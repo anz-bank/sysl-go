@@ -1,0 +1,23 @@
+syntax  = "proto3";
+
+package simplegrpc;
+
+message GetStuffRequest {
+    string innerStuff = 1;
+    string sensitiveStuff = 2;
+    string timeStuff = 3;
+}
+
+message GetStuffResponse {
+    repeated Item Data = 1;
+}
+
+message Item {
+    string Name = 1;
+    string A1 = 2;
+    string A2 = 3;
+}
+
+service SimpleGrpc {
+    rpc GetStuff (GetStuffRequest) returns (GetStuffResponse);
+}

@@ -1,0 +1,1091 @@
+CodeGenTransform:
+  !view GoName(word <: string) -> string:
+    word -> (:
+      let splitted = if MatchString("^[\\p{L}_][\\p{L}\\p{N}_]*$", word) then [word] else FindAllString("[\\p{L}_][\\p{L}\\p{N}_]*", word, -1)
+
+      # Common initialisms https://github.com/golang/lint/blob/8f45f776aaf18cebc8d65861cc70c33c60471952/lint.go#L771
+      let initialisms = ["ACL", "API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML", "HTTP", "HTTPS", "ID", "IP", "JSON", "LHS", "QPS", "RAM", "RHS", "RPC", "SLA", "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "UID", "UUID", "URI", "URL", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS"]
+
+      let wordUpper = splitted -> <sequence of string> (w:
+        let upper = ToTitle(TrimPrefix(w,"_"))
+        out = if upper in initialisms then upper else Title(w)
+      )
+      out = Join(wordUpper flatten(.out), "")
+    )
+
+  !view ParamType(t <: sysl.Type) -> string:
+    t -> (:
+      let IsPtr = if t.optional == true && t.type != "sequence" then "*" else ""
+      let typeName = if t.type ==:
+        "primitive" => if t.primitive ==:
+          "DECIMAL" => "double"
+          "INT" => "int64"
+          "FLOAT" => "float64"
+          "STRING" => "string"
+          "STRING_8" => "string"
+          "BOOL" => "bool"
+          "DATE" => "date.Date"
+          "DATETIME" => "convert.JSONTime"
+        "sequence" => "[]" + GoType(t.sequence).out
+        else GoName(t.type_ref).out
+      out = IsPtr + typeName
+    )
+
+  !view filename(app <: sysl.App) -> string:
+    app -> (:
+      filename =  "servicehandler.go"
+    )
+
+  !view makeValueExpr(strValue <: string) -> Expression:
+    strValue -> (:
+      ValueExpr = strValue
+    )
+
+  !view paramDecl(identifier <: string, typeName <: string) -> ParameterDecl:
+    identifier -> (:
+      Identifier = identifier
+      TypeName = typeName
+    )
+
+  !view varDecl(name <: string, typeName <: string) -> VarDecl:
+    name -> (:
+      identifier = name
+      TypeName = typeName
+    )
+
+  !view handleErrorReturnNil(condition <: string) -> StatementList:
+    condition -> (:
+      Statement = condition -> <Statement> (:
+        IfElseStmt = condition -> <IfElseStmt> (:
+          Expression = makeValueExpr(condition)
+          Block = condition -> <Block> (:
+            let returnStmt = condition -> <StatementList> (:
+              Statement = condition -> <Statement> (:
+                ReturnStmt = condition -> <ReturnStmt> (:
+                  PayLoad = "nil"
+                )
+              )
+            )
+            StatementList = [returnStmt]
+          )
+        )
+      )
+    )
+
+  !view handleErrorWithRollback(condition <: string, errorCode <: string, errorMsg <: string, errorObj <: string) -> StatementList:
+    condition -> (:
+      Statement = condition -> <Statement> (:
+        IfElseStmt = condition -> <IfElseStmt> (:
+          Expression = makeValueExpr(condition)
+          Block = condition -> <Block> (:
+            let rollbackStmt = condition -> <StatementList> (:
+              Statement = condition -> <Statement> (:
+                FunctionCall = condition -> <FunctionCall> (:
+                  FunctionName = "tx.Rollback"
+                )
+              )
+            )
+            let interfaceCall = condition -> <StatementList> (:
+              Statement = condition -> <Statement> (:
+                FunctionCall = condition -> <ReturnStmt> (:
+                  FunctionName = "s.genCallback.HandleError"
+                  FunctionArgs = condition -> <FunctionArgs> (:
+                    Expression = makeValueExpr("ctx")
+                    let writer = condition -> <FuncArgsRest> (:
+                      Expression = makeValueExpr("w")
+                    )
+                    let code = errorCode -> <FuncArgsRest> (:
+                      Expression = makeValueExpr(errorCode)
+                    )
+                    let msg = errorMsg -> <FuncArgsRest>(:
+                      Expression = makeValueExpr(errorMsg)
+                    )
+                    let error = errorObj -> <FuncArgsRest> (:
+                      Expression = makeValueExpr(errorObj)
+                    )
+                    FuncArgsRest = [writer, code, msg, error]
+                  )
+                )
+              )
+            )
+
+            let returnStmt = condition -> <StatementList> (:
+              Statement = condition -> <Statement> (:
+                ReturnStmt = condition -> <ReturnStmt> (:
+                  PayLoad = ""
+                )
+              )
+            )
+            StatementList = [rollbackStmt, interfaceCall, returnStmt]
+          )
+        )
+      )
+    )
+
+  !view handleError(condition <: string, errorCode <: string, errorMsg <: string, errorObj <: string) -> StatementList:
+    condition -> (:
+      Statement = condition -> <Statement> (:
+        IfElseStmt = condition -> <IfElseStmt> (:
+          Expression = makeValueExpr(condition)
+          Block = condition -> <Block> (:
+            let interfaceCall = condition -> <StatementList> (:
+              Statement = condition -> <Statement> (:
+                FunctionCall = condition -> <ReturnStmt> (:
+                  FunctionName = "s.genCallback.HandleError"
+                  FunctionArgs = condition -> <FunctionArgs> (:
+                    Expression = makeValueExpr("ctx")
+                    let writer = condition -> <FuncArgsRest> (:
+                      Expression = makeValueExpr("w")
+                    )
+                    let code = errorCode -> <FuncArgsRest> (:
+                      Expression = makeValueExpr(errorCode)
+                    )
+                    let msg = errorMsg -> <FuncArgsRest>(:
+                      Expression = makeValueExpr(errorMsg)
+                    )
+                    let error = errorObj -> <FuncArgsRest> (:
+                      Expression = makeValueExpr(errorObj)
+                    )
+                    FuncArgsRest = [writer, code, msg, error]
+                  )
+                )
+              )
+            )
+
+            let returnStmt = condition -> <StatementList> (:
+              Statement = condition -> <Statement> (:
+                ReturnStmt = condition -> <ReturnStmt> (:
+                  PayLoad = ""
+                )
+              )
+            )
+            StatementList = [interfaceCall, returnStmt]
+          )
+        )
+      )
+    )
+
+  !view structVarDecl(bodyParams <: BodyParams) -> sequence of StatementList:
+    bodyParams -> (param:
+      Statement = param -> <Statement>(:
+        VarDecl =varDecl(param.paramName, param.paramType)
+      )
+    )
+
+  !view jsonDecode(bodyParams <: BodyParams, packageName <: string) -> Block:
+    packageName -> (:
+      let decodeErr = "decodeErr"
+
+      let decodeStmts = bodyParams -> <sequence of StatementList> (param:
+        let decode = param -> <Statement> (:
+          DeclareAndAssignStmt = param -> <DeclareAndAssignStmt> (:
+            Variables = decodeErr
+            Expression = param -> <Expression> (:
+              FunctionCall = param -> <FunctionCall> (:
+                FunctionName = "decoder.Decode"
+                FunctionArgs = param -> <FunctionArgs> (:
+                  Expression = makeValueExpr("&req.Request")
+                )
+              )
+            )
+          )
+        )
+        Statement = decode
+      )
+
+      StatementList = decodeStmts | [handleError(decodeErr + " != nil", "common.BadRequestError", '"Error reading request body"', decodeErr)]
+    )
+
+  !view validateRequest(request <: string) -> Block:
+    request -> (:
+      let valErr = "valErr"
+
+      let validate = request -> <StatementList> (:
+        Statement = request -> <Statement> (:
+          DeclareAndAssignStmt = request -> <DeclareAndAssignStmt> (:
+            Variables = valErr
+            Expression = request -> <Expression> (:
+              FunctionCall = request -> <FunctionCall> (:
+                FunctionName = "validator.Validate"
+                FunctionArgs = request -> <FunctionArgs> (:
+                  Expression = makeValueExpr(request)
+                )
+              )
+            )
+          )
+        )
+      )
+
+      let handle = handleError(valErr + " != nil", "common.BadRequestError", '"Invalid request"', valErr)
+
+      StatementList = [validate, handle]
+    )
+
+  !view retrieveDBHandle(ep <: sysl.Endpoint) -> Block:
+    ep -> (:
+      let vars = "conn,err"
+      let funcName = "s.DB.Conn"
+      let validate = ep -> <StatementList> (:
+        Statement = ep -> <Statement> (:
+          DeclareAndAssignStmt = ep -> <DeclareAndAssignStmt> (:
+            Variables = vars
+            Expression = ep -> <Expression> (:
+              FunctionCall = ep -> <FunctionCall> (:
+                FunctionName = funcName
+                FunctionArgs = funcName -> <FunctionArgs>(:
+                  Expression = makeValueExpr("ctx")
+                )
+              )
+            )
+          )
+        )
+      )
+
+      let handle = handleError("err" + " != nil", "common.InternalError", '"Database connection could not be retrieved"', "err")
+
+      let deferCloseConnection = "defer conn.Close"
+
+      let closeConnection = deferCloseConnection -> <StatementList>(:
+        Statement = deferCloseConnection -> <Statement>(:
+          FunctionCall = deferCloseConnection -> <FunctionCall>(:
+            FunctionName = deferCloseConnection
+          )
+        )
+      )
+
+      let queryStatements = ep.attrs where (HasPrefix(.key, "sql_")) -> <sequence of StatementList> (t:
+        Statement = t -> <Statement> (:
+          DeclareAndAssignStmt = t -> <DeclareAndAssignStmt> (:
+            let functName = ToLower(TrimPrefix(t.key,"sql_"))
+            Variables = functName+"Stmt, err_"+functName
+            Expression = t -> <Expression> (:
+              FunctionCall = t -> <FunctionCall> (:
+                FunctionName = "conn.PrepareContext"
+                FunctionArgs = "conn.PrepareContext" -> <FunctionArgs>(:
+                  Expression = makeValueExpr("ctx")
+                  FuncArgsRest = [t] -> <sequence of FuncArgsRest>(a:
+                    Expression = makeValueExpr("\""+t.value+"\"")
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+
+      let queryErrors = ep.attrs where (HasPrefix(.key, "sql_")) -> <sequence of StatementList> (t:
+        let functName = ToLower(TrimPrefix(t.key,"sql_"))
+        let errorMessage = '"could not parse the sql query with the name '+t.key+'"'
+        Statement = handleError("err_" + functName + " != nil", "common.InternalError", errorMessage , "err_"+functName).Statement
+      )
+
+      let createTransaction = ep -> <StatementList> (:
+        Statement = ep -> <Statement> (:
+          DeclareAndAssignStmt = ep -> <DeclareAndAssignStmt> (:
+            Variables = "tx, err"
+            Expression = ep -> <Expression> (:
+              FunctionCall = ep -> <FunctionCall> (:
+                FunctionName = "conn.BeginTx"
+                FunctionArgs = "conn.BeginTx" -> <FunctionArgs>(:
+                  Expression = makeValueExpr("ctx, &sql.TxOptions{Isolation: sql.LevelSerializable}")
+                )
+              )
+            )
+          )
+        )
+      )
+      let transactionError = handleError("err" + " != nil", "common.DownstreamUnavailableError", '"DB Transaction could not be created"', "err")
+
+      StatementList = [validate, handle, closeConnection] | queryStatements | queryErrors | [createTransaction, transactionError]
+    )
+
+  !view setServiceHandlerWithDBPool(request <: string, app <: sysl.App, module <: sysl.Module, serviceImplVarname <: string) -> Block:
+    request -> (:
+      let vars = "db,err"
+      let dbHandle = request -> <StatementList> (:
+        Statement = request -> <Statement> (:
+          DeclareAndAssignStmt = request -> <DeclareAndAssignStmt> (:
+            Variables = vars
+            Expression = request -> <Expression> (:
+              FunctionCall = request -> <FunctionCall> (:
+                FunctionName = "database.GetDBHandle"
+              )
+            )
+          )
+        )
+      )
+
+      let errorHandle = handleErrorReturnNil("err" + " != nil")
+      let returnStmt = request -> <StatementList> (:
+        Statement = request -> <Statement> (:
+          ReturnStmt = request -> <ReturnStmt> (:
+            let clientParamList = makeClientParamList(app, module) flatten(.out) -> <set of out>(pl:
+              out = pl
+            )
+            PayLoad = "&ServiceHandler{" + Join(["genCallback", serviceImplVarname,"db"] | clientParamList flatten(.out),",") + "}"
+          )
+        )
+      )
+      StatementList = [dbHandle, errorHandle, returnStmt]
+    )
+
+  !view setServiceHandlerWithoutDBPool(request <: string, app <: sysl.App, module <: sysl.Module, serviceImplVarname <: string) -> Block:
+    request -> (:
+      let returnStmt = request -> <StatementList> (:
+        Statement = request -> <Statement> (:
+          ReturnStmt = request -> <ReturnStmt> (:
+            let clientParamList = makeClientParamList(app, module) flatten(.out) -> <set of out>(pl:
+              out = pl
+            )
+            PayLoad = "&ServiceHandler{" + Join(["genCallback", serviceImplVarname] | clientParamList flatten(.out),",") + "}"
+          )
+        )
+      )
+      StatementList = [returnStmt]
+    )
+
+  !view methodDef(ep <: sysl.Endpoint) -> string:
+    ep -> (:
+      let terms = ep.value.pathvars -> <out> (:
+        out = "{" + .name + "}"
+      )
+      let pathVars = terms flatten(.out)
+      let path = Split(ep.value.path, "/")
+      let method = Title(ToLower(ep.value.method))
+
+      let methodPostfix = path -> <sequence of string> (p:
+        let postfix  = if p in pathVars then "" else p
+        out = Title(ToLower(postfix))
+      )
+
+      let withArg = if MatchString("\\{\\p{L}+\\}$", ep.value.path) && Contains("POST", ToUpper(method)) then "WithArg" else ""
+      let getList = if MatchString("[\\p{L}\\p{N}]$", ep.value.path) && Contains("GET", ToUpper(method)) then "List" else ""
+
+      methodName = GoName(method + Join(methodPostfix flatten(.out), "") + withArg + getList).out
+    )
+
+  !view epHandlerMethodSpecs(eps <: sequence of sysl.Endpoints) -> sequence of MethodSpec:
+    eps where(.value.is_rest == true) -> (ep:
+      MethodName = methodDef(ep).methodName + "Handler"
+      Signature = ep -> <Signature> (:
+        Parameters = ep -> <Parameters>(:
+          ParameterList = ep -> <ParameterList>(:
+            ParameterDecl = paramDecl("w", "http.ResponseWriter")
+            ParameterDeclC = [ep] -> <sequence of ParameterDeclC>(ep:
+              ParameterDecl = paramDecl("r", "*http.Request")
+            )
+          )
+        )
+      )
+    )
+
+  !view paramAssignment(param <: sysl.Parameter, methodName <: string) -> out:
+    param -> (:
+      out = param -> <out> (:
+        Variables = param.varName
+        Expression = param -> <Expression> (:
+          FunctionCall = param -> <FunctionCall> (:
+            FunctionName = methodName
+            FunctionArgs = param -> <FunctionArgs> (:
+              Expression = makeValueExpr("r")
+              FuncArgsRest = [param] -> <FuncArgsRest> (:
+                Expression = makeValueExpr('"' + param.paramName + '"')
+              )
+            )
+          )
+        )
+      )
+    )
+
+  !view getParamStatementsDecl(paramList <: ParamList, methodName <: string) -> sequence of StatementList:
+    paramList -> (param:
+      Statement = param -> <Statement> (:
+        DeclareAndAssignStmt = paramAssignment(param, methodName).out
+      )
+    )
+
+  !view getParamStatements(paramList <: ParamList, methodName <: string) -> sequence of StatementList:
+    paramList -> (param:
+      Statement = param -> <Statement> (:
+        AssignStmt = paramAssignment(param, methodName).out
+      )
+    )
+
+  !view getOptParamStatements(paramList <: ParamList, methodName <: string) -> Block:
+    methodName -> (:
+      let paramSuffix = paramList -> <sequence of ParamList> (p:
+        varName = p.varNameClean + "Param"
+        paramName = p.paramName
+        paramType = "string"
+      )
+
+      let declStmt = paramSuffix -> <sequence of StatementList> (p:
+        Statement = p -> <Statement> (:
+          VarDecl = p -> <VarDecl>(:
+            identifier = p.varName
+            TypeName = p.paramType
+          )
+        )
+      )
+
+      let convErrDecl = ["convErr"] where(paramList count > 0) -> <sequence of StatementList> (d:
+        Statement = d -> <Statement> (:
+          VarDecl = d -> <VarDecl>(:
+            identifier = d
+            TypeName = "error"
+          )
+        )
+      )
+
+      let assignStmt = getParamStatements(paramSuffix, methodName)
+
+      let assignVar = paramList -> <sequence of out> (param:
+        let st = param -> <Statement> (:
+          AssignStmt = param -> <AssignStmt> (:
+            Variables = param.varName + ", convErr"
+            let conversion = if param.paramType ==:
+              "*bool" => "convert.StringToBoolPtr"
+              "*int64" => "convert.StringToIntPtr"
+              "*convert.JSONTime" => "convert.StringToTimePtr"
+              else "convert.StringToStringPtr"
+
+            Expression = conversion -> <Expression> (:
+              FunctionCall = conversion -> <FunctionCall> (:
+                FunctionName = conversion
+                FunctionArgs = "ctx" -> <FunctionArgs> (:
+                  Expression = makeValueExpr("ctx")
+                  FuncArgsRest = [param.varNameClean + "Param"] -> <sequence of FuncArgsRest> (arg:
+                    Expression = makeValueExpr(arg)
+                  )
+                )
+              )
+            )
+          )
+        )
+        let handleErrStmt = handleError("convErr != nil", "common.BadRequestError", '"Invalid request"', "convErr").Statement
+        out = [st, handleErrStmt]
+      )
+
+      let c1 = assignVar flatten(.out) -> <sequence of out> (o:
+        let c2 = o -> <sequence of out> (o2:
+          Statement = o2
+        )
+        out = c2
+      )
+
+
+      StatementList = declStmt | convErrDecl | assignStmt | c1 flatten(.out) flatten(.)
+    )
+
+  !view validateHeaders(ep <: sysl.Endpoint) -> sequence of StatementList:
+    ep.value.params where("header" in .attrs.patterns && "required" in .attrs.patterns) -> (param:
+      let condition = GoName(param.attrs.name).out + ' == ""'
+      let errorCode = "common.BadRequestError"
+      let errMsg = '"' + param.attrs.name + ' header length is zero"'
+      Statement = handleError(condition, errorCode, errMsg, "nil").Statement
+    )
+
+  !view declareHeaders(variableName <: string, typeName <: string, values <: sequence of string) -> StatementList:
+    typeName -> (:
+      Statement = typeName -> <Statement> (:
+        DeclareAndAssignStmt = typeName -> <DeclareAndAssignStmt> (:
+          Variables = variableName
+          Expression = typeName -> <Expression> (:
+            NewSlice = typeName -> <NewSlice> (:
+              TypeName = typeName
+              let v = values -> <sequence of string> (vv:
+                out = '"' + vv + '"'
+              )
+              SliceValues = Join(v flatten(.out), ',')
+            )
+          )
+        )
+      )
+    )
+
+  !view getReqVars(allParams <: AllParams) -> Block:
+    allParams -> (:
+      let pps = getParamStatements(allParams.PathParams, "restlib.GetURLParam")
+      let reqQps = getParamStatements(allParams.ReqQueryParams, "restlib.GetQueryParam")
+      let optQps = getOptParamStatements(allParams.OptQueryParams, "restlib.GetQueryParam").StatementList
+      let reqHs = getParamStatementsDecl(allParams.ReqHeaderParams, "restlib.GetHeaderParam")
+      StatementList = pps | reqQps | optQps | reqHs
+    )
+
+  !view getBodyParams(bodyParams <: BodyParams, packageName <: string) -> Block:
+    packageName -> (:
+      let decoder = jsonDecoder("decoder")
+      let structVarDecl = structVarDecl(bodyParams)
+      let jsonDecode = jsonDecode(bodyParams, packageName).StatementList
+
+      StatementList = if bodyParams count > 0 then [decoder] | jsonDecode else structVarDecl
+    )
+
+  !view queryParamNameFromAttrs(ep <: sysl.Endpoint, qparam <: sysl.EndPoint.RestParams.QueryParam) -> string:
+    ep -> (:
+      let matchingPname = .value.attrs.queryParamNames where (qparam.name in .) -> <sequence of string> (namePair:
+          mpout = namePair where (. != qparam.name)
+      )
+      let matchingPnameAsString = matchingPname flatten(.mpout) -> <sequence of string> (v:
+        mpasout = Join(v,"")
+      )
+
+      out = Join(matchingPnameAsString flatten(.mpasout), "")
+    )
+
+  !view queryParamName(ep <: sysl.Endpoint, qparam <: sysl.EndPoint.RestParams.QueryParam) -> string:
+    ep -> (:
+      out = if "queryParamNames" in .value.attrs then queryParamNameFromAttrs(ep, qparam).out else qparam.name
+    )
+
+  !view getPackagePrefix(payload <: string, module <: sysl.Module) -> string:
+    payload -> (:
+      let packages = Split(payload, ".") -> <set of string>(p:
+        let depList = module.apps where(.value.name == p) -> <set of string> (dep:
+          pkg = dep.value.attrs.package
+          appName = p
+        )
+        pkg = depList flatten(.pkg)
+        appName = depList flatten(.appName)
+      )
+      out = if packages flatten(.pkg) count == 0 then "" else packages flatten(.pkg) single + "."
+      appName = if packages flatten(.appName) count == 0 then "" else packages flatten(.appName) single
+    )
+
+  !view VarName(word <: string) -> string:
+    word -> (:
+      out = ToLower(Join(Split(word, "_"),""))
+    )
+
+  !view getAllParams(ep <: sysl.Endpoint, module <: sysl.Module) -> AllParams:
+    ep -> (:
+      let reqQueryParams = ep.value.queryvars where (.optional == false) -> <QueryParams> (:
+        paramType = ParamType(.).out
+        paramName = queryParamName(ep, .).out
+        varName = "req." + GoName(.name).out
+      )
+      let optQueryParams = ep.value.queryvars where (.optional == true) -> <QueryParams> (:
+        paramType = ParamType(.).out
+        paramName = queryParamName(ep, .).out
+        varName = "req." + GoName(.name).out
+        varNameClean = GoName(.name).out
+      )
+      let pathParams = ep.value.pathvars -> <PathParams> (:
+        paramType = ParamType(.).out
+        paramName = .name
+        varName = "req." + GoName(.name).out
+      )
+      let reqHeaderParams = ep.value.params where("header" in .attrs.patterns && "required" in .attrs.patterns) -> <HeaderParams> (:
+        paramType = ParamType(.).out
+        paramName = .attrs.name
+        varName = GoName(.attrs.name).out
+        isOptional = false
+      )
+      let optHeaderParams = ep.value.params where("header" in .attrs.patterns && "optional" in .attrs.patterns) -> <HeaderParams> (:
+        paramType = ParamType(.).out
+        paramName = .attrs.name
+        varName = "req." + GoName(.attrs.name).out
+        isOptional = true
+      )
+      let bodyParams = ep.value.params where("body" in .attrs.patterns) -> <BodyParams> (:
+        let p = getPackagePrefix(.type_ref, module)
+        let t = TrimPrefix(.type_ref, p.appName)
+        paramType = p.out + GoName(t).out
+        paramName = GoName(.name).out
+        varName = "req." + GoName(.name).out
+      )
+      QueryParams = reqQueryParams | optQueryParams
+      ReqQueryParams = reqQueryParams
+      OptQueryParams = optQueryParams
+      PathParams = pathParams
+      ReqHeaderParams = reqHeaderParams
+      OptHeaderParams = optHeaderParams
+      HeaderParams = reqHeaderParams | optHeaderParams
+      BodyParams = bodyParams
+      AllParams = pathParams flatten(.paramName) | reqQueryParams flatten(.paramName) |  optQueryParams flatten(.paramName) | reqHeaderParams flatten(.paramName) | optHeaderParams flatten(.paramName) | bodyParams flatten(.paramName)
+    )
+
+  !view jsonDecoder(decoderName <: string) -> StatementList:
+    decoderName -> (:
+      Statement = decoderName -> <Statement>(:
+        DeclareAndAssignStmt = decoderName -> <DeclareAndAssignStmt>(:
+          Variables = decoderName
+          Expression = decoderName -> <Expression> (:
+            FunctionCall = decoderName -> <FunctionCall> (:
+              FunctionName = 'json.NewDecoder'
+              FunctionArgs = decoderName -> <FunctionArgs> (:
+                Expression = makeValueExpr("r.Body")
+              )
+            )
+          )
+        )
+      )
+    )
+
+  !view makeFunctionCall(funcName <: string, arg0 <: ValueExpr, rest <: sequence of ValueExpr) -> StatementList:
+    funcName -> (:
+      Statement = funcName -> <Statement>(:
+        FunctionCall = funcName -> <FunctionCall>(:
+          FunctionName = funcName
+          FunctionArgs = funcName -> <FunctionArgs> (:
+            Expression = arg0
+            FuncArgsRest = rest -> <FuncArgsRest> (:
+              Expression = .
+            )
+          )
+        )
+      )
+    )
+
+  !view makeResult(ep <: sysl.Endpoint) -> string:
+    ep -> (:
+        let tn = ep.value.ret where (.key != "error") -> <sequence of string>(t:
+          let justName = ToLower(TrimPrefix(t.value, "sequence of "))
+          let p = if MatchString("^.+\\.", justName) then FindAllString("^.+\\.", justName, 1) single else ""
+          out = TrimPrefix(justName, p)
+        )
+        out = Join(tn flatten(.out), ", ")
+    )
+
+  !view EpHandlerMethodDecl(app <: sysl.App, packageName <: string, module <: sysl.Module) -> sequence of TopLevelDecl:
+    app.endpoints where(.value.is_rest == true) -> (ep:
+      let implFuncName = methodDef(ep).methodName
+      let funcName = implFuncName + "Handler"
+      let allParams = getAllParams(ep, module)
+      Comment = '// ' + funcName + ' ...'
+      MethodDecl = ep -> <MethodDecl>(:
+        Receiver = ep -> <Receiver>(:
+          ReceiverType = "s *ServiceHandler"
+        )
+        FunctionName = funcName
+        Signature = ep -> <Signature> (:
+          Parameters = ep -> <Parameters>(:
+            ParameterList = ep -> <ParameterList>(:
+              ParameterDecl = paramDecl("w", "http.ResponseWriter")
+              ParameterDeclC = [ep] -> <sequence of ParameterDeclC>(p:
+                ParameterDecl = paramDecl("r", "*http.Request")
+              )
+            )
+          )
+        )
+
+        let hasPayload = if ep.value.ret count > 0 then true else false
+
+        let returnValues = makeResult(ep).out + ",err"
+        let sendRespCallArgs = "httpstatus," + makeResult(ep).out + ",err"
+
+
+        Block = ep -> <Block>(:
+
+          let nilCheck = implFuncName -> <StatementList>(:
+            Statement = implFuncName -> <Statement>(:
+              IfElseStmt = implFuncName -> <IfElseStmt>(:
+                Expression = makeValueExpr("s.serviceInterface." + implFuncName + " == nil")
+                Block = implFuncName -> <Block>(:
+                    let handleError =  makeFunctionCall("s.genCallback.HandleError", makeValueExpr("r.Context()"), [makeValueExpr("w"), makeValueExpr("common.InternalError"), makeValueExpr('"not implemented"'), makeValueExpr("nil")])
+
+                    let returnError = implFuncName -> <StatementList>(:
+                      Statement = implFuncName -> <Statement>(:
+                        ReturnStmt = implFuncName -> <ReturnStmt>(:
+                          PayLoad = ""
+                        )
+                      )
+                    )
+                    StatementList = [handleError, returnError]
+                )
+              )
+            )
+          )
+
+          let ctxVar = "ctx"
+          let reqToCtx = "common.RequestHeaderToContext"
+
+          let ctx = ctxVar -> <Block>(:
+            let reqCtx = ctxVar -> <StatementList>(:
+              Statement = ctxVar -> <Statement>(:
+                DeclareAndAssignStmt = ctxVar -> <DeclareAndAssignStmt>(:
+                  Variables = ctxVar
+                  Expression = ctxVar -> <Expression>(:
+                    FunctionCall = reqToCtx -> <FunctionCall>(:
+                      FunctionName = reqToCtx
+                      FunctionArgs = reqToCtx -> <FunctionArgs>(:
+                        Expression = makeValueExpr("r.Context()")
+                        FuncArgsRest = [reqToCtx] -> <sequence of FuncArgsRest>(a:
+                          Expression = makeValueExpr("r.Header")
+                        )
+
+                      )
+                    )
+                  )
+                )
+              )
+            )
+
+            let respToCtx = "common.RespHeaderAndStatusToContext"
+
+            let respCtx = ctxVar -> <StatementList> (:
+              Statement = ctxVar -> <Statement>(:
+                AssignStmt = ctxVar -> <AssignStmt>(:
+                  Variables = ctxVar
+                  Expression = ctxVar -> <Expression>(:
+                    FunctionCall = respToCtx -> <FunctionCall>(:
+                      FunctionName = respToCtx
+                      FunctionArgs = respToCtx -> <FunctionArgs>(:
+                        Expression = makeValueExpr(ctxVar)
+                        FuncArgsRest = ["make(http.Header)", "http.StatusOK"] -> <sequence of FuncArgsRest>(a:
+                          Expression = makeValueExpr(a)
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+            StatementList = [reqCtx, respCtx]
+          )
+
+          let declareClient = ep -> <StatementList>(:
+            Statement = ep -> <Statement>(:
+              DeclareAndAssignStmt = ep -> <DeclareAndAssignStmt> (:
+                Variables = "client"
+                Expression = ep -> <Expression>(:
+                  NewStruct = makeClient(app, ep, module)
+                )
+              )
+            )
+          )
+
+          let implCall = ep -> <StatementList> (:
+            Statement = ep -> <Statement> (:
+              DeclareAndAssignStmt = ep -> <DeclareAndAssignStmt> (:
+                Variables = returnValues
+                Expression = ep -> <Expression> (:
+                  FunctionCall = ep -> <FunctionCall> (:
+                    FunctionName = "s.serviceInterface." + implFuncName
+                    FunctionArgs = ep -> <FunctionArgs> (:
+                      Expression = makeValueExpr("ctx")
+                      FuncArgsRest = ["&req", "client"] -> <sequence of FuncArgsRest>(p:
+                        Expression = makeValueExpr(p)
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+
+          let errCheckWithOutDB = handleError("err != nil", "common.DownstreamUnexpectedResponseError", "\"Downstream failure\"", "err")
+          let errCheckWithDB = handleErrorWithRollback("err != nil", "common.DownstreamUnexpectedResponseError", "\"Downstream failure\"", "err")
+          let errCheck = if IsDataBaseApp(app).out then errCheckWithDB else errCheckWithOutDB
+
+          let transactionCommit = ep -> <StatementList> (:
+            Statement = ep -> <Statement> (:
+              DeclareAndAssignStmt = ep -> <DeclareAndAssignStmt> (:
+                Variables = "commitErr"
+                Expression = ep -> <Expression> (:
+                  FunctionCall = ep -> <FunctionCall> (:
+                    FunctionName = "tx.Commit"
+                  )
+                )
+              )
+            )
+          )
+
+          let commitErrorHandle = handleError("commitErr" + " != nil", "common.InternalError", '"Failed to commit the transaction"', "commitErr")
+
+          let assignResp = ep -> <StatementList>(:
+            Statement = ep -> <Statement> (:
+              DeclareAndAssignStmt = ep -> <DeclareAndAssignStmt>(:
+                Variables = "headermap, httpstatus"
+                Expression = ep -> <Expression>(:
+                  FunctionCall = ep -> <FunctionCall>(:
+                    FunctionName = "common.RespHeaderAndStatusFromContext"
+                    FunctionArgs = ep -> <FunctionArgs>(:
+                      Expression = makeValueExpr("ctx")
+                    )
+                  )
+                )
+              )
+            )
+          )
+
+          let setHeadersCall = ep -> <StatementList> (:
+            Statement = ep -> <Statement> (:
+              FunctionCall = ep -> <FunctionCall> (:
+                FunctionName = "restlib.SetHeaders"
+                FunctionArgs = ep -> <FunctionArgs> (:
+                  Expression = makeValueExpr("w")
+                  FuncArgsRest = [ep] -> <sequence of FuncArgsRest> (a:
+                    Expression = makeValueExpr("headermap")
+                  )
+                )
+              )
+            )
+          )
+
+          let sendRespCall = ep -> <StatementList> (:
+            Statement = ep -> <Statement> (:
+              FunctionCall = ep -> <FunctionCall> (:
+                FunctionName = "restlib.SendHTTPResponse"
+                FunctionArgs = ep -> <FunctionArgs> (:
+                  Expression = makeValueExpr("w")
+                  FuncArgsRest = [ep] -> <sequence of FuncArgsRest> (a:
+                    Expression = makeValueExpr(sendRespCallArgs)
+                  )
+                )
+              )
+            )
+          )
+
+          let withTimeout = ep -> <StatementList> (:
+            Statement = ep -> <Statement>(:
+              DeclareAndAssignStmt = ep -> <DeclareAndAssignStmt>(:
+                Variables = "ctx, cancel"
+                Expression = ep -> <Expression>(:
+                  FunctionCall = ep -> <FunctionCall>(:
+                    FunctionName = "s.genCallback.DownstreamTimeoutContext"
+                    FunctionArgs = ep -> <FunctionArgs>(:
+                      Expression = ep -> <Expression>(:
+                        ValueExpr = "ctx"
+                      )
+                    )
+                  )
+                )
+              )
+            )
+          )
+
+          let deferCancel = "defer cancel"
+
+          let cancel = deferCancel -> <StatementList>(:
+            Statement = deferCancel -> <Statement>(:
+              FunctionCall = deferCancel -> <FunctionCall>(:
+                FunctionName = deferCancel
+              )
+            )
+          )
+
+          let requestDecl = ep -> <StatementList> (:
+            Statement = ep -> <Statement> (:
+              VarDecl = varDecl("req", implFuncName + "Request")
+            )
+          )
+          let funcCallsWithDB = [withTimeout, cancel] | validateRequest("&req").StatementList | retrieveDBHandle(ep).StatementList | [declareClient, implCall, errCheck, transactionCommit, commitErrorHandle, assignResp, setHeadersCall, sendRespCall]
+          let funcCallsWithOutDB = [withTimeout, cancel] | validateRequest("&req").StatementList | [declareClient, implCall, errCheck, assignResp, setHeadersCall, sendRespCall]
+          let funcCalls = if IsDataBaseApp(app).out then funcCallsWithDB else funcCallsWithOutDB
+
+          let commonStmtList = [requestDecl] | getReqVars(allParams).StatementList | validateHeaders(ep)
+          let stmtList = commonStmtList
+          StatementList = if ep.value.method ==:
+            "GET" => [nilCheck] | ctx.StatementList | stmtList | funcCalls
+            "POST" => [nilCheck] | ctx.StatementList | stmtList  | getBodyParams(allParams.BodyParams, packageName).StatementList | funcCalls
+            "PUT" => [nilCheck] | ctx.StatementList | stmtList  | getBodyParams(allParams.BodyParams, packageName).StatementList | funcCalls
+            "DELETE" => [nilCheck] |ctx.StatementList | stmtList  | funcCalls
+        )
+      )
+    )
+
+  !view makeEpClientName(ep <: sysl.Endpoint) -> string:
+    ep ->(:
+      out = methodDef(ep).methodName + "Client"
+    )
+
+  !view makeClient(app <: sysl.App, ep <: sysl.Endpoint, module <: sysl.Module) -> NewStruct:
+    ep -> (:
+      StructName = makeEpClientName(ep).out
+      let sf = ep.value.stmts where (.type == "call") -> <sequence of out> (call:
+        let depList = module.apps where(.value.name == call.target) -> <sequence of out> (dep:
+          let depEpList = dep.value.endpoints where(.value.name == call.endpoint) -> <sequence of out> (depEp:
+            identifier = methodDef(depEp).methodName
+            Expression = depEp -> <Expression> (:
+              ValueExpr = "s." + dep.value.attrs.package + dep.value.name + "Service" + "." + methodDef(depEp).methodName
+            )
+          )
+          out = depEpList
+        )
+        out = depList flatten(.out) flatten(.)
+      )
+
+      let dbParam = "dbParam" -> <out>(:
+        identifier = "conn"
+        Expression = "Expr" -> <Expression> (:
+          ValueExpr = "conn"
+        )
+      )
+      let queryAttributes = SetQueryAttributes(ep).out
+      let StructFieldWithoutDB = sf flatten(.out) flatten(.)
+      let StructFieldWithDB = [dbParam] | queryAttributes | sf flatten(.out) flatten(.)
+      StructField = if IsDataBaseApp(app).out then StructFieldWithDB else StructFieldWithoutDB
+    )
+
+  !view makeClientStruct(app <: sysl.App, module <: sysl.Module) -> set of out:
+    app.endpoints -> (ep:
+      let callList = ep.value.stmts where (.type == "call") -> <set of out> (call:
+        let depList = module.apps where(.value.name == call.target) -> <set of out> (dep:
+          identifier = dep.value.attrs.package + dep.value.name + "Service"
+          Type = dep.value.attrs.package + "." + "Service"
+        )
+        out = depList
+      )
+      out = callList flatten(.out)
+    )
+
+  !view makeClientParam(app <: sysl.App, module <: sysl.Module) -> set of out:
+    app.endpoints -> (ep:
+      let callList = ep.value.stmts where (.type == "call") -> <set of out> (call:
+        let depList = module.apps where(.value.name == call.target) -> <set of out> (dep:
+          ParameterDecl = dep -> <ParameterDecl>(:
+            Identifier = dep.value.attrs.package + dep.value.name + "Service"
+            TypeName = dep.value.attrs.package + "." + "Service"
+          )
+        )
+        out = depList
+      )
+      out = callList flatten(.out)
+    )
+
+  !view makeClientParamList(app <: sysl.App, module <: sysl.Module) -> set of string:
+    app.endpoints -> (ep:
+      let callList = ep.value.stmts where (.type == "call") -> <set of out> (call:
+        let depList = module.apps where(.value.name == call.target) -> <set of out> (dep:
+          out = dep.value.attrs.package + dep.value.name + "Service"
+        )
+        out = depList flatten(.out)
+      )
+      out = callList flatten(.out)
+    )
+
+  !view makeClientImportList(app <: sysl.App, module <: sysl.Module) -> set of string:
+    app.endpoints -> (ep:
+      let callList = ep.value.stmts where (.type == "call") -> <set of out> (call:
+        let depList = module.apps where(.value.name == call.target) -> <set of out> (dep:
+          out = dep.value.attrs.package
+        )
+        out = depList flatten(.out)
+      )
+      out = callList flatten(.out)
+    )
+
+  !view goFile(app <: sysl.App, module <: sysl.Module, basePath <: string) -> goFile:
+    app -> (:
+      PackageClause = app -> <PackageClause> (:
+        let pname = if .attrs.package != null then .attrs.package else app.name
+        PackageName = ToLower(pname)
+      )
+
+      ImportDecl = app -> <ImportDecl>(:
+        let convert = "github.com/anz-bank/sysl-go-comms/convert"
+        let common = "github.com/anz-bank/sysl-go-comms/common"
+        let database = "github.com/anz-bank/sysl-go-comms/database"
+        let validator = "github.com/anz-bank/sysl-go-comms/validator"
+        let db = "database/sql"
+        let clientImports = makeClientImportList(app, module) flatten(.out) -> <set of string>(i:
+          out = basePath + i
+        )
+        let specWithoutDB = ["encoding/json", "net/http", "github.com/anz-bank/sysl-go-comms/restlib", common, convert, validator]
+        let specWithDB = ["encoding/json", "database/sql", "net/http", "github.com/anz-bank/sysl-go-comms/restlib", common, convert, database, validator]
+        let spec = if IsDataBaseApp(app).out then specWithDB else specWithoutDB  | clientImports flatten(.out) -> <sequence of ImportSpec> (importPath:
+          Import = if importPath == "" then true else '"' + importPath + '"'
+        )
+        ImportSpec = spec
+      )
+
+      let serviceImplVarname = "serviceInterface"
+
+      let svcInterface = [.name] -> <sequence of TopLevelDecl> (name:
+        let title = "Handler"
+        Comment = "// Handler interface for "  + name
+        Declaration = title -> <Declaration>(:
+          InterfaceType = title -> <InterfaceType>(:
+            InterfaceName = title
+            MethodSpec =  epHandlerMethodSpecs(app.endpoints)
+          )
+        )
+      )
+
+      let serviceHandlerStruct = [.name] -> <sequence of TopLevelDecl> (name:
+        Comment = "// ServiceHandler for " + name + " API"
+        Declaration = name -> <Declaration>(:
+          StructType = name -> <StructType>(:
+            StructName = "ServiceHandler"
+
+            let genCallback = name -> <FieldDecl>(:
+              identifier = "genCallback"
+              Type =  "GenCallback"
+            )
+
+            let svcHandlerField = name -> <FieldDecl>(:
+              identifier = serviceImplVarname
+              Type = "*ServiceInterface"
+            )
+
+            let dbPoolField = name -> <FieldDecl>(:
+              identifier = "DB"
+              Type = "*sql.DB"
+            )
+
+            let clientStruct = makeClientStruct(app, module) flatten(.out) -> <set of out>(c:
+              out = c
+            )
+            let fieldDeclWithoutDB = [genCallback, svcHandlerField]
+            let fieldDeclWithDB = [genCallback, svcHandlerField, dbPoolField]
+            FieldDecl = if IsDataBaseApp(app).out then fieldDeclWithDB else fieldDeclWithoutDB | clientStruct flatten(.out)
+          )
+        )
+      )
+
+      let newServiceHandler = [.name] -> <sequence of TopLevelDecl> (name:
+        Comment = "// NewServiceHandler for " + name
+        FunctionDecl = name -> <FunctionDecl>(:
+          FunctionName = "NewServiceHandler"
+          Signature = name -> <Signature> (:
+            Parameters = name -> <Parameters>(:
+              ParameterList = name -> <ParameterList>(:
+                ParameterDecl = paramDecl("genCallback", "GenCallback")
+                let genCallback = name -> <ParameterDeclC>(:
+                  ParameterDecl = name -> <ParameterDecl>(:
+                    Identifier = serviceImplVarname
+                    TypeName = "*ServiceInterface"
+                  )
+                )
+
+                let clientParam = makeClientParam(app, module) flatten(.out) -> <set of out>(p:
+                  out = p
+                )
+
+                ParameterDeclC = [genCallback] |  clientParam flatten(.out)
+              )
+            )
+
+            Result = name -> <Result> (:
+              TypeName = "*ServiceHandler"
+            )
+          )
+          Block = name -> <Block>(:
+            StatementList = if IsDataBaseApp(app).out then setServiceHandlerWithDBPool("@req",app,module,serviceImplVarname).StatementList else setServiceHandlerWithoutDBPool("@req",app,module,serviceImplVarname).StatementList
+          )
+        )
+      )
+
+      Comment = "// Code generated by sysl DO NOT EDIT.\n"
+
+      TopLevelDecl = svcInterface | serviceHandlerStruct | newServiceHandler | EpHandlerMethodDecl(app, pname, module)
+    )
+
+  !view IsDataBaseApp(app <: sysl.App) -> string:
+    app -> (:
+      let Patterns = if app.attrs count > 0 && "patterns" in app.attrs then app.attrs.patterns else [""]
+      out = if "DB" in Patterns then true else false
+    )
+  !view SetQueryAttributes(ep <: sysl.Endpoint) -> string:
+    ep -> (:
+      let tn = ep.attrs where (HasPrefix(.key, "sql_")) -> <sequence of string>(t:
+        out = "out" -> <out>(:
+          identifier = ToLower(TrimPrefix(t.key,"sql_"))
+          Expression = "Expr" -> <Expression> (:
+            ValueExpr = ToLower(TrimPrefix(t.key,"sql_"))+"Stmt"
+          )
+        )
+      )
+      out = tn flatten(.out)
+    )

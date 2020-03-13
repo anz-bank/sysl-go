@@ -1,0 +1,57 @@
+Simple "Simple Server" [package="simple"]:
+    @basePath = "/simple"
+
+    /stuff:
+        GET ?dt=DATETIME?&st=string?&bt=bool?&it=int?:
+            return ok <: Stuff
+        POST (request <: str [~body]):
+            return ok <: str
+
+    /raw:
+        GET:
+            return ok <: str
+
+    /raw-int:
+        GET:
+            return ok <: integer
+
+    /oops:
+        GET:
+            return ok <: Response
+            # status is intentionally lower case, do not change
+            return error <: status
+
+    !type Stuff:
+        @description =:
+            | just some stuff
+        innerStuff <: string:
+            @json_tag = "innerStuff"
+        sensitiveStuff <: string:
+            @json_tag = "sensitiveStuff"
+            @sensitive = "true"
+        timeStuff <: DATETIME:
+            @json_tag = "timeStuff"
+        responseStuff <: Response:
+            @json_tag = "responseStuff"
+        emptyStuff <: Empty:
+            @json_tag = "emptyStuff"
+
+    !alias str:
+        string
+
+    !alias integer:
+        int
+        
+    !type Response:
+        Data <: set of Item
+
+    !type Item [json_map_key="Name"]:
+        Name <: string [~pk, ~no_json]
+        A1 <: string
+        A2 <: string
+
+    !type Empty:
+        ...
+
+    !type Status:
+        statusField <: string

@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package cards.v1;
+
+option go_package = "cardspb";
+
+service Wallet {
+  rpc Apple(AppleRequest) returns (AppleResponse);
+}
+
+message AppleRequest {
+  string fpan = 1;
+}
+
+message AppleResponse {
+  string activation_data = 1;
+}
