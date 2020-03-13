@@ -1,0 +1,24 @@
+SimpleGrpc "Simple Server" [package="simplegrpc"]:
+    @go_package = "simple"
+    @go_pb_package = "simplepb"
+    @pb_package = "simple.v1"
+
+    GetStuff(st <: Stuff):
+            return ok <: Response
+
+    !type Stuff:
+        innerStuff <: string:
+            @json_tag = "innerStuff"
+        sensitiveStuff <: string:
+            @json_tag = "sensitiveStuff"
+            @sensitive = "true"
+        timeStuff <: DATETIME:
+            @json_tag = "timeStuff"
+
+    !type Response:
+        Data <: set of Item
+
+    !type Item [json_map_key="Name"]:
+        Name <: string [~pk, ~no_json]
+        A1 <: string
+        A2 <: string

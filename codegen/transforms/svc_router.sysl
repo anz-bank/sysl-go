@@ -1,0 +1,494 @@
+CodeGenTransform:
+  !view GoName(word <: string) -> string:
+    word -> (:
+      let splitted = if MatchString("^[\\p{L}_][\\p{L}\\p{N}_]*$", word) then [word] else FindAllString("[\\p{L}_][\\p{L}\\p{N}_]*", word, -1)
+
+      # Common initialisms https://github.com/golang/lint/blob/8f45f776aaf18cebc8d65861cc70c33c60471952/lint.go#L771
+      let initialisms = ["ACL", "API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML", "HTTP", "HTTPS", "ID", "IP", "JSON", "LHS", "QPS", "RAM", "RHS", "RPC", "SLA", "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "UID", "UUID", "URI", "URL", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS"]
+
+      let wordUpper = splitted -> <sequence of string> (w:
+        let upper = ToTitle(TrimPrefix(w,"_"))
+        out = if upper in initialisms then upper else Title(w)
+      )
+      out = Join(wordUpper flatten(.out), "")
+    )
+
+  !view filename(app <: sysl.App) -> string:
+    app -> (:
+      filename =  "requestrouter.go"
+    )
+
+  !view makeValueExpr(strValue <: string) -> Expression:
+    strValue -> (:
+      ValueExpr = strValue
+    )
+
+  !view makeFunctionCall(funcName <: string, arg0 <: ValueExpr, rest <: sequence of ValueExpr) -> StatementList:
+    funcName -> (:
+      Statement = funcName -> <Statement>(:
+        FunctionCall = funcName -> <FunctionCall>(:
+          FunctionName = funcName
+          FunctionArgs = funcName -> <FunctionArgs> (:
+            Expression = arg0
+            FuncArgsRest = rest -> <sequence of FuncArgsRest> (r:
+              Expression = r
+            )
+          )
+        )
+      )
+    )
+
+  !view makeFunctionOneArg(funcName <: string, arg0 <: Expression) -> Expression:
+    funcName -> (:
+      FunctionCall = funcName -> <FunctionCall>(:
+        FunctionName = funcName
+        FunctionArgs = funcName -> <FunctionArgs> (:
+          Expression = arg0.Expression
+        )
+      )
+    )
+
+  !view RouteEndpoints(eps <: set of sysl.Endpoints) -> sequence of StatementList:
+    eps where(.value.is_rest == true) -> (ep:
+      let terms = ep.value.pathvars -> <out> (:
+        out = "{" + .name + "}"
+      )
+      let pathVars = terms flatten(.out)
+      let path = Split(ep.value.path, "/")
+      let method = Title(ToLower(ep.value.method))
+
+      let methodPostfix = path -> <sequence of string> (p:
+        let postfix  = if p in pathVars then "" else p
+        out = Title(ToLower(postfix))
+      )
+      let withArg = if MatchString("\\{\\p{L}+\\}$", ep.value.path) && Contains("POST", ToUpper(method)) then "WithArg" else ""
+      let getList = if MatchString("[\\p{L}\\p{N}]$", ep.value.path) && Contains("GET", ToUpper(method)) then "List" else ""
+
+      let handlerCall = "s." + "svcHandler" + "." + GoName(method + Join(methodPostfix flatten(.out), "") + withArg + getList).out + "Handler"
+      let epPath =  '"' + Join(path, "/") + '"'
+      let funcName = "r." + method
+
+      let nilCheck = handlerCall -> <Statement>(:
+        IfElseStmt = handlerCall -> <IfElseStmt>(:
+          Expression = makeValueExpr(handlerCall + " != nil")
+          Block = handlerCall -> <Block>(:
+            StatementList = [handlerCall] -> <StatementList>(:
+              Statement = makeFunctionCall(funcName, makeValueExpr(epPath), [makeValueExpr(handlerCall)]).Statement
+            )
+          )
+        )
+      )
+      Statement = makeFunctionCall(funcName, makeValueExpr(epPath), [makeValueExpr(handlerCall)]).Statement
+    )
+
+  !view goFile(app <: sysl.App) -> goFile:
+    app -> (:
+
+      PackageClause = app -> <package> (:
+        let pname = if .attrs.package != null then .attrs.package else app.name
+        PackageName = ToLower(pname)
+      )
+
+      ImportDecl = app -> <ImportDecl>(:
+        let hiImport = "github.com/anz-bank/sysl-go-comms/handlerinitialiser"
+        let bffCommonImport = "github.com/anz-bank/sysl-go-comms/common"
+        let coreImport = "github.com/anz-bank/sysl-go-comms/core"
+        let validatorImport = "github.com/anz-bank/sysl-go-comms/validator"
+
+        let spec = ["context", "net/http", "github.com/go-chi/chi", hiImport, bffCommonImport, coreImport, validatorImport] -> <sequence of ImportSpec> (importPath:
+          Import = if importPath == "" then true else '"' + importPath + '"'
+        )
+        ImportSpec = spec
+      )
+
+      let routerVarname = "router"
+      let svcHandlerVarname = "svcHandler"
+      let configVarName = "cfg"
+      let ehVarName = "errorHandler"
+      let basePathAttr = if "basePath" in .attrs then .attrs.basePath else ""
+
+      let addMiddleware = app -> <MethodSpec>(:
+        MethodName = "AddMiddleware"
+        Signature = app -> <Signature> (:
+          Parameters = app -> <Parameters>(:
+            ParameterList = app -> <ParameterList>(:
+              ParameterDecl = app -> <ParameterDecl>(:
+                Identifier = "ctx"
+                TypeName = "context.Context"
+              )
+              let r = app -> <ParameterList>(:
+                ParameterDecl = app -> <ParameterDecl>(:
+                  Identifier = "r"
+                  TypeName = "chi.Router"
+                )
+              )
+              ParameterDeclC = [r]
+            )
+          )
+        )
+      )
+
+      let basePath = app -> <MethodSpec>(:
+        MethodName = "BasePath"
+        Signature = app -> <Signature> (:
+          Parameters = true
+          Result = app -> <Result>(:
+            TypeName = "string"
+          )
+        )
+      )
+
+      let config = app -> <MethodSpec>(:
+        MethodName = "Config"
+        Signature = app -> <Signature> (:
+          Parameters = true
+          Result = app -> <Result>(:
+            TypeName = "validator.Validator"
+          )
+        )
+      )
+
+      let handleError = app -> <MethodSpec>(:
+        MethodName = "HandleError"
+        Signature = app -> <Signature> (:
+          Parameters = app -> <Parameters>(:
+            ParameterList = app -> <ParameterList>(:
+              ParameterDecl = app -> <ParameterDecl>(:
+                Identifier = "ctx"
+                TypeName = "context.Context"
+              )
+              let w = app -> <ParameterList>(:
+                ParameterDecl = app -> <ParameterDecl>(:
+                  Identifier = "w"
+                  TypeName = "http.ResponseWriter"
+                )
+              )
+              let k = app -> <ParameterList>(:
+                ParameterDecl = app -> <ParameterDecl>(:
+                  Identifier = "kind"
+                  TypeName = "common.Kind"
+                )
+              )
+              let m = app -> <ParameterList>(:
+                ParameterDecl = app -> <ParameterDecl>(:
+                  Identifier = "message"
+                  TypeName = "string"
+                )
+              )
+              let c = app -> <ParameterList>(:
+                ParameterDecl = app -> <ParameterDecl>(:
+                  Identifier = "cause"
+                  TypeName = "error"
+                )
+              )
+              ParameterDeclC = [w,k,m,c]
+            )
+          )
+        )
+      )
+
+      let downstream = app -> <MethodSpec>(:
+        MethodName = "DownstreamTimeoutContext"
+        Signature = app -> <Signature> (:
+          Parameters = app -> <Parameters>(:
+            ParameterList = app -> <ParameterList>(:
+              ParameterDecl = app -> <ParameterDecl>(:
+                Identifier = "ctx"
+                TypeName = "context.Context"
+              )
+            )
+          )
+          Result = app -> <Result>(:
+            ReturnTypes = app -> <ReturnTypes>(:
+              TypeName = "context.Context"
+              ResultTypeList = [app] -> <ResultTypeList>(:
+                TypeName = "context.CancelFunc"
+              )
+            )
+          )
+        )
+      )
+
+      let swaggerFile = [app] -> <sequence of TopLevelDecl> (name:
+        Comment = "// swaggerFile is a struct to store the swagger file system"
+        Declaration = app -> <Declaration>(:
+          StructType = name -> <StructType>(:
+            StructName = "swaggerFile"
+
+            let file = name -> <FieldDecl>(:
+              identifier = "file"
+              Type = "http.FileSystem"
+            )
+
+            FieldDecl = [file]
+          )
+        )
+      )
+
+      let swaggerFileVar = [app] -> <sequence of TopLevelDecl>(name:
+        Comment = "// swagger will receive the embedded swagger file if it is generated by the resource application"
+        Declaration = name -> <Declaration> (:
+          VarDeclWithVal = name -> <VarDeclWithVal> (:
+            identifier = "swagger"
+            Expression = name -> <Expression>(:
+              ValueExpr = "swaggerFile{}"
+            )
+          )
+        )
+      )
+
+      let genCallbackDecl = [app] -> <sequence of TopLevelDecl> (eh:
+        Comment = "// GenCallback callbacks used by the generated code"
+        Declaration = app -> <Declaration>(:
+          InterfaceType = app -> <InterfaceType>(:
+            InterfaceName = "GenCallback"
+            MethodSpec = [addMiddleware, basePath, config, handleError, downstream]
+          )
+        )
+      )
+
+      let svcInterface = [.name] -> <sequence of TopLevelDecl> (name:
+        let title = "Router"
+        Comment = "// Router interface for "  + name
+        Declaration = title -> <Declaration>(:
+          InterfaceType = title -> <InterfaceType>(:
+            let method = name -> <MethodSpec>(:
+              MethodName = 'Route'
+              Signature = name -> <Signature> (:
+                Parameters = name -> <Parameters>(:
+                  ParameterList = name -> <ParameterList>(:
+                    ParameterDecl = name -> <ParameterDecl>(:
+                      Identifier = "router"
+                      TypeName = "*chi.Mux"
+                    )
+                  )
+                )
+              )
+            )
+
+            InterfaceName = title
+            MethodSpec =  [method]
+          )
+        )
+      )
+
+      let serviceRouterStruct = [.name] -> <sequence of TopLevelDecl> (name:
+        Comment = "// ServiceRouter for " + name + " API"
+        Declaration = name -> <Declaration>(:
+          StructType = name -> <StructType>(:
+            StructName = "ServiceRouter"
+
+            let genCallback = name -> <FieldDecl>(:
+              identifier = "gc"
+              Type = "GenCallback"
+            )
+
+            let svcHandlerField = name -> <FieldDecl>(:
+              identifier = svcHandlerVarname
+              Type = "*ServiceHandler"
+            )
+
+            let basePathFromSpec = name -> <FieldDecl>(:
+              identifier = "basePathFromSpec"
+              Type = "string"
+            )
+
+            FieldDecl = [genCallback, svcHandlerField, basePathFromSpec]
+          )
+        )
+      )
+
+      let makeRouter = [.name] -> <sequence of TopLevelDecl> (name:
+        Comment = "// NewServiceRouter creates a new service router for " + name
+        FunctionDecl = name -> <FunctionDecl>(:
+          FunctionName = "NewServiceRouter"
+          Signature = name -> <Signature> (:
+            Parameters = name -> <Parameters>(:
+              ParameterList = name -> <ParameterList>(:
+
+                ParameterDecl = name -> <ParameterDecl>(:
+                  Identifier = "gc"
+                  TypeName = "GenCallback"
+                )
+
+                let sh = svcHandlerVarname -> <ParameterList>(:
+                  ParameterDecl = svcHandlerVarname -> <ParameterDecl>(:
+                    Identifier = svcHandlerVarname
+                    TypeName = "*ServiceHandler"
+                  )
+                )
+
+                ParameterDeclC = [sh]
+              )
+            )
+
+            Result = name -> <Result> (:
+              TypeName = "handlerinitialiser.HandlerInitialiser"
+            )
+          )
+          Block = name -> <Block>(:
+            StatementList = [name] -> <sequence of StatementList>(item:
+              Statement = item -> <Statement> (:
+                ReturnStmt = item -> <ReturnStmt> (:
+                  PayLoad = "&ServiceRouter{gc, " + svcHandlerVarname + ", \"" + basePathAttr + "\"}"
+                )
+              )
+            )
+          )
+        )
+      )
+
+      let routeMethod = [.name] -> <sequence of TopLevelDecl> (name:
+        let funcName = "WireRoutes"
+        Comment = '// ' + funcName + ' ...' + "\n//nolint:funlen"
+        MethodDecl = name -> <MethodDecl>(:
+          Receiver = name -> <Receiver>(:
+            ReceiverType = "s *ServiceRouter"
+          )
+          FunctionName = funcName
+          Signature = name -> <Signature> (:
+            Parameters = name -> <Parameters>(:
+              ParameterList = name -> <ParameterList>(:
+                ParameterDecl = name -> <ParameterDecl>(:
+                  Identifier = "ctx"
+                  TypeName = "context.Context"
+                )
+
+                let r = name -> <ParameterList>(:
+                  ParameterDecl = name -> <ParameterDecl>(:
+                    Identifier = "r"
+                    TypeName = "chi.Router"
+                  )
+                )
+
+                ParameterDeclC = [r]
+              )
+            )
+          )
+          Block = name -> <Block>(:
+            let route = name -> <StatementList>(:
+              Statement = name -> <Statement>(:
+                FunctionCall = name -> <FunctionCall>(:
+                  FunctionName = "r.Route"
+                  FunctionArgs = name -> <FunctionArgs> (:
+                    Expression = name -> <Expression> (:
+                      FunctionCall = name -> <FunctionCall>(:
+                        FunctionName = "core.SelectBasePath"
+                        FunctionArgs = name -> <FunctionArgs>(:
+                          Expression  = makeValueExpr("s.basePathFromSpec")
+                          FuncArgsRest = ["s.gc.BasePath()"] -> <sequence of FuncArgsRest>(arg:
+                            Expression = makeValueExpr(arg)
+                          )
+                        )
+                      )
+                    )
+                    FuncArgsRest = [name] -> <sequence of FuncArgsRest>(name:
+                      Expression = name -> <Expression>(:
+                        FunctionLit = name -> <FunctionLit>(:
+                          Signature = name -> <Signature>(:
+                            Parameters = name -> <Parameters>(:
+                              ParameterList = name -> <ParameterList>(:
+                                ParameterDecl = name -> <ParameterDecl>(:
+                                  Identifier = "r"
+                                  TypeName = "chi.Router"
+                                )
+                              )
+                            )
+                          )
+                          FuncLitBlock = name -> <FuncLitBlock>(:
+                            let useCall = name -> <StatementList>(:
+                              Statement = name -> <Statement>(:
+                                FunctionCall = name -> <FunctionCall>(:
+                                  FunctionName = "s.gc.AddMiddleware"
+                                  FunctionArgs = name -> <FunctionArgs>(:
+                                    Expression = makeValueExpr("ctx")
+                                    FuncArgsRest = ["r"] -> <sequence of FuncArgsRest> (a:
+                                      Expression = makeValueExpr(a)
+                                    )
+                                  )
+                                )
+                              )
+                            )
+
+                            let uiRouteCall = name -> <StatementList>(:
+                              Statement = name -> <Statement>(:
+                                FunctionCall = name -> <FunctionCall>(:
+                                  FunctionName = "core.RouteSwaggerUI"
+                                  FunctionArgs = name -> <FunctionArgs>(:
+                                    Expression = makeValueExpr("swagger.file")
+                                    FuncArgsRest = ["r"] -> <sequence of FuncArgsRest> (a:
+                                      Expression = makeValueExpr(a)
+                                    )
+                                  )
+                                )
+                              )
+                            )
+
+                            StatementList = [useCall] | [uiRouteCall] | RouteEndpoints(app.endpoints)
+                          )
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
+            StatementList = [route]
+          )
+        )
+      )
+
+      let configMethod = [.name] -> <sequence of TopLevelDecl>(name:
+        Comment = '// Config ...'
+        MethodDecl = name -> <MethodDecl>(:
+          Receiver = name -> <Receiver>(:
+            ReceiverType = "s *ServiceRouter"
+          )
+          FunctionName = "Config"
+          Signature = name -> <Signature> (:
+            Parameters = true
+            Result = name -> <Result>(:
+              TypeName = "validator.Validator"
+            )
+          )
+          Block = name -> <Block>(:
+            StatementList = [name] -> <sequence of StatementList>(name:
+              Statement = name -> <Statement>(:
+                ReturnStmt = name -> <ReturnStmt>(:
+                  PayLoad = "s.gc.Config()"
+                )
+              )
+            )
+          )
+        )
+      )
+
+      let nameMethod = [.name] -> <sequence of TopLevelDecl>(name:
+        Comment = '// Name ...'
+        MethodDecl = name -> <MethodDecl>(:
+          Receiver = name -> <Receiver>(:
+            ReceiverType = "s *ServiceRouter"
+          )
+          FunctionName = "Name"
+          Signature = name -> <Signature> (:
+            Parameters = true
+            Result = name -> <Result>(:
+              TypeName = "string"
+            )
+          )
+          Block = name -> <Block>(:
+            StatementList = [name] -> <sequence of StatementList>(name:
+              Statement = name -> <Statement>(:
+                ReturnStmt = name -> <ReturnStmt>(:
+                  PayLoad = "\"" + name + "\""
+                )
+              )
+            )
+          )
+        )
+      )
+
+      Comment = "// Code generated by sysl DO NOT EDIT.\n"
+
+      TopLevelDecl = genCallbackDecl | svcInterface | serviceRouterStruct | swaggerFile | swaggerFileVar | makeRouter | routeMethod | configMethod | nameMethod
+    )
