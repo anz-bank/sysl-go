@@ -45,6 +45,7 @@ var cipherSuites = map[string]uint16{
 }
 
 var tlsVersions = map[string]uint16{
+	"1.2": tls.VersionTLS12,
 	"1.3": tls.VersionTLS13,
 }
 

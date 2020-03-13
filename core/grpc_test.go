@@ -31,7 +31,7 @@ func localServer() config.CommonServerConfig {
 }
 
 func localSecureServer() config.CommonServerConfig {
-	minVer := "1.3"
+	minVer := "1.2"
 	maxVer := "1.3"
 	certPath := "testdata/creds/server1.pem"
 	keyPath := "testdata/creds/server1.key"
