@@ -27,7 +27,7 @@ func TestTLSCiphers(t *testing.T) {
 	req := require.New(t)
 
 	ciphers := []string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"}
-	tlsVer := "1.3"
+	tlsVer := "1.2"
 	tlsCfg := &TLSConfig{
 		MinVersion: &tlsVer,
 		MaxVersion: &tlsVer,
@@ -48,7 +48,7 @@ func TestTLSCiphersFail(t *testing.T) {
 	req := require.New(t)
 
 	ciphers := []string{"IM_NOT_A_CIPHER_SUITE"}
-	tlsVer := "1.3"
+	tlsVer := "1.2"
 	tlsCfg := &TLSConfig{
 		MinVersion: &tlsVer,
 		MaxVersion: &tlsVer,
@@ -66,7 +66,7 @@ func TestTLSVersions(t *testing.T) {
 	req := require.New(t)
 
 	var ciphers []string
-	tlsVer := "1.3"
+	tlsVer := "1.2"
 	tlsCfg := &TLSConfig{
 		MinVersion: &tlsVer,
 		MaxVersion: &tlsVer,
@@ -76,8 +76,8 @@ func TestTLSVersions(t *testing.T) {
 	min, max, err := TLSVersions(tlsCfg)
 	req.NoError(err)
 
-	req.Equal(min, uint16(tls2.VersionTLS13))
-	req.Equal(max, uint16(tls2.VersionTLS13))
+	req.Equal(min, uint16(tls2.VersionTLS12))
+	req.Equal(max, uint16(tls2.VersionTLS12))
 }
 
 func TestTLSVersionsFail(t *testing.T) {
@@ -115,8 +115,8 @@ var tlsConfigSetupTests = []struct {
 	},
 		fmt.Errorf("invalid TLSMin config: 1.4"), "TEST: tlsConfigSetupTests #1"},
 	{TLSConfig{
-		NewString("1.3"),
-		NewString("1.3"),
+		NewString("1.2"),
+		NewString("1.2"),
 		NewString("this_is_not_a_valid_policy"),
 		[]string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"},
 		nil,
@@ -125,8 +125,8 @@ var tlsConfigSetupTests = []struct {
 	},
 		fmt.Errorf("invalid client authentication policy: this_is_not_a_valid_policy"), "TEST: tlsConfigSetupTests #2"},
 	{TLSConfig{
-		NewString("1.3"),
-		NewString("1.3"),
+		NewString("1.2"),
+		NewString("1.2"),
 		NewString("this_is_not_a_valid_policy"),
 		[]string{"T", "L", "S", "E", "C", "D", "H", "E", "E", "C", "D", "S", "A", "W",
 			"I", "T", "H", "A", "E", "S", "L", "S", "T", "L", "S", "E", "C", "D", "H", "E"},
@@ -134,6 +134,16 @@ var tlsConfigSetupTests = []struct {
 		nil,
 		false,
 	}, fmt.Errorf("TLS cipher suite configuration contains more ciphers than the number of known ciphers"), "TEST: tlsConfigSetupTests #3"},
+	{TLSConfig{
+		NewString("1.3"),
+		NewString("1.2"),
+		nil,
+		[]string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"},
+		nil,
+		nil,
+		false,
+	},
+		fmt.Errorf("invalid TLS version config"), "TEST: tlsConfigSetupTests #4"},
 }
 
 func TestConfigureTLSInvalidConfig(t *testing.T) {
@@ -169,7 +179,7 @@ func TestConfigureTLS(t *testing.T) {
 			KeyPath:  &keyFilename,
 		},
 	}
-	cfg := NewTLSConfig("1.3", "1.3", "RequireAndVerifyClientCert",
+	cfg := NewTLSConfig("1.2", "1.2", "RequireAndVerifyClientCert",
 		[]string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"}, identity)
 
 	tlsCfg, err := MakeTLSConfig(cfg)
@@ -179,8 +189,8 @@ func TestConfigureTLS(t *testing.T) {
 	req.NoError(err)
 
 	expectedTLS := &tls2.Config{
-		MinVersion:               tls2.VersionTLS13,
-		MaxVersion:               tls2.VersionTLS13,
+		MinVersion:               tls2.VersionTLS12,
+		MaxVersion:               tls2.VersionTLS12,
 		CipherSuites:             []uint16{tls2.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, tls2.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256},
 		PreferServerCipherSuites: true,
 		Certificates:             []tls2.Certificate{expectedIdentityCert},
@@ -238,7 +248,7 @@ var tlsInvalidConfigTests = []struct {
 	name string
 }{
 	{TLSConfig{}, fmt.Errorf("config missing"), "TEST: tlsInvalidConfigTests #1"},
-	{TLSConfig{MinVersion: NewString("1.3")}, fmt.Errorf("clientAuth config missing"), "TEST: tlsInvalidConfigTests #2"},
+	{TLSConfig{MinVersion: NewString("1.2")}, fmt.Errorf("clientAuth config missing"), "TEST: tlsInvalidConfigTests #2"},
 	{TLSConfig{
 		Ciphers:    []string{},
 		MinVersion: NewString(""),
@@ -247,25 +257,25 @@ var tlsInvalidConfigTests = []struct {
 	}, fmt.Errorf("clientAuth: client authentication policy must be set if TLS is in use"), "TEST: tlsInvalidConfigTests #3"},
 	{TLSConfig{
 		Ciphers:    []string{"TLS_BANANA_RAMA"},
-		MinVersion: NewString("1.3"),
-		MaxVersion: NewString("1.3"),
+		MinVersion: NewString("1.2"),
+		MaxVersion: NewString("1.2"),
 		ClientAuth: NewString("RequireAndVerifyClientCert"),
 	}, fmt.Errorf("ciphers: [TLS_BANANA_RAMA] are not valid"), "TEST: tlsInvalidConfigTests #4"},
 	{TLSConfig{
 		Ciphers:    []string{},
-		MinVersion: NewString("1.3"),
+		MinVersion: NewString("1.2"),
 		MaxVersion: nil,
 		ClientAuth: NewString("RequireAndVerifyClientCert"),
 	}, fmt.Errorf("max config missing"), "TEST: tlsInvalidConfigTests #5"},
 	{TLSConfig{
 		Ciphers:    []string{},
 		MinVersion: NewString("1.5"),
-		MaxVersion: NewString("1.3"),
+		MaxVersion: NewString("1.2"),
 		ClientAuth: NewString("RequireAndVerifyClientCert"),
 	}, fmt.Errorf("min: TLS version not recognized"), "TEST: tlsInvalidConfigTests #6"},
 	{TLSConfig{
 		Ciphers:    []string{},
-		MinVersion: NewString("1.3"),
+		MinVersion: NewString("1.2"),
 		MaxVersion: NewString("1.5"),
 		ClientAuth: NewString("RequireAndVerifyClientCert"),
 	}, fmt.Errorf("max: TLS version not recognized"), "TEST: tlsInvalidConfigTests #7"},
@@ -389,8 +399,8 @@ func TestGetTrustedCAsFromPEMByDir(t *testing.T) {
 
 	cfg := &TLSConfig{
 		Ciphers:    []string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"},
-		MinVersion: NewString("1.3"),
-		MaxVersion: NewString("1.3"),
+		MinVersion: NewString("1.2"),
+		MaxVersion: NewString("1.2"),
 		ClientAuth: NewString("RequireAndVerifyClientCert"),
 		TrustedCertPool: &TrustedCertPoolConfig{
 			Mode:     NewString("directory"),
@@ -416,8 +426,8 @@ var tlsGetTrustedCAsByFileTests = []struct {
 }{
 	{&TLSConfig{
 		Ciphers:    []string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"},
-		MinVersion: NewString("1.3"),
-		MaxVersion: NewString("1.3"),
+		MinVersion: NewString("1.2"),
+		MaxVersion: NewString("1.2"),
 		ClientAuth: NewString("RequireAndVerifyClientCert"),
 		TrustedCertPool: &TrustedCertPoolConfig{
 			Mode:     NewString("file"),
@@ -450,8 +460,8 @@ func TestGetTrustedCAsByFile(t *testing.T) {
 func TestGetTrustedCAsFromSystem(t *testing.T) {
 	cfg := &TLSConfig{
 		Ciphers:    []string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"},
-		MinVersion: NewString("1.3"),
-		MaxVersion: NewString("1.3"),
+		MinVersion: NewString("1.2"),
+		MaxVersion: NewString("1.2"),
 		ClientAuth: NewString("RequireAndVerifyClientCert"),
 		TrustedCertPool: &TrustedCertPoolConfig{
 			Mode: NewString("system"),

@@ -79,8 +79,8 @@ func Test_makeNewServer(t *testing.T) {
 				router: nil,
 				tlsConfig: &tls.Config{
 					ServerName: "Hello",
-					MinVersion: tls.VersionTLS13,
-					MaxVersion: tls.VersionTLS13,
+					MinVersion: tls.VersionTLS12,
+					MaxVersion: tls.VersionTLS12,
 				},
 				serverConfig: config.CommonHTTPServerConfig{
 					BasePath: "/test",
@@ -88,8 +88,8 @@ func Test_makeNewServer(t *testing.T) {
 						HostName: "",
 						Port:     8080,
 						TLS: &config.TLSConfig{
-							MinVersion: newString("1.3"),
-							MaxVersion: newString("1.3"),
+							MinVersion: newString("1.2"),
+							MaxVersion: newString("1.2"),
 						},
 					},
 				},
@@ -98,8 +98,8 @@ func Test_makeNewServer(t *testing.T) {
 				Addr: ":8080",
 				TLSConfig: &tls.Config{
 					ServerName: "Hello",
-					MinVersion: tls.VersionTLS13,
-					MaxVersion: tls.VersionTLS13,
+					MinVersion: tls.VersionTLS12,
+					MaxVersion: tls.VersionTLS12,
 				},
 				ReadHeaderTimeout: 10 * time.Second,
 				IdleTimeout:       5 * time.Second,
@@ -136,8 +136,8 @@ func Test_prepareServerListener(t *testing.T) {
 				rootRouter: nil,
 				tlsConfig: &tls.Config{
 					ServerName: "Hello",
-					MinVersion: tls.VersionTLS13,
-					MaxVersion: tls.VersionTLS13,
+					MinVersion: tls.VersionTLS12,
+					MaxVersion: tls.VersionTLS12,
 				},
 				commonConfig: config.CommonHTTPServerConfig{
 					BasePath: "/test",
@@ -145,7 +145,7 @@ func Test_prepareServerListener(t *testing.T) {
 						HostName: "",
 						Port:     8080,
 						TLS: &config.TLSConfig{
-							MinVersion: newString("1.3"),
+							MinVersion: newString("1.2"),
 							MaxVersion: newString("1.3"),
 						},
 					},
