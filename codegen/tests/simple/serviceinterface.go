@@ -30,10 +30,15 @@ type GetRawIntListClient struct {
 type GetStuffListClient struct {
 }
 
+// PostStuff Client
+type PostStuffClient struct {
+}
+
 // ServiceInterface for Simple
 type ServiceInterface struct {
 	GetOopsList   func(ctx context.Context, req *GetOopsListRequest, client GetOopsListClient) (*Response, error)
 	GetRawList    func(ctx context.Context, req *GetRawListRequest, client GetRawListClient) (*Str, error)
 	GetRawIntList func(ctx context.Context, req *GetRawIntListRequest, client GetRawIntListClient) (*Integer, error)
 	GetStuffList  func(ctx context.Context, req *GetStuffListRequest, client GetStuffListClient) (*Stuff, error)
+	PostStuff     func(ctx context.Context, req *PostStuffRequest, client PostStuffClient) (*Str, error)
 }
