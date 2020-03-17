@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/anz-bank/sysl-go-comms/common"
-	"github.com/anz-bank/sysl-go-comms/config"
-	"github.com/anz-bank/sysl-go-comms/handlerinitialiser"
+	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/config"
+	"github.com/anz-bank/sysl-go/handlerinitialiser"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"

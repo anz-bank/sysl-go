@@ -3,7 +3,7 @@ package handlerinitialiser
 import (
 	"context"
 
-	"github.com/anz-bank/sysl-go-comms/validator"
+	"github.com/anz-bank/sysl-go/validator"
 	"github.com/go-chi/chi"
 	"google.golang.org/grpc"
 )

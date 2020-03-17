@@ -6,9 +6,9 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/anz-bank/sysl-go-comms/config"
-	test "github.com/anz-bank/sysl-go-comms/core/testdata/proto"
-	"github.com/anz-bank/sysl-go-comms/handlerinitialiser"
+	"github.com/anz-bank/sysl-go/config"
+	test "github.com/anz-bank/sysl-go/core/testdata/proto"
+	"github.com/anz-bank/sysl-go/handlerinitialiser"
 	"github.com/sirupsen/logrus"
 	tlog "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"

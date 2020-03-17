@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anz-bank/sysl-go-comms/common"
+	"github.com/anz-bank/sysl-go/common"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"

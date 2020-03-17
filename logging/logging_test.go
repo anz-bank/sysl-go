@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/anz-bank/sysl-go-comms/config"
+	"github.com/anz-bank/sysl-go/config"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )

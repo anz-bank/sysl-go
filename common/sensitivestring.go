@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"reflect"
 
-	"github.com/anz-bank/sysl-go-comms/validator"
+	"github.com/anz-bank/sysl-go/validator"
 )
 
 const DefaultReplacementText = "****************"

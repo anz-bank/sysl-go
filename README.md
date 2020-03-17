@@ -6,7 +6,7 @@ Communication library used by SYSL-generated code written in Go.
 
 Go get the repository
 
-    go get github.com/anz-bank/sysl-go-comms
+    go get github.com/anz-bank/sysl-go
 
 ### 1.1.1. Local Development
 

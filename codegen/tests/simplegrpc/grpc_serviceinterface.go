@@ -4,7 +4,7 @@ package simplegrpc
 import (
 	"context"
 
-	simplegrpcgrpc "github.com/anz-bank/sysl-go-comms/codegen/tests/simplegrpc/grpc"
+	simplegrpcgrpc "github.com/anz-bank/sysl-go/codegen/tests/simplegrpc/grpc"
 )
 
 // GetStuff Client
