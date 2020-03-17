@@ -1,6 +1,2 @@
 coverage*.out
-.idea/*
-dist/*
-.DS_Store
-.vscode/
 .sysl-tmp/*

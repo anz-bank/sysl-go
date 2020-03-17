@@ -114,6 +114,7 @@ func Test_makeGrpcListenFuncListens(t *testing.T) {
 }
 
 func Test_encryptionConfigUsed(t *testing.T) {
+	t.Skip("Skipping as required certs not present")
 	logger, hook := tlog.NewNullLogger()
 	grpclog.SetLoggerV2(grpclog.NewLoggerV2(logger.WriterLevel(logrus.InfoLevel),
 		logger.WriterLevel(logrus.WarnLevel), logger.WriterLevel(logrus.ErrorLevel)))
