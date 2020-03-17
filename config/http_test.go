@@ -1,6 +1,9 @@
 package config
 
 import (
+	"net/http"
+	"net/url"
+	"os"
 	"testing"
 	"time"
 
@@ -42,6 +45,7 @@ func defaultPublicServer() CommonHTTPServerConfig {
 		WriteTimeout: 2 * time.Second,
 	}
 }
+
 func TestValidateGlobalConfigLoPort(t *testing.T) {
 	config := defaultAdminServer()
 	config.Common.Port = -1
@@ -80,4 +84,36 @@ func TestValidateGlobalConfigSlashBasePath(t *testing.T) {
 	config.BasePath = "/"
 	err := config.Validate()
 	require.NoError(t, err)
+}
+
+func TestProxyHandlerFromConfig(t *testing.T) {
+	dummyReq, _ := http.NewRequest("", "", nil)
+	testTransport := Transport{
+		ProxyURL: "https://localhost:3128",
+		UseProxy: true,
+	}
+	testURL, _ := url.Parse(testTransport.ProxyURL)
+	fn := proxyHandlerFromConfig(&testTransport)
+	url, err := fn(dummyReq)
+	require.NoError(t, err)
+	require.Equal(t, url, testURL)
+}
+
+func TestProxyHandlerFromConfigDefaultProxy(t *testing.T) {
+	os.Setenv(`http_proxy`, `http://localhost:3128`)
+	os.Setenv(`https_proxy`, `http://localhost:3128`)
+	dummyReq, _ := http.NewRequest("", "", nil)
+	testTransport := Transport{
+		UseProxy: true,
+	}
+	fn := proxyHandlerFromConfig(&testTransport)
+	url, err := fn(dummyReq)
+	require.NoError(t, err)
+	require.Equal(t, url.String(), `http://localhost:3128`)
+}
+
+func TestProxyHandlerFromConfigNoProxy(t *testing.T) {
+	testTransport := Transport{}
+	fn := proxyHandlerFromConfig(&testTransport)
+	require.Nil(t, fn)
 }
