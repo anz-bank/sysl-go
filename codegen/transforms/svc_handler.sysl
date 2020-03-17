@@ -974,16 +974,16 @@ CodeGenTransform:
       )
 
       ImportDecl = app -> <ImportDecl>(:
-        let convert = "github.com/anz-bank/sysl-go-comms/convert"
-        let common = "github.com/anz-bank/sysl-go-comms/common"
-        let database = "github.com/anz-bank/sysl-go-comms/database"
-        let validator = "github.com/anz-bank/sysl-go-comms/validator"
+        let convert = "github.com/anz-bank/sysl-go/convert"
+        let common = "github.com/anz-bank/sysl-go/common"
+        let database = "github.com/anz-bank/sysl-go/database"
+        let validator = "github.com/anz-bank/sysl-go/validator"
         let db = "database/sql"
         let clientImports = makeClientImportList(app, module) flatten(.out) -> <set of string>(i:
           out = basePath + i
         )
-        let specWithoutDB = ["encoding/json", "net/http", "github.com/anz-bank/sysl-go-comms/restlib", common, convert, validator]
-        let specWithDB = ["encoding/json", "database/sql", "net/http", "github.com/anz-bank/sysl-go-comms/restlib", common, convert, database, validator]
+        let specWithoutDB = ["encoding/json", "net/http", "github.com/anz-bank/sysl-go/restlib", common, convert, validator]
+        let specWithDB = ["encoding/json", "database/sql", "net/http", "github.com/anz-bank/sysl-go/restlib", common, convert, database, validator]
         let spec = if IsDataBaseApp(app).out then specWithDB else specWithoutDB  | clientImports flatten(.out) -> <sequence of ImportSpec> (importPath:
           Import = if importPath == "" then true else '"' + importPath + '"'
         )

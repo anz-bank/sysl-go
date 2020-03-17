@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/anz-bank/sysl-go-comms/validator"
+	"github.com/anz-bank/sysl-go/validator"
 
 	"encoding/json"
 

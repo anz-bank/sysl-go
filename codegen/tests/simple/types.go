@@ -4,9 +4,9 @@ package simple
 import (
 	"time"
 
-	"github.com/anz-bank/sysl-go-comms/common"
-	"github.com/anz-bank/sysl-go-comms/convert"
-	"github.com/anz-bank/sysl-go-comms/validator"
+	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/convert"
+	"github.com/anz-bank/sysl-go/validator"
 	"github.com/rickb777/date"
 )
 

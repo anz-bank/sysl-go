@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/anz-bank/sysl-go-comms/common"
+	"github.com/anz-bank/sysl-go/common"
 	"github.com/stretchr/testify/assert"
 )
 

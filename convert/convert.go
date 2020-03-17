@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anz-bank/sysl-go-comms/common"
+	"github.com/anz-bank/sysl-go/common"
 )
 
 type JSONTime struct {

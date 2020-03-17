@@ -5,7 +5,7 @@ package core
 import (
 	"context"
 
-	"github.com/anz-bank/sysl-go-comms/status"
+	"github.com/anz-bank/sysl-go/status"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
