@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/anz-bank/sysl-go-comms/common"
-	"github.com/anz-bank/sysl-go-comms/restlib"
-	"github.com/anz-bank/sysl-go-comms/validator"
+	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/restlib"
+	"github.com/anz-bank/sysl-go/validator"
 )
 
 // Service interface for DbEndpoints

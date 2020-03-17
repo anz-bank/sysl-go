@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/anz-bank/sysl-go-comms/handlerinitialiser"
+	"github.com/anz-bank/sysl-go/handlerinitialiser"
 
-	"github.com/anz-bank/sysl-go-comms/config"
+	"github.com/anz-bank/sysl-go/config"
 
 	"github.com/go-chi/chi"
 )

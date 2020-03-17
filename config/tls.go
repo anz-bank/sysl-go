@@ -11,7 +11,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/anz-bank/sysl-go-comms/common"
+	"github.com/anz-bank/sysl-go/common"
 	"github.com/sirupsen/logrus"
 )
 

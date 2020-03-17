@@ -295,9 +295,9 @@ CodeGenTransform:
       )
 
       ImportDecl = app -> <ImportDecl>(:
-        let validateLib = "github.com/anz-bank/sysl-go-comms/validator"
-        let common = "github.com/anz-bank/sysl-go-comms/common"
-        let convert = "github.com/anz-bank/sysl-go-comms/convert"
+        let validateLib = "github.com/anz-bank/sysl-go/validator"
+        let common = "github.com/anz-bank/sysl-go/common"
+        let convert = "github.com/anz-bank/sysl-go/convert"
         let spec = ["time", "", "github.com/rickb777/date", common, validateLib, convert] -> <sequence of ImportSpec> (importPath:
           Import = if importPath == "" then true else '"' + importPath + '"'
         )

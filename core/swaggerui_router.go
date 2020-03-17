@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/anz-bank/sysl-go-comms/core/build"
+	"github.com/anz-bank/sysl-go/core/build"
 	"github.com/go-chi/chi"
 	"gopkg.in/russross/blackfriday.v2"
 )

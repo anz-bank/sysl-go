@@ -619,8 +619,8 @@ CodeGenTransform:
       )
 
       ImportDecl = app -> <ImportDecl>(:
-        let restLib = "github.com/anz-bank/sysl-go-comms/restlib"
-        let bffLib = "github.com/anz-bank/sysl-go-comms/common"
+        let restLib = "github.com/anz-bank/sysl-go/restlib"
+        let bffLib = "github.com/anz-bank/sysl-go/common"
         let spec = ["context", "fmt", "net/http", "net/url", restLib, bffLib] -> <sequence of ImportSpec> (importPath:
           Import = if importPath == "" then true else '"' + importPath + '"'
         )
