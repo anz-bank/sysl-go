@@ -3,6 +3,7 @@ package config
 import (
 	"net"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/anz-bank/sysl-go-comms/validator"
@@ -41,6 +42,8 @@ type Transport struct {
 	TLSHandshakeTimeout   time.Duration
 	ExpectContinueTimeout time.Duration
 	ClientTLS             *TLSConfig `yaml:"tls"`
+	ProxyURL              string     `yaml:"proxyURL"`
+	UseProxy              bool       `yaml:"useProxy"`
 }
 
 // Dialer is part of the Transport struct
@@ -85,6 +88,22 @@ func (c *CommonHTTPServerConfig) Validate() error {
 	return nil
 }
 
+func proxyHandlerFromConfig(cfg *Transport) func(req *http.Request) (*url.URL, error) {
+	if cfg.UseProxy {
+		if len(cfg.ProxyURL) > 0 {
+			return func(req *http.Request) (*url.URL, error) {
+				proxyURL, err := url.Parse(cfg.ProxyURL)
+				if err != nil {
+					return http.ProxyFromEnvironment(req)
+				}
+				return proxyURL, err
+			}
+		}
+		return http.ProxyFromEnvironment
+	}
+	return nil
+}
+
 // defaultHTTPTransport returns a new *http.Transport with the same configuration as http.DefaultTransport .
 func defaultHTTPTransport(cfg *Transport) (*http.Transport, error) {
 	// Finalise the handler loading
@@ -94,7 +113,7 @@ func defaultHTTPTransport(cfg *Transport) (*http.Transport, error) {
 	}
 
 	return &http.Transport{
-		Proxy: http.ProxyFromEnvironment,
+		Proxy: proxyHandlerFromConfig(cfg),
 		DialContext: (&net.Dialer{
 			Timeout:   cfg.Dialer.Timeout,
 			KeepAlive: cfg.Dialer.KeepAlive,
