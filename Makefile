@@ -7,7 +7,7 @@ START=goFile
 TEST_DIR=codegen/tests
 
 define run-sysl
-sysl codegen --dep-path github.com/anz-bank/sysl-go/$(TEST_DIR)/  --root . --root-transform . --transform $< --grammar $(GRAMMAR) --start $(START) --outdir $(OUT) --app-name $(APP) $(MODEL)
+sysl codegen -v --dep-path github.com/anz-bank/sysl-go/$(TEST_DIR)/$(EXT_LIB_DIR)  --root . --root-transform . --transform $< --grammar $(GRAMMAR) --start $(START) --outdir $(OUT) --app-name $(APP) $(MODEL)
 goimports -w $@
 endef
 
