@@ -409,6 +409,7 @@ func TestCommentsPassed(t *testing.T) {
 	for s.Scan() {
 		if strings.Contains(s.Text(), "// Stuff just some stuff") {
 			foundComment = true
+			break
 		}
 	}
 
