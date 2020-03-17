@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	pb "github.com/anz-bank/sysl-go/codegen/tests/simplegrpc/grpc"
 	"github.com/anz-bank/sysl-go/codegen/tests/simplegrpc/simple"
+	pb "github.com/anz-bank/sysl-go/codegen/tests/simplegrpc/simplepb"
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"

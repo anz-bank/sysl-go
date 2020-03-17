@@ -107,9 +107,7 @@ func init() {
 	proto.RegisterType((*GetCardsResponse)(nil), "cards.v1.GetCardsResponse")
 }
 
-func init() {
-	proto.RegisterFile("cards_api.proto", fileDescriptor_3972b0c891f2b156)
-}
+func init() { proto.RegisterFile("cards_api.proto", fileDescriptor_3972b0c891f2b156) }
 
 var fileDescriptor_3972b0c891f2b156 = []byte{
 	// 169 bytes of a gzipped FileDescriptorProto
@@ -128,11 +126,11 @@ var fileDescriptor_3972b0c891f2b156 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConnInterface
+var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
+const _ = grpc.SupportPackageIsVersion4
 
 // CardsClient is the client API for Cards service.
 //
@@ -142,10 +140,10 @@ type CardsClient interface {
 }
 
 type cardsClient struct {
-	cc grpc.ClientConnInterface
+	cc *grpc.ClientConn
 }
 
-func NewCardsClient(cc grpc.ClientConnInterface) CardsClient {
+func NewCardsClient(cc *grpc.ClientConn) CardsClient {
 	return &cardsClient{cc}
 }
 

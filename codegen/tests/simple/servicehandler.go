@@ -2,6 +2,7 @@
 package simple
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/anz-bank/sysl-go/common"
@@ -16,6 +17,7 @@ type Handler interface {
 	GetRawListHandler(w http.ResponseWriter, r *http.Request)
 	GetRawIntListHandler(w http.ResponseWriter, r *http.Request)
 	GetStuffListHandler(w http.ResponseWriter, r *http.Request)
+	PostStuffHandler(w http.ResponseWriter, r *http.Request)
 }
 
 // ServiceHandler for Simple API
@@ -193,4 +195,43 @@ func (s *ServiceHandler) GetStuffListHandler(w http.ResponseWriter, r *http.Requ
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, stuff, err)
+}
+
+// PostStuffHandler ...
+func (s *ServiceHandler) PostStuffHandler(w http.ResponseWriter, r *http.Request) {
+	if s.serviceInterface.PostStuff == nil {
+		s.genCallback.HandleError(r.Context(), w, common.InternalError, "not implemented", nil)
+		return
+	}
+
+	ctx := common.RequestHeaderToContext(r.Context(), r.Header)
+	ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
+	var req PostStuffRequest
+
+	decoder := json.NewDecoder(r.Body)
+	decodeErr := decoder.Decode(&req.Request)
+	if decodeErr != nil {
+		s.genCallback.HandleError(ctx, w, common.BadRequestError, "Error reading request body", decodeErr)
+		return
+	}
+
+	ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
+	defer cancel()
+	valErr := validator.Validate(&req)
+	if valErr != nil {
+		s.genCallback.HandleError(ctx, w, common.BadRequestError, "Invalid request", valErr)
+		return
+	}
+
+	client := PostStuffClient{}
+
+	str, err := s.serviceInterface.PostStuff(ctx, &req, client)
+	if err != nil {
+		s.genCallback.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err)
+		return
+	}
+
+	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	restlib.SetHeaders(w, headermap)
+	restlib.SendHTTPResponse(w, httpstatus, str, err)
 }

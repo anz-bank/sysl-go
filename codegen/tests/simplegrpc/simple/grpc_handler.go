@@ -4,6 +4,8 @@ package simple
 import (
 	"context"
 
+	cb "github.com/anz-bank/sysl-go/codegen/tests/simplegrpc/callback"
+	pb "github.com/anz-bank/sysl-go/codegen/tests/simplegrpc/simplepb"
 	"google.golang.org/grpc"
 )
 

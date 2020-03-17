@@ -56,6 +56,7 @@ func (s *ServiceRouter) WireRoutes(ctx context.Context, r chi.Router) {
 		r.Get("/raw", s.svcHandler.GetRawListHandler)
 		r.Get("/raw-int", s.svcHandler.GetRawIntListHandler)
 		r.Get("/stuff", s.svcHandler.GetStuffListHandler)
+		r.Post("/stuff", s.svcHandler.PostStuffHandler)
 	})
 }
 
