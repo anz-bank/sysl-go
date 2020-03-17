@@ -3,8 +3,8 @@ package config
 import (
 	"testing"
 
-	"github.com/anz-bank/sysl-go-comms/common"
-	"github.com/anz-bank/sysl-go-comms/validator"
+	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/validator"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"

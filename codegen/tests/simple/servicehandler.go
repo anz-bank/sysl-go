@@ -4,10 +4,10 @@ package simple
 import (
 	"net/http"
 
-	"github.com/anz-bank/sysl-go-comms/common"
-	"github.com/anz-bank/sysl-go-comms/convert"
-	"github.com/anz-bank/sysl-go-comms/restlib"
-	"github.com/anz-bank/sysl-go-comms/validator"
+	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/convert"
+	"github.com/anz-bank/sysl-go/restlib"
+	"github.com/anz-bank/sysl-go/validator"
 )
 
 // Handler interface for Simple

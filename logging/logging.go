@@ -5,8 +5,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/anz-bank/sysl-go-comms/config"
-	"github.com/anz-bank/sysl-go-comms/splunk"
+	"github.com/anz-bank/sysl-go/config"
+	"github.com/anz-bank/sysl-go/splunk"
 	"github.com/sirupsen/logrus"
 )
 

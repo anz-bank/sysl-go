@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/anz-bank/sysl-go-comms/common"
+	"github.com/anz-bank/sysl-go/common"
 
-	"github.com/anz-bank/sysl-go-comms/config"
+	"github.com/anz-bank/sysl-go/config"
 )
 
 func BuildDownstreamHTTPClient(serviceName string, cfg *config.CommonDownstreamData) (*http.Client, error) {
