@@ -1,4 +1,4 @@
-# sysl-go-comms
+# sysl-go
 
 Communication library used by SYSL-generated code written in Go.
 
