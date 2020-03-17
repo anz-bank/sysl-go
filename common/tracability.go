@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/anz-bank/sysl-go-comms/common/internal"
+	"github.com/anz-bank/sysl-go/common/internal"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"

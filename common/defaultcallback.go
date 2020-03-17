@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/anz-bank/sysl-go-comms/validator"
+	"github.com/anz-bank/sysl-go/validator"
 	"github.com/go-chi/chi"
 )
 

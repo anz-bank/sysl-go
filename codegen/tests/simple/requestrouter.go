@@ -5,10 +5,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/anz-bank/sysl-go-comms/common"
-	"github.com/anz-bank/sysl-go-comms/core"
-	"github.com/anz-bank/sysl-go-comms/handlerinitialiser"
-	"github.com/anz-bank/sysl-go-comms/validator"
+	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/core"
+	"github.com/anz-bank/sysl-go/handlerinitialiser"
+	"github.com/anz-bank/sysl-go/validator"
 	"github.com/go-chi/chi"
 )
 
@@ -56,6 +56,7 @@ func (s *ServiceRouter) WireRoutes(ctx context.Context, r chi.Router) {
 		r.Get("/raw", s.svcHandler.GetRawListHandler)
 		r.Get("/raw-int", s.svcHandler.GetRawIntListHandler)
 		r.Get("/stuff", s.svcHandler.GetStuffListHandler)
+		r.Post("/stuff", s.svcHandler.PostStuffHandler)
 	})
 }
 

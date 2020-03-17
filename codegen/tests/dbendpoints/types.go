@@ -4,7 +4,7 @@ package dbendpoints
 import (
 	"time"
 
-	"github.com/anz-bank/sysl-go-comms/validator"
+	"github.com/anz-bank/sysl-go/validator"
 	"github.com/rickb777/date"
 )
 

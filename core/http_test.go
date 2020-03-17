@@ -7,14 +7,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anz-bank/sysl-go-comms/common"
+	"github.com/anz-bank/sysl-go/common"
 
-	"github.com/anz-bank/sysl-go-comms/status"
+	"github.com/anz-bank/sysl-go/status"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/anz-bank/sysl-go-comms/config"
+	"github.com/anz-bank/sysl-go/config"
 
 	"github.com/stretchr/testify/assert"
 )

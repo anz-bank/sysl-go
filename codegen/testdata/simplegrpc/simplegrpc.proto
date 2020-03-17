@@ -1,6 +1,6 @@
 syntax  = "proto3";
 
-package simplegrpc;
+package simplepb;
 
 message GetStuffRequest {
     string innerStuff = 1;

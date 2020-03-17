@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/anz-bank/sysl-go-comms/validator"
+	"github.com/anz-bank/sysl-go/validator"
 )
 
 func DefaultCommonDownstreamData() *CommonDownstreamData {

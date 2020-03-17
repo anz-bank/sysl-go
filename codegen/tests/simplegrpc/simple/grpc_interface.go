@@ -4,7 +4,7 @@ package simple
 import (
 	"context"
 
-	pb "github.com/anz-bank/sysl-go-comms/codegen/tests/simplegrpc/simplepb"
+	pb "github.com/anz-bank/sysl-go/codegen/tests/simplegrpc/simplepb"
 )
 
 // GetStuff Client

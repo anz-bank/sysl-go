@@ -1,4 +1,4 @@
-module github.com/anz-bank/sysl-go-comms
+module github.com/anz-bank/sysl-go
 
 require (
 	github.com/go-chi/chi v4.0.3+incompatible
