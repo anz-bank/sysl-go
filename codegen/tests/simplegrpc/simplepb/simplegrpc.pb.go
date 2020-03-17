@@ -179,7 +179,9 @@ func init() {
 	proto.RegisterType((*Item)(nil), "simplepb.Item")
 }
 
-func init() { proto.RegisterFile("simplegrpc.proto", fileDescriptor_111fa7809525fdda) }
+func init() {
+	proto.RegisterFile("simplegrpc.proto", fileDescriptor_111fa7809525fdda)
+}
 
 var fileDescriptor_111fa7809525fdda = []byte{
 	// 230 bytes of a gzipped FileDescriptorProto
@@ -202,11 +204,11 @@ var fileDescriptor_111fa7809525fdda = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConn
+var _ grpc.ClientConnInterface
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion4
+const _ = grpc.SupportPackageIsVersion6
 
 // SimpleGrpcClient is the client API for SimpleGrpc service.
 //
@@ -216,10 +218,10 @@ type SimpleGrpcClient interface {
 }
 
 type simpleGrpcClient struct {
-	cc *grpc.ClientConn
+	cc grpc.ClientConnInterface
 }
 
-func NewSimpleGrpcClient(cc *grpc.ClientConn) SimpleGrpcClient {
+func NewSimpleGrpcClient(cc grpc.ClientConnInterface) SimpleGrpcClient {
 	return &simpleGrpcClient{cc}
 }
 

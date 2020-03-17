@@ -154,7 +154,7 @@ func TestHandlerNotImplemented(t *testing.T) {
 	resp := w.Result()
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-	require.JSONEq(t, `{"status":{"code":"1234", "description":"Internal Server Error"}}`, string(body))
+	require.JSONEq(t, `{"status":{"code":"9998", "description":"Internal Server Error"}}`, string(body))
 	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=not implemented, Cause=%!s(<nil>))", hook.LastEntry().Message)
 }
 
@@ -164,7 +164,7 @@ func TestHandlerMissingEndpoint(t *testing.T) {
 	resp := w.Result()
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-	require.JSONEq(t, `{"status":{"code":"1234", "description":"Internal Server Error"}}`, string(body))
+	require.JSONEq(t, `{"status":{"code":"9998", "description":"Internal Server Error"}}`, string(body))
 	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=not implemented, Cause=%!s(<nil>))", hook.LastEntry().Message)
 }
 

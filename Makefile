@@ -7,7 +7,7 @@ START=goFile
 TEST_DIR=codegen/tests
 
 define run-sysl
-sysl codegen -v --dep-path github.com/anz-bank/sysl-go/$(TEST_DIR)/$(EXT_LIB_DIR)  --root . --root-transform . --transform $< --grammar $(GRAMMAR) --start $(START) --outdir $(OUT) --app-name $(APP) $(MODEL)
+sysl codegen --dep-path github.com/anz-bank/sysl-go/$(TEST_DIR)/$(EXT_LIB_DIR)  --root . --root-transform . --transform $< --grammar $(GRAMMAR) --start $(START) --outdir $(OUT) --app-name $(APP) $(MODEL)
 goimports -w $@
 endef
 
@@ -21,13 +21,13 @@ tidy:
 gen:
 
 test: gen
-	go test -v -cover -tags codeanalysis ./...
+	go test -cover -tags codeanalysis ./...
 
 test-coverage:
 	go test -coverprofile=$(COVERFILE) ./...
 
 lint: gen
-	golangci-lint run ./...
+	golangci-lint run
 
 cover: test-coverage
 	go tool cover -html=$(COVERFILE)
