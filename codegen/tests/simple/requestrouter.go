@@ -51,7 +51,6 @@ func NewServiceRouter(gc GenCallback, svcHandler *ServiceHandler) handlerinitial
 func (s *ServiceRouter) WireRoutes(ctx context.Context, r chi.Router) {
 	r.Route(core.SelectBasePath(s.basePathFromSpec, s.gc.BasePath()), func(r chi.Router) {
 		s.gc.AddMiddleware(ctx, r)
-		core.RouteSwaggerUI(swagger.file, r)
 		r.Get("/oops", s.svcHandler.GetOopsListHandler)
 		r.Get("/raw", s.svcHandler.GetRawListHandler)
 		r.Get("/raw-int", s.svcHandler.GetRawIntListHandler)
