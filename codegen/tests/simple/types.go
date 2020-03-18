@@ -47,6 +47,22 @@ type ItemSet struct {
 	M map[string]Item
 }
 
+// GetJustOkAndJustErrorListRequest ...
+type GetJustOkAndJustErrorListRequest struct {
+}
+
+// GetJustReturnErrorListRequest ...
+type GetJustReturnErrorListRequest struct {
+}
+
+// GetJustReturnOkListRequest ...
+type GetJustReturnOkListRequest struct {
+}
+
+// GetOkTypeAndJustErrorListRequest ...
+type GetOkTypeAndJustErrorListRequest struct {
+}
+
 // GetOopsListRequest ...
 type GetOopsListRequest struct {
 }
