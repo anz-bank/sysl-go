@@ -24,7 +24,7 @@ Ensure your environment provides:
     golangci-lint run ./...
 
 ### 1.1.4. Running the Tests
-    go test -v -cover -tags codeanalysis -count=1 `go list ./... | grep -v ./codegen`
+    go test -v -cover -count=1 `go list ./... | grep -v ./codegen`
 
 To generate and view test coverage in a browser, use this
 
