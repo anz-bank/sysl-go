@@ -175,7 +175,7 @@ CodeGenTransform:
           let body = ep.value.params where("body" in .attrs.patterns) -> <FuncArgsRest> (:
             Expression = makeValueExpr("req.Request").Expression
           )
-          
+
           let nilExpr = ep -> <FuncArgsRest> (:
             Expression = makeValueExpr("nil").Expression
           )
@@ -236,7 +236,7 @@ CodeGenTransform:
         DeclareAndAssignStmt = ret -> <DeclareAndAssignStmt> (:
           Variables = GoName(ret.key).out + name.varName + 'Response, ok'
           Expression = ret -> <Expression> (:
-            ValueExpr = "result.Response.(*" + name.typeName + ")" 
+            ValueExpr = "result.Response.(*" + name.typeName + ")"
           )
         )
       )
@@ -261,7 +261,7 @@ CodeGenTransform:
           )
         )
       )
-    
+
       let retIfErr = returnIfError(valErr + " != nil", emptyStatements("").StatementList,  nilResponseGenerator(ep).out + "common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, " + valErr + ")")
 
       StatementList = [validate, retIfErr]
@@ -275,7 +275,7 @@ CodeGenTransform:
           Block = ep -> <Block> (:
 
             let resultVar = GoName(ret.key).out + makeType(ret.value).varName + "Response"
-            
+
             let ret = ep -> <StatementList>(:
               Statement = ep -> <Statement>(:
                 ReturnStmt = ep -> <ReturnStmt> (:
@@ -292,7 +292,7 @@ CodeGenTransform:
 
   !view castResults(ep <: sysl.Endpoint) -> Block:
     ep -> (:
-      let casting = ep.value.ret where (.key != "error") -> <sequence of string> (rt:
+      let casting = ep.value.ret where (.key != "error" && .value != "ok" && .value != "error") -> <sequence of string> (rt:
         out = [castResult(rt), returnCastResult(rt, ep)]
       )
       let test = casting flatten(.out)
@@ -309,11 +309,20 @@ CodeGenTransform:
 
   !view castFallThroughCheck(ep <: sysl.Endpoint) -> StatementList:
     ep -> (:
+      let nilResponses = nilResponseGenerator(ep).out
+
       Statement = ep -> <Statement> (:
         ReturnStmt = ep -> <ReturnStmt> (:
-          PayLoad = nilResponseGenerator(ep).out + "common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)"
+          PayLoad = if bodyType(ep).userDefined > 0 then nilResponses + "common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)" else if bodyType(ep).emptyOk > 0 then "&result.HTTPResponse.Header, nil" else "nil"
         )
       )
+    )
+
+  !view bodyType(ep <: sysl.Endpoint) -> out:
+    ep -> (:
+      emptyError = ep.value.ret where (.value == "error") count
+      emptyOk =  ep.value.ret where (.value == "ok") count
+      userDefined = ep.value.ret where (.key == "ok") count
     )
 
   !view castErrorCodeCheck(ep <: sysl.Endpoint) -> StatementList:
@@ -341,7 +350,7 @@ CodeGenTransform:
           let resultTypes = Split(ep.value.ret.payload, ', ') -> <sequence of string> (rt:
             typeName = GoName(rt).out
           )
-          PayLoad = if ep.value.ret.payload == "" then "error" else Join(resultTypes flatten(.typeName),"Response, ") + "Response, nil"
+          PayLoad = if ep.value.ret.payload == "" then "http.Header, error" else Join(resultTypes flatten(.typeName),"Response, ") + "Response, nil"
         )
       )
     )
@@ -379,7 +388,7 @@ CodeGenTransform:
               )
               SliceValues = Join(v flatten(.out), ',')
             )
-          )   
+          )
         )
       )
     )
@@ -400,7 +409,7 @@ CodeGenTransform:
         ReturnStmt = name -> <ReturnStmt> (:
           PayLoad = Join(["resp", name, "err"], ",")
         )
-      )   
+      )
     )
 
   !view queryParamNameFromAttrs(ep <: sysl.Endpoint, qparam <: sysl.EndPoint.RestParams.QueryParam) -> string:
@@ -414,7 +423,7 @@ CodeGenTransform:
 
       out = Join(matchingPnameAsString flatten(.mpasout), "")
     )
-    
+
   !view queryParamName(ep <: sysl.Endpoint, qparam <: sysl.EndPoint.RestParams.QueryParam) -> string:
     ep -> (:
       out = if "queryParamNames" in .value.attrs then queryParamNameFromAttrs(ep, qparam).out else qparam.name
@@ -467,7 +476,7 @@ CodeGenTransform:
         )
       )
     )
-  
+
   !view emptyStatements(empty <: string) -> Block:
     empty -> (:
       StatementList = [empty] where(. != empty) -> <sequence of StatementList>(e:
@@ -498,10 +507,10 @@ CodeGenTransform:
         )
       )
     )
-  
+
   !view nilResponseGenerator(ep <: sysl.Endpoint) -> string:
     ep -> (:
-      let resultTypes = ep.value.ret where (.key != "error") -> <sequence of string> (rt:
+      let resultTypes = ep.value.ret where (.key != "error" && .value != "error") -> <sequence of string> (rt:
         typeName = "nil"
       )
       out = if resultTypes flatten(.typeName) count > 0 then Join(resultTypes flatten(.typeName),", ") + ", " else ""
@@ -513,7 +522,7 @@ CodeGenTransform:
       let required = declareHeaders("required", "string", requiredHeaders flatten(.attrs.name))
       let okTypes = ep.value.ret where(.key == "ok") -> <sequence of string>(t:
         out = t.value
-      ) 
+      )
       let errorTypes = ep.value.ret where(.key == "error") -> <sequence of string>(t:
         out = t.value
       )
@@ -529,7 +538,7 @@ CodeGenTransform:
   !view ClientMethods(appName <: string, eps <: set of sysl.Endpoints) -> sequence of TopLevelDecl:
     eps -> (ep:
       let funcName = methodName(ep.value.method, ep.value.path).out
-      Comment = '// ' + funcName + ' ...' 
+      Comment = '// ' + funcName + ' ...'
       MethodDecl = ep -> <MethodDecl>(:
         Receiver = ep -> <Receiver>(:
           ReceiverType = "s *Client"
@@ -551,7 +560,7 @@ CodeGenTransform:
     )
 
   !view makeType(input <: string) -> string:
-    input -> (: 
+    input -> (:
       let userType = if HasPrefix(input, "sequence of") then "[]" + GoName(TrimPrefix(input, "sequence of ")).out else GoName(input).out
       let safeType = if input in ["error"] then input else userType
       out = safeType
@@ -562,8 +571,8 @@ CodeGenTransform:
   !view makeResult(ep <: sysl.Endpoint) -> Result:
     ep -> (:
       ReturnTypes = ep -> <ReturnTypes>(:
-        let tn = ep.value.ret where (.key != "error") -> <sequence of string>(t:
-          out = "*" + makeType(t.value).out
+        let tn = ep.value.ret where (.key != "error" && .value != "error") -> <sequence of string>(t:
+          out = if t.value == "ok" then "*http.Header" else "*" + makeType(t.value).out
         )
         TypeName = Join(tn flatten(.out) | ["error"], ", ")
       )
@@ -601,7 +610,7 @@ CodeGenTransform:
 
   !view varDecl(name <: string, typeName <: string) -> TopLevelDecl:
     name -> (:
-      Comment = "// Reference imports to suppress unused errors"    
+      Comment = "// Reference imports to suppress unused errors"
       Declaration = name -> <Declaration> (:
         VarDeclWithVal = name -> <VarDeclWithVal> (:
           identifier = name
@@ -637,7 +646,7 @@ CodeGenTransform:
           )
         )
       )
-      
+
       let clientStruct = [.name] -> <sequence of TopLevelDecl> (name:
         Comment = "// Client for " + name + " API"
         Declaration = name -> <Declaration>(:
@@ -701,6 +710,6 @@ CodeGenTransform:
         )
       )
       Comment = "// Code generated by sysl DO NOT EDIT.\n"
-      
+
       TopLevelDecl = GoInterfaces(app.union) | svcInterface | clientStruct |  makeClient  |  ClientMethods(.name, app.endpoints)
     )

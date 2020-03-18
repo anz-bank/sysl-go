@@ -15,6 +15,7 @@ import (
 
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/convert"
+	"github.com/anz-bank/sysl-go/restlib"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -39,7 +40,7 @@ func headerCpy(src http.Header) http.Header {
 	return dst
 }
 
-func (th *TestHandler) ValidHandler(ctx context.Context, req *GetStuffListRequest, client GetStuffListClient) (*Stuff, error) {
+func (th *TestHandler) ValidGetStuffListHandlerStub(ctx context.Context, req *GetStuffListRequest, client GetStuffListClient) (*Stuff, error) {
 	s := Stuff{
 		InnerStuff: "response",
 		ResponseStuff: Response{
@@ -171,7 +172,7 @@ func TestHandlerMissingEndpoint(t *testing.T) {
 func TestHandlerRequestHeaderInContext(t *testing.T) {
 	th := TestHandler{}
 	si := ServiceInterface{
-		GetStuffList: th.ValidHandler,
+		GetStuffList: th.ValidGetStuffListHandlerStub,
 	}
 
 	_, _ = callHandler("http://example.com/stuff", si)
@@ -182,7 +183,7 @@ func TestHandlerRequestHeaderInContext(t *testing.T) {
 func TestHandlerResponseHeaderInContext(t *testing.T) {
 	th := TestHandler{}
 	si := ServiceInterface{
-		GetStuffList: th.ValidHandler,
+		GetStuffList: th.ValidGetStuffListHandlerStub,
 	}
 
 	_, _ = callHandler("http://example.com/stuff", si)
@@ -194,7 +195,7 @@ func TestHandlerResponseHeaderInContext(t *testing.T) {
 func TestHandlerValid(t *testing.T) {
 	th := TestHandler{}
 	si := ServiceInterface{
-		GetStuffList: th.ValidHandler,
+		GetStuffList: th.ValidGetStuffListHandlerStub,
 	}
 
 	w, _ := callHandler("http://example.com/stuff", si)
@@ -414,4 +415,83 @@ func TestCommentsPassed(t *testing.T) {
 	}
 
 	require.True(t, foundComment)
+}
+
+func bodylessClientServer(statusToReturn int) (*Client, *httptest.Server) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Send response to be tested
+		w.Header().Add("Context", `{"jsonField":"jsonVal"}`)
+		w.WriteHeader(statusToReturn)
+	}))
+	client := server.Client()
+
+	return &Client{
+		client: client,
+		url:    server.URL,
+	}, server
+}
+
+func TestJustOKReturnsHeaders(t *testing.T) {
+	c, s := bodylessClientServer(200)
+	defer s.Close()
+
+	logger, _ := test.NewNullLogger()
+	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
+
+	h, err := c.GetJustReturnOkList(ctx, &GetJustReturnOkListRequest{})
+	require.NoError(t, err)
+	require.Equal(t, `{"jsonField":"jsonVal"}`, h.Get("Context"))
+}
+
+func TestJustErrorPutsHeadersInError(t *testing.T) {
+	c, s := bodylessClientServer(400)
+	defer s.Close()
+
+	logger, _ := test.NewNullLogger()
+	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
+
+	err := c.GetJustReturnErrorList(ctx, &GetJustReturnErrorListRequest{})
+	require.Error(t, err)
+	resp := err.(*common.ServerError).Cause.(*restlib.HTTPResult)
+	require.Equal(t, `{"jsonField":"jsonVal"}`, resp.HTTPResponse.Header.Get("Context"))
+}
+
+func TestJustOKAndJustErrorReturnsHeadersWhenOK(t *testing.T) {
+	c, s := bodylessClientServer(200)
+	defer s.Close()
+
+	logger, _ := test.NewNullLogger()
+	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
+
+	h, err := c.GetJustOkAndJustErrorList(ctx, &GetJustOkAndJustErrorListRequest{})
+	require.NoError(t, err)
+	require.Equal(t, `{"jsonField":"jsonVal"}`, h.Get("Context"))
+}
+
+func TestJustOKAndJustErrorPutsHeadersInErrorWhenError(t *testing.T) {
+	c, s := bodylessClientServer(400)
+	defer s.Close()
+
+	logger, _ := test.NewNullLogger()
+	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
+
+	h, err := c.GetJustOkAndJustErrorList(ctx, &GetJustOkAndJustErrorListRequest{})
+	require.Error(t, err)
+	require.Nil(t, h)
+	resp := err.(*common.ServerError).Cause.(*restlib.HTTPResult)
+	require.Equal(t, `{"jsonField":"jsonVal"}`, resp.HTTPResponse.Header.Get("Context"))
+}
+
+func TestOKTypeAndJustErrorPutsHeadersInErrorWhenError(t *testing.T) {
+	c, s := bodylessClientServer(400)
+	defer s.Close()
+
+	logger, _ := test.NewNullLogger()
+	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
+
+	h, err := c.GetOkTypeAndJustErrorList(ctx, &GetOkTypeAndJustErrorListRequest{})
+	require.Error(t, err)
+	require.Nil(t, h)
+	resp := err.(*common.ServerError).Cause.(*restlib.HTTPResult)
+	require.Equal(t, `{"jsonField":"jsonVal"}`, resp.HTTPResponse.Header.Get("Context"))
 }
