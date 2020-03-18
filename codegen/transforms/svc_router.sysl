@@ -410,21 +410,7 @@ CodeGenTransform:
                               )
                             )
 
-                            let uiRouteCall = name -> <StatementList>(:
-                              Statement = name -> <Statement>(:
-                                FunctionCall = name -> <FunctionCall>(:
-                                  FunctionName = "core.RouteSwaggerUI"
-                                  FunctionArgs = name -> <FunctionArgs>(:
-                                    Expression = makeValueExpr("swagger.file")
-                                    FuncArgsRest = ["r"] -> <sequence of FuncArgsRest> (a:
-                                      Expression = makeValueExpr(a)
-                                    )
-                                  )
-                                )
-                              )
-                            )
-
-                            StatementList = [useCall] | [uiRouteCall] | RouteEndpoints(app.endpoints)
+                            StatementList = [useCall] | RouteEndpoints(app.endpoints)
                           )
                         )
                       )
