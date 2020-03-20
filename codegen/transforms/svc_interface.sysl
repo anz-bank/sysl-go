@@ -89,7 +89,7 @@ CodeGenTransform:
   !view makeResultWithClientPackage(ep <: sysl.Endpoint, package <: string) -> Result:
     ep -> (:
       ReturnTypes = ep -> <ReturnTypes>(:
-        let tn = ep.value.ret where (.key != "error" && .value != "ok" && .value != .error) -> <sequence of string>(t:
+        let tn = ep.value.ret where (.key != "error" && .value != "ok" && .value != "error") -> <sequence of string>(t:
           out = makeType(t.value, package).out
         )
         TypeName = Join(tn flatten(.out) | ["error"], ", ")
