@@ -1,0 +1,37 @@
+library:
+  log:
+    format: text
+    level: 3
+    caller: true
+  profiling: true
+server:
+  adminServer:
+    contextTimeout: 2s
+    http:
+      basePath: /admintest
+      readTimeout: 1s
+      writeTimeout: 3s
+      common:
+        hostName: ""
+        port: 3333
+genCode:
+  upstream:
+    contextTimeout: 120s
+    http:
+      basePath: /
+      readTimeout: 120s
+      writeTimeout: 120s
+      common:
+        hostName: ""
+        port: 8080
+    grpc:
+      hostName: ""
+      port: 8081
+  downstream:
+    contextTimeout: 120s
+    foo:
+      serviceURL: https://foo.example.com
+      clientTimeout: 120s
+    bar:
+      serviceURL: https://bar.example.com
+      clientTimeout: 10s
