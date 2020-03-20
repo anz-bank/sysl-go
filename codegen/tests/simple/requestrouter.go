@@ -51,6 +51,10 @@ func NewServiceRouter(gc GenCallback, svcHandler *ServiceHandler) handlerinitial
 func (s *ServiceRouter) WireRoutes(ctx context.Context, r chi.Router) {
 	r.Route(core.SelectBasePath(s.basePathFromSpec, s.gc.BasePath()), func(r chi.Router) {
 		s.gc.AddMiddleware(ctx, r)
+		r.Get("/just-ok-and-just-error", s.svcHandler.GetJustOkAndJustErrorListHandler)
+		r.Get("/just-return-error", s.svcHandler.GetJustReturnErrorListHandler)
+		r.Get("/just-return-ok", s.svcHandler.GetJustReturnOkListHandler)
+		r.Get("/ok-type-and-just-error", s.svcHandler.GetOkTypeAndJustErrorListHandler)
 		r.Get("/oops", s.svcHandler.GetOopsListHandler)
 		r.Get("/raw", s.svcHandler.GetRawListHandler)
 		r.Get("/raw-int", s.svcHandler.GetRawIntListHandler)

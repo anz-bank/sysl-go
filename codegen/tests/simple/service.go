@@ -14,6 +14,10 @@ import (
 
 // Service interface for Simple
 type Service interface {
+	GetJustOkAndJustErrorList(ctx context.Context, req *GetJustOkAndJustErrorListRequest) (*http.Header, error)
+	GetJustReturnErrorList(ctx context.Context, req *GetJustReturnErrorListRequest) error
+	GetJustReturnOkList(ctx context.Context, req *GetJustReturnOkListRequest) (*http.Header, error)
+	GetOkTypeAndJustErrorList(ctx context.Context, req *GetOkTypeAndJustErrorListRequest) (*Response, error)
 	GetOopsList(ctx context.Context, req *GetOopsListRequest) (*Response, error)
 	GetRawList(ctx context.Context, req *GetRawListRequest) (*Str, error)
 	GetRawIntList(ctx context.Context, req *GetRawIntListRequest) (*Integer, error)
@@ -30,6 +34,98 @@ type Client struct {
 // NewClient for Simple
 func NewClient(client *http.Client, serviceURL string) *Client {
 	return &Client{client, serviceURL}
+}
+
+// GetJustOkAndJustErrorList ...
+func (s *Client) GetJustOkAndJustErrorList(ctx context.Context, req *GetJustOkAndJustErrorListRequest) (*http.Header, error) {
+	required := []string{}
+	u, err := url.Parse(fmt.Sprintf("%s/just-ok-and-just-error", s.url))
+	if err != nil {
+		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
+	}
+
+	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, nil, nil)
+	if err != nil {
+		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
+	}
+
+	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
+		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
+	}
+
+	return &result.HTTPResponse.Header, nil
+}
+
+// GetJustReturnErrorList ...
+func (s *Client) GetJustReturnErrorList(ctx context.Context, req *GetJustReturnErrorListRequest) error {
+	required := []string{}
+	u, err := url.Parse(fmt.Sprintf("%s/just-return-error", s.url))
+	if err != nil {
+		return common.CreateError(ctx, common.InternalError, "failed to parse url", err)
+	}
+
+	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, nil, nil)
+	if err != nil {
+		return common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
+	}
+
+	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
+		return common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
+	}
+
+	return nil
+}
+
+// GetJustReturnOkList ...
+func (s *Client) GetJustReturnOkList(ctx context.Context, req *GetJustReturnOkListRequest) (*http.Header, error) {
+	required := []string{}
+	u, err := url.Parse(fmt.Sprintf("%s/just-return-ok", s.url))
+	if err != nil {
+		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
+	}
+
+	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, nil, nil)
+	if err != nil {
+		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
+	}
+
+	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
+		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
+	}
+
+	return &result.HTTPResponse.Header, nil
+}
+
+// GetOkTypeAndJustErrorList ...
+func (s *Client) GetOkTypeAndJustErrorList(ctx context.Context, req *GetOkTypeAndJustErrorListRequest) (*Response, error) {
+	required := []string{}
+	var okResponse Response
+
+	u, err := url.Parse(fmt.Sprintf("%s/ok-type-and-just-error", s.url))
+	if err != nil {
+		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
+	}
+
+	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	if err != nil {
+		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
+	}
+
+	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
+		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
+	}
+
+	OkResponseResponse, ok := result.Response.(*Response)
+	if ok {
+		valErr := validator.Validate(OkResponseResponse)
+		if valErr != nil {
+			return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, valErr)
+		}
+
+		return OkResponseResponse, nil
+	}
+
+	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
 }
 
 // GetOopsList ...

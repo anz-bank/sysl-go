@@ -89,7 +89,7 @@ CodeGenTransform:
   !view makeResultWithClientPackage(ep <: sysl.Endpoint, package <: string) -> Result:
     ep -> (:
       ReturnTypes = ep -> <ReturnTypes>(:
-        let tn = ep.value.ret where (.key != "error") -> <sequence of string>(t:
+        let tn = ep.value.ret where (.key != "error" && .value != "ok" && .value != "error") -> <sequence of string>(t:
           out = makeType(t.value, package).out
         )
         TypeName = Join(tn flatten(.out) | ["error"], ", ")
@@ -99,7 +99,7 @@ CodeGenTransform:
   !view makeResultDetectPackage(ep <: sysl.Endpoint, module <: sysl.Module) -> Result:
     ep -> (:
       ReturnTypes = ep -> <ReturnTypes>(:
-        let tn = ep.value.ret where (.key != "error") -> <set of string>(t:
+        let tn = ep.value.ret where (.key != "error" && .value != "ok") -> <set of string>(t:
           let packages = Split(t.value, ".") -> <set of string>(p:
             let depList = module.apps where(.value.name == p) -> <set of string> (dep:
               pkg = dep.value.attrs.package
