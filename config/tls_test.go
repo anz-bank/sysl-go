@@ -289,14 +289,6 @@ func TestValidateInvalidTlsConfigs(t *testing.T) {
 	}
 }
 
-var tlsValidConfigTests = []struct {
-	in   *TLSConfig
-	name string
-}{
-	{defaultAdminServer().Common.TLS, "TEST: tlsValidConfigTests #1"},
-	{defaultPublicServer().Common.TLS, "TEST: tlsValidConfigTests #2"},
-}
-
 // *** helper functions ***
 
 func makeX509Template(organisation string) (*x509.Certificate, error) {

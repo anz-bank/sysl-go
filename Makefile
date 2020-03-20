@@ -15,13 +15,15 @@ run-protoc=protoc --proto_path=$(PROTO_IN) --go_out=plugins=grpc:$(PROTO_OUT) $^
 
 GRPC_SERVER_FILES=grpc_interface.go grpc_handler.go
 
+all: clean gen test lint
+
 tidy:
 	go mod tidy
 
 gen:
 
 test: gen
-	go test -cover -tags codeanalysis ./...
+	go test -count=1 -cover -tags codeanalysis ./...
 
 test-coverage:
 	go test -coverprofile=$(COVERFILE) ./...
