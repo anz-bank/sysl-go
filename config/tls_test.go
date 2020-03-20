@@ -291,15 +291,6 @@ func TestValidateInvalidTlsConfigs(t *testing.T) {
 	}
 }
 
-//nolint:deadcode,varcheck,unused // Disabled as we're currently skipping the tests due to missing cert files
-var tlsValidConfigTests = []struct {
-	in   *TLSConfig
-	name string
-}{
-	{defaultAdminServer().Common.TLS, "TEST: tlsValidConfigTests #1"},
-	{defaultPublicServer().Common.TLS, "TEST: tlsValidConfigTests #2"},
-}
-
 // *** helper functions ***
 
 func makeX509Template(organisation string) (*x509.Certificate, error) {
