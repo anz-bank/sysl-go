@@ -29,6 +29,9 @@ Simple "Simple Server" [package="simple"]:
         sensitiveStuff <: string:
             @json_tag = "sensitiveStuff"
             @sensitive = "true"
+        rawTimeStuff <: DATETIME:
+            @json_tag = "rawTimeStuff"
+            @time_format = "stdtime"
         timeStuff <: DATETIME:
             @json_tag = "timeStuff"
         responseStuff <: Response:

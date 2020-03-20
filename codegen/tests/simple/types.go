@@ -37,6 +37,7 @@ type Status struct {
 type Stuff struct {
 	EmptyStuff     Empty                  `json:"emptyStuff"`
 	InnerStuff     string                 `json:"innerStuff"`
+	RawTimeStuff   time.Time              `json:"rawTimeStuff"`
 	ResponseStuff  Response               `json:"responseStuff"`
 	SensitiveStuff common.SensitiveString `json:"sensitiveStuff"`
 	TimeStuff      convert.JSONTime       `json:"timeStuff"`
