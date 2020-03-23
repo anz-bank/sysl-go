@@ -24,11 +24,11 @@ const (
 	errorJSON = `{ "test2":"test string 2" }`
 )
 
-func Test_unmarshalPanicOnNilResponse(t *testing.T) {
+func TestUnmarshalPanicOnNilResponse(t *testing.T) {
 	require.Panics(t, func() { _, _ = unmarshal(nil, nil, nil) })
 }
 
-func Test_unmarshalNilBodyOK(t *testing.T) {
+func TestUnmarshalNilBodyOK(t *testing.T) {
 	result, err := unmarshal(&http.Response{}, nil, OkType{})
 	require.NoError(t, err)
 	require.NotNil(t, result)
@@ -37,7 +37,7 @@ func Test_unmarshalNilBodyOK(t *testing.T) {
 	require.Nil(t, result.Response)
 }
 
-func Test_unmarshalEmptyBodyOK(t *testing.T) {
+func TestUnmarshalEmptyBodyOK(t *testing.T) {
 	result, err := unmarshal(&http.Response{}, make([]byte, 0), OkType{})
 	require.NoError(t, err)
 	require.NotNil(t, result)
@@ -46,7 +46,7 @@ func Test_unmarshalEmptyBodyOK(t *testing.T) {
 	require.Nil(t, result.Response)
 }
 
-func Test_unmarshalNilTypeOK(t *testing.T) {
+func TestUnmarshalNilTypeOK(t *testing.T) {
 	result, err := unmarshal(&http.Response{}, []byte(okJSON), nil)
 	require.NoError(t, err)
 	require.NotNil(t, result)
@@ -55,14 +55,14 @@ func Test_unmarshalNilTypeOK(t *testing.T) {
 	require.Nil(t, result.Response)
 }
 
-func Test_unmarshalWrongJSONOK(t *testing.T) {
+func TestUnmarshalWrongJSONOK(t *testing.T) {
 	result, err := unmarshal(&http.Response{}, []byte(errorJSON), &OkType{})
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.IsType(t, &OkType{}, result.Response)
 }
 
-func Test_unmarshalAliasString(t *testing.T) {
+func TestUnmarshalAliasString(t *testing.T) {
 	type Str string
 	var OkStrType Str
 	result, err := unmarshal(&http.Response{}, []byte(errorJSON), &OkStrType)
@@ -71,7 +71,7 @@ func Test_unmarshalAliasString(t *testing.T) {
 	require.IsType(t, &OkStrType, result.Response)
 }
 
-func Test_DoHTTPRequestOkType(t *testing.T) {
+func TestDoHTTPRequestOkType(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte(okJSON))
@@ -84,7 +84,7 @@ func Test_DoHTTPRequestOkType(t *testing.T) {
 	require.IsType(t, &OkType{}, result.Response)
 }
 
-func Test_DoHTTPRequestErrorType(t *testing.T) {
+func TestDoHTTPRequestErrorType(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
 		_, _ = w.Write([]byte(errorJSON))
@@ -98,7 +98,7 @@ func Test_DoHTTPRequestErrorType(t *testing.T) {
 	require.IsType(t, &ErrorType{}, err.(*HTTPResult).Response)
 }
 
-func Test_DoHTTPRequestRightTypeWrongJSON(t *testing.T) {
+func TestDoHTTPRequestRightTypeWrongJSON(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte(errorJSON))
@@ -111,7 +111,7 @@ func Test_DoHTTPRequestRightTypeWrongJSON(t *testing.T) {
 	require.IsType(t, &OkType{}, result.Response)
 }
 
-func Test_DoHTTPRequestXMLBody(t *testing.T) {
+func TestDoHTTPRequestXMLBody(t *testing.T) {
 	xmlBody := `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ond="http://www.qas.com/OnDemand-2011-03"><soapenv:Header><ond:QAQueryHeader></ond:QAQueryHeader></soapenv:Header><soapenv:Body><ond:QASearch><ond:Country>AUS</ond:Country><ond:Engine>Intuitive</ond:Engine><!--Optional:--><ond:Layout>QADefault</ond:Layout><ond:Search>5 lyg</ond:Search><!--Optional:--><ond:FormattedAddressInPicklist>false</ond:FormattedAddressInPicklist></ond:QASearch></soapenv:Body></soapenv:Envelope>`
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := make([]byte, len(xmlBody))
