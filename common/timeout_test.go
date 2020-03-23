@@ -110,7 +110,6 @@ func TestTimeoutHandler_NoPanicRethrow(t *testing.T) {
 	})
 }
 
-//nolint:bodyclose
 func TestTimeoutHandler_ContextTimoutMoreThanWriteTimeout(t *testing.T) {
 	req := require.New(t)
 	tester := defaultTestHandler()
@@ -129,7 +128,7 @@ func TestTimeoutHandler_ContextTimoutMoreThanWriteTimeout(t *testing.T) {
 	ts := httptest.NewUnstartedServer(timeoutmware(handler))
 	ts.Config.WriteTimeout = 5 * time.Millisecond
 	ts.Start()
-
+	//nolint:bodyclose // We don't check the body
 	_, err := http.Get(ts.URL)
 	req.Equal(err.(*url.Error).Err.Error(), "EOF")
 }

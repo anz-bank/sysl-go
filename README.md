@@ -14,19 +14,30 @@ Go get the repository
 
 Ensure your environment provides:
 
-- [go 1.12.9](https://golang.org/)
-- [golangci-lint 1.17.1](https://github.com/golangci/golangci-lint)
-- some working method of obtaining dependencies listed in `go.mod` (working internet access, `GOPROXY`)
-- env var `GOFLAGS="-mod=vendor"`
-- correctly configured cntlm or alpaca proxy running on localhost at port 3128 (only for updating vendor dependencies)
+- [go 1.13](https://golang.org/doc/install)
+- [golangci-lint 1.23](https://github.com/golangci/golangci-lint)
+- [protobuf 3.11.4](https://github.com/protocolbuffers/protobuf/)
+- `make`
+- `jq`
+- proto3 and gRPC
+  - https://github.com/protocolbuffers/protobuf/releases
+  - https://github.com/golang/protobuf
+  - https://github.com/grpc/grpc
 
-### 1.1.3. Linting
-    golangci-lint run ./...
+On OSX, after installing [go 1.12.9](https://golang.org/doc/install) run
 
-### 1.1.4. Running the Tests
-    go test -v -cover -count=1 `go list ./... | grep -v ./codegen`
+    brew install golangci/tap/golangci-lint make jq curl protoc-gen-go grpc
 
-To generate and view test coverage in a browser, use this
+### 1.1.3 Development
 
-    go test -coverprofile=coverage.out ./...
-    go tool cover -html=coverage.out
+Test and lint everything with
+
+    make
+
+View all relevant make targets with
+
+    make help
+
+View test coverage in the browser with
+
+    make coverage
