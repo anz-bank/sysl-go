@@ -203,7 +203,7 @@ func TestHandlerValid(t *testing.T) {
 	resp := w.Result()
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-	require.JSONEq(t, `{"emptyStuff":{}, "innerStuff":"response","responseStuff":{"Data":{"M":{"James":{"A1":"SpencerSt", "A2":"CollinsSt"}, "John":{"A1":"CollinsSt", "A2":"LonasDaleSt"}}}}, "sensitiveStuff":"****************", "timeStuff":"0001-01-01T00:00:00.000+0000"}`, string(body))
+	require.JSONEq(t, `{"emptyStuff":{}, "innerStuff":"response", "rawTimeStuff":"0001-01-01T00:00:00Z", "responseStuff":{"Data":{"M":{"James":{"A1":"SpencerSt", "A2":"CollinsSt"}, "John":{"A1":"CollinsSt", "A2":"LonasDaleSt"}}}}, "sensitiveStuff":"****************", "timeStuff":"0001-01-01T00:00:00.000+0000"}`, string(body))
 }
 
 func TestRawHandlerValid(t *testing.T) {
@@ -395,7 +395,34 @@ func TestClient_PassesXMLBody(t *testing.T) {
 func TestSensitive(t *testing.T) {
 	logger, hook := test.NewNullLogger()
 	logger.Error(Stuff{InnerStuff: "innerStuff", SensitiveStuff: common.NewSensitiveString("sensitiveStuff")})
-	require.Equal(t, "{{} innerStuff {{map[]}} **************** 0001-01-01 00:00:00 +0000 UTC}", hook.LastEntry().Message)
+	require.Equal(t, "{{} innerStuff 0001-01-01 00:00:00 +0000 UTC {{map[]}} **************** 0001-01-01 00:00:00 +0000 UTC}", hook.LastEntry().Message)
+}
+
+func TestTimeFormat(t *testing.T) {
+	stuff := Stuff{}
+	isStdTime := func(s interface{}) bool {
+		switch s.(type) {
+		case time.Time:
+			return true
+		default:
+			return false
+		}
+	}
+
+	isConvertTime := func(s interface{}) bool {
+		switch s.(type) {
+		case convert.JSONTime:
+			return true
+		default:
+			return false
+		}
+	}
+
+	require.True(t, isStdTime(stuff.RawTimeStuff))
+	require.False(t, isConvertTime(stuff.RawTimeStuff))
+
+	require.True(t, isConvertTime(stuff.TimeStuff))
+	require.False(t, isStdTime(stuff.TimeStuff))
 }
 
 func TestCommentsPassed(t *testing.T) {
