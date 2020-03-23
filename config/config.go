@@ -10,7 +10,7 @@ import (
 // ReadConfig reads from a single config file and populates both custom, library and genCode config structs
 // cfgFile: path to config file
 // config: a pointer to the custom config struct
-func ReadConfig(cfgFile string, config interface{}) (LibraryConfig, GenCodeConfig) {
+func ReadConfig(cfgFile string, lib *LibraryConfig, gen *GenCodeConfig, config interface{}) {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
@@ -37,16 +37,13 @@ func ReadConfig(cfgFile string, config interface{}) (LibraryConfig, GenCodeConfi
 		log.Fatal("Unmarshal error:", err)
 	}
 
-	lib := LibraryConfig{}
-
-	if err := viper.UnmarshalKey("library", &lib); err != nil {
+	if err := viper.UnmarshalKey("library", lib); err != nil {
 		log.Fatal("Unmarshal error:", err)
 	}
 
-	gen := GenCodeConfig{}
-	if err := viper.UnmarshalKey("genCode", &gen); err != nil {
+	if err := viper.UnmarshalKey("genCode", gen); err != nil {
 		log.Fatal("Unmarshal error:", err)
 	}
 
-	return lib, gen
+	return
 }
