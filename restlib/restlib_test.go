@@ -3,6 +3,7 @@ package restlib
 import (
 	"context"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -131,4 +132,69 @@ func Test_DoHTTPRequestXMLBody(t *testing.T) {
 	strRes, isString := result.Response.(string)
 	require.True(t, isString)
 	require.True(t, xmlBody == strRes)
+}
+
+type testResp struct {
+	Data string `json:"jdata" xml:"xdata"`
+}
+
+func TestSendHTTPResponseJSONBody(t *testing.T) {
+	// Given
+	recorder := httptest.NewRecorder()
+	recorder.HeaderMap = http.Header{}
+	recorder.HeaderMap.Add("Content-Type", "application/json")
+
+	resp := testResp{Data: "test"}
+
+	// When
+	SendHTTPResponse(recorder, 200, resp)
+
+	// Then
+	result := recorder.Result()
+	require.NotNil(t, result)
+	require.Equal(t, 200, result.StatusCode)
+	b, err := ioutil.ReadAll(result.Body)
+	defer result.Body.Close()
+	require.NoError(t, err)
+	require.Equal(t, "{\"jdata\":\"test\"}\n", string(b))
+}
+
+func TestSendHTTPResponseXMLBody(t *testing.T) {
+	// Given
+	recorder := httptest.NewRecorder()
+	recorder.HeaderMap = http.Header{}
+	recorder.HeaderMap.Add("Content-Type", "text/xml; charset=utf-8")
+
+	resp := testResp{Data: "test"}
+
+	// When
+	SendHTTPResponse(recorder, 200, resp)
+
+	// Then
+	result := recorder.Result()
+	require.NotNil(t, result)
+	require.Equal(t, 200, result.StatusCode)
+	b, err := ioutil.ReadAll(result.Body)
+	defer result.Body.Close()
+	require.NoError(t, err)
+	require.Equal(t, "<testResp><xdata>test</xdata></testResp>", string(b))
+}
+
+func TestSendHTTPResponseBinaryBody(t *testing.T) {
+	// Given
+	recorder := httptest.NewRecorder()
+	recorder.HeaderMap = http.Header{}
+	recorder.HeaderMap.Add("Content-Type", "application/octet-stream")
+
+	// When
+	SendHTTPResponse(recorder, 200, []byte("test binary data"))
+
+	// Then
+	result := recorder.Result()
+	require.NotNil(t, result)
+	require.Equal(t, 200, result.StatusCode)
+	b, err := ioutil.ReadAll(result.Body)
+	defer result.Body.Close()
+	require.NoError(t, err)
+	require.Equal(t, "test binary data", string(b))
 }
