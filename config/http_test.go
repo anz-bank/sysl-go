@@ -109,7 +109,7 @@ func TestProxyHandlerFromConfigDefaultProxy(t *testing.T) {
 	fn := proxyHandlerFromConfig(&testTransport)
 	url, err := fn(dummyReq)
 	require.NoError(t, err)
-	require.Equal(t, url.String(), `http://localhost:3128/`)
+	require.Equal(t, `http://localhost:3128`, url.String())
 }
 
 func TestProxyHandlerFromConfigNoProxy(t *testing.T) {
