@@ -70,7 +70,7 @@ func sensitiveStringValidator(field reflect.Value) interface{} {
 	return nil
 }
 
-//nolint:gochecknoinits
+//nolint:gochecknoinits // We must use init here to setup a custom validator
 func init() {
 	validator.RegisterCustomValidator(sensitiveStringValidator, SensitiveString{})
 }

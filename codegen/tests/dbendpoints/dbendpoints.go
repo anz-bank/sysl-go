@@ -10,7 +10,7 @@ func (s *DefaultDbEndpointsImpl) GetCompanyLocationList() func(ctx context.Conte
 		queryStmt := client.retrievebycompanyandlocation
 		rows, err := queryStmt.QueryContext(ctx, req.DeptLoc, req.CompanyName)
 		if err != nil {
-			fmt.Println("################ error Receied - " + err.Error())
+			fmt.Println("################ error Received - " + err.Error())
 			return nil, err
 		}
 		companiesMap := map[int64]Company{}
@@ -18,6 +18,10 @@ func (s *DefaultDbEndpointsImpl) GetCompanyLocationList() func(ctx context.Conte
 		var departments []Department
 		var prevAbnNum, curCompanyIndex int64
 		for rows.Next() {
+			if rows.Err() != nil {
+				fmt.Println("################ error Received - " + err.Error())
+				return nil, err
+			}
 			var abnnumber, deptid int64
 			var companyname, companycountry, deptname, deptloc string
 			_ = rows.Scan(&abnnumber, &companyname, &companycountry, &deptid, &deptname, &deptloc)

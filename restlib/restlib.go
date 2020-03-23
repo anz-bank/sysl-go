@@ -63,7 +63,7 @@ func unmarshal(resp *http.Response, body []byte, respStruct interface{}) (*HTTPR
 }
 
 // DoHTTPRequest returns HTTPResult
-//nolint:funlen
+//nolint:funlen // TODO: Refactor this function to be shorter
 func DoHTTPRequest(ctx context.Context, client *http.Client, method string,
 	urlString string, body interface{}, required []string,
 	okResponse interface{}, errorResponse interface{}) (*HTTPResult, error) {
