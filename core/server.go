@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+//nolint:gocognit // Long method names are okay because only generated code will call this, not humans.
 func Server(ctx context.Context, name string, hl Manager, grpcHl GrpcManager, logger *logrus.Logger, promRegistry *prometheus.Registry, buildMetadata *status.BuildMetadata) error {
 	mWare := prepareMiddleware(name, logger, promRegistry)
 
