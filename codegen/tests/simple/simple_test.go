@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/anz-bank/sysl-go/codegen/tests/deps"
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/convert"
 	"github.com/sirupsen/logrus"
@@ -100,7 +101,8 @@ func (th *TestHandler) InvalidHander(ctx context.Context, req *GetStuffListReque
 func callHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *test.Hook) {
 	cb := Callback{}
 
-	sh := NewServiceHandler(cb, &si)
+	var depssrv deps.Service
+	sh := NewServiceHandler(cb, &si, depssrv)
 
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
@@ -117,7 +119,8 @@ func callHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder
 func callRawHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *test.Hook) {
 	cb := Callback{}
 
-	sh := NewServiceHandler(cb, &si)
+	var depssrv deps.Service
+	sh := NewServiceHandler(cb, &si, depssrv)
 
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
@@ -134,7 +137,8 @@ func callRawHandler(target string, si ServiceInterface) (*httptest.ResponseRecor
 func callRawIntHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *test.Hook) {
 	cb := Callback{}
 
-	sh := NewServiceHandler(cb, &si)
+	var depssrv deps.Service
+	sh := NewServiceHandler(cb, &si, depssrv)
 
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()

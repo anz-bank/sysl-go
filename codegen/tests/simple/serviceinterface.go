@@ -3,6 +3,8 @@ package simple
 
 import (
 	"context"
+
+	"github.com/anz-bank/sysl-go/codegen/tests/deps"
 )
 
 // DefaultSimpleImpl  ...
@@ -12,6 +14,11 @@ type DefaultSimpleImpl struct {
 // NewDefaultSimpleImpl for Simple
 func NewDefaultSimpleImpl() *DefaultSimpleImpl {
 	return &DefaultSimpleImpl{}
+}
+
+// GetApiDocsList Client
+type GetApiDocsListClient struct {
+	GetApiDocsList func(ctx context.Context, req *deps.GetApiDocsListRequest) (*deps.ApiDoc, error)
 }
 
 // GetOopsList Client
@@ -36,9 +43,10 @@ type PostStuffClient struct {
 
 // ServiceInterface for Simple
 type ServiceInterface struct {
-	GetOopsList   func(ctx context.Context, req *GetOopsListRequest, client GetOopsListClient) (*Response, error)
-	GetRawList    func(ctx context.Context, req *GetRawListRequest, client GetRawListClient) (*Str, error)
-	GetRawIntList func(ctx context.Context, req *GetRawIntListRequest, client GetRawIntListClient) (*Integer, error)
-	GetStuffList  func(ctx context.Context, req *GetStuffListRequest, client GetStuffListClient) (*Stuff, error)
-	PostStuff     func(ctx context.Context, req *PostStuffRequest, client PostStuffClient) (*Str, error)
+	GetApiDocsList func(ctx context.Context, req *GetApiDocsListRequest, client GetApiDocsListClient) (*deps.ApiDoc, error)
+	GetOopsList    func(ctx context.Context, req *GetOopsListRequest, client GetOopsListClient) (*Response, error)
+	GetRawList     func(ctx context.Context, req *GetRawListRequest, client GetRawListClient) (*Str, error)
+	GetRawIntList  func(ctx context.Context, req *GetRawIntListRequest, client GetRawIntListClient) (*Integer, error)
+	GetStuffList   func(ctx context.Context, req *GetStuffListRequest, client GetStuffListClient) (*Stuff, error)
+	PostStuff      func(ctx context.Context, req *PostStuffRequest, client PostStuffClient) (*Str, error)
 }
