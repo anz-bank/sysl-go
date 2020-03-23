@@ -35,3 +35,7 @@ jobs:
 
       - name: Run tests
         run: make check-coverage
+
+      - name: Check go mod is tidy
+        run: make check-tidy
+
