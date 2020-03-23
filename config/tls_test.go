@@ -289,14 +289,6 @@ func TestValidateInvalidTlsConfigs(t *testing.T) {
 	}
 }
 
-var tlsValidConfigTests = []struct {
-	in   *TLSConfig
-	name string
-}{
-	{defaultAdminServer().Common.TLS, "TEST: tlsValidConfigTests #1"},
-	{defaultPublicServer().Common.TLS, "TEST: tlsValidConfigTests #2"},
-}
-
 // *** helper functions ***
 
 func makeX509Template(organisation string) (*x509.Certificate, error) {
@@ -474,22 +466,6 @@ func TestGetTrustedCAsFromSystem(t *testing.T) {
 	} else {
 		assert.NotNil(t, res)
 	}
-}
-
-var tlsValidTLSTrustedCertPoolConfigTests = []struct {
-	in   *TrustedCertPoolConfig
-	name string
-}{
-	{&TrustedCertPoolConfig{
-		Mode:     NewString("directory"),
-		Encoding: NewString("PEM"),
-		Path:     NewString(""),
-	}, "TEST: tlsValidTlsTrustedCertPoolConfigTests #1"},
-	{&TrustedCertPoolConfig{
-		Mode:     NewString("File"),
-		Encoding: NewString("PEM"),
-		Path:     NewString(""),
-	}, "TEST: tlsValidTlsTrustedCertPoolConfigTests #2"},
 }
 
 var tlsInvalidTLSTrustedCertPoolConfigTests = []struct {
