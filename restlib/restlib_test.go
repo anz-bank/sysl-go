@@ -28,6 +28,15 @@ func TestUnmarshalPanicOnNilResponse(t *testing.T) {
 	require.Panics(t, func() { _, _ = unmarshal(nil, nil, nil) })
 }
 
+func TestUnmarshalBadJson(t *testing.T) {
+	result, err := unmarshal(&http.Response{}, []byte(`{ "bad-JSON`), &OkType{})
+	require.Error(t, err)
+	require.NotNil(t, result)
+	require.NotNil(t, result.HTTPResponse)
+	require.NotNil(t, result.Body)
+	require.Nil(t, result.Response)
+}
+
 func TestUnmarshalNilBodyOK(t *testing.T) {
 	result, err := unmarshal(&http.Response{}, nil, OkType{})
 	require.NoError(t, err)
