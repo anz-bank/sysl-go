@@ -11,7 +11,10 @@ lint: ## Lint Go Source Code
 tidy: ## Run go mod tidy
 	go mod tidy
 
-.PHONY: lint tidy
+check-tidy: ## Check go.mod and go.sum is tidy
+	go mod tidy && test -z "$$(git status --porcelain)"
+
+.PHONY: lint tidy check-tidy
 
 # -- Test ----------------------------------------------------------------------
 COVERFILE=coverage.out
