@@ -47,13 +47,7 @@ func (t *loggingRoundtripper) RoundTrip(req *http.Request) (*http.Response, erro
 	fields := initCommonLogFields(resp.StatusCode, reqTime, resp.Request)
 
 	entry := t.logentry.WithFields(fields)
-
-	switch {
-	case resp.StatusCode < 400:
-		entry.Info("Backend request completed")
-	default:
-		entry.Error("Backend request completed with error status")
-	}
+	entry.Info("Backend request completed")
 
 	if t.logentry.Logger.IsLevelEnabled(logrus.DebugLevel) {
 		rspbody, _ := ioutil.ReadAll(resp.Body)

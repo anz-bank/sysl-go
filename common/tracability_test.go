@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/sirupsen/logrus/hooks/test"
@@ -18,14 +19,17 @@ type testData struct {
 
 var tests = []testData{
 	{NewString(""), true},
-	{NewString("1234-5678910"), false},
+	{NewString("652817bc-ee0c-40e3-936c-fa74aea0ad49"), false},
+	{NewString("652817bc-AB0C-40E3-936C-fA74AAA0AA49"), false},
 	{nil, true},
 }
 
 func TestTraceabilityMiddleware(t *testing.T) {
+
 	for i, tt := range tests {
 		tt := tt
 		t.Run(fmt.Sprintf("TestTraceabilityMiddleware#%d", i), func(t *testing.T) {
+
 			logger, loghook := test.NewNullLogger()
 
 			mware := TraceabilityMiddleware(logger)
@@ -40,15 +44,16 @@ func TestTraceabilityMiddleware(t *testing.T) {
 			fn := mware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 				if tt.expectWarning {
 					require.NotEmpty(t, loghook.Entries)
-					require.NotEqual(t, "", loghook.LastEntry().Data["traceid"])
-					require.Equal(t, loghook.LastEntry().Data["traceid"], GetTraceIDFromContext(r.Context()))
 				} else {
 					require.Empty(t, loghook.Entries)
-					require.Equal(t, *tt.reqid, GetTraceIDFromContext(r.Context()))
+					require.Equal(t, strings.ToLower(*tt.reqid), strings.ToLower(GetTraceIDFromContext(r.Context()).String()))
 				}
+
 			}))
 
 			fn.ServeHTTP(nil, req)
+
 		})
 	}
+
 }
