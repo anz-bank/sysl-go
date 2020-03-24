@@ -233,7 +233,7 @@ CodeGenTransform:
 
       ImportDecl = app -> <ImportDecl>(:
         let clientImports = makeClientImportList(app, module) flatten(.out) -> <set of string>(i:
-          out = depPath + i
+          out = depPath + "/" + i
         )
         
         let goPbPackage = if "go_pb_package" in .attrs then .attrs.go_pb_package else "pb"
