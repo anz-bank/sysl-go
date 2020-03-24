@@ -3,9 +3,10 @@ package deps
 
 import (
 	"context"
+	"time"
 )
 
-// DefaultDepsImpl  ...
+// DefaultDepsImpl ...
 type DefaultDepsImpl struct {
 }
 
@@ -21,4 +22,9 @@ type GetApiDocsListClient struct {
 // ServiceInterface for Deps
 type ServiceInterface struct {
 	GetApiDocsList func(ctx context.Context, req *GetApiDocsListRequest, client GetApiDocsListClient) (*ApiDoc, error)
+}
+
+// DownstreamConfig for Deps
+type DownstreamConfig struct {
+	ContextTimeout time.Duration `yaml:"contextTimeout"`
 }
