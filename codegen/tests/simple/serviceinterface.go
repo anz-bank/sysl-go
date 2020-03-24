@@ -3,11 +3,13 @@ package simple
 
 import (
 	"context"
+	"time"
 
 	"github.com/anz-bank/sysl-go/codegen/tests/deps"
+	"github.com/anz-bank/sysl-go/config"
 )
 
-// DefaultSimpleImpl  ...
+// DefaultSimpleImpl ...
 type DefaultSimpleImpl struct {
 }
 
@@ -49,4 +51,10 @@ type ServiceInterface struct {
 	GetRawIntList  func(ctx context.Context, req *GetRawIntListRequest, client GetRawIntListClient) (*Integer, error)
 	GetStuffList   func(ctx context.Context, req *GetStuffListRequest, client GetStuffListClient) (*Stuff, error)
 	PostStuff      func(ctx context.Context, req *PostStuffRequest, client PostStuffClient) (*Str, error)
+}
+
+// DownstreamConfig for Simple
+type DownstreamConfig struct {
+	ContextTimeout time.Duration               `yaml:"contextTimeout"`
+	Deps           config.CommonDownstreamData `yaml:"deps"`
 }
