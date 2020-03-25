@@ -19,7 +19,7 @@ COVERAGE = 50
 
 test: ## Run all tests
 	go test -count=1 -cover -coverprofile=$(COVERFILE) -tags codeanalysis ./...
-  
+
 check-coverage: test  ## Check that test coverage meets the required level
 	@go tool cover -func=$(COVERFILE) | $(CHECK_COVERAGE) || $(FAIL_COVERAGE)
 
