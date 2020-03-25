@@ -967,7 +967,7 @@ CodeGenTransform:
   !view goFile(app <: sysl.App, module <: sysl.Module, basePath <: string) -> goFile:
     app -> (:
       PackageClause = app -> <PackageClause> (:
-        let pname = if .attrs.package != null then .attrs.package else app.name
+        let pname = getPackage(app).pname
         PackageName = ToLower(pname)
       )
 
