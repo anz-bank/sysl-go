@@ -639,12 +639,12 @@ CodeGenTransform:
 
   !view makeResult(ep <: sysl.Endpoint) -> string:
     ep -> (:
-        let tn = ep.value.ret where (.key != "error") -> <sequence of string>(t:
+        let tn = ep.value.ret where (.key != "error" && .value != "ok" && .value != "error") -> <sequence of string>(t:
           let justName = ToLower(TrimPrefix(t.value, "sequence of "))
           let p = if MatchString("^.+\\.", justName) then FindAllString("^.+\\.", justName, 1) single else ""
           out = TrimPrefix(justName, p)
         )
-        out = Join(tn flatten(.out), ", ")
+        out = Join(tn flatten(.out), ",")
     )
 
   !view EpHandlerMethodDecl(app <: sysl.App, packageName <: string, module <: sysl.Module) -> sequence of TopLevelDecl:
@@ -668,11 +668,9 @@ CodeGenTransform:
             )
           )
         )
-
-        let hasPayload = if ep.value.ret count > 0 then true else false
-
-        let returnValues = makeResult(ep).out + ",err"
-        let sendRespCallArgs = "httpstatus," + makeResult(ep).out + ",err"
+        let result = makeResult(ep).out
+        let returnValues = if result == "" then "err" else Join( [result, "err"], ",")
+        let sendRespCallArgs = if result == "" then "httpstatus, nil" else Join( ["httpstatus", result], ",")
 
 
         Block = ep -> <Block>(:

@@ -1,1 +1,0 @@
-SySL-generated Go files.

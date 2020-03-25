@@ -265,7 +265,7 @@ func MakeTLSConfig(cfg *TLSConfig) (*tls.Config, error) {
 	}
 
 	if cfg.InsecureSkipVerify {
-		//nolint:gosec
+		//nolint:gosec // This is configured by the user
 		return &tls.Config{InsecureSkipVerify: true}, nil
 	}
 
@@ -319,7 +319,7 @@ func MakeTLSConfig(cfg *TLSConfig) (*tls.Config, error) {
 	return settings, nil
 }
 
-//nolint:funlen
+//nolint:funlen // TODO: Break this into smaller functions
 func (t *TLSConfig) Validate() error {
 	if t == nil {
 		return nil

@@ -1,0 +1,10 @@
+Simple "Simple Server" [package="simple"]:
+    @basePath = "/simple"
+
+    /stuff:
+        POST (request <: StufReq [~body]):
+            return ok <: str
+            return error <: str
+
+    !type StufReq:
+        field1 <: string

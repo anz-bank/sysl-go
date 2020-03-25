@@ -1,0 +1,42 @@
+linters-settings:
+  lll:
+    line-length: 180
+
+linters:
+  enable-all: true
+  disable:
+    - dupl
+    - gochecknoglobals
+    - wsl
+    - lll
+    - gomnd # Ignore magic as it seems to produce too much noise for this codebase
+
+issues:
+  exclude-rules:
+    #Ignore variable scope linting
+    - path: "errors/error_handler_test.go"
+      linters:
+        - scopelint
+    - path: "config/config_test.go"
+      linters:
+        - scopelint
+    # Ignore things like "FormId should be FormID"
+    - path: codegen
+      text: "ST1003:"
+      linters:
+        - stylecheck
+    # Ignore things like "FormId should be FormID"
+    - path: codegen
+      text: ".*should be.*"
+      linters:
+        - golint
+    
+    - path: _test\.go
+      linters:
+        - govet # Ignore err shadowing in test files
+        - gomnd 
+        - funlen # Ignore function length for tests
+
+run:
+  deadline: 2m
+
