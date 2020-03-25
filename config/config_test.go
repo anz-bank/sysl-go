@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/alecthomas/assert"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
 )
 
 type TestMyConfig struct {
@@ -29,8 +29,8 @@ type TestHTTP struct {
 
 type TestDownstreamConfig struct {
 	ContextTimeout time.Duration        `yaml:"contextTimeout"`
-	Deps1          CommonDownstreamData `yaml:"deps1"`
-	Deps2          CommonDownstreamData `yaml:"deps2"`
+	Foo            CommonDownstreamData `yaml:"foo"`
+	Bar            CommonDownstreamData `yaml:"bar"`
 }
 
 func TestSReadConfig(t *testing.T) {
@@ -45,16 +45,16 @@ func TestSReadConfig(t *testing.T) {
 	myConfig := TestMyConfig{}
 	err := ReadConfig("testdata/config.yaml", &defaultConfig, &myConfig)
 
-	assert.Nil(t, err)
+	require.Nil(t, err)
 
-	assert.Equal(t, 2*time.Second, myConfig.Server.AdminServer.ContextTimeout)
-	assert.Equal(t, "/admintest", myConfig.Server.AdminServer.HTTP.BasePath)
+	require.Equal(t, 2*time.Second, myConfig.Server.AdminServer.ContextTimeout)
+	require.Equal(t, "/admintest", myConfig.Server.AdminServer.HTTP.BasePath)
 
-	assert.True(t, defaultConfig.Library.Log.ReportCaller)
-	assert.Equal(t, logrus.WarnLevel, defaultConfig.Library.Log.Level)
+	require.True(t, defaultConfig.Library.Log.ReportCaller)
+	require.Equal(t, logrus.WarnLevel, defaultConfig.Library.Log.Level)
 
-	assert.Equal(t, 8080, defaultConfig.GenCode.Upstream.HTTP.Common.Port)
-	assert.Equal(t, 8081, defaultConfig.GenCode.Upstream.GRPC.Port)
-	assert.Equal(t, 120*time.Second, defaultConfig.GenCode.Downstream.(*TestDownstreamConfig).Deps1.ClientTimeout)
-	assert.Equal(t, "https://deps2.example.cn", defaultConfig.GenCode.Downstream.(*TestDownstreamConfig).Deps2.ServiceURL)
+	require.Equal(t, 8080, defaultConfig.GenCode.Upstream.HTTP.Common.Port)
+	require.Equal(t, 8081, defaultConfig.GenCode.Upstream.GRPC.Port)
+	require.Equal(t, 120*time.Second, defaultConfig.GenCode.Downstream.(*TestDownstreamConfig).Foo.ClientTimeout)
+	require.Equal(t, "https://bar.example.com", defaultConfig.GenCode.Downstream.(*TestDownstreamConfig).Bar.ServiceURL)
 }
