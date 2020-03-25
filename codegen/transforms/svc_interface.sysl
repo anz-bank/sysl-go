@@ -69,7 +69,7 @@ CodeGenTransform:
     payload -> (:
       let packages = Split(payload, ".") -> <set of string>(p:
         let depList = module.apps where(.value.name == p) -> <set of string> (dep:
-          pkg = dep.value.attrs.package
+          pkg = getPackage(dep.value).pname
           appName = p
         )
         pkg = depList flatten(.pkg)
@@ -102,7 +102,7 @@ CodeGenTransform:
         let tn = ep.value.ret where (.key != "error" && .value != "ok") -> <set of string>(t:
           let packages = Split(t.value, ".") -> <set of string>(p:
             let depList = module.apps where(.value.name == p) -> <set of string> (dep:
-              pkg = dep.value.attrs.package
+              pkg = getPackage(dep.value).pname
               prefix = p
             )
             pkg = depList flatten(.pkg)
@@ -183,7 +183,7 @@ CodeGenTransform:
 
           let callList = ep.value.stmts where (.type == "call") -> <sequence of out> (call:
             let depList = module.apps where(.value.name == call.target) -> <sequence of out> (dep:
-              out = epHandlerMethodSpecsNoClient(dep.value.endpoints where(.value.name == call.endpoint), dep.value.attrs.package, module)
+              out = epHandlerMethodSpecsNoClient(dep.value.endpoints where(.value.name == call.endpoint), getPackage(dep.value).pname, module)
             )
             out = depList flatten(.out) flatten(.)
           )
@@ -202,7 +202,7 @@ CodeGenTransform:
     app.endpoints where(.value.is_rest == true) -> (ep:
       let callList = ep.value.stmts where (.type == "call") -> <set of out> (call:
         let depList = module.apps where(.value.name == call.target) -> <set of out> (dep:
-          out = dep.value.attrs.package
+          out = getPackage(dep.value).pname
         )
         out = depList flatten(.out)
       )
@@ -213,7 +213,7 @@ CodeGenTransform:
     app -> (:
 
       PackageClause = app -> <package> (:
-        let pname = if .attrs.package != null then .attrs.package else app.name
+        let pname = getPackage(app).pname
         PackageName = ToLower(pname)
       )
 
@@ -305,4 +305,9 @@ CodeGenTransform:
         )
       )
       out = tn flatten(.out)
+    )
+
+  !view getPackage(app <: sysl.App) -> string:
+    app -> (:
+      pname = if "package" in .attrs then if .attrs.package != null then .attrs.package else ToLower(.name) else ToLower(.name)
     )

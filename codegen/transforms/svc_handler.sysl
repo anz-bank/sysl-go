@@ -542,7 +542,7 @@ CodeGenTransform:
     payload -> (:
       let packages = Split(payload, ".") -> <set of string>(p:
         let depList = module.apps where(.value.name == p) -> <set of string> (dep:
-          pkg = dep.value.attrs.package
+          pkg = getPackage(dep.value).pname
           appName = p
         )
         pkg = depList flatten(.pkg)
@@ -896,7 +896,7 @@ CodeGenTransform:
           let depEpList = dep.value.endpoints where(.value.name == call.endpoint) -> <sequence of out> (depEp:
             identifier = methodDef(depEp).methodName
             Expression = depEp -> <Expression> (:
-              ValueExpr = "s." + dep.value.attrs.package + dep.value.name + "Service" + "." + methodDef(depEp).methodName
+              ValueExpr = "s." + getPackage(dep.value).pname + dep.value.name + "Service" + "." + methodDef(depEp).methodName
             )
           )
           out = depEpList
@@ -920,8 +920,8 @@ CodeGenTransform:
     app.endpoints -> (ep:
       let callList = ep.value.stmts where (.type == "call") -> <set of out> (call:
         let depList = module.apps where(.value.name == call.target) -> <set of out> (dep:
-          identifier = dep.value.attrs.package + dep.value.name + "Service"
-          Type = dep.value.attrs.package + "." + "Service"
+          identifier = getPackage(dep.value).pname + dep.value.name + "Service"
+          Type = getPackage(dep.value).pname + "." + "Service"
         )
         out = depList
       )
@@ -933,8 +933,8 @@ CodeGenTransform:
       let callList = ep.value.stmts where (.type == "call") -> <set of out> (call:
         let depList = module.apps where(.value.name == call.target) -> <set of out> (dep:
           ParameterDecl = dep -> <ParameterDecl>(:
-            Identifier = dep.value.attrs.package + dep.value.name + "Service"
-            TypeName = dep.value.attrs.package + "." + "Service"
+            Identifier = getPackage(dep.value).pname + dep.value.name + "Service"
+            TypeName = getPackage(dep.value).pname + "." + "Service"
           )
         )
         out = depList
@@ -946,7 +946,7 @@ CodeGenTransform:
     app.endpoints -> (ep:
       let callList = ep.value.stmts where (.type == "call") -> <set of out> (call:
         let depList = module.apps where(.value.name == call.target) -> <set of out> (dep:
-          out = dep.value.attrs.package + dep.value.name + "Service"
+          out = getPackage(dep.value).pname + dep.value.name + "Service"
         )
         out = depList flatten(.out)
       )
@@ -957,7 +957,7 @@ CodeGenTransform:
     app.endpoints -> (ep:
       let callList = ep.value.stmts where (.type == "call") -> <set of out> (call:
         let depList = module.apps where(.value.name == call.target) -> <set of out> (dep:
-          out = dep.value.attrs.package
+          out = getPackage(dep.value).pname
         )
         out = depList flatten(.out)
       )
@@ -967,7 +967,7 @@ CodeGenTransform:
   !view goFile(app <: sysl.App, module <: sysl.Module, basePath <: string) -> goFile:
     app -> (:
       PackageClause = app -> <PackageClause> (:
-        let pname = if .attrs.package != null then .attrs.package else app.name
+        let pname = getPackage(app).pname
         PackageName = ToLower(pname)
       )
 
@@ -1086,4 +1086,9 @@ CodeGenTransform:
         )
       )
       out = tn flatten(.out)
+    )
+
+  !view getPackage(app <: sysl.App) -> string:
+    app -> (:
+      pname = if "package" in .attrs then if .attrs.package != null then .attrs.package else ToLower(.name) else ToLower(.name)
     )

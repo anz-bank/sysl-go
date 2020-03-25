@@ -78,7 +78,7 @@ CodeGenTransform:
     app -> (:
 
       PackageClause = app -> <package> (:
-        let pname = if .attrs.package != null then .attrs.package else app.name
+        let pname = getPackage(app).pname
         PackageName = ToLower(pname)
       )
 
@@ -96,4 +96,9 @@ CodeGenTransform:
       )
 
       TopLevelDecl = distinctDecl flatten(.out)
+    )
+
+  !view getPackage(app <: sysl.App) -> string:
+    app -> (:
+      pname = if "package" in .attrs then if .attrs.package != null then .attrs.package else ToLower(.name) else ToLower(.name)
     )
