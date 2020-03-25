@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/spf13/viper"
 )
@@ -10,7 +9,7 @@ import (
 // ReadConfig reads from a single config file and populates both custom, library and genCode config structs
 // cfgFile: path to config file
 // config: a pointer to the custom config struct
-func ReadConfig(cfgFile string, lib *LibraryConfig, gen *GenCodeConfig, config interface{}) {
+func ReadConfig(cfgFile string, lib *LibraryConfig, gen *GenCodeConfig, config interface{}) error {
 	if cfgFile != "" {
 		viper.SetConfigFile(cfgFile)
 	} else {
@@ -22,28 +21,27 @@ func ReadConfig(cfgFile string, lib *LibraryConfig, gen *GenCodeConfig, config i
 
 	err := viper.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("Fatal error config file: %s \n", err))
+		return fmt.Errorf("fatal error config file: %s", err)
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			panic(fmt.Errorf("config file not found: %s \n", err))
-		} else {
-			panic(fmt.Errorf("config file was found but: %s \n", err))
+			return fmt.Errorf("config file not found: %s", err)
 		}
+		return fmt.Errorf("config file was found but: %s", err)
 	}
 
 	if err := viper.Unmarshal(config); err != nil {
-		log.Fatal("Unmarshal error:", err)
+		return fmt.Errorf("unmarshal config error: %s", err)
 	}
 
 	if err := viper.UnmarshalKey("library", lib); err != nil {
-		log.Fatal("Unmarshal error:", err)
+		return fmt.Errorf("unmarshal library error: %s", err)
 	}
 
 	if err := viper.UnmarshalKey("genCode", gen); err != nil {
-		log.Fatal("Unmarshal error:", err)
+		return fmt.Errorf("unmarshal genCode error: %s", err)
 	}
 
-	return
+	return nil
 }
