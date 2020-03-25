@@ -291,7 +291,7 @@ CodeGenTransform:
     app -> (:
 
       PackageClause = app -> <package> (:
-        let pname = if .attrs.package != null then .attrs.package else app.name
+        let pname = getPackage(app).pname
         PackageName = ToLower(pname)
       )
 
