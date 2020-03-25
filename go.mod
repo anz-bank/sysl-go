@@ -16,7 +16,6 @@ require (
 	github.com/prometheus/client_golang v0.9.3
 	github.com/rickb777/date v1.12.4
 	github.com/sergi/go-diff v1.1.0 // indirect
-	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.4.0
 	github.com/spf13/viper v1.6.2
 	github.com/stretchr/testify v1.4.0
