@@ -29,9 +29,9 @@ genCode:
       port: 8081
   downstream:
     contextTimeout: 120s
-    deps1:
-      serviceURL: https://deps1.example.org
+    foo:
+      serviceURL: https://foo.example.com
       clientTimeout: 120s
-    deps2:
-      serviceURL: https://deps2.example.cn
+    bar:
+      serviceURL: https://bar.example.com
       clientTimeout: 10s
