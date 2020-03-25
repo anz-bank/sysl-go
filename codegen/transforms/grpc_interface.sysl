@@ -171,17 +171,20 @@ CodeGenTransform:
   !view makeResultWithClientPackage(ep <: sysl.Endpoint, package <: string) -> Result:
     ep -> (:
       ReturnTypes = ep -> <ReturnTypes>(:
-        let tn = ep.value.ret -> <sequence of string>(t:
+        let tn = ep.value.ret where (.key != "error" && .value != "error") -> <sequence of string>(t:
           out = makeType(t.value, package).out
         )
         TypeName = Join(tn flatten(.out) | ["error"], ", ")
       )
     )
 
-  !view makeParams(ep <: sysl.Endpoint, allParams <: AllParams) -> Parameters:
+  !view makeParams(ep <: sysl.Endpoint, package <: string) -> Parameters:
     ep -> (:
       ParameterList = ep -> <ParameterList>(:
-        ParameterDecl = if ep.value.params where("header" in .attrs.patterns) count > 0 then paramDecl(Join(allParams.AllParams, ", "), "").ParameterDecl else paramDecl(Join(allParams.AllParams, ", "), "").ParameterDecl    
+        ParameterDecl = paramDecl("ctx", "context.Context").ParameterDecl
+        ParameterDeclC = ["req"] -> <sequence of ParameterDeclC>(ident:
+          ParameterDecl = paramDecl(ident, "*" + package + "." + methodDef(ep).methodName + "Request").ParameterDecl
+        )
       )
     )
 
@@ -190,12 +193,10 @@ CodeGenTransform:
       let emptyList = [""] where (. != "") -> <sequence of string> (s:
         out = s
       )
-      let allParams = getAllParams(ep, emptyList flatten(.out), package, module)
       identifier = methodDef(ep).methodName
       FunctionType = ep -> <FunctionType>(:
-        
         Signature = ep -> <Signature> (:
-          Parameters = makeParams(ep, allParams)
+          Parameters = makeParams(ep, package)
           Result = makeResultWithClientPackage(ep, package)
         )
       )
@@ -232,7 +233,7 @@ CodeGenTransform:
 
       ImportDecl = app -> <ImportDecl>(:
         let clientImports = makeClientImportList(app, module) flatten(.out) -> <set of string>(i:
-          out = depPath + i
+          out = depPath + "/" + i
         )
         
         let goPbPackage = if "go_pb_package" in .attrs then .attrs.go_pb_package else "pb"

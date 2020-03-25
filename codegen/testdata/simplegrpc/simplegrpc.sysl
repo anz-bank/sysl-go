@@ -1,9 +1,12 @@
+import simple
+
 SimpleGrpc "Simple Server" [package="simplegrpc"]:
-    @go_package = "simple"
+    @go_package = "simplesg"
     @go_pb_package = "simplepb"
     @pb_package = "simple.v1"
 
     GetStuff(st <: Stuff):
+            Simple <- POST /stuff
             return ok <: Response
 
     !type Stuff:
