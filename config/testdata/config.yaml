@@ -1,8 +1,9 @@
 library:
   log:
     format: text
-    level: 5
-    caller: false
+    level: 3
+    caller: true
+  profiling: true
 server:
   adminServer:
     contextTimeout: 2s

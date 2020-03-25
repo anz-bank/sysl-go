@@ -19,7 +19,7 @@ type LogConfig struct {
 	Format       string        `yaml:"format" validate:"nonnil,oneof=color json text"`
 	Splunk       *SplunkConfig `yaml:"splunk"`
 	Level        logrus.Level  `yaml:"level" validate:"nonnil"`
-	ReportCaller bool          `yaml:"caller"`
+	ReportCaller bool          `yaml:"caller" mapstructure:"caller"`
 }
 
 // SplunkConfig struct
