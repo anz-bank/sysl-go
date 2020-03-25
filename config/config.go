@@ -2,46 +2,43 @@ package config
 
 import (
 	"fmt"
+	"io/ioutil"
 
-	"github.com/spf13/viper"
+	"github.com/mitchellh/mapstructure"
+	"gopkg.in/yaml.v2"
 )
+
+type DefaultConfig struct {
+	Library LibraryConfig `yaml:"library"`
+	GenCode GenCodeConfig `yaml:"genCode"`
+}
 
 // ReadConfig reads from a single config file and populates both custom, library and genCode config structs
 // cfgFile: path to config file
 // config: a pointer to the custom config struct
-func ReadConfig(cfgFile string, lib *LibraryConfig, gen *GenCodeConfig, config interface{}) error {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		viper.AddConfigPath("./")
-		viper.AddConfigPath("../configs")
-		viper.SetConfigName("config")
-		viper.SetConfigType("yaml")
-	}
-
-	err := viper.ReadInConfig()
+func ReadConfig(cfgFile string, defaultConfig *DefaultConfig, customConfig interface{}) error {
+	b, err := ioutil.ReadFile(cfgFile)
 	if err != nil {
-		return fmt.Errorf("fatal error config file: %s", err)
+		return fmt.Errorf("read config file error: %s", err)
 	}
 
-	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-			return fmt.Errorf("config file not found: %s", err)
-		}
-		return fmt.Errorf("config file was found but: %s", err)
+	if err = yaml.Unmarshal(b, customConfig); err != nil {
+		return fmt.Errorf("unmarshal config file error: %s", err)
 	}
 
-	if err := viper.Unmarshal(config); err != nil {
-		return fmt.Errorf("unmarshal config error: %s", err)
+	c := make(map[string]interface{})
+	if err = yaml.Unmarshal(b, &c); err != nil {
+		return fmt.Errorf("unmarshal config file error: %s", err)
 	}
 
-	if err := viper.UnmarshalKey("library", lib); err != nil {
-		return fmt.Errorf("unmarshal library error: %s", err)
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Metadata:   nil,
+		DecodeHook: mapstructure.StringToTimeDurationHookFunc(),
+		Result:     defaultConfig,
+	})
+	if err != nil {
+		return err
 	}
 
-	if err := viper.UnmarshalKey("genCode", gen); err != nil {
-		return fmt.Errorf("unmarshal genCode error: %s", err)
-	}
-
-	return nil
+	return decoder.Decode(c)
 }

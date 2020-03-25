@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/alecthomas/assert"
+	"github.com/sirupsen/logrus"
 )
 
 type TestMyConfig struct {
@@ -35,21 +36,25 @@ type TestDownstreamConfig struct {
 func TestSReadConfig(t *testing.T) {
 	t.Parallel()
 
-	lib := LibraryConfig{}
-	gen := GenCodeConfig{}
-	gen.Downstream = &TestDownstreamConfig{}
+	defaultConfig := DefaultConfig{
+		Library: LibraryConfig{},
+		GenCode: GenCodeConfig{
+			Downstream: &TestDownstreamConfig{},
+		},
+	}
 	myConfig := TestMyConfig{}
-	err := ReadConfig("testdata/config.yaml", &lib, &gen, &myConfig)
+	err := ReadConfig("testdata/config.yaml", &defaultConfig, &myConfig)
 
 	assert.Nil(t, err)
 
 	assert.Equal(t, 2*time.Second, myConfig.Server.AdminServer.ContextTimeout)
 	assert.Equal(t, "/admintest", myConfig.Server.AdminServer.HTTP.BasePath)
 
-	assert.False(t, lib.Log.ReportCaller)
+	assert.True(t, defaultConfig.Library.Log.ReportCaller)
+	assert.Equal(t, logrus.WarnLevel, defaultConfig.Library.Log.Level)
 
-	assert.Equal(t, 8080, gen.Upstream.HTTP.Common.Port)
-	assert.Equal(t, 8081, gen.Upstream.GRPC.Port)
-	assert.Equal(t, 120*time.Second, gen.Downstream.(*TestDownstreamConfig).Fenergo.ClientTimeout)
-	assert.Equal(t, "https://stubs.bah.apps.x.gcpnp.anz", gen.Downstream.(*TestDownstreamConfig).Qas.ServiceURL)
+	assert.Equal(t, 8080, defaultConfig.GenCode.Upstream.HTTP.Common.Port)
+	assert.Equal(t, 8081, defaultConfig.GenCode.Upstream.GRPC.Port)
+	assert.Equal(t, 120*time.Second, defaultConfig.GenCode.Downstream.(*TestDownstreamConfig).Fenergo.ClientTimeout)
+	assert.Equal(t, "https://stubs.bah.apps.x.gcpnp.anz", defaultConfig.GenCode.Downstream.(*TestDownstreamConfig).Qas.ServiceURL)
 }
