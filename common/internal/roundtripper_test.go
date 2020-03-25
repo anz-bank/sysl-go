@@ -96,7 +96,7 @@ func TestLoggingTransport_RoundTrip400Code(t *testing.T) {
 				respFound = true
 			}
 		}
-		if entry.Message == "Backend request completed with error status" {
+		if entry.Message == "Backend request completed" {
 			statusFound = true
 		}
 	}
@@ -140,7 +140,7 @@ func TestLoggingTransport_RoundTripLogFields(t *testing.T) {
 				respFound = true
 			}
 		}
-		if entry.Message == "Backend request completed with error status" {
+		if entry.Message == "Backend request completed" {
 			statusFound = true
 		}
 	}

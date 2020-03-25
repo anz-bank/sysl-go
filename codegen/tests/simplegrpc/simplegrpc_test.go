@@ -2,11 +2,14 @@ package simplegrpc
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/anz-bank/sysl-go/codegen/tests/simplegrpc/simple"
+	"github.com/anz-bank/sysl-go/codegen/tests/simple"
 	pb "github.com/anz-bank/sysl-go/codegen/tests/simplegrpc/simplepb"
+	"github.com/anz-bank/sysl-go/codegen/tests/simplegrpc/simplesg"
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
@@ -55,7 +58,7 @@ func (c Callbacks) DownstreamTimeoutContext(ctx context.Context) (context.Contex
 	return context.WithTimeout(ctx, c.timeout)
 }
 
-func GetStuffStub(ctx context.Context, req *pb.GetStuffRequest, client simple.GetStuffClient) (*pb.GetStuffResponse, error) {
+func GetStuffStub(ctx context.Context, req *pb.GetStuffRequest, client simplesg.GetStuffClient) (*pb.GetStuffResponse, error) {
 	resp := pb.GetStuffResponse{
 		Data: []*pb.Item{{Name: "test"}},
 	}
@@ -73,17 +76,23 @@ func connectAndCheckReturn(t *testing.T, securityOption grpc.DialOption) {
 }
 
 func TestValidRequestResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer server.Close()
+
 	logger, _ := tlog.NewNullLogger()
 
 	cb := Callbacks{
 		timeout: 1 * time.Second,
 	}
 
-	si := simple.GrpcServiceInterface{
+	si := simplesg.GrpcServiceInterface{
 		GetStuff: GetStuffStub,
 	}
 
-	serviceHandler := simple.NewGrpcServiceHandler(cb, &si)
+	client := simple.NewClient(server.Client(), server.URL)
+	serviceHandler := simplesg.NewGrpcServiceHandler(cb, &si, client)
 
 	serverHolder := ServerHolder{}
 

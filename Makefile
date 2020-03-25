@@ -26,7 +26,7 @@ check-coverage: test  ## Check that test coverage meets the required level
 coverage: test  ## Show test coverage in your browser
 	go tool cover -html=$(COVERFILE)
 
-clean: 
+clean:
 	rm -f $(COVERFILE)
 
 CHECK_COVERAGE = awk -F '[ \t%]+' '/^total:/ && $$3 < $(COVERAGE) {exit 1}'

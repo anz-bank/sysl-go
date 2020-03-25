@@ -23,7 +23,6 @@ const traceIDLogField = "traceid"
 func TraceabilityMiddleware(logger *logrus.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-
 			val, err := uuid.Parse(r.Header.Get("RequestID"))
 			if err != nil {
 				id := uuid.New()

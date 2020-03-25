@@ -25,11 +25,9 @@ var tests = []testData{
 }
 
 func TestTraceabilityMiddleware(t *testing.T) {
-
 	for i, tt := range tests {
 		tt := tt
 		t.Run(fmt.Sprintf("TestTraceabilityMiddleware#%d", i), func(t *testing.T) {
-
 			logger, loghook := test.NewNullLogger()
 
 			mware := TraceabilityMiddleware(logger)
@@ -48,12 +46,8 @@ func TestTraceabilityMiddleware(t *testing.T) {
 					require.Empty(t, loghook.Entries)
 					require.Equal(t, strings.ToLower(*tt.reqid), strings.ToLower(GetTraceIDFromContext(r.Context()).String()))
 				}
-
 			}))
-
 			fn.ServeHTTP(nil, req)
-
 		})
 	}
-
 }
