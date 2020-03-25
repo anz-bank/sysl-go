@@ -29,8 +29,8 @@ type TestHTTP struct {
 
 type TestDownstreamConfig struct {
 	ContextTimeout time.Duration        `yaml:"contextTimeout"`
-	Fenergo        CommonDownstreamData `yaml:"fenergo"`
-	Qas            CommonDownstreamData `yaml:"qas"`
+	Deps1          CommonDownstreamData `yaml:"deps1"`
+	Deps2          CommonDownstreamData `yaml:"deps2"`
 }
 
 func TestSReadConfig(t *testing.T) {
@@ -55,6 +55,6 @@ func TestSReadConfig(t *testing.T) {
 
 	assert.Equal(t, 8080, defaultConfig.GenCode.Upstream.HTTP.Common.Port)
 	assert.Equal(t, 8081, defaultConfig.GenCode.Upstream.GRPC.Port)
-	assert.Equal(t, 120*time.Second, defaultConfig.GenCode.Downstream.(*TestDownstreamConfig).Fenergo.ClientTimeout)
-	assert.Equal(t, "https://stubs.bah.apps.x.gcpnp.anz", defaultConfig.GenCode.Downstream.(*TestDownstreamConfig).Qas.ServiceURL)
+	assert.Equal(t, 120*time.Second, defaultConfig.GenCode.Downstream.(*TestDownstreamConfig).Deps1.ClientTimeout)
+	assert.Equal(t, "https://deps2.example.cn", defaultConfig.GenCode.Downstream.(*TestDownstreamConfig).Deps2.ServiceURL)
 }

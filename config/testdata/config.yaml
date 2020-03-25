@@ -15,22 +15,6 @@ server:
         hostName: ""
         port: 3333
 genCode:
-  handlers:
-    getV1BffFenergoAPIDocs:
-      openapi: "2.0"
-      swagger: "3.0"
-    getV1StatementOfPositionCustomer:
-      formId: "dcoLeDetailsCompanyClientStatic"
-    getV1BffPropertyCustomer:
-      concurrency: 5
-      timeout: 5s
-    getAddressesFromQas:
-      serviceURL: https://ws3.ondemand.qas.com/ProOnDemand/V3/ProOnDemandService.asmx
-      authToken: 997f7d28-8719-4504-9d85-e617db4a14cc
-      soapAction: http://www.qas.com/OnDemand-2011-03/DoSearch
-  param:
-    soptaskfenergo: "Statement Of Position"
-    soptaskui: "statement-of-position"
   upstream:
     contextTimeout: 120s
     http:
@@ -45,13 +29,9 @@ genCode:
       port: 8081
   downstream:
     contextTimeout: 120s
-    fenergo:
-      # serviceURL: https://a3f6e72cde58c33.corp.nonp.au1.aws.anz.com:8082/FenergoMessageBroker/rest
-      serviceURL: https://stubs.bah.apps.x.gcpnp.anz/FenergoMessageBroker/rest
+    deps1:
+      serviceURL: https://deps1.example.org
       clientTimeout: 120s
-      clientTransport:
-        clientTLS:
-          insecureSkipVerify: true
-    qas:
-      serviceURL: https://stubs.bah.apps.x.gcpnp.anz
+    deps2:
+      serviceURL: https://deps2.example.cn
       clientTimeout: 10s
