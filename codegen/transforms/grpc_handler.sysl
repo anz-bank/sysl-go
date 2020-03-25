@@ -610,7 +610,7 @@ CodeGenTransform:
             )
 
             let clientStruct = makeClientStruct(app, module) flatten(.out) -> <set of out>(c:
-              out = c 
+              out = c
             )
 
             FieldDecl = [genCallback, svcHandlerField, unimpl] | clientStruct flatten(.out)
@@ -690,7 +690,7 @@ CodeGenTransform:
                     Expression = makeValueExpr("server")
                     FuncArgsRest = [n] -> <sequence of FuncArgsRest>(np:
                       Expression = makeValueExpr("s")
-                    )                  
+                    )
                   )
                 )
               )
@@ -706,5 +706,5 @@ CodeGenTransform:
 
   !view getPackage(app <: sysl.App) -> string:
     app -> (:
-      pname = if "package" in .attrs then if .attrs.package != null then .attrs.package else ToLower(.name) else ToLower(.name)
+      pname = if "go_package" in .attrs then .attrs.go_package else if "package" in .attrs then .attrs.package else ToLower(.name)
     )
