@@ -5,21 +5,11 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
-	"github.com/anz-bank/sysl-go/validator"
 	"github.com/go-chi/chi"
 )
-
-// GenCallback callbacks used by the generated code
-type GenCallback interface {
-	AddMiddleware(ctx context.Context, r chi.Router)
-	BasePath() string
-	Config() validator.Validator
-	HandleError(ctx context.Context, w http.ResponseWriter, kind common.Kind, message string, cause error)
-	DownstreamTimeoutContext(ctx context.Context) (context.Context, context.CancelFunc)
-}
 
 // Router interface for Simple
 type Router interface {
@@ -28,7 +18,7 @@ type Router interface {
 
 // ServiceRouter for Simple API
 type ServiceRouter struct {
-	gc               GenCallback
+	gc               config.GenCallback
 	svcHandler       *ServiceHandler
 	basePathFromSpec string
 }
@@ -42,7 +32,7 @@ type swaggerFile struct {
 var swagger = swaggerFile{}
 
 // NewServiceRouter creates a new service router for Simple
-func NewServiceRouter(gc GenCallback, svcHandler *ServiceHandler) handlerinitialiser.HandlerInitialiser {
+func NewServiceRouter(gc config.GenCallback, svcHandler *ServiceHandler) handlerinitialiser.HandlerInitialiser {
 	return &ServiceRouter{gc, svcHandler, "/simple"}
 }
 
@@ -64,7 +54,7 @@ func (s *ServiceRouter) WireRoutes(ctx context.Context, r chi.Router) {
 }
 
 // Config ...
-func (s *ServiceRouter) Config() validator.Validator {
+func (s *ServiceRouter) Config() config.UpstreamConfig {
 	return s.gc.Config()
 }
 

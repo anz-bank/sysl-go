@@ -974,14 +974,15 @@ CodeGenTransform:
       ImportDecl = app -> <ImportDecl>(:
         let convert = "github.com/anz-bank/sysl-go/convert"
         let common = "github.com/anz-bank/sysl-go/common"
+        let config = "github.com/anz-bank/sysl-go/config"
         let database = "github.com/anz-bank/sysl-go/database"
         let validator = "github.com/anz-bank/sysl-go/validator"
         let db = "database/sql"
         let clientImports = makeClientImportList(app, module) flatten(.out) -> <set of string>(i:
           out = basePath + i
         )
-        let specWithoutDB = ["encoding/json", "net/http", "github.com/anz-bank/sysl-go/restlib", common, convert, validator]
-        let specWithDB = ["encoding/json", "database/sql", "net/http", "github.com/anz-bank/sysl-go/restlib", common, convert, database, validator]
+        let specWithoutDB = ["encoding/json", "net/http", "github.com/anz-bank/sysl-go/restlib", common, config, convert, validator]
+        let specWithDB = ["encoding/json", "database/sql", "net/http", "github.com/anz-bank/sysl-go/restlib", common, config, convert, database, validator]
         let spec = if IsDataBaseApp(app).out then specWithDB else specWithoutDB  | clientImports flatten(.out) -> <sequence of ImportSpec> (importPath:
           Import = if importPath == "" then true else '"' + importPath + '"'
         )
@@ -1009,7 +1010,7 @@ CodeGenTransform:
 
             let genCallback = name -> <FieldDecl>(:
               identifier = "genCallback"
-              Type =  "GenCallback"
+              Type =  "config.GenCallback"
             )
 
             let svcHandlerField = name -> <FieldDecl>(:
@@ -1039,7 +1040,7 @@ CodeGenTransform:
           Signature = name -> <Signature> (:
             Parameters = name -> <Parameters>(:
               ParameterList = name -> <ParameterList>(:
-                ParameterDecl = paramDecl("genCallback", "GenCallback")
+                ParameterDecl = paramDecl("genCallback", "config.GenCallback")
                 let genCallback = name -> <ParameterDeclC>(:
                   ParameterDecl = name -> <ParameterDecl>(:
                     Identifier = serviceImplVarname
