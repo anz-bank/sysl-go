@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/anz-bank/sysl-go/codegen/tests/deps"
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/restlib"
 	"github.com/anz-bank/sysl-go/validator"
@@ -18,6 +19,7 @@ type Service interface {
 	GetJustReturnErrorList(ctx context.Context, req *GetJustReturnErrorListRequest) error
 	GetJustReturnOkList(ctx context.Context, req *GetJustReturnOkListRequest) (*http.Header, error)
 	GetOkTypeAndJustErrorList(ctx context.Context, req *GetOkTypeAndJustErrorListRequest) (*Response, error)
+	GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest) (*deps.ApiDoc, error)
 	GetOopsList(ctx context.Context, req *GetOopsListRequest) (*Response, error)
 	GetRawList(ctx context.Context, req *GetRawListRequest) (*Str, error)
 	GetRawIntList(ctx context.Context, req *GetRawIntListRequest) (*Integer, error)
@@ -123,6 +125,38 @@ func (s *Client) GetOkTypeAndJustErrorList(ctx context.Context, req *GetOkTypeAn
 		}
 
 		return OkResponseResponse, nil
+	}
+
+	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
+}
+
+// GetApiDocsList ...
+func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest) (*deps.ApiDoc, error) {
+	required := []string{}
+	var okResponse deps.ApiDoc
+
+	u, err := url.Parse(fmt.Sprintf("%s/api-docs", s.url))
+	if err != nil {
+		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
+	}
+
+	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	if err != nil {
+		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
+	}
+
+	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
+		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
+	}
+
+	OkDepsApiDocResponse, ok := result.Response.(*deps.ApiDoc)
+	if ok {
+		valErr := validator.Validate(OkDepsApiDocResponse)
+		if valErr != nil {
+			return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, valErr)
+		}
+
+		return OkDepsApiDocResponse, nil
 	}
 
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
