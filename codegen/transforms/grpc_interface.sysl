@@ -204,7 +204,7 @@ CodeGenTransform:
 
   !view handlerClients(app <: sysl.App, module <: sysl.Module) -> sequence of TopLevelDecl:
     app.endpoints where(.value.is_rest == false) -> (ep:
-      
+
       Comment = "// " + ep.value.name + " Client"
       Declaration = ep -> <Declaration> (:
         StructType = ep -> <StructType> (:
@@ -216,7 +216,6 @@ CodeGenTransform:
             )
             out = depList flatten(.out) flatten(.)
           )
-          
           FieldDecl = callList flatten(.out) flatten(.)
         )
       )
@@ -269,5 +268,5 @@ CodeGenTransform:
 
   !view getPackage(app <: sysl.App) -> string:
     app -> (:
-      pname = if "package" in .attrs then if .attrs.package != null then .attrs.package else ToLower(.name) else ToLower(.name)
+      pname = if "go_package" in .attrs then .attrs.go_package else if "package" in .attrs then .attrs.package else ToLower(.name)
     )
