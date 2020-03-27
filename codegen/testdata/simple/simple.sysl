@@ -1,5 +1,6 @@
 Simple "Simple Server" [package="simple"]:
     @basePath = "/simple"
+    @go_package = "simple"
 
     /stuff:
         GET ?dt=DATETIME?&st=string?&bt=bool?&it=int?:

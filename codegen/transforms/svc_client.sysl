@@ -716,5 +716,5 @@ CodeGenTransform:
 
   !view getPackage(app <: sysl.App) -> string:
     app -> (:
-      pname = if "package" in .attrs then if .attrs.package != null then .attrs.package else ToLower(.name) else ToLower(.name)
+      pname = if "go_package" in .attrs then .attrs.go_package else if "package" in .attrs then if .attrs.package != null then .attrs.package else ToLower(.name) else ToLower(.name)
     )
