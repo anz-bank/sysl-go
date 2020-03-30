@@ -219,11 +219,12 @@ CodeGenTransform:
 
       ImportDecl = app -> <ImportDecl>(:
         let clientImports = makeClientImportList(app, module) flatten(.out) -> <set of string>(i:
-          out = basePath + i
+          out = basePath  + "/" + i
         )
+        let config = "github.com/anz-bank/sysl-go/config"
         let databaseImport = "database/sql"
-        let initWithoutDB = ["context"]
-        let initWithDB = ["context",databaseImport]
+        let initWithoutDB = [config, "context"]
+        let initWithDB = [config, "context",databaseImport]
 
         let spec = if IsDataBaseApp(app).out then initWithDB else initWithoutDB | clientImports flatten(.out) -> <sequence of ImportSpec> (importPath:
           Import = if importPath == "" then true else '"' + importPath + '"'
