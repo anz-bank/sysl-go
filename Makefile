@@ -67,7 +67,7 @@ sysl codegen \
 	--grammar codegen/grammars/go.gen.g \
 	--start goFile \
 	--outdir $(OUT) \
-	--basepath github.com/anz-bank/sysl-go/$(TEST_OUT_DIR)/ \
+	--basepath github.com/anz-bank/sysl-go/$(TEST_OUT_DIR) \
 	--app-name $(APP) \
 	$(MODEL)
 goimports -w $@

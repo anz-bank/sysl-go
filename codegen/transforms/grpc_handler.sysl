@@ -187,7 +187,7 @@ CodeGenTransform:
           )
         )
       )
-      
+
       StatementList = assignStmt | assignVar
     )
 
@@ -237,7 +237,7 @@ CodeGenTransform:
 
       out = Join(matchingPnameAsString flatten(.mpasout), "")
     )
-    
+
   !view queryParamName(ep <: sysl.Endpoint, qparam <: sysl.EndPoint.RestParams.QueryParam) -> string:
     ep -> (:
       out = if "queryParamNames" in .value.attrs then queryParamNameFromAttrs(ep, qparam).out else qparam.name
@@ -422,7 +422,7 @@ CodeGenTransform:
               )
             )
           )
-          
+
           # Call the implementation behind the Service Interface
           let implCall = ep -> <StatementList> (:
             Statement = ep -> <Statement> (:
@@ -543,7 +543,7 @@ CodeGenTransform:
         )
         out = depList flatten(.out)
       )
-      out = callList flatten(.out) 
+      out = callList flatten(.out)
     )
 
   !view goFile(app <: sysl.App, module <: sysl.Module, depPath <: string) -> goFile:
@@ -558,9 +558,8 @@ CodeGenTransform:
 
       ImportDecl = app -> <ImportDecl>(:
         let convert = "github.com/anz-bank/sysl-go/convert"
-        let common = "github.com/anz-bank/sysl-go/common"
         let clientImports = makeClientImportList(app, module) flatten(.out) -> <set of string>(i:
-          out = depPath + i
+          out = depPath + "/" + i
         )
 
         let goPbPackage = if "go_pb_package" in .attrs then .attrs.go_pb_package else "pb"
@@ -579,7 +578,7 @@ CodeGenTransform:
           )
         )
 
-        let spec = ["context", common, convert, "google.golang.org/grpc"] | clientImports flatten(.out) -> <sequence of ImportSpec> (importPath:
+        let spec = ["context", convert, "google.golang.org/grpc"] | clientImports flatten(.out) -> <sequence of ImportSpec> (importPath:
           Import = if importPath == "" then true else '"' + importPath + '"'
         )
         ImportSpec = spec | [grpcDefs, callbackDefs]
