@@ -118,7 +118,7 @@ CodeGenTransform:
         )
       )
     )
-    
+
   !view makeFunctionCall(funcName <: string, arg0 <: Expression, rest <: sequence of Expression) -> FuncArgsRest:
     funcName -> (:
       Expression = funcName -> <Expression>(:
@@ -628,9 +628,10 @@ CodeGenTransform:
       )
 
       ImportDecl = app -> <ImportDecl>(:
+        let validator = "github.com/anz-bank/sysl-go/validator"
         let restLib = "github.com/anz-bank/sysl-go/restlib"
         let bffLib = "github.com/anz-bank/sysl-go/common"
-        let spec = ["context", "fmt", "net/http", "net/url", restLib, bffLib] -> <sequence of ImportSpec> (importPath:
+        let spec = ["context", "fmt", "net/http", "net/url", restLib, bffLib, validator] -> <sequence of ImportSpec> (importPath:
           Import = if importPath == "" then true else '"' + importPath + '"'
         )
         ImportSpec = spec

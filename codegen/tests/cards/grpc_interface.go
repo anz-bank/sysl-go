@@ -4,7 +4,7 @@ package cards
 import (
 	"context"
 
-	pb "github.com/anz-bank/sysl-go/codegen/tests/multigrpc/cardspb"
+	pb "github.com/anz-bank/sysl-go/codegen/tests/cardspb"
 )
 
 // GetCards Client

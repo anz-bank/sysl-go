@@ -978,7 +978,7 @@ CodeGenTransform:
         let validator = "github.com/anz-bank/sysl-go/validator"
         let db = "database/sql"
         let clientImports = makeClientImportList(app, module) flatten(.out) -> <set of string>(i:
-          out = basePath + i
+          out = basePath + "/" +  i
         )
         let specWithoutDB = ["encoding/json", "net/http", "github.com/anz-bank/sysl-go/restlib", common, convert, validator]
         let specWithDB = ["encoding/json", "database/sql", "net/http", "github.com/anz-bank/sysl-go/restlib", common, convert, database, validator]
