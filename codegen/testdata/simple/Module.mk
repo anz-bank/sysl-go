@@ -1,5 +1,5 @@
 # Simple Server
-SIMPLE_IN=codegen/testdata/simple
+SIMPLE_IN=simple
 SIMPLE_OUT=codegen/tests/simple
 
 SIMPLE_ALL_FILES=$(SIMPLE_ERRORS) $(SIMPLE_TYPES) $(SIMPLE_INTERFACE) $(SIMPLE_HANDLER) $(SIMPLE_ROUTER)

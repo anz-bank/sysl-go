@@ -4,8 +4,8 @@ package wallet
 import (
 	"context"
 
-	cb "github.com/anz-bank/sysl-go/codegen/tests/multigrpc/callback"
-	pb "github.com/anz-bank/sysl-go/codegen/tests/multigrpc/cardspb"
+	cb "github.com/anz-bank/sysl-go/codegen/tests/callback"
+	pb "github.com/anz-bank/sysl-go/codegen/tests/cardspb"
 	"google.golang.org/grpc"
 )
 

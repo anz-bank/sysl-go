@@ -1,5 +1,5 @@
 Cards_V1 [~package, package="cards.v1"]:
-    @go_package = "cardspb"
+    @go_package = "cards"
 
     !type Card:
         Name <: string
