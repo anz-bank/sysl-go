@@ -135,8 +135,7 @@ func testDummyValidator(reflect.Value) interface{} {
 	return 6
 }
 
-//nolint:gochecknoinits
-func init() {
+func TestMain(m *testing.M) {
 	RegisterCustomValidator(testDummyValidator, dummyvalidator{})
 }
 func TestRegisterCustomValidator(t *testing.T) {

@@ -37,7 +37,7 @@ func NewServiceHandler(genCallback GenCallback, serviceInterface *ServiceInterfa
 // GetCompanyLocationListHandler ...
 func (s *ServiceHandler) GetCompanyLocationListHandler(w http.ResponseWriter, r *http.Request) {
 	if s.serviceInterface.GetCompanyLocationList == nil {
-		s.genCallback.HandleError(r.Context(), w, common.InternalError, "not implemented", nil)
+		common.HandleError(r.Context(), w, common.InternalError, "not implemented", nil, s.genCallback.MapError)
 		return
 	}
 
@@ -53,7 +53,7 @@ func (s *ServiceHandler) GetCompanyLocationListHandler(w http.ResponseWriter, r 
 	CompanyNameParam = restlib.GetQueryParam(r, "companyName")
 	req.CompanyName, convErr = convert.StringToStringPtr(ctx, CompanyNameParam)
 	if convErr != nil {
-		s.genCallback.HandleError(ctx, w, common.BadRequestError, "Invalid request", convErr)
+		common.HandleError(ctx, w, common.BadRequestError, "Invalid request", convErr, s.genCallback.MapError)
 		return
 	}
 
@@ -61,26 +61,26 @@ func (s *ServiceHandler) GetCompanyLocationListHandler(w http.ResponseWriter, r 
 	defer cancel()
 	valErr := validator.Validate(&req)
 	if valErr != nil {
-		s.genCallback.HandleError(ctx, w, common.BadRequestError, "Invalid request", valErr)
+		common.HandleError(ctx, w, common.BadRequestError, "Invalid request", valErr, s.genCallback.MapError)
 		return
 	}
 
 	conn, err := s.DB.Conn(ctx)
 	if err != nil {
-		s.genCallback.HandleError(ctx, w, common.InternalError, "Database connection could not be retrieved", err)
+		common.HandleError(ctx, w, common.InternalError, "Database connection could not be retrieved", err, s.genCallback.MapError)
 		return
 	}
 
 	defer conn.Close()
 	retrievebycompanyandlocationStmt, err_retrievebycompanyandlocation := conn.PrepareContext(ctx, "select company.abnnumber, company.companyname, company.companycountry, department.deptid, department.deptname, department.deptloc from company JOIN department ON company.abnnumber=department.abn WHERE department.deptloc=? and company.companyname=? order by company.abnnumber;")
 	if err_retrievebycompanyandlocation != nil {
-		s.genCallback.HandleError(ctx, w, common.InternalError, "could not parse the sql query with the name sql_retrieveByCompanyAndLocation", err_retrievebycompanyandlocation)
+		common.HandleError(ctx, w, common.InternalError, "could not parse the sql query with the name sql_retrieveByCompanyAndLocation", err_retrievebycompanyandlocation, s.genCallback.MapError)
 		return
 	}
 
 	tx, err := conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
 	if err != nil {
-		s.genCallback.HandleError(ctx, w, common.DownstreamUnavailableError, "DB Transaction could not be created", err)
+		common.HandleError(ctx, w, common.DownstreamUnavailableError, "DB Transaction could not be created", err, s.genCallback.MapError)
 		return
 	}
 
@@ -92,17 +92,17 @@ func (s *ServiceHandler) GetCompanyLocationListHandler(w http.ResponseWriter, r 
 	getcompanylocationresponse, err := s.serviceInterface.GetCompanyLocationList(ctx, &req, client)
 	if err != nil {
 		tx.Rollback()
-		s.genCallback.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err)
+		common.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err, s.genCallback.MapError)
 		return
 	}
 
 	commitErr := tx.Commit()
 	if commitErr != nil {
-		s.genCallback.HandleError(ctx, w, common.InternalError, "Failed to commit the transaction", commitErr)
+		common.HandleError(ctx, w, common.InternalError, "Failed to commit the transaction", commitErr, s.genCallback.MapError)
 		return
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
 	restlib.SetHeaders(w, headermap)
-	restlib.SendHTTPResponse(w, httpstatus, getcompanylocationresponse, err)
+	restlib.SendHTTPResponse(w, httpstatus, getcompanylocationresponse)
 }

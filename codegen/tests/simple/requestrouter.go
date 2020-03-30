@@ -17,7 +17,7 @@ type GenCallback interface {
 	AddMiddleware(ctx context.Context, r chi.Router)
 	BasePath() string
 	Config() validator.Validator
-	HandleError(ctx context.Context, w http.ResponseWriter, kind common.Kind, message string, cause error)
+	MapError(ctx context.Context, cause error) *common.HTTPError
 	DownstreamTimeoutContext(ctx context.Context) (context.Context, context.CancelFunc)
 }
 
@@ -51,6 +51,11 @@ func NewServiceRouter(gc GenCallback, svcHandler *ServiceHandler) handlerinitial
 func (s *ServiceRouter) WireRoutes(ctx context.Context, r chi.Router) {
 	r.Route(core.SelectBasePath(s.basePathFromSpec, s.gc.BasePath()), func(r chi.Router) {
 		s.gc.AddMiddleware(ctx, r)
+		r.Get("/api-docs", s.svcHandler.GetApiDocsListHandler)
+		r.Get("/just-ok-and-just-error", s.svcHandler.GetJustOkAndJustErrorListHandler)
+		r.Get("/just-return-error", s.svcHandler.GetJustReturnErrorListHandler)
+		r.Get("/just-return-ok", s.svcHandler.GetJustReturnOkListHandler)
+		r.Get("/ok-type-and-just-error", s.svcHandler.GetOkTypeAndJustErrorListHandler)
 		r.Get("/oops", s.svcHandler.GetOopsListHandler)
 		r.Get("/raw", s.svcHandler.GetRawListHandler)
 		r.Get("/raw-int", s.svcHandler.GetRawIntListHandler)

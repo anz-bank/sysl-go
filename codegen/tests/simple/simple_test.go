@@ -13,8 +13,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/anz-bank/sysl-go/codegen/tests/deps"
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/convert"
+	"github.com/anz-bank/sysl-go/restlib"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
@@ -39,7 +41,7 @@ func headerCpy(src http.Header) http.Header {
 	return dst
 }
 
-func (th *TestHandler) ValidHandler(ctx context.Context, req *GetStuffListRequest, client GetStuffListClient) (*Stuff, error) {
+func (th *TestHandler) ValidGetStuffListHandlerStub(ctx context.Context, req *GetStuffListRequest, client GetStuffListClient) (*Stuff, error) {
 	s := Stuff{
 		InnerStuff: "response",
 		ResponseStuff: Response{
@@ -100,7 +102,8 @@ func (th *TestHandler) InvalidHander(ctx context.Context, req *GetStuffListReque
 func callHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *test.Hook) {
 	cb := Callback{}
 
-	sh := NewServiceHandler(cb, &si)
+	var depssrv deps.Service
+	sh := NewServiceHandler(cb, &si, depssrv)
 
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
@@ -117,7 +120,8 @@ func callHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder
 func callRawHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *test.Hook) {
 	cb := Callback{}
 
-	sh := NewServiceHandler(cb, &si)
+	var depssrv deps.Service
+	sh := NewServiceHandler(cb, &si, depssrv)
 
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
@@ -134,7 +138,8 @@ func callRawHandler(target string, si ServiceInterface) (*httptest.ResponseRecor
 func callRawIntHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *test.Hook) {
 	cb := Callback{}
 
-	sh := NewServiceHandler(cb, &si)
+	var depssrv deps.Service
+	sh := NewServiceHandler(cb, &si, depssrv)
 
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
@@ -171,7 +176,7 @@ func TestHandlerMissingEndpoint(t *testing.T) {
 func TestHandlerRequestHeaderInContext(t *testing.T) {
 	th := TestHandler{}
 	si := ServiceInterface{
-		GetStuffList: th.ValidHandler,
+		GetStuffList: th.ValidGetStuffListHandlerStub,
 	}
 
 	_, _ = callHandler("http://example.com/stuff", si)
@@ -182,7 +187,7 @@ func TestHandlerRequestHeaderInContext(t *testing.T) {
 func TestHandlerResponseHeaderInContext(t *testing.T) {
 	th := TestHandler{}
 	si := ServiceInterface{
-		GetStuffList: th.ValidHandler,
+		GetStuffList: th.ValidGetStuffListHandlerStub,
 	}
 
 	_, _ = callHandler("http://example.com/stuff", si)
@@ -194,7 +199,7 @@ func TestHandlerResponseHeaderInContext(t *testing.T) {
 func TestHandlerValid(t *testing.T) {
 	th := TestHandler{}
 	si := ServiceInterface{
-		GetStuffList: th.ValidHandler,
+		GetStuffList: th.ValidGetStuffListHandlerStub,
 	}
 
 	w, _ := callHandler("http://example.com/stuff", si)
@@ -202,7 +207,7 @@ func TestHandlerValid(t *testing.T) {
 	resp := w.Result()
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-	require.JSONEq(t, `{"emptyStuff":{}, "innerStuff":"response","responseStuff":{"Data":{"M":{"James":{"A1":"SpencerSt", "A2":"CollinsSt"}, "John":{"A1":"CollinsSt", "A2":"LonasDaleSt"}}}}, "sensitiveStuff":"****************", "timeStuff":"0001-01-01T00:00:00.000+0000"}`, string(body))
+	require.JSONEq(t, `{"emptyStuff":{}, "innerStuff":"response", "rawTimeStuff":"0001-01-01T00:00:00Z", "responseStuff":{"Data":{"M":{"James":{"A1":"SpencerSt", "A2":"CollinsSt"}, "John":{"A1":"CollinsSt", "A2":"LonasDaleSt"}}}}, "sensitiveStuff":"****************", "timeStuff":"0001-01-01T00:00:00.000+0000"}`, string(body))
 }
 
 func TestRawHandlerValid(t *testing.T) {
@@ -394,7 +399,34 @@ func TestClient_PassesXMLBody(t *testing.T) {
 func TestSensitive(t *testing.T) {
 	logger, hook := test.NewNullLogger()
 	logger.Error(Stuff{InnerStuff: "innerStuff", SensitiveStuff: common.NewSensitiveString("sensitiveStuff")})
-	require.Equal(t, "{{} innerStuff {{map[]}} **************** 0001-01-01 00:00:00 +0000 UTC}", hook.LastEntry().Message)
+	require.Equal(t, "{{} innerStuff 0001-01-01 00:00:00 +0000 UTC {{map[]}} **************** 0001-01-01 00:00:00 +0000 UTC}", hook.LastEntry().Message)
+}
+
+func TestTimeFormat(t *testing.T) {
+	stuff := Stuff{}
+	isStdTime := func(s interface{}) bool {
+		switch s.(type) {
+		case time.Time:
+			return true
+		default:
+			return false
+		}
+	}
+
+	isConvertTime := func(s interface{}) bool {
+		switch s.(type) {
+		case convert.JSONTime:
+			return true
+		default:
+			return false
+		}
+	}
+
+	require.True(t, isStdTime(stuff.RawTimeStuff))
+	require.False(t, isConvertTime(stuff.RawTimeStuff))
+
+	require.True(t, isConvertTime(stuff.TimeStuff))
+	require.False(t, isStdTime(stuff.TimeStuff))
 }
 
 func TestCommentsPassed(t *testing.T) {
@@ -409,8 +441,88 @@ func TestCommentsPassed(t *testing.T) {
 	for s.Scan() {
 		if strings.Contains(s.Text(), "// Stuff just some stuff") {
 			foundComment = true
+			break
 		}
 	}
 
 	require.True(t, foundComment)
+}
+
+func bodylessClientServer(statusToReturn int) (*Client, *httptest.Server) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Send response to be tested
+		w.Header().Add("Context", `{"jsonField":"jsonVal"}`)
+		w.WriteHeader(statusToReturn)
+	}))
+	client := server.Client()
+
+	return &Client{
+		client: client,
+		url:    server.URL,
+	}, server
+}
+
+func TestJustOKReturnsHeaders(t *testing.T) {
+	c, s := bodylessClientServer(200)
+	defer s.Close()
+
+	logger, _ := test.NewNullLogger()
+	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
+
+	h, err := c.GetJustReturnOkList(ctx, &GetJustReturnOkListRequest{})
+	require.NoError(t, err)
+	require.Equal(t, `{"jsonField":"jsonVal"}`, h.Get("Context"))
+}
+
+func TestJustErrorPutsHeadersInError(t *testing.T) {
+	c, s := bodylessClientServer(400)
+	defer s.Close()
+
+	logger, _ := test.NewNullLogger()
+	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
+
+	err := c.GetJustReturnErrorList(ctx, &GetJustReturnErrorListRequest{})
+	require.Error(t, err)
+	resp := err.(*common.ServerError).Cause.(*restlib.HTTPResult)
+	require.Equal(t, `{"jsonField":"jsonVal"}`, resp.HTTPResponse.Header.Get("Context"))
+}
+
+func TestJustOKAndJustErrorReturnsHeadersWhenOK(t *testing.T) {
+	c, s := bodylessClientServer(200)
+	defer s.Close()
+
+	logger, _ := test.NewNullLogger()
+	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
+
+	h, err := c.GetJustOkAndJustErrorList(ctx, &GetJustOkAndJustErrorListRequest{})
+	require.NoError(t, err)
+	require.Equal(t, `{"jsonField":"jsonVal"}`, h.Get("Context"))
+}
+
+func TestJustOKAndJustErrorPutsHeadersInErrorWhenError(t *testing.T) {
+	c, s := bodylessClientServer(400)
+	defer s.Close()
+
+	logger, _ := test.NewNullLogger()
+	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
+
+	h, err := c.GetJustOkAndJustErrorList(ctx, &GetJustOkAndJustErrorListRequest{})
+	require.Error(t, err)
+	require.Nil(t, h)
+	resp := err.(*common.ServerError).Cause.(*restlib.HTTPResult)
+	require.Equal(t, `{"jsonField":"jsonVal"}`, resp.HTTPResponse.Header.Get("Context"))
+}
+
+func TestOKTypeAndJustErrorPutsHeadersInErrorWhenError(t *testing.T) {
+	c, s := bodylessClientServer(400)
+	defer s.Close()
+
+	logger, _ := test.NewNullLogger()
+	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
+
+	h, err := c.GetOkTypeAndJustErrorList(ctx, &GetOkTypeAndJustErrorListRequest{})
+	require.Error(t, err)
+	require.Nil(t, h)
+	resp := err.(*common.ServerError).Cause.(*restlib.HTTPResult)
+	require.Equal(t, `{"jsonField":"jsonVal"}`, resp.HTTPResponse.Header.Get("Context"))
 }

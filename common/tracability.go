@@ -13,7 +13,8 @@ import (
 type traceabilityContextKey struct{}
 
 type requestID struct {
-	id string // This appears to be a UUID in both the android and IOS clients, however it is 'string' in the swagger :/
+	id          uuid.UUID
+	wasProvided bool
 }
 
 const traceIDLogField = "traceid"
@@ -22,15 +23,15 @@ const traceIDLogField = "traceid"
 func TraceabilityMiddleware(logger *logrus.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			reqid := r.Header.Get("RequestID")
-			if reqid == "" {
-				reqid = uuid.New().String()
+			val, err := uuid.Parse(r.Header.Get("RequestID"))
+			if err != nil {
+				id := uuid.New()
 				logger.WithFields(internal.InitFieldsFromRequest(r)).
-					WithField(traceIDLogField, reqid).
-					Warnf("Incoming request without RequestID header, filled traceid with new UUID instead")
+					Warn("Incoming request with invalid or missing RequestID header, filled traceid with new UUID instead")
+				r = r.WithContext(AddTraceIDToContext(r.Context(), id, false))
+			} else {
+				r = r.WithContext(AddTraceIDToContext(r.Context(), val, true))
 			}
-
-			r = r.WithContext(context.WithValue(r.Context(), traceabilityContextKey{}, &requestID{reqid}))
 
 			next.ServeHTTP(w, r)
 		}
@@ -38,10 +39,20 @@ func TraceabilityMiddleware(logger *logrus.Logger) func(next http.Handler) http.
 	}
 }
 
-func GetTraceIDFromContext(ctx context.Context) string {
+func GetTraceIDFromContext(ctx context.Context) uuid.UUID {
+	val, _ := TryGetTraceIDFromContext(ctx)
+
+	return val
+}
+
+func TryGetTraceIDFromContext(ctx context.Context) (uuid.UUID, bool) {
 	val, ok := ctx.Value(traceabilityContextKey{}).(*requestID)
 	if ok {
-		return val.id
+		return val.id, val.wasProvided
 	}
-	return ""
+	return uuid.New(), false
+}
+
+func AddTraceIDToContext(ctx context.Context, id uuid.UUID, wasProvided bool) context.Context {
+	return context.WithValue(ctx, traceabilityContextKey{}, &requestID{id, wasProvided})
 }

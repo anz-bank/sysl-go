@@ -43,7 +43,7 @@ func TestWriter_Write(t *testing.T) {
 	// Send a bunch of messages in separate goroutines to make sure we're properly
 	// testing Writer's concurrency promise
 	for i := 0; i < numWrites; i++ {
-		// nolint: errcheck
+		//nolint:errcheck // We ignore the error here for tests
 		go writer.Write(fmt.Sprintf("%d", i))
 	}
 	// To notify our test we've collected everything we need.

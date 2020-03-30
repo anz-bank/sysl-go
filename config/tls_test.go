@@ -23,6 +23,7 @@ import (
 )
 
 // TLS
+//nolint:goconst // Better readability inline
 func TestTLSCiphers(t *testing.T) {
 	req := require.New(t)
 
@@ -202,6 +203,7 @@ func TestConfigureTLS(t *testing.T) {
 	req.Equal(expectedTLS, tlsCfg)
 }
 
+//nolint:goconst // Better readability inline
 func TestTLSClientAuth(t *testing.T) {
 	req := require.New(t)
 
@@ -289,6 +291,7 @@ func TestValidateInvalidTlsConfigs(t *testing.T) {
 	}
 }
 
+//nolint:deadcode,varcheck,unused // Disabled as we're currently skipping the tests due to missing cert files
 var tlsValidConfigTests = []struct {
 	in   *TLSConfig
 	name string
@@ -322,7 +325,6 @@ func makeX509Template(organisation string) (*x509.Certificate, error) {
 	}, nil
 }
 
-//nolint:funlen
 func generateSelfSignedCert(hosts []string, organisation string, certFilename, keyFilename string) error {
 	pemBlockForKey := func(priv *ecdsa.PrivateKey) (*pem.Block, error) {
 		b, err := x509.MarshalECPrivateKey(priv)
@@ -476,6 +478,7 @@ func TestGetTrustedCAsFromSystem(t *testing.T) {
 	}
 }
 
+//nolint:deadcode,varcheck,unused // Disabled as we're currently skipping the tests due to missing cert files
 var tlsValidTLSTrustedCertPoolConfigTests = []struct {
 	in   *TrustedCertPoolConfig
 	name string
