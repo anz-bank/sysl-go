@@ -8,8 +8,7 @@ import (
 	"time"
 
 	"github.com/anz-bank/sysl-go/codegen/tests/simple"
-	pb "github.com/anz-bank/sysl-go/codegen/tests/simplegrpc/simplepb"
-	"github.com/anz-bank/sysl-go/codegen/tests/simplegrpc/simplesg"
+	pb "github.com/anz-bank/sysl-go/codegen/tests/simplepb"
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
@@ -58,7 +57,7 @@ func (c Callbacks) DownstreamTimeoutContext(ctx context.Context) (context.Contex
 	return context.WithTimeout(ctx, c.timeout)
 }
 
-func GetStuffStub(ctx context.Context, req *pb.GetStuffRequest, client simplesg.GetStuffClient) (*pb.GetStuffResponse, error) {
+func GetStuffStub(ctx context.Context, req *pb.GetStuffRequest, client GetStuffClient) (*pb.GetStuffResponse, error) {
 	resp := pb.GetStuffResponse{
 		Data: []*pb.Item{{Name: "test"}},
 	}
@@ -87,12 +86,12 @@ func TestValidRequestResponse(t *testing.T) {
 		timeout: 1 * time.Second,
 	}
 
-	si := simplesg.GrpcServiceInterface{
+	si := GrpcServiceInterface{
 		GetStuff: GetStuffStub,
 	}
 
 	client := simple.NewClient(server.Client(), server.URL)
-	serviceHandler := simplesg.NewGrpcServiceHandler(cb, &si, client)
+	serviceHandler := NewGrpcServiceHandler(cb, &si, client)
 
 	serverHolder := ServerHolder{}
 

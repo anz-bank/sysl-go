@@ -1,7 +1,7 @@
-import simple
+import /simple/simple
 
 SimpleGrpc "Simple Server" [package="simplegrpc"]:
-    @go_package = "simplesg"
+    @go_package = "simplegrpc"
     @go_pb_package = "simplepb"
     @pb_package = "simple.v1"
 

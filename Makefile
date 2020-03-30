@@ -52,22 +52,37 @@ help:
 # -- Codegen ----------------------------------------------------------------------
 # Transform settings - common across all code generation
 TRANSFORMS=codegen/transforms
-GRAMMAR=codegen/grammars/go.gen.g
-START=goFile
-TEST_DIR=codegen/tests
-BATH_PATH=github.com/anz-bank/sysl-go/codegen/tests/
+
+# Input models for code generation
+TEST_IN_DIR=codegen/testdata
+# Base directory for code generation output
+TEST_OUT_DIR=codegen/tests
 
 define run-sysl
-sysl codegen --dep-path github.com/anz-bank/sysl-go/$(TEST_DIR)/$(EXT_LIB_DIR)  --root . --root-transform . --transform $< --grammar $(GRAMMAR) --start $(START) --outdir $(OUT) --basepath $(BATH_PATH) --app-name $(APP) $(MODEL)
+sysl codegen \
+	--dep-path github.com/anz-bank/sysl-go/$(TEST_OUT_DIR)  \
+	--root $(TEST_IN_DIR) \
+	--root-transform . \
+	--transform $< \
+	--grammar codegen/grammars/go.gen.g \
+	--start goFile \
+	--outdir $(OUT) \
+	--basepath github.com/anz-bank/sysl-go/$(TEST_OUT_DIR)/ \
+	--app-name $(APP) \
+	$(MODEL)
 goimports -w $@
 endef
 
-run-protoc=protoc --proto_path=$(PROTO_IN) --go_out=plugins=grpc:$(PROTO_OUT) $^
+# PROTO_IN and PROTO_OUT are defined in Make modules
+run-protoc=protoc \
+	--proto_path=$(PROTO_IN) \
+	--go_out=plugins=grpc:$(PROTO_OUT) $^
 
+# Output files generated for gRPC servers
 GRPC_SERVER_FILES=grpc_interface.go grpc_handler.go
 
 gen: ## Run sysl codegen and proto codegen
 
 .PHONY: gen
 
-include codegen/testdata/*/Module.mk
+include $(TEST_IN_DIR)/*/Module.mk

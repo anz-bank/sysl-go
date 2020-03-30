@@ -1,5 +1,5 @@
 # DB Server
-DB_IN=codegen/testdata/dbendpoints
+DB_IN=dbendpoints
 DB_OUT=codegen/tests/dbendpoints
 
 DB_ALL_FILES=$(DB_TYPES) $(DB_INTERFACE) $(DB_HANDLER) $(DB_ROUTER) $(DB_CLIENT)
