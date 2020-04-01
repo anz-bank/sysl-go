@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/restlib"
 	"github.com/anz-bank/sysl-go/validator"
 )
@@ -16,12 +17,12 @@ type Handler interface {
 
 // ServiceHandler for Deps API
 type ServiceHandler struct {
-	genCallback      GenCallback
+	genCallback      core.RestGenCallback
 	serviceInterface *ServiceInterface
 }
 
 // NewServiceHandler for Deps
-func NewServiceHandler(genCallback GenCallback, serviceInterface *ServiceInterface) *ServiceHandler {
+func NewServiceHandler(genCallback core.RestGenCallback, serviceInterface *ServiceInterface) *ServiceHandler {
 	return &ServiceHandler{genCallback, serviceInterface}
 }
 

@@ -4,22 +4,22 @@ package simplegrpc
 import (
 	"context"
 
-	cb "github.com/anz-bank/sysl-go/codegen/tests/callback"
 	"github.com/anz-bank/sysl-go/codegen/tests/simple"
 	pb "github.com/anz-bank/sysl-go/codegen/tests/simplepb"
+	"github.com/anz-bank/sysl-go/core"
 	"google.golang.org/grpc"
 )
 
 // GrpcServiceHandler for SimpleGrpc API
 type GrpcServiceHandler struct {
-	genCallback         cb.GenCallback
+	genCallback         core.GrpcGenCallback
 	serviceInterface    *GrpcServiceInterface
 	unimpl              *pb.UnimplementedSimpleGrpcServer
 	simpleSimpleService simple.Service
 }
 
 // NewGrpcServiceHandler for SimpleGrpc
-func NewGrpcServiceHandler(genCallback cb.GenCallback, serviceInterface *GrpcServiceInterface, simpleSimpleService simple.Service) *GrpcServiceHandler {
+func NewGrpcServiceHandler(genCallback core.GrpcGenCallback, serviceInterface *GrpcServiceInterface, simpleSimpleService simple.Service) *GrpcServiceHandler {
 	return &GrpcServiceHandler{genCallback, serviceInterface, &(pb.UnimplementedSimpleGrpcServer{}), simpleSimpleService}
 }
 
