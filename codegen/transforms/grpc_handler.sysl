@@ -550,7 +550,6 @@ CodeGenTransform:
     app -> (:
       let packageName = if "go_package" in .attrs then .attrs.go_package else if "package" in .attrs then ToLower(.attrs.package) else ToLower(app.name)
       let grpcPkgName = "pb"
-      let callbackPkgName = "cb"
 
       PackageClause = app -> <PackageClause> (:
         PackageName = packageName
@@ -558,6 +557,7 @@ CodeGenTransform:
 
       ImportDecl = app -> <ImportDecl>(:
         let convert = "github.com/anz-bank/sysl-go/convert"
+        let core = "github.com/anz-bank/sysl-go/core"
         let clientImports = makeClientImportList(app, module) flatten(.out) -> <set of string>(i:
           out = depPath + "/" + i
         )
@@ -571,17 +571,10 @@ CodeGenTransform:
           )
         )
 
-        let callbackDefs = callbackPkgName -> <ImportSpec>(:
-          NamedImport = callbackPkgName -> <NamedImport>(:
-            Name = callbackPkgName
-            Import = '"' + depPath + "/callback" + '"'
-          )
-        )
-
-        let spec = ["context", convert, "google.golang.org/grpc"] | clientImports flatten(.out) -> <sequence of ImportSpec> (importPath:
+        let spec = ["context", core, convert, "google.golang.org/grpc"] | clientImports flatten(.out) -> <sequence of ImportSpec> (importPath:
           Import = if importPath == "" then true else '"' + importPath + '"'
         )
-        ImportSpec = spec | [grpcDefs, callbackDefs]
+        ImportSpec = spec | [grpcDefs]
       )
 
       let serviceImplVarname = "serviceInterface"
@@ -595,7 +588,7 @@ CodeGenTransform:
 
             let genCallback = name -> <FieldDecl>(:
               identifier = "genCallback"
-              Type =  callbackPkgName + ".GenCallback"
+              Type =  "core.GrpcGenCallback"
             )
 
             let svcHandlerField = name -> <FieldDecl>(:
@@ -624,7 +617,7 @@ CodeGenTransform:
           Signature = name -> <Signature> (:
             Parameters = name -> <Parameters>(:
               ParameterList = name -> <ParameterList>(:
-                ParameterDecl = paramDecl("genCallback", callbackPkgName + ".GenCallback")
+                ParameterDecl = paramDecl("genCallback", "core.GrpcGenCallback")
                 let genCallback = name -> <ParameterDeclC>(:
                   ParameterDecl = name -> <ParameterDecl>(:
                     Identifier = serviceImplVarname

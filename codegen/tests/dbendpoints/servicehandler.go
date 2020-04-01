@@ -7,6 +7,7 @@ import (
 
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/convert"
+	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/database"
 	"github.com/anz-bank/sysl-go/restlib"
 	"github.com/anz-bank/sysl-go/validator"
@@ -19,13 +20,13 @@ type Handler interface {
 
 // ServiceHandler for DbEndpoints API
 type ServiceHandler struct {
-	genCallback      GenCallback
+	genCallback      core.RestGenCallback
 	serviceInterface *ServiceInterface
 	DB               *sql.DB
 }
 
 // NewServiceHandler for DbEndpoints
-func NewServiceHandler(genCallback GenCallback, serviceInterface *ServiceInterface) *ServiceHandler {
+func NewServiceHandler(genCallback core.RestGenCallback, serviceInterface *ServiceInterface) *ServiceHandler {
 	db, err := database.GetDBHandle()
 	if err != nil {
 		return nil

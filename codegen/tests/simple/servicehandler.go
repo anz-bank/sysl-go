@@ -8,6 +8,7 @@ import (
 	"github.com/anz-bank/sysl-go/codegen/tests/deps"
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/convert"
+	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/restlib"
 	"github.com/anz-bank/sysl-go/validator"
 )
@@ -22,19 +23,20 @@ type Handler interface {
 	GetOopsListHandler(w http.ResponseWriter, r *http.Request)
 	GetRawListHandler(w http.ResponseWriter, r *http.Request)
 	GetRawIntListHandler(w http.ResponseWriter, r *http.Request)
+	GetSimpleAPIDocsListHandler(w http.ResponseWriter, r *http.Request)
 	GetStuffListHandler(w http.ResponseWriter, r *http.Request)
 	PostStuffHandler(w http.ResponseWriter, r *http.Request)
 }
 
 // ServiceHandler for Simple API
 type ServiceHandler struct {
-	genCallback      GenCallback
+	genCallback      core.RestGenCallback
 	serviceInterface *ServiceInterface
 	depsDepsService  deps.Service
 }
 
 // NewServiceHandler for Simple
-func NewServiceHandler(genCallback GenCallback, serviceInterface *ServiceInterface, depsDepsService deps.Service) *ServiceHandler {
+func NewServiceHandler(genCallback core.RestGenCallback, serviceInterface *ServiceInterface, depsDepsService deps.Service) *ServiceHandler {
 	return &ServiceHandler{genCallback, serviceInterface, depsDepsService}
 }
 
@@ -294,6 +296,40 @@ func (s *ServiceHandler) GetRawIntListHandler(w http.ResponseWriter, r *http.Req
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, integer)
+}
+
+// GetSimpleAPIDocsListHandler ...
+func (s *ServiceHandler) GetSimpleAPIDocsListHandler(w http.ResponseWriter, r *http.Request) {
+	if s.serviceInterface.GetSimpleAPIDocsList == nil {
+		s.genCallback.HandleError(r.Context(), w, common.InternalError, "not implemented", nil)
+		return
+	}
+
+	ctx := common.RequestHeaderToContext(r.Context(), r.Header)
+	ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
+	var req GetSimpleAPIDocsListRequest
+
+	ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
+	defer cancel()
+	valErr := validator.Validate(&req)
+	if valErr != nil {
+		s.genCallback.HandleError(ctx, w, common.BadRequestError, "Invalid request", valErr)
+		return
+	}
+
+	client := GetSimpleAPIDocsListClient{
+		GetApiDocsList: s.depsDepsService.GetApiDocsList,
+	}
+
+	apidoc, err := s.serviceInterface.GetSimpleAPIDocsList(ctx, &req, client)
+	if err != nil {
+		s.genCallback.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err)
+		return
+	}
+
+	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	restlib.SetHeaders(w, headermap)
+	restlib.SendHTTPResponse(w, httpstatus, apidoc)
 }
 
 // GetStuffListHandler ...
