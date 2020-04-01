@@ -80,6 +80,10 @@ type GetRawListRequest struct {
 type GetRawIntListRequest struct {
 }
 
+// GetSimpleAPIDocsListRequest ...
+type GetSimpleAPIDocsListRequest struct {
+}
+
 // GetStuffListRequest ...
 type GetStuffListRequest struct {
 	Dt *convert.JSONTime

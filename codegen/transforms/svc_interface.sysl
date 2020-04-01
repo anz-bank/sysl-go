@@ -296,7 +296,10 @@ CodeGenTransform:
               Type =  "time.Duration"
               Tag = '`yaml:"contextTimeout"`'
             )
-            let depList = makeClientImportList(app, module) flatten(.out) -> <sequence of FieldDecl> (importPath:
+            let downstreamAppList = makeClientImportList(app, module) flatten(.out) -> <set of string>(i:
+              out = i
+            )
+            let depList = downstreamAppList flatten(.out) -> <sequence of FieldDecl> (importPath:
               identifier = GoName(importPath).out
               Type =  "config.CommonDownstreamData"
               Tag = '`yaml:"' + importPath + '"`'
