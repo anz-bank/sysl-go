@@ -74,9 +74,10 @@ goimports -w $@
 endef
 
 # PROTO_IN and PROTO_OUT are defined in Make modules
-run-protoc=protoc \
-	--proto_path=$(PROTO_IN) \
-	--go_out=plugins=grpc:$(PROTO_OUT) $^
+define run-protoc
+protoc --proto_path=$(PROTO_IN) --go_out=plugins=grpc:$(PROTO_OUT) $^
+goimports -w $@
+endef
 
 # Output files generated for gRPC servers
 GRPC_SERVER_FILES=grpc_interface.go grpc_handler.go
