@@ -51,6 +51,11 @@ type GetRawListClient struct {
 type GetRawIntListClient struct {
 }
 
+// GetSimpleAPIDocsList Client
+type GetSimpleAPIDocsListClient struct {
+	GetApiDocsList func(ctx context.Context, req *deps.GetApiDocsListRequest) (*deps.ApiDoc, error)
+}
+
 // GetStuffList Client
 type GetStuffListClient struct {
 }
@@ -69,6 +74,7 @@ type ServiceInterface struct {
 	GetOopsList               func(ctx context.Context, req *GetOopsListRequest, client GetOopsListClient) (*Response, error)
 	GetRawList                func(ctx context.Context, req *GetRawListRequest, client GetRawListClient) (*Str, error)
 	GetRawIntList             func(ctx context.Context, req *GetRawIntListRequest, client GetRawIntListClient) (*Integer, error)
+	GetSimpleAPIDocsList      func(ctx context.Context, req *GetSimpleAPIDocsListRequest, client GetSimpleAPIDocsListClient) (*deps.ApiDoc, error)
 	GetStuffList              func(ctx context.Context, req *GetStuffListRequest, client GetStuffListClient) (*Stuff, error)
 	PostStuff                 func(ctx context.Context, req *PostStuffRequest, client PostStuffClient) (*Str, error)
 }
