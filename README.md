@@ -14,7 +14,7 @@ Go get the repository
 
 Ensure your environment provides:
 
-- [go 1.13](https://golang.org/doc/install)
+- [go 1.14](https://golang.org/doc/install)
 - [golangci-lint 1.23](https://github.com/golangci/golangci-lint)
 - [protobuf 3.11.4](https://github.com/protocolbuffers/protobuf/)
 - `make`
