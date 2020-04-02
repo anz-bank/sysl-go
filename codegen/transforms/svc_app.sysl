@@ -42,7 +42,7 @@ CodeGenTransform:
               let serviceCallback = app -> <ParameterDeclC>(:
                 ParameterDecl = app -> <ParameterDecl>(:
                   Identifier = "serviceCallback"
-                  TypeName = "config.Callback"
+                  TypeName = "core.RestGenCallback"
                 )
               )
               ParameterDeclC = [serviceInterface] |  [serviceCallback]

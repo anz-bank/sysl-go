@@ -974,7 +974,6 @@ CodeGenTransform:
       ImportDecl = app -> <ImportDecl>(:
         let convert = "github.com/anz-bank/sysl-go/convert"
         let common = "github.com/anz-bank/sysl-go/common"
-        let config = "github.com/anz-bank/sysl-go/config"
         let database = "github.com/anz-bank/sysl-go/database"
         let validator = "github.com/anz-bank/sysl-go/validator"
         let db = "database/sql"

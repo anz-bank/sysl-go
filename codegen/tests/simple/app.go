@@ -20,7 +20,7 @@ type HandlerManager struct {
 }
 
 // LoadServices ...
-func (a *App) InitialiseHandler(h *HandlerManager, serviceInterface ServiceInterface, serviceCallback config.Callback) error {
+func (a *App) InitialiseHandler(h *HandlerManager, serviceInterface ServiceInterface, serviceCallback core.RestGenCallback) error {
 	depsHTTPClient, depsErr := core.BuildDownstreamHTTPClient("deps", &h.coreCfg.GenCode.Downstream.(*DownstreamConfig).Deps)
 	if depsErr != nil {
 		return depsErr
