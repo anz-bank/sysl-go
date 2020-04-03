@@ -24,17 +24,19 @@ db-clean:
 clean: db-clean
 gen: db-gen
 
-$(DB_TYPES): $(TRANSFORMS)/svc_types.sysl $(MODEL)
+DB_SYSL=$(TEST_IN_DIR)/$(DB_IN)/dbendpoints.sysl
+
+$(DB_TYPES): $(TRANSFORMS)/svc_types.sysl $(DB_SYSL)
 	$(run-sysl)
 
-$(DB_INTERFACE): $(TRANSFORMS)/svc_interface.sysl $(MODEL)
+$(DB_INTERFACE): $(TRANSFORMS)/svc_interface.sysl $(DB_SYSL)
 	$(run-sysl)
 
-$(DB_HANDLER): $(TRANSFORMS)/svc_handler.sysl $(MODEL)
+$(DB_HANDLER): $(TRANSFORMS)/svc_handler.sysl $(DB_SYSL)
 	$(run-sysl)
 
-$(DB_ROUTER): $(TRANSFORMS)/svc_router.sysl $(MODEL)
+$(DB_ROUTER): $(TRANSFORMS)/svc_router.sysl $(DB_SYSL)
 	$(run-sysl)
 
-$(DB_CLIENT): $(TRANSFORMS)/svc_client.sysl $(MODEL)
+$(DB_CLIENT): $(TRANSFORMS)/svc_client.sysl $(DB_SYSL)
 	$(run-sysl)
