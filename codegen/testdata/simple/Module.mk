@@ -22,22 +22,24 @@ simple-gen: $(SIMPLE_ALL_FILES)
 simple-clean:
 	rm $(SIMPLE_ALL_FILES)
 
-$(SIMPLE_ERRORS): $(TRANSFORMS)/svc_error_types.sysl $(MODEL)
+SIMPLE_SYSL=$(TEST_IN_DIR)/$(SIMPLE_IN)/simple.sysl
+
+$(SIMPLE_ERRORS): $(TRANSFORMS)/svc_error_types.sysl $(SIMPLE_SYSL)
 	$(run-sysl)
 
-$(SIMPLE_TYPES): $(TRANSFORMS)/svc_types.sysl $(MODEL)
+$(SIMPLE_TYPES): $(TRANSFORMS)/svc_types.sysl $(SIMPLE_SYSL)
 	$(run-sysl)
 
-$(SIMPLE_INTERFACE): $(TRANSFORMS)/svc_interface.sysl $(MODEL)
+$(SIMPLE_INTERFACE): $(TRANSFORMS)/svc_interface.sysl $(SIMPLE_SYSL)
 	$(run-sysl)
 
-$(SIMPLE_HANDLER): $(TRANSFORMS)/svc_handler.sysl $(MODEL)
+$(SIMPLE_HANDLER): $(TRANSFORMS)/svc_handler.sysl $(SIMPLE_SYSL)
 	$(run-sysl)
 
-$(SIMPLE_ROUTER): $(TRANSFORMS)/svc_router.sysl $(MODEL)
+$(SIMPLE_ROUTER): $(TRANSFORMS)/svc_router.sysl $(SIMPLE_SYSL)
 	$(run-sysl)
 
-$(SIMPLE_CLIENT): $(TRANSFORMS)/svc_client.sysl $(MODEL)
+$(SIMPLE_CLIENT): $(TRANSFORMS)/svc_client.sysl $(SIMPLE_SYSL)
 	$(run-sysl)
 
 # Deps Server
