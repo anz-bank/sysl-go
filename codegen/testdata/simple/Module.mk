@@ -1,5 +1,5 @@
 # Simple Server
-SIMPLE_IN=codegen/testdata/simple
+SIMPLE_IN=simple
 SIMPLE_OUT=codegen/tests/simple
 
 SIMPLE_ALL_FILES=$(SIMPLE_ERRORS) $(SIMPLE_TYPES) $(SIMPLE_INTERFACE) $(SIMPLE_HANDLER) $(SIMPLE_ROUTER) $(SIMPLE_CLIENT) $(SIMPLE_APP)
@@ -22,25 +22,24 @@ simple-gen: $(SIMPLE_ALL_FILES)
 simple-clean:
 	rm $(SIMPLE_ALL_FILES)
 
-clean: simple-clean
-gen: simple-gen
+SIMPLE_SYSL=$(TEST_IN_DIR)/$(SIMPLE_IN)/simple.sysl
 
-$(SIMPLE_ERRORS): $(TRANSFORMS)/svc_error_types.sysl $(MODEL)
+$(SIMPLE_ERRORS): $(TRANSFORMS)/svc_error_types.sysl $(SIMPLE_SYSL)
 	$(run-sysl)
 
-$(SIMPLE_TYPES): $(TRANSFORMS)/svc_types.sysl $(MODEL)
+$(SIMPLE_TYPES): $(TRANSFORMS)/svc_types.sysl $(SIMPLE_SYSL)
 	$(run-sysl)
 
-$(SIMPLE_INTERFACE): $(TRANSFORMS)/svc_interface.sysl $(MODEL)
+$(SIMPLE_INTERFACE): $(TRANSFORMS)/svc_interface.sysl $(SIMPLE_SYSL)
 	$(run-sysl)
 
-$(SIMPLE_HANDLER): $(TRANSFORMS)/svc_handler.sysl $(MODEL)
+$(SIMPLE_HANDLER): $(TRANSFORMS)/svc_handler.sysl $(SIMPLE_SYSL)
 	$(run-sysl)
 
-$(SIMPLE_ROUTER): $(TRANSFORMS)/svc_router.sysl $(MODEL)
+$(SIMPLE_ROUTER): $(TRANSFORMS)/svc_router.sysl $(SIMPLE_SYSL)
 	$(run-sysl)
 
-$(SIMPLE_CLIENT): $(TRANSFORMS)/svc_client.sysl $(MODEL)
+$(SIMPLE_CLIENT): $(TRANSFORMS)/svc_client.sysl $(SIMPLE_SYSL)
 	$(run-sysl)
 
 $(SIMPLE_APP): $(TRANSFORMS)/svc_app.sysl $(MODEL)

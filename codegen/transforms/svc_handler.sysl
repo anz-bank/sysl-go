@@ -88,7 +88,7 @@ CodeGenTransform:
             let interfaceCall = condition -> <StatementList> (:
               Statement = condition -> <Statement> (:
                 FunctionCall = condition -> <ReturnStmt> (:
-                  FunctionName = "s.genCallback.HandleError"
+                  FunctionName = "common.HandleError"
                   FunctionArgs = condition -> <FunctionArgs> (:
                     Expression = makeValueExpr("ctx")
                     let writer = condition -> <FuncArgsRest> (:
@@ -103,7 +103,10 @@ CodeGenTransform:
                     let error = errorObj -> <FuncArgsRest> (:
                       Expression = makeValueExpr(errorObj)
                     )
-                    FuncArgsRest = [writer, code, msg, error]
+                    let mapErrorCallback = errorCode -> <FunctionArgs> (:
+                      Expression = makeValueExpr("s.genCallback.MapError")
+                    )
+                    FuncArgsRest = [writer, code, msg, error, mapErrorCallback]
                   )
                 )
               )
@@ -131,7 +134,7 @@ CodeGenTransform:
             let interfaceCall = condition -> <StatementList> (:
               Statement = condition -> <Statement> (:
                 FunctionCall = condition -> <ReturnStmt> (:
-                  FunctionName = "s.genCallback.HandleError"
+                  FunctionName = "common.HandleError"
                   FunctionArgs = condition -> <FunctionArgs> (:
                     Expression = makeValueExpr("ctx")
                     let writer = condition -> <FuncArgsRest> (:
@@ -146,7 +149,10 @@ CodeGenTransform:
                     let error = errorObj -> <FuncArgsRest> (:
                       Expression = makeValueExpr(errorObj)
                     )
-                    FuncArgsRest = [writer, code, msg, error]
+                    let mapErrorCallback = errorCode -> <FunctionArgs> (:
+                      Expression = makeValueExpr("s.genCallback.MapError")
+                    )
+                    FuncArgsRest = [writer, code, msg, error, mapErrorCallback]
                   )
                 )
               )
@@ -680,7 +686,7 @@ CodeGenTransform:
               IfElseStmt = implFuncName -> <IfElseStmt>(:
                 Expression = makeValueExpr("s.serviceInterface." + implFuncName + " == nil")
                 Block = implFuncName -> <Block>(:
-                    let handleError =  makeFunctionCall("s.genCallback.HandleError", makeValueExpr("r.Context()"), [makeValueExpr("w"), makeValueExpr("common.InternalError"), makeValueExpr('"not implemented"'), makeValueExpr("nil")])
+                    let handleError =  makeFunctionCall("common.HandleError", makeValueExpr("r.Context()"), [makeValueExpr("w"), makeValueExpr("common.InternalError"), makeValueExpr('"not implemented"'), makeValueExpr("nil"), makeValueExpr("s.genCallback.MapError")])
 
                     let returnError = implFuncName -> <StatementList>(:
                       Statement = implFuncName -> <Statement>(:
@@ -964,6 +970,28 @@ CodeGenTransform:
       out = callList flatten(.out)
     )
 
+  !view customErrorTypes(types <: set of Type) -> sequence of TopLevelDecl:
+    types where("error" in .attrs.patterns) -> (type:
+      let typeName = "*" + Title(type.key)
+      Comment = '// ' + typeName + ' error'
+      Declaration = type -> <Declaration> (:
+        VarDeclWithVal = type -> <VarDeclWithVal> (:
+          identifier = Title(type.key) + " common.CustomError"
+
+          let nameAttribute = '"name":"' + Title(type.key) + '"'
+          let attributes = type.value.fields -> <sequence of string> (field:
+            let fvalue = field.value.attrs -> <sequence of string> (f:
+              out = f.value
+            )
+            out = ',"' + field.key + '" : "' + Join(fvalue flatten(.out), "") + '"'
+          )
+
+          Expression = type -> <Expression>(:
+            ValueExpr = "map[string]string{" +  nameAttribute + Join(attributes flatten(.out), "") + "}"
+          )
+        )
+      )
+    )
   !view goFile(app <: sysl.App, module <: sysl.Module, basePath <: string) -> goFile:
     app -> (:
       PackageClause = app -> <PackageClause> (:
@@ -972,20 +1000,20 @@ CodeGenTransform:
       )
 
       ImportDecl = app -> <ImportDecl>(:
+        let core = "github.com/anz-bank/sysl-go/core"
         let convert = "github.com/anz-bank/sysl-go/convert"
         let common = "github.com/anz-bank/sysl-go/common"
         let database = "github.com/anz-bank/sysl-go/database"
         let validator = "github.com/anz-bank/sysl-go/validator"
         let db = "database/sql"
         let clientImports = makeClientImportList(app, module) flatten(.out) -> <set of string>(i:
-          out = basePath + i
+          out = basePath + "/" +  i
         )
-        let specWithoutDB = ["encoding/json", "net/http", "github.com/anz-bank/sysl-go/restlib", common, config, convert, validator]
-        let specWithDB = ["encoding/json", "database/sql", "net/http", "github.com/anz-bank/sysl-go/restlib", common, config, convert, database, validator]
-        let spec = if IsDataBaseApp(app).out then specWithDB else specWithoutDB  | clientImports flatten(.out) -> <sequence of ImportSpec> (importPath:
+        let specWithoutDB = ["encoding/json", "net/http", "github.com/anz-bank/sysl-go/restlib", core, common, convert, validator]
+        let specWithDB = specWithoutDB | [database]
+        ImportSpec = if IsDataBaseApp(app).out then specWithDB else specWithoutDB  | clientImports flatten(.out) -> <sequence of ImportSpec> (importPath:
           Import = if importPath == "" then true else '"' + importPath + '"'
         )
-        ImportSpec = spec
       )
 
       let serviceImplVarname = "serviceInterface"
@@ -1009,7 +1037,7 @@ CodeGenTransform:
 
             let genCallback = name -> <FieldDecl>(:
               identifier = "genCallback"
-              Type =  "config.GenCallback"
+              Type =  "core.RestGenCallback"
             )
 
             let svcHandlerField = name -> <FieldDecl>(:
@@ -1039,7 +1067,7 @@ CodeGenTransform:
           Signature = name -> <Signature> (:
             Parameters = name -> <Parameters>(:
               ParameterList = name -> <ParameterList>(:
-                ParameterDecl = paramDecl("genCallback", "config.GenCallback")
+                ParameterDecl = paramDecl("genCallback", "core.RestGenCallback")
                 let genCallback = name -> <ParameterDeclC>(:
                   ParameterDecl = name -> <ParameterDecl>(:
                     Identifier = serviceImplVarname
@@ -1067,7 +1095,7 @@ CodeGenTransform:
 
       Comment = "// Code generated by sysl DO NOT EDIT.\n"
 
-      TopLevelDecl = svcInterface | serviceHandlerStruct | newServiceHandler | EpHandlerMethodDecl(app, pname, module)
+      TopLevelDecl = customErrorTypes(app.types where(.attrs count > 0 && "patterns" in .attrs)) | svcInterface | serviceHandlerStruct | newServiceHandler | EpHandlerMethodDecl(app, pname, module)
     )
 
   !view IsDataBaseApp(app <: sysl.App) -> string:

@@ -1,0 +1,17 @@
+Deps "Downstream Server" [package="deps"]:
+    @basePath = "/deps"
+
+    /api-docs:
+        GET:
+            | Return whole api docs 
+            return ok <: ApiDoc
+            return error <: status
+
+    !type ApiDoc:
+        swagger <: string:
+            @json_tag = "swagger"
+        openapi <: string:
+            @json_tag = "openapi"
+
+    !type Status:
+        statusField <: string

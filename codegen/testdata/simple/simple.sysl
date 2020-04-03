@@ -3,6 +3,7 @@ import downstream
 
 Simple "Simple Server" [package="simple"]:
     @basePath = "/simple"
+    @go_package = "simple"
 
     /stuff:
         GET ?dt=DATETIME?&st=string?&bt=bool?&it=int?:
@@ -74,6 +75,16 @@ Simple "Simple Server" [package="simple"]:
             @json_tag = "responseStuff"
         emptyStuff <: Empty:
             @json_tag = "emptyStuff"
+            
+    !type BusinessLogicError [~error]:
+        http_status <: string [value = "500"]
+        http_code <: string [value = "1001"]
+        http_message <: string [value = "foo"]
+
+    !type businessLogicError2 [~error]:
+        http_status <: string [value = "501"]
+        http_code <: string [value = "1002"]
+        http_message <: string [value = "foo2"]
 
     !alias str:
         string

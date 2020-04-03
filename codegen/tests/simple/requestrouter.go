@@ -5,7 +5,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
 	"github.com/anz-bank/sysl-go/validator"
@@ -19,7 +18,7 @@ type Router interface {
 
 // ServiceRouter for Simple API
 type ServiceRouter struct {
-	gc               config.GenCallback
+	gc               core.RestGenCallback
 	svcHandler       *ServiceHandler
 	basePathFromSpec string
 }
@@ -33,7 +32,7 @@ type swaggerFile struct {
 var swagger = swaggerFile{}
 
 // NewServiceRouter creates a new service router for Simple
-func NewServiceRouter(gc config.GenCallback, svcHandler *ServiceHandler) handlerinitialiser.HandlerInitialiser {
+func NewServiceRouter(gc core.RestGenCallback, svcHandler *ServiceHandler) handlerinitialiser.HandlerInitialiser {
 	return &ServiceRouter{gc, svcHandler, "/simple"}
 }
 
@@ -42,6 +41,7 @@ func NewServiceRouter(gc config.GenCallback, svcHandler *ServiceHandler) handler
 func (s *ServiceRouter) WireRoutes(ctx context.Context, r chi.Router) {
 	r.Route(core.SelectBasePath(s.basePathFromSpec, s.gc.BasePath()), func(r chi.Router) {
 		s.gc.AddMiddleware(ctx, r)
+		r.Get("/api-docs", s.svcHandler.GetApiDocsListHandler)
 		r.Get("/just-ok-and-just-error", s.svcHandler.GetJustOkAndJustErrorListHandler)
 		r.Get("/just-return-error", s.svcHandler.GetJustReturnErrorListHandler)
 		r.Get("/just-return-ok", s.svcHandler.GetJustReturnOkListHandler)
@@ -49,6 +49,7 @@ func (s *ServiceRouter) WireRoutes(ctx context.Context, r chi.Router) {
 		r.Get("/oops", s.svcHandler.GetOopsListHandler)
 		r.Get("/raw", s.svcHandler.GetRawListHandler)
 		r.Get("/raw-int", s.svcHandler.GetRawIntListHandler)
+		r.Get("/simple-api-docs", s.svcHandler.GetSimpleAPIDocsListHandler)
 		r.Get("/stuff", s.svcHandler.GetStuffListHandler)
 		r.Post("/stuff", s.svcHandler.PostStuffHandler)
 	})

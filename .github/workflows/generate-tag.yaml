@@ -1,0 +1,24 @@
+name: Generate-Tag
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  generate-tag:
+    name: Generate tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@master
+        with:
+          fetch-depth: '0'
+
+      # If no #major, #minor or #patch tag is contained in the commit messages, 
+      # it will bump whichever DEFAULT_BUMP is set to (which is minor by default).
+      - name: Bump version and push tag
+        uses: anothrNick/github-tag-action@1.19.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WITH_V: true

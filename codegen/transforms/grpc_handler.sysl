@@ -187,7 +187,7 @@ CodeGenTransform:
           )
         )
       )
-      
+
       StatementList = assignStmt | assignVar
     )
 
@@ -237,7 +237,7 @@ CodeGenTransform:
 
       out = Join(matchingPnameAsString flatten(.mpasout), "")
     )
-    
+
   !view queryParamName(ep <: sysl.Endpoint, qparam <: sysl.EndPoint.RestParams.QueryParam) -> string:
     ep -> (:
       out = if "queryParamNames" in .value.attrs then queryParamNameFromAttrs(ep, qparam).out else qparam.name
@@ -422,7 +422,7 @@ CodeGenTransform:
               )
             )
           )
-          
+
           # Call the implementation behind the Service Interface
           let implCall = ep -> <StatementList> (:
             Statement = ep -> <Statement> (:
@@ -543,14 +543,13 @@ CodeGenTransform:
         )
         out = depList flatten(.out)
       )
-      out = callList flatten(.out) 
+      out = callList flatten(.out)
     )
 
   !view goFile(app <: sysl.App, module <: sysl.Module, depPath <: string) -> goFile:
     app -> (:
       let packageName = if "go_package" in .attrs then .attrs.go_package else if "package" in .attrs then ToLower(.attrs.package) else ToLower(app.name)
       let grpcPkgName = "pb"
-      let callbackPkgName = "cb"
 
       PackageClause = app -> <PackageClause> (:
         PackageName = packageName
@@ -558,9 +557,9 @@ CodeGenTransform:
 
       ImportDecl = app -> <ImportDecl>(:
         let convert = "github.com/anz-bank/sysl-go/convert"
-        let common = "github.com/anz-bank/sysl-go/common"
+        let core = "github.com/anz-bank/sysl-go/core"
         let clientImports = makeClientImportList(app, module) flatten(.out) -> <set of string>(i:
-          out = depPath + i
+          out = depPath + "/" + i
         )
 
         let goPbPackage = if "go_pb_package" in .attrs then .attrs.go_pb_package else "pb"
@@ -572,17 +571,10 @@ CodeGenTransform:
           )
         )
 
-        let callbackDefs = callbackPkgName -> <ImportSpec>(:
-          NamedImport = callbackPkgName -> <NamedImport>(:
-            Name = callbackPkgName
-            Import = '"' + depPath + "/callback" + '"'
-          )
-        )
-
-        let spec = ["context", common, convert, "google.golang.org/grpc"] | clientImports flatten(.out) -> <sequence of ImportSpec> (importPath:
+        let spec = ["context", core, convert, "google.golang.org/grpc"] | clientImports flatten(.out) -> <sequence of ImportSpec> (importPath:
           Import = if importPath == "" then true else '"' + importPath + '"'
         )
-        ImportSpec = spec | [grpcDefs, callbackDefs]
+        ImportSpec = spec | [grpcDefs]
       )
 
       let serviceImplVarname = "serviceInterface"
@@ -596,7 +588,7 @@ CodeGenTransform:
 
             let genCallback = name -> <FieldDecl>(:
               identifier = "genCallback"
-              Type =  callbackPkgName + ".GenCallback"
+              Type =  "core.GrpcGenCallback"
             )
 
             let svcHandlerField = name -> <FieldDecl>(:
@@ -610,7 +602,7 @@ CodeGenTransform:
             )
 
             let clientStruct = makeClientStruct(app, module) flatten(.out) -> <set of out>(c:
-              out = c 
+              out = c
             )
 
             FieldDecl = [genCallback, svcHandlerField, unimpl] | clientStruct flatten(.out)
@@ -625,7 +617,7 @@ CodeGenTransform:
           Signature = name -> <Signature> (:
             Parameters = name -> <Parameters>(:
               ParameterList = name -> <ParameterList>(:
-                ParameterDecl = paramDecl("genCallback", callbackPkgName + ".GenCallback")
+                ParameterDecl = paramDecl("genCallback", "core.GrpcGenCallback")
                 let genCallback = name -> <ParameterDeclC>(:
                   ParameterDecl = name -> <ParameterDecl>(:
                     Identifier = serviceImplVarname
@@ -690,7 +682,7 @@ CodeGenTransform:
                     Expression = makeValueExpr("server")
                     FuncArgsRest = [n] -> <sequence of FuncArgsRest>(np:
                       Expression = makeValueExpr("s")
-                    )                  
+                    )
                   )
                 )
               )
@@ -706,5 +698,5 @@ CodeGenTransform:
 
   !view getPackage(app <: sysl.App) -> string:
     app -> (:
-      pname = if "package" in .attrs then if .attrs.package != null then .attrs.package else ToLower(.name) else ToLower(.name)
+      pname = if "go_package" in .attrs then .attrs.go_package else if "package" in .attrs then .attrs.package else ToLower(.name)
     )

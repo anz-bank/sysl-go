@@ -4,20 +4,20 @@ package cards
 import (
 	"context"
 
-	cb "github.com/anz-bank/sysl-go/codegen/tests/multigrpc/callback"
-	pb "github.com/anz-bank/sysl-go/codegen/tests/multigrpc/cardspb"
+	pb "github.com/anz-bank/sysl-go/codegen/tests/cardspb"
+	"github.com/anz-bank/sysl-go/core"
 	"google.golang.org/grpc"
 )
 
 // GrpcServiceHandler for Cards API
 type GrpcServiceHandler struct {
-	genCallback      cb.GenCallback
+	genCallback      core.GrpcGenCallback
 	serviceInterface *GrpcServiceInterface
 	unimpl           *pb.UnimplementedCardsServer
 }
 
 // NewGrpcServiceHandler for Cards
-func NewGrpcServiceHandler(genCallback cb.GenCallback, serviceInterface *GrpcServiceInterface) *GrpcServiceHandler {
+func NewGrpcServiceHandler(genCallback core.GrpcGenCallback, serviceInterface *GrpcServiceInterface) *GrpcServiceHandler {
 	return &GrpcServiceHandler{genCallback, serviceInterface, &(pb.UnimplementedCardsServer{})}
 }
 

@@ -32,7 +32,7 @@ type middlewareCollection struct {
 	public []func(handler http.Handler) http.Handler
 }
 
-func configureAdminServerListener(hl Manager, logger *logrus.Logger, promRegistry *prometheus.Registry, buildMetadata *status.BuildMetadata, mWare []func(handler http.Handler) http.Handler) (func() error, error) {
+func configureAdminServerListener(hl Manager, logger *logrus.Logger, promRegistry *prometheus.Registry, mWare []func(handler http.Handler) http.Handler) (func() error, error) {
 	rootAdminRouter, adminRouter := configureRouters(hl.AdminServerConfig().BasePath, mWare)
 
 	adminTLSConfig, err := config.MakeTLSConfig(hl.AdminServerConfig().Common.TLS)

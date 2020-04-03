@@ -5,13 +5,12 @@ package core
 import (
 	"context"
 
-	"github.com/anz-bank/sysl-go/status"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
 
 //nolint:gocognit // Long method names are okay because only generated code will call this, not humans.
-func Server(ctx context.Context, name string, hl Manager, grpcHl GrpcManager, logger *logrus.Logger, promRegistry *prometheus.Registry, buildMetadata *status.BuildMetadata) error {
+func Server(ctx context.Context, name string, hl Manager, grpcHl GrpcManager, logger *logrus.Logger, promRegistry *prometheus.Registry) error {
 	mWare := prepareMiddleware(name, logger, promRegistry)
 
 	var restIsRunning, grpcIsRunning bool
@@ -20,7 +19,7 @@ func Server(ctx context.Context, name string, hl Manager, grpcHl GrpcManager, lo
 	var listenAdmin func() error
 	if hl != nil && hl.AdminServerConfig() != nil {
 		var err error
-		listenAdmin, err = configureAdminServerListener(hl, logger, promRegistry, buildMetadata, mWare.admin)
+		listenAdmin, err = configureAdminServerListener(hl, logger, promRegistry, mWare.admin)
 		if err != nil {
 			return err
 		}

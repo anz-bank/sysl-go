@@ -1,13 +1,13 @@
-package simplegrpc
+package multigrpc
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/anz-bank/sysl-go/codegen/tests/multigrpc/cards"
-	pb "github.com/anz-bank/sysl-go/codegen/tests/multigrpc/cardspb"
-	"github.com/anz-bank/sysl-go/codegen/tests/multigrpc/wallet"
+	"github.com/anz-bank/sysl-go/codegen/tests/cards"
+	pb "github.com/anz-bank/sysl-go/codegen/tests/cardspb"
+	"github.com/anz-bank/sysl-go/codegen/tests/wallet"
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
@@ -102,7 +102,7 @@ func TestEndToEndValidRequestResponse(t *testing.T) {
 
 	go func() {
 		err := core.Server(context.Background(), "test",
-			nil, &handlerManager, logger, nil, nil)
+			nil, &handlerManager, logger, nil)
 		serverError <- err
 	}()
 

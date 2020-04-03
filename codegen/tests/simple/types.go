@@ -48,6 +48,10 @@ type ItemSet struct {
 	M map[string]Item
 }
 
+// GetApiDocsListRequest ...
+type GetApiDocsListRequest struct {
+}
+
 // GetJustOkAndJustErrorListRequest ...
 type GetJustOkAndJustErrorListRequest struct {
 }
@@ -74,6 +78,10 @@ type GetRawListRequest struct {
 
 // GetRawIntListRequest ...
 type GetRawIntListRequest struct {
+}
+
+// GetSimpleAPIDocsListRequest ...
+type GetSimpleAPIDocsListRequest struct {
 }
 
 // GetStuffListRequest ...
