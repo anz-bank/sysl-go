@@ -68,7 +68,6 @@ func (r *testRoundtripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	return &rsp, nil
 }
 func TestLoggingTransport_RoundTrip400Code(t *testing.T) {
-
 	tr := testRoundtripper{false, 400}
 	logger, hook := test.NewNullLogger()
 	logger.Level = logrus.DebugLevel
@@ -108,7 +107,6 @@ func TestLoggingTransport_RoundTrip400Code(t *testing.T) {
 }
 
 func TestLoggingTransport_RoundTripLogFields(t *testing.T) {
-
 	tr := testRoundtripper{false, 400}
 	logger, hook := test.NewNullLogger()
 	logger.Level = logrus.DebugLevel

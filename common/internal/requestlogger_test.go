@@ -48,7 +48,6 @@ func TestNopLogger_FlushLog(t *testing.T) {
 
 	l.FlushLog()
 	require.Empty(t, hook.Entries)
-
 }
 
 func TestLogger_FlushLog(t *testing.T) {
@@ -86,7 +85,6 @@ func TestLogger_FlushLog(t *testing.T) {
 	l.FlushLog()
 	require.NotEmpty(t, hook.Entries)
 	require.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
-
 }
 
 func TestRequestLogger_NilBody(t *testing.T) {
@@ -100,7 +98,6 @@ func TestRequestLogger_NilBody(t *testing.T) {
 	require.NotPanics(t, func() {
 		NewRequestLogger(logger.WithField("foo", "bar"), req)
 	})
-
 }
 
 func TestRequestLogger_ResponseWriter(t *testing.T) {
@@ -117,5 +114,4 @@ func TestRequestLogger_ResponseWriter(t *testing.T) {
 	_, _ = rw.Write([]byte("hello"))
 	l.FlushLog()
 	require.NotEmpty(t, hook.Entries)
-
 }
