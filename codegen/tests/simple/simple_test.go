@@ -159,7 +159,6 @@ func callRawIntHandler(target string, si ServiceInterface) (*httptest.ResponseRe
 	var downstreamSrv downstream.Service
 	sh := NewServiceHandler(cb, &si, depssrv, downstreamSrv)
 
-
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
 

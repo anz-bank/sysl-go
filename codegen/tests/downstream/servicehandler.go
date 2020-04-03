@@ -29,7 +29,7 @@ func NewServiceHandler(genCallback core.RestGenCallback, serviceInterface *Servi
 // GetServiceDocsListHandler ...
 func (s *ServiceHandler) GetServiceDocsListHandler(w http.ResponseWriter, r *http.Request) {
 	if s.serviceInterface.GetServiceDocsList == nil {
-		s.genCallback.HandleError(r.Context(), w, common.InternalError, "not implemented", nil)
+		common.HandleError(r.Context(), w, common.InternalError, "not implemented", nil, s.genCallback.MapError)
 		return
 	}
 
@@ -41,7 +41,7 @@ func (s *ServiceHandler) GetServiceDocsListHandler(w http.ResponseWriter, r *htt
 	defer cancel()
 	valErr := validator.Validate(&req)
 	if valErr != nil {
-		s.genCallback.HandleError(ctx, w, common.BadRequestError, "Invalid request", valErr)
+		common.HandleError(ctx, w, common.BadRequestError, "Invalid request", valErr, s.genCallback.MapError)
 		return
 	}
 
@@ -49,7 +49,7 @@ func (s *ServiceHandler) GetServiceDocsListHandler(w http.ResponseWriter, r *htt
 
 	servicedoc, err := s.serviceInterface.GetServiceDocsList(ctx, &req, client)
 	if err != nil {
-		s.genCallback.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err)
+		common.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err, s.genCallback.MapError)
 		return
 	}
 
