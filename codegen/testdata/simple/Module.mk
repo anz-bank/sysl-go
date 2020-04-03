@@ -87,5 +87,46 @@ $(DEPS_ROUTER): $(TRANSFORMS)/svc_router.sysl $(MODEL)
 $(DEPS_CLIENT): $(TRANSFORMS)/svc_client.sysl $(MODEL)
 	$(run-sysl)
 
-clean: simple-clean deps-clean
-gen: deps-gen simple-gen
+clean: simple-clean deps-clean downstream-clean
+gen: deps-gen downstream-gen simple-gen
+
+# Downstream System
+DOWNSTREAM_OUT=codegen/tests/downstream
+
+DOWNSTREAM_ALL_FILES=$(DOWNSTREAM_ERRORS) $(DOWNSTREAM_TYPES) $(DOWNSTREAM_INTERFACE) $(DOWNSTREAM_HANDLER) $(DOWNSTREAM_ROUTER) $(DOWNSTREAM_CLIENT)
+
+DOWNSTREAM_ERRORS=$(DOWNSTREAM_OUT)/error_types.go
+DOWNSTREAM_TYPES=$(DOWNSTREAM_OUT)/types.go
+DOWNSTREAM_INTERFACE=$(DOWNSTREAM_OUT)/serviceinterface.go
+DOWNSTREAM_HANDLER=$(DOWNSTREAM_OUT)/servicehandler.go
+DOWNSTREAM_ROUTER=$(DOWNSTREAM_OUT)/requestrouter.go
+DOWNSTREAM_CLIENT=$(DOWNSTREAM_OUT)/service.go
+
+.PHONY: downstream-gen
+downstream-gen: APP=Downstream
+downstream-gen: MODEL=$(SIMPLE_IN)/downstream.sysl
+downstream-gen: OUT=$(DOWNSTREAM_OUT)
+
+downstream-gen: $(DOWNSTREAM_ALL_FILES)
+
+.PHONY: downstream-clean
+downstream-clean:
+	rm $(DOWNSTREAM_ALL_FILES)
+
+$(DOWNSTREAM_ERRORS): $(TRANSFORMS)/svc_error_types.sysl $(MODEL)
+	$(run-sysl)
+
+$(DOWNSTREAM_TYPES): $(TRANSFORMS)/svc_types.sysl $(MODEL)
+	$(run-sysl)
+
+$(DOWNSTREAM_INTERFACE): $(TRANSFORMS)/svc_interface.sysl $(MODEL)
+	$(run-sysl)
+
+$(DOWNSTREAM_HANDLER): $(TRANSFORMS)/svc_handler.sysl $(MODEL)
+	$(run-sysl)
+
+$(DOWNSTREAM_ROUTER): $(TRANSFORMS)/svc_router.sysl $(MODEL)
+	$(run-sysl)
+
+$(DOWNSTREAM_CLIENT): $(TRANSFORMS)/svc_client.sysl $(MODEL)
+	$(run-sysl)

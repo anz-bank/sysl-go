@@ -52,7 +52,15 @@ CodeGenTransform:
             TypeName = "error"
           )
         )
-        Block = app -> <Block>(:      
+        Block = app -> <Block>(:
+          let errorDecl = app -> <StatementList> (:
+            Statement = app -> <Statement>(:
+              AssignStmt = app -> <AssignStmt> (:
+                Variables = "var err error"
+                Expression = makeValueExpr("nil")
+              )
+            )
+          )
           let clientPkgs = makeClientPkgList(app, module) flatten(.out) -> <set of string>(pkg:
             pkgHttpClientStmt = pkg -> <StatementList> (:
               Statement = pkg -> <Statement>(:
@@ -93,7 +101,7 @@ CodeGenTransform:
             Statement = app -> <Statement>(:
               DeclareAndAssignStmt = app -> <DeclareAndAssignStmt> (:
                 Variables = "serviceHandler"
-                Expression = makeMethodCallExpr(app, module, "genCallbacks", "&bffSI")
+                Expression = makeMethodCallExpr(app, module, "serviceCallback", "&serviceInterface")
               )
             )
           )
@@ -102,7 +110,7 @@ CodeGenTransform:
             Statement = app -> <Statement>(:
               DeclareAndAssignStmt = app -> <DeclareAndAssignStmt> (:
                 Variables = "serviceRouter"
-                Expression = makeValueExpr("NewServiceRouter(genCallbacks, serviceHandler)")
+                Expression = makeValueExpr("NewServiceRouter(serviceCallback, serviceHandler)")
               )
             )
           )
@@ -119,11 +127,11 @@ CodeGenTransform:
           let retStmt = app -> <StatementList>(:
             Statement = app -> <Statement>(:
               ReturnStmt = app -> <ReturnStmt>(:
-                PayLoad = "nil"
+                PayLoad = "err"
               )
             )
           )
-          StatementList = [clientPkgs flatten(.pkgHttpClientStmt)] | clientPkgs flatten(.ifStmt) | clientPkgs flatten(.pkgClientStmt) | [serviceHandlerStmt, serviceRouterStmt, enabledHandlersStmt, retStmt]
+          StatementList = [errorDecl] | clientPkgs flatten(.pkgHttpClientStmt) | clientPkgs flatten(.ifStmt) | clientPkgs flatten(.pkgClientStmt) | [serviceHandlerStmt, serviceRouterStmt, enabledHandlersStmt, retStmt]
         )
       )
     )

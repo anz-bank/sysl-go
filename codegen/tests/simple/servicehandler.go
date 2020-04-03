@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/anz-bank/sysl-go/codegen/tests/deps"
+	"github.com/anz-bank/sysl-go/codegen/tests/downstream"
 	"github.com/anz-bank/sysl-go/common"
-	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/convert"
+	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/restlib"
 	"github.com/anz-bank/sysl-go/validator"
 )
@@ -28,13 +30,15 @@ type Handler interface {
 
 // ServiceHandler for Simple API
 type ServiceHandler struct {
-	genCallback      config.GenCallback
-	serviceInterface *ServiceInterface
+	genCallback                 core.RestGenCallback
+	serviceInterface            *ServiceInterface
+	depsDepsService             deps.Service
+	downstreamDownstreamService downstream.Service
 }
 
 // NewServiceHandler for Simple
-func NewServiceHandler(genCallback config.GenCallback, serviceInterface *ServiceInterface, depsDepsService deps.Service) *ServiceHandler {
-	return &ServiceHandler{genCallback, serviceInterface, depsDepsService}
+func NewServiceHandler(genCallback core.RestGenCallback, serviceInterface *ServiceInterface, depsDepsService deps.Service, downstreamDownstreamService downstream.Service) *ServiceHandler {
+	return &ServiceHandler{genCallback, serviceInterface, depsDepsService, downstreamDownstreamService}
 }
 
 // GetApiDocsListHandler ...
@@ -57,7 +61,8 @@ func (s *ServiceHandler) GetApiDocsListHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	client := GetApiDocsListClient{
-		GetApiDocsList: s.depsDepsService.GetApiDocsList,
+		GetApiDocsList:     s.depsDepsService.GetApiDocsList,
+		GetServiceDocsList: s.downstreamDownstreamService.GetServiceDocsList,
 	}
 
 	apidoc, err := s.serviceInterface.GetApiDocsList(ctx, &req, client)

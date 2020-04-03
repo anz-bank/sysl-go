@@ -1,3 +1,6 @@
+import deps
+import downstream
+
 Simple "Simple Server" [package="simple"]:
     @basePath = "/simple"
 
@@ -20,6 +23,17 @@ Simple "Simple Server" [package="simple"]:
             return ok <: Response
             # status is intentionally lower case, do not change
             return error <: status
+
+    /api-docs:
+        GET:
+            Deps <- GET /api-docs
+            Downstream <- GET /service-docs
+            return ok <: Deps.ApiDoc
+
+    /simple-api-docs:
+        GET:
+            Deps <- GET /api-docs
+            return ok <: Deps.ApiDoc
 
     # /no-return-type:
     #     GET:
