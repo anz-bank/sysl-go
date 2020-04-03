@@ -29,6 +29,7 @@ CodeGenTransform:
           "STRING" => "string"
           "STRING_8" => "string"
           "BOOL" => "bool"
+          "BYTES" => "[]byte"
           "DATE" => "date.Date"
           "DATETIME" => "time.Time"
         "sequence" => "[]" + GoType(t.sequence).out

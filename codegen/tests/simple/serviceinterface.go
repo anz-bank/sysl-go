@@ -23,6 +23,10 @@ type GetApiDocsListClient struct {
 	GetApiDocsList func(ctx context.Context, req *deps.GetApiDocsListRequest) (*deps.ApiDoc, error)
 }
 
+// GetGetSomeBytesList Client
+type GetGetSomeBytesListClient struct {
+}
+
 // GetJustOkAndJustErrorList Client
 type GetJustOkAndJustErrorListClient struct {
 }
@@ -67,6 +71,7 @@ type PostStuffClient struct {
 // ServiceInterface for Simple
 type ServiceInterface struct {
 	GetApiDocsList            func(ctx context.Context, req *GetApiDocsListRequest, client GetApiDocsListClient) (*deps.ApiDoc, error)
+	GetGetSomeBytesList       func(ctx context.Context, req *GetGetSomeBytesListRequest, client GetGetSomeBytesListClient) (*Pdf, error)
 	GetJustOkAndJustErrorList func(ctx context.Context, req *GetJustOkAndJustErrorListRequest, client GetJustOkAndJustErrorListClient) error
 	GetJustReturnErrorList    func(ctx context.Context, req *GetJustReturnErrorListRequest, client GetJustReturnErrorListClient) error
 	GetJustReturnOkList       func(ctx context.Context, req *GetJustReturnOkListRequest, client GetJustReturnOkListClient) error

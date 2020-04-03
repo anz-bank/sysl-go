@@ -184,7 +184,8 @@ func TestSendHTTPResponseBinaryBody(t *testing.T) {
 	recorder.Header().Set("Content-Type", "application/octet-stream")
 
 	// When
-	SendHTTPResponse(recorder, 200, []byte("test binary data"))
+	data := []byte("test binary data")
+	SendHTTPResponse(recorder, 200, data)
 
 	// Then
 	result := recorder.Result()
@@ -193,5 +194,26 @@ func TestSendHTTPResponseBinaryBody(t *testing.T) {
 	b, err := ioutil.ReadAll(result.Body)
 	defer result.Body.Close()
 	require.NoError(t, err)
-	require.Equal(t, "test binary data", string(b))
+	require.Equal(t, data, b)
+}
+
+type ByteWrapper []byte
+
+func TestSendHTTPResponseBinaryBody2(t *testing.T) {
+	// Given
+	recorder := httptest.NewRecorder()
+	recorder.Header().Set("Content-Type", "application/pdf")
+
+	// When
+	data := ByteWrapper("test binary data")
+	SendHTTPResponse(recorder, 200, &data)
+
+	// Then
+	result := recorder.Result()
+	require.NotNil(t, result)
+	require.Equal(t, 200, result.StatusCode)
+	b, err := ioutil.ReadAll(result.Body)
+	defer result.Body.Close()
+	require.NoError(t, err)
+	require.Equal(t, data, b)
 }

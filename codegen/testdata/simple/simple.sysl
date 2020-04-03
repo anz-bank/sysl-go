@@ -56,6 +56,10 @@ Simple "Simple Server" [package="simple"]:
             return ok <: Response
             return error
 
+    /get-some-bytes:
+        GET:
+            return ok <: pdf
+
     !type Stuff:
         @description =:
             | just some stuff
@@ -86,6 +90,9 @@ Simple "Simple Server" [package="simple"]:
 
     !alias str:
         string
+
+    !alias pdf:
+        bytes
 
     !alias integer:
         int
