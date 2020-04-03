@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -148,9 +149,20 @@ func DoHTTPRequest(ctx context.Context, client *http.Client, method string,
 func SendHTTPResponse(w http.ResponseWriter, httpStatus int, responses ...interface{}) {
 	w.WriteHeader(httpStatus)
 
+	contentType := w.Header().Get("Content-Type")
+
 	for _, resp := range responses {
 		if resp != nil {
-			_ = json.NewEncoder(w).Encode(resp)
+			switch {
+			case strings.Contains(contentType, "xml"):
+				_ = xml.NewEncoder(w).Encode(resp)
+			case strings.Contains(contentType, "octet-stream"), strings.Contains(contentType, "pdf"):
+				if b, ok := resp.([]byte); ok {
+					_, _ = w.Write(b)
+				}
+			default:
+				_ = json.NewEncoder(w).Encode(resp)
+			}
 			return
 		}
 	}
