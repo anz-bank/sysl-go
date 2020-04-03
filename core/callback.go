@@ -2,7 +2,6 @@ package core
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/validator"
@@ -18,8 +17,10 @@ type RestGenCallback interface {
 	// Config returns a structure representing the server config
 	// This is returned from the status endpoint
 	Config() validator.Validator
-	// HandleError allows custom HTTP errors to be added to `sys-go` errors
-	HandleError(ctx context.Context, w http.ResponseWriter, kind common.Kind, message string, cause error)
+	// MapError maps an error to an HTTPError in instances where custom error mapping is required. Return nil to perform default error mapping; defined as:
+	// 1. CustomError.HTTPError if the original error is a CustomError, otherwise
+	// 2. common.MapError
+	MapError(ctx context.Context, err error) *common.HTTPError
 	// DownstreamTimeoutContext add the desired timeout duration to the context for downstreams
 	// A separate service timeout (usually greater than the downstream) should also be in
 	// place to automatically respond to callers
