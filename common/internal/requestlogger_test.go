@@ -13,7 +13,6 @@ import (
 )
 
 func TestNopLogger_FlushLog(t *testing.T) {
-
 	logger, hook := test.NewNullLogger()
 
 	logger.Level = logrus.ErrorLevel
@@ -53,7 +52,6 @@ func TestNopLogger_FlushLog(t *testing.T) {
 }
 
 func TestLogger_FlushLog(t *testing.T) {
-
 	logger, hook := test.NewNullLogger()
 
 	logger.Level = logrus.DebugLevel
@@ -92,7 +90,6 @@ func TestLogger_FlushLog(t *testing.T) {
 }
 
 func TestRequestLogger_NilBody(t *testing.T) {
-
 	logger, _ := test.NewNullLogger()
 
 	logger.Level = logrus.DebugLevel

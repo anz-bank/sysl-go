@@ -32,7 +32,6 @@ type requestLogger struct {
 }
 
 func (r *requestLogger) LogResponse(resp *http.Response) {
-
 	if resp != nil {
 		b, _ := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
@@ -45,7 +44,6 @@ func (r *requestLogger) LogResponse(resp *http.Response) {
 }
 
 func (r *requestLogger) ResponseWriter(base http.ResponseWriter) http.ResponseWriter {
-
 	rw := middleware.NewWrapResponseWriter(base, r.protoMajor)
 	rw.Tee(&r.resp.body)
 
@@ -84,7 +82,6 @@ func (r *nopLogger) FlushLog()                                                  
 
 func NewRequestLogger(entry *logrus.Entry, req *http.Request) (RequestLogger, *logrus.Entry) {
 	if entry.Logger.IsLevelEnabled(logrus.DebugLevel) {
-
 		l := &requestLogger{
 			e:          entry.WithFields(InitFieldsFromRequest(req)),
 			protoMajor: req.ProtoMajor,
