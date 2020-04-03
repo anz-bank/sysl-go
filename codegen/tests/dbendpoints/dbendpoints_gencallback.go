@@ -2,7 +2,6 @@ package dbendpoints
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -30,12 +29,8 @@ func (c Callback) Config() validator.Validator {
 	return Config{}
 }
 
-func (c Callback) HandleError(ctx context.Context, w http.ResponseWriter, kind common.Kind, message string, cause error) {
-	se := common.CreateError(ctx, kind, message, cause)
-
-	httpError := common.HandleError(ctx, se)
-
-	httpError.WriteError(ctx, w)
+func (c Callback) MapError(ctx context.Context, cause error) *common.HTTPError {
+	return nil
 }
 
 func (c Callback) AddMiddleware(ctx context.Context, r chi.Router) {

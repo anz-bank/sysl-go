@@ -16,6 +16,7 @@ import (
 	"github.com/anz-bank/sysl-go/codegen/tests/deps"
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/convert"
+	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/restlib"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
@@ -99,6 +100,19 @@ func (th *TestHandler) InvalidHander(ctx context.Context, req *GetStuffListReque
 	return nil, errors.New("invalid")
 }
 
+func callHandlerError(cb core.RestGenCallback, target string, message string, cause error) (*httptest.ResponseRecorder, *test.Hook) {
+	r := httptest.NewRequest("GET", target, nil)
+	w := httptest.NewRecorder()
+
+	r.Header.Set("Accept", "application/json")
+	logger, hook := test.NewNullLogger()
+	r = r.WithContext(common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger)))
+	ctx := common.RequestHeaderToContext(r.Context(), r.Header)
+	common.HandleError(ctx, w, common.InternalError, message, cause, cb.MapError)
+
+	return w, hook
+}
+
 func callHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *test.Hook) {
 	cb := Callback{}
 
@@ -161,6 +175,40 @@ func TestHandlerNotImplemented(t *testing.T) {
 	body, _ := ioutil.ReadAll(resp.Body)
 	require.JSONEq(t, `{"status":{"code":"9998", "description":"Internal Server Error"}}`, string(body))
 	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=not implemented, Cause=%!s(<nil>))", hook.LastEntry().Message)
+}
+
+func TestHandleErrorLogMappedErrorIfReturned(t *testing.T) {
+	cb := Callback{&common.HTTPError{HTTPCode: 500, Code: "1001", Description: "foo"}}
+	w, hook := callHandlerError(cb, "http://example.com/stuff", "foo", nil)
+
+	resp := w.Result()
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	require.JSONEq(t, `{"status":{"code":"1001", "description":"foo"}}`, string(body))
+	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=foo, Cause=%!s(<nil>))", hook.LastEntry().Message)
+}
+func TestHandleErrorLogCustomError(t *testing.T) {
+	cb := Callback{}
+	var e error = BusinessLogicError
+
+	w, hook := callHandlerError(cb, "http://example.com/stuff", "foo", e)
+
+	resp := w.Result()
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	require.JSONEq(t, `{"status":{"code":"1001", "description":"foo"}}`, string(body))
+	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=foo, Cause=BusinessLogicError(common.CustomError{\"http_code\":\"1001\", \"http_message\":\"foo\", \"http_status\":\"500\", \"name\":\"BusinessLogicError\"}))", hook.LastEntry().Message)
+}
+
+func TestHandleErrorLogDefaultError(t *testing.T) {
+	cb := Callback{}
+	w, hook := callHandlerError(cb, "http://example.com/stuff", "foo", nil)
+
+	resp := w.Result()
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	require.JSONEq(t, `{"status":{"code":"9998", "description":"Internal Server Error"}}`, string(body))
+	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=foo, Cause=%!s(<nil>))", hook.LastEntry().Message)
 }
 
 func TestHandlerMissingEndpoint(t *testing.T) {
