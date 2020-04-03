@@ -95,9 +95,15 @@ func CoreRequestContextMiddleware(logger *logrus.Logger) func(next http.Handler)
 			ctx = internal.AddResponseBodyMonitorToContext(ctx)
 			defer internal.CheckForUnclosedResponses(ctx, entry)
 
+			reqLogger, entry := internal.NewRequestLogger(entry, r)
+			w = reqLogger.ResponseWriter(w)
+			defer reqLogger.FlushLog()
+			LoggerToContext(ctx, logger, entry)
+
 			r = r.WithContext(ctx)
 
 			tl := internal.NewRequestTimer(w, r)
+			w = tl.RespWrapper
 			defer tl.Log(entry)
 
 			next.ServeHTTP(w, r)
