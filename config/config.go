@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/anz-bank/sysl-go/validator"
+
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/yaml.v2"
 )
@@ -13,11 +15,12 @@ type DefaultConfig struct {
 	GenCode GenCodeConfig `yaml:"genCode"`
 }
 
-// ReadConfig reads from a single config file and populates both custom, library and genCode config structs
-// cfgFile: path to config file
-// config: a pointer to the custom config struct
-func ReadConfig(cfgFile string, defaultConfig *DefaultConfig, customConfig interface{}) error {
-	b, err := ioutil.ReadFile(cfgFile)
+// LoadConfig reads and validates a configuration loaded from file.
+// file: the path to the yaml-encoded config file
+// defaultConfig: a pointer to the default config struct to populate
+// customConfig: a pointer to the custom config struct to populate
+func LoadConfig(file string, defaultConfig *DefaultConfig, customConfig interface{}) error {
+	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		return fmt.Errorf("read config file error: %s", err)
 	}
@@ -40,5 +43,20 @@ func ReadConfig(cfgFile string, defaultConfig *DefaultConfig, customConfig inter
 		return err
 	}
 
-	return decoder.Decode(c)
+	err = decoder.Decode(c)
+	if err != nil {
+		return err
+	}
+
+	err = validator.Validate(defaultConfig)
+	if err != nil {
+		return err
+	}
+
+	err = validator.Validate(customConfig)
+	if err != nil {
+		return err
+	}
+
+	return err
 }
