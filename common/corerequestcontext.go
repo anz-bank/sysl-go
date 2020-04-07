@@ -98,7 +98,7 @@ func CoreRequestContextMiddleware(logger *logrus.Logger) func(next http.Handler)
 			reqLogger, entry := internal.NewRequestLogger(entry, r)
 			w = reqLogger.ResponseWriter(w)
 			defer reqLogger.FlushLog()
-			LoggerToContext(ctx, logger, entry)
+			ctx = LoggerToContext(ctx, logger, entry)
 
 			r = r.WithContext(ctx)
 
