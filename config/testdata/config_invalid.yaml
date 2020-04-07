@@ -31,7 +31,7 @@ genCode:
     contextTimeout: 120s
     foo:
       serviceURL: https://foo.example.com
-      clientTimeout: 10s
+      clientTimeout: 120s # invalid. too large
     bar:
       serviceURL: https://bar.example.com
       clientTimeout: 10s
