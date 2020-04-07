@@ -141,8 +141,7 @@ type testResp struct {
 func TestSendHTTPResponseJSONBody(t *testing.T) {
 	// Given
 	recorder := httptest.NewRecorder()
-	recorder.HeaderMap = http.Header{}
-	recorder.HeaderMap.Add("Content-Type", "application/json")
+	recorder.Header().Set("Content-Type", "application/json")
 
 	resp := testResp{Data: "test"}
 
@@ -162,8 +161,7 @@ func TestSendHTTPResponseJSONBody(t *testing.T) {
 func TestSendHTTPResponseXMLBody(t *testing.T) {
 	// Given
 	recorder := httptest.NewRecorder()
-	recorder.HeaderMap = http.Header{}
-	recorder.HeaderMap.Add("Content-Type", "text/xml; charset=utf-8")
+	recorder.Header().Set("Content-Type", "text/xml; charset=utf-8")
 
 	resp := testResp{Data: "test"}
 
@@ -183,8 +181,7 @@ func TestSendHTTPResponseXMLBody(t *testing.T) {
 func TestSendHTTPResponseBinaryBody(t *testing.T) {
 	// Given
 	recorder := httptest.NewRecorder()
-	recorder.HeaderMap = http.Header{}
-	recorder.HeaderMap.Add("Content-Type", "application/octet-stream")
+	recorder.Header().Set("Content-Type", "application/octet-stream")
 
 	// When
 	SendHTTPResponse(recorder, 200, []byte("test binary data"))
