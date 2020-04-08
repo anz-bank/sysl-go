@@ -157,8 +157,11 @@ func SendHTTPResponse(w http.ResponseWriter, httpStatus int, responses ...interf
 			case strings.Contains(contentType, "xml"):
 				_ = xml.NewEncoder(w).Encode(resp)
 			case strings.Contains(contentType, "octet-stream"), strings.Contains(contentType, "pdf"):
-				if b, ok := resp.([]byte); ok {
-					_, _ = w.Write(b)
+				switch data := resp.(type) {
+				case *[]byte:
+					_, _ = w.Write(*data)
+				case []byte:
+					_, _ = w.Write(data)
 				}
 			default:
 				_ = json.NewEncoder(w).Encode(resp)

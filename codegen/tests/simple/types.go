@@ -52,6 +52,10 @@ type ItemSet struct {
 type GetApiDocsListRequest struct {
 }
 
+// GetGetSomeBytesListRequest ...
+type GetGetSomeBytesListRequest struct {
+}
+
 // GetJustOkAndJustErrorListRequest ...
 type GetJustOkAndJustErrorListRequest struct {
 }
@@ -129,6 +133,9 @@ func (s *ItemSet) Lookup(Name string) Item {
 
 // Integer ...
 type Integer int64
+
+// Pdf ...
+type Pdf []byte
 
 // Str ...
 type Str string
