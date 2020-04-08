@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -16,6 +17,7 @@ import (
 	"github.com/anz-bank/sysl-go/codegen/tests/deps"
 	"github.com/anz-bank/sysl-go/codegen/tests/downstream"
 	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/convert"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/restlib"
@@ -577,4 +579,34 @@ func TestOKTypeAndJustErrorPutsHeadersInErrorWhenError(t *testing.T) {
 	require.Nil(t, h)
 	resp := err.(*common.ServerError).Cause.(*restlib.HTTPResult)
 	require.Equal(t, `{"jsonField":"jsonVal"}`, resp.HTTPResponse.Header.Get("Context"))
+}
+
+func TestAppInitialiseHandler(t *testing.T) {
+	t.Parallel()
+	testConfig := config.DefaultConfig{
+		Library: config.LibraryConfig{},
+		GenCode: config.GenCodeConfig{
+			Downstream: &DownstreamConfig{
+				Deps: config.CommonDownstreamData{
+					ServiceURL: "http://localhost:8080/deps",
+				},
+				Downstream: config.CommonDownstreamData{
+					ServiceURL: "http://localhost:8080/downstream",
+				},
+			},
+		},
+	}
+	th := TestHandler{}
+	testServiceInterface := ServiceInterface{
+		GetRawList:   th.ValidRawHandler,
+		GetStuffList: th.ValidGetStuffListHandlerStub,
+	}
+	var testCallback core.RestGenCallback = &Callback{}
+	handlers, err := InitialiseHandler(&testConfig, testServiceInterface, testCallback)
+	require.Nil(t, err)
+	require.True(t, len(handlers.enabledHandlers) > 0)
+	srvRouter, ok := (handlers.enabledHandlers[0]).(*ServiceRouter)
+	require.True(t, ok)
+	reflect.DeepEqual(testCallback, srvRouter.svcHandler.genCallback)
+	reflect.DeepEqual(testServiceInterface, srvRouter.svcHandler.serviceInterface)
 }

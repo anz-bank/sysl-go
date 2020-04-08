@@ -19,19 +19,15 @@ CodeGenTransform:
 
   !view makeInitialiseHandler(app <: sysl.App, module <: sysl.Module) -> TopLevelDecl:
     app -> (:
-      let typeName = "*HandlerManager"
       Comment = '// InitialiseHandler ...'
-      MethodDecl = app -> <MethodDecl>(:
-        Receiver = app -> <Receiver>(:
-          ReceiverType = "a *App"
-        )
+      FunctionDecl = app -> <FunctionDecl>(:
         FunctionName = "InitialiseHandler"
         Signature = app -> <Signature>(:
           Parameters = app -> <Parameters>(:
             ParameterList = app -> <ParameterList>(:
               ParameterDecl = app -> <ParameterDecl>(:
-                Identifier = "h"
-                TypeName = typeName
+                Identifier = "coreCfg"
+                TypeName = "*config.DefaultConfig"
               )
               let serviceInterface = app -> <ParameterDeclC>(:
                 ParameterDecl = app -> <ParameterDecl>(:
@@ -49,7 +45,7 @@ CodeGenTransform:
             )
           )
           Result = app -> <Result>(:
-            TypeName = "error"
+            TypeName = "(*HandlerInit, error)"
           )
         )
         Block = app -> <Block>(:
@@ -66,7 +62,7 @@ CodeGenTransform:
               Statement = pkg -> <Statement>(:
                 DeclareAndAssignStmt = pkg -> <DeclareAndAssignStmt> (:
                   Variables = pkg + "HTTPClient" + ",  "+ ToLower(pkg) + "Err"
-                  Expression = makeValueExpr("core.BuildDownstreamHTTPClient(\"" + ToLower(pkg) + "\", &h.coreCfg.GenCode.Downstream.(*DownstreamConfig)." + Title(ToLower(pkg)) + ")")
+                  Expression = makeValueExpr("core.BuildDownstreamHTTPClient(\"" + ToLower(pkg) + "\", &coreCfg.GenCode.Downstream.(*DownstreamConfig)." + Title(ToLower(pkg)) + ")")
                 )
               )
             )
@@ -78,7 +74,7 @@ CodeGenTransform:
                     let stmt = pkg -> <StatementList> (:
                       Statement = pkg -> <Statement> (:
                         ReturnStmt = pkg -> <ReturnStmt> (:
-                          PayLoad = ToLower(pkg) + "Err"
+                          PayLoad = "nil, " + ToLower(pkg) + "Err"
                         )
                       )
                     )
@@ -91,7 +87,7 @@ CodeGenTransform:
               Statement = pkg -> <Statement>(:
                 DeclareAndAssignStmt = pkg -> <DeclareAndAssignStmt> (:
                   Variables = ToLower(pkg) + "Client"
-                  Expression = makeValueExpr(ToLower(pkg) + ".NewClient(" + ToLower(pkg) + "HTTPClient, h.coreCfg.GenCode.Downstream.(*DownstreamConfig)." + Title(ToLower(pkg)) + ".ServiceURL)")
+                  Expression = makeValueExpr(ToLower(pkg) + ".NewClient(" + ToLower(pkg) + "HTTPClient, coreCfg.GenCode.Downstream.(*DownstreamConfig)." + Title(ToLower(pkg)) + ".ServiceURL)")
                 )
               )
             )
@@ -117,9 +113,9 @@ CodeGenTransform:
 
           let enabledHandlersStmt = app -> <StatementList> (:
             Statement = app -> <Statement>(:
-              AssignStmt = app -> <AssignStmt> (:
-                Variables = "h.enabledHandlers"
-                Expression = makeValueExpr("append(h.enabledHandlers, serviceRouter)")
+              DeclareAndAssignStmt = app -> <DeclareAndAssignStmt> (:
+                Variables = "httpHandlers"
+                Expression = makeValueExpr("[]handlerinitialiser.HandlerInitialiser{serviceRouter}")
               )
             )
           )
@@ -127,7 +123,7 @@ CodeGenTransform:
           let retStmt = app -> <StatementList>(:
             Statement = app -> <Statement>(:
               ReturnStmt = app -> <ReturnStmt>(:
-                PayLoad = "err"
+                PayLoad = "&HandlerInit{enabledHandlers: httpHandlers}, err"
               )
             )
           )
@@ -170,25 +166,11 @@ CodeGenTransform:
         ImportSpec = spec | ci
       )
 
-      let appStruct = [.name] -> <sequence of TopLevelDecl> (name:
-        Comment = "// App for " + name
+      let handlerInitStruct = [.name] -> <sequence of TopLevelDecl> (name:
+        Comment = "// HandlerInit for " + name
         Declaration = name -> <Declaration>(:
           StructType = name -> <StructType>(:
-            StructName = "App"
-          )
-        )
-      )
-
-      let handlerManagerStruct = [.name] -> <sequence of TopLevelDecl> (name:
-        Comment = "// HandlerManager for " + name
-        Declaration = name -> <Declaration>(:
-          StructType = name -> <StructType>(:
-            StructName = "HandlerManager"
-            let coreCfg = name -> <FieldDecl>(:
-              identifier = "coreCfg"
-              Type =  "*config.DefaultConfig"
-            )
-
+            StructName = "HandlerInit"
             let enabledHandlers = name -> <FieldDecl>(:
               identifier = "enabledHandlers"
               Type = "[]handlerinitialiser.HandlerInitialiser"
@@ -198,10 +180,10 @@ CodeGenTransform:
               identifier = "enabledGrpcHandlers"
               Type = "[]handlerinitialiser.GrpcHandlerInitialiser"
             )
-            FieldDecl = [coreCfg, enabledHandlers, enabledGrpcHandlers]
+            FieldDecl = [enabledHandlers, enabledGrpcHandlers]
           )
         )
       )
       Comment = "// Code generated by sysl DO NOT EDIT.\n"
-      TopLevelDecl = appStruct | handlerManagerStruct | [makeInitialiseHandler(app, module)]
+      TopLevelDecl = handlerInitStruct | [makeInitialiseHandler(app, module)]
     )

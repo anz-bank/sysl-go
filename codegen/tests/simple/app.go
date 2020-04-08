@@ -9,34 +9,29 @@ import (
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
 )
 
-// App for Simple
-type App struct {
-}
-
-// HandlerManager for Simple
-type HandlerManager struct {
-	coreCfg             *config.DefaultConfig
+// HandlerInit for Simple
+type HandlerInit struct {
 	enabledHandlers     []handlerinitialiser.HandlerInitialiser
 	enabledGrpcHandlers []handlerinitialiser.GrpcHandlerInitialiser
 }
 
 // InitialiseHandler ...
-func (a *App) InitialiseHandler(h *HandlerManager, serviceInterface ServiceInterface, serviceCallback core.RestGenCallback) error {
+func InitialiseHandler(coreCfg *config.DefaultConfig, serviceInterface ServiceInterface, serviceCallback core.RestGenCallback) (*HandlerInit, error) {
 	var err error = nil
-	depsHTTPClient, depsErr := core.BuildDownstreamHTTPClient("deps", &h.coreCfg.GenCode.Downstream.(*DownstreamConfig).Deps)
-	downstreamHTTPClient, downstreamErr := core.BuildDownstreamHTTPClient("downstream", &h.coreCfg.GenCode.Downstream.(*DownstreamConfig).Downstream)
+	depsHTTPClient, depsErr := core.BuildDownstreamHTTPClient("deps", &coreCfg.GenCode.Downstream.(*DownstreamConfig).Deps)
+	downstreamHTTPClient, downstreamErr := core.BuildDownstreamHTTPClient("downstream", &coreCfg.GenCode.Downstream.(*DownstreamConfig).Downstream)
 	if depsErr != nil {
-		return depsErr
+		return nil, depsErr
 	}
 
 	if downstreamErr != nil {
-		return downstreamErr
+		return nil, downstreamErr
 	}
 
-	depsClient := deps.NewClient(depsHTTPClient, h.coreCfg.GenCode.Downstream.(*DownstreamConfig).Deps.ServiceURL)
-	downstreamClient := downstream.NewClient(downstreamHTTPClient, h.coreCfg.GenCode.Downstream.(*DownstreamConfig).Downstream.ServiceURL)
+	depsClient := deps.NewClient(depsHTTPClient, coreCfg.GenCode.Downstream.(*DownstreamConfig).Deps.ServiceURL)
+	downstreamClient := downstream.NewClient(downstreamHTTPClient, coreCfg.GenCode.Downstream.(*DownstreamConfig).Downstream.ServiceURL)
 	serviceHandler := NewServiceHandler(serviceCallback, &serviceInterface, depsClient, downstreamClient)
 	serviceRouter := NewServiceRouter(serviceCallback, serviceHandler)
-	h.enabledHandlers = append(h.enabledHandlers, serviceRouter)
-	return err
+	httpHandlers := []handlerinitialiser.HandlerInitialiser{serviceRouter}
+	return &HandlerInit{enabledHandlers: httpHandlers}, err
 }
