@@ -131,11 +131,11 @@ func (s *ItemSet) Lookup(Name string) Item {
 	return s.M[Name]
 }
 
-// Integer ...
-type Integer int64
-
 // Pdf ...
 type Pdf []byte
+
+// Integer ...
+type Integer int64
 
 // Str ...
 type Str string

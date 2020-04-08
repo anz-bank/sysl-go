@@ -58,7 +58,7 @@ Simple "Simple Server" [package="simple"]:
 
     /get-some-bytes:
         GET:
-            return ok <: pdf
+            return ok <: Pdf
 
     !type Stuff:
         @description =:
@@ -91,7 +91,7 @@ Simple "Simple Server" [package="simple"]:
     !alias str:
         string
 
-    !alias pdf:
+    !alias Pdf:
         bytes
 
     !alias integer:
