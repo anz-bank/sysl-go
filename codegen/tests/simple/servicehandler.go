@@ -110,7 +110,7 @@ func (s *ServiceHandler) GetGetSomeBytesListHandler(w http.ResponseWriter, r *ht
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
 	restlib.SetHeaders(w, headermap)
-	restlib.SendHTTPResponse(w, httpstatus, pdf)
+	restlib.SendHTTPResponse(w, httpstatus, (*[]byte)(pdf))
 }
 
 // GetJustOkAndJustErrorListHandler ...

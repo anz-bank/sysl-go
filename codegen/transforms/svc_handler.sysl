@@ -644,14 +644,17 @@ CodeGenTransform:
       )
     )
 
-  !view makeResult(ep <: sysl.Endpoint) -> string:
+  !view makeResult(app <: sysl.App, ep <: sysl.Endpoint) -> string:
     ep -> (:
         let tn = ep.value.ret where (.key != "error" && .value != "ok" && .value != "error") -> <sequence of string>(t:
-          let justName = ToLower(TrimPrefix(t.value, "sequence of "))
-          let p = if MatchString("^.+\\.", justName) then FindAllString("^.+\\.", justName, 1) single else ""
-          out = TrimPrefix(justName, p)
+          let noSeq = ToLower(TrimPrefix(t.value, "sequence of "))
+          let p = if MatchString("^.+\\.", noSeq) then FindAllString("^.+\\.", noSeq, 1) single else ""
+          let noPrefix = TrimPrefix(noSeq, p)
+          justName = noPrefix
+          withCast = if app.alias where (.key == noPrefix && .type == "primitive" && .primitive == "BYTES") count > 0 then "(*[]byte)(" + noPrefix + ")" else noPrefix
         )
-        out = Join(tn flatten(.out), ",")
+        out = Join(tn flatten(.justName), ",")
+        outWithCast = Join(tn flatten(.withCast), ",")
     )
 
   !view EpHandlerMethodDecl(app <: sysl.App, packageName <: string, module <: sysl.Module) -> sequence of TopLevelDecl:
@@ -675,9 +678,9 @@ CodeGenTransform:
             )
           )
         )
-        let result = makeResult(ep).out
+        let result = makeResult(app, ep).out
         let returnValues = if result == "" then "err" else Join( [result, "err"], ",")
-        let sendRespCallArgs = if result == "" then "httpstatus, nil" else Join( ["httpstatus", result], ",")
+        let sendRespCallArgs = if result == "" then "httpstatus, nil" else Join( ["httpstatus", makeResult(app, ep).outWithCast], ",")
 
 
         Block = ep -> <Block>(:

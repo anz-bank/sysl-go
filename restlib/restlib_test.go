@@ -206,7 +206,7 @@ func TestSendHTTPResponseBinaryBody2(t *testing.T) {
 
 	// When
 	data := ByteWrapper("test binary data")
-	SendHTTPResponse(recorder, 200, &data)
+	SendHTTPResponse(recorder, 200, (*[]byte)(&data))
 
 	// Then
 	result := recorder.Result()
@@ -215,5 +215,5 @@ func TestSendHTTPResponseBinaryBody2(t *testing.T) {
 	b, err := ioutil.ReadAll(result.Body)
 	defer result.Body.Close()
 	require.NoError(t, err)
-	require.Equal(t, data, b)
+	require.Equal(t, ([]byte)(data), b)
 }
