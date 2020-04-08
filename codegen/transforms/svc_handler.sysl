@@ -651,7 +651,7 @@ CodeGenTransform:
           let p = if MatchString("^.+\\.", noSeq) then FindAllString("^.+\\.", noSeq, 1) single else ""
           let noPrefix = TrimPrefix(noSeq, p)
           justName = noPrefix
-          withCast = if app.alias where (.key == noPrefix && .type == "primitive" && .primitive == "BYTES") count > 0 then "(*[]byte)(" + noPrefix + ")" else noPrefix
+          withCast = if app.alias where (ToUpper(.key) == ToUpper(noPrefix) && .type == "primitive" && .primitive == "BYTES") count > 0 then "(*[]byte)(" + noPrefix + ")" else noPrefix
         )
         out = Join(tn flatten(.justName), ",")
         outWithCast = Join(tn flatten(.withCast), ",")
