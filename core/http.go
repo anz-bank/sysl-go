@@ -20,10 +20,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type Manager interface {
-	EnabledHandlers() []handlerinitialiser.HandlerInitialiser
-	LibraryConfig() *config.LibraryConfig
-	AdminServerConfig() *config.CommonHTTPServerConfig
+type RestManager interface {
+	EnabledHandlers() []handlerinitialiser.RestHandlerInitialiser
 	PublicServerConfig() *config.CommonHTTPServerConfig
 }
 
@@ -32,10 +30,14 @@ type middlewareCollection struct {
 	public []func(handler http.Handler) http.Handler
 }
 
-func configureAdminServerListener(hl Manager, logger *logrus.Logger, promRegistry *prometheus.Registry, mWare []func(handler http.Handler) http.Handler) (func() error, error) {
-	rootAdminRouter, adminRouter := configureRouters(hl.AdminServerConfig().BasePath, mWare)
+func configureAdminServerListener(libraryConfig *config.LibraryConfig,
+	handlers []handlerinitialiser.HandlerInitialiser,
+	logger *logrus.Logger, promRegistry *prometheus.Registry,
+	mWare []func(handler http.Handler) http.Handler) (func() error, error) {
 
-	adminTLSConfig, err := config.MakeTLSConfig(hl.AdminServerConfig().Common.TLS)
+	rootAdminRouter, adminRouter := configureRouters(libraryConfig.AdminServer.BasePath, mWare)
+
+	adminTLSConfig, err := config.MakeTLSConfig(libraryConfig.AdminServer.Common.TLS)
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +45,8 @@ func configureAdminServerListener(hl Manager, logger *logrus.Logger, promRegistr
 	// Define meta-service endpoints:
 	statusService := status.Service{
 		BuildMetadata: buildMetadata,
-		Config:        hl.LibraryConfig(),
-		Services:      hl.EnabledHandlers(),
+		Config:        libraryConfig,
+		Services:      handlers,
 	}
 
 	adminRouter.Route("/-", func(r chi.Router) {
@@ -54,15 +56,15 @@ func configureAdminServerListener(hl Manager, logger *logrus.Logger, promRegistr
 		r.Route("/metrics", func(r chi.Router) {
 			r.Get("/", metrics.Handler(promRegistry).(http.HandlerFunc))
 		})
-		registerProfilingHandler(logger, hl.LibraryConfig(), r)
+		registerProfilingHandler(logger, libraryConfig, r)
 	})
 
-	listenAdmin := prepareServerListener(logger, rootAdminRouter, adminTLSConfig, *hl.AdminServerConfig())
+	listenAdmin := prepareServerListener(logger, rootAdminRouter, adminTLSConfig, libraryConfig.AdminServer)
 
 	return listenAdmin, nil
 }
 
-func configurePublicServerListener(ctx context.Context, hl Manager, logger *logrus.Logger, mWare []func(handler http.Handler) http.Handler) (func() error, error) {
+func configurePublicServerListener(ctx context.Context, hl RestManager, logger *logrus.Logger, mWare []func(handler http.Handler) http.Handler) (func() error, error) {
 	rootPublicRouter, publicRouter := configureRouters(hl.PublicServerConfig().BasePath, mWare)
 
 	publicTLSConfig, err := config.MakeTLSConfig(hl.PublicServerConfig().Common.TLS)
@@ -78,7 +80,7 @@ func configurePublicServerListener(ctx context.Context, hl Manager, logger *logr
 		logger.Warn("No service handlers enabled by config.")
 	}
 
-	listenPublic := prepareServerListener(logger, rootPublicRouter, publicTLSConfig, *hl.PublicServerConfig())
+	listenPublic := prepareServerListener(logger, rootPublicRouter, publicTLSConfig, hl.PublicServerConfig())
 
 	return listenPublic, nil
 }
@@ -104,7 +106,7 @@ func registerProfilingHandler(logger *logrus.Logger, cfg *config.LibraryConfig, 
 	}
 }
 
-func makeListenFunc(server *http.Server, logger *logrus.Logger, cfg config.CommonHTTPServerConfig) func() error {
+func makeListenFunc(server *http.Server, logger *logrus.Logger, cfg *config.CommonHTTPServerConfig) func() error {
 	return func() error {
 		if cfg.Common.TLS != nil {
 			logger.Infof("TLS configuration present. Preparing to serve HTTPS for address: %s:%d%s", cfg.Common.HostName, cfg.Common.Port, cfg.BasePath)
@@ -115,7 +117,7 @@ func makeListenFunc(server *http.Server, logger *logrus.Logger, cfg config.Commo
 	}
 }
 
-func prepareServerListener(logger *logrus.Logger, rootRouter http.Handler, tlsConfig *tls.Config, httpConfig config.CommonHTTPServerConfig) func() error {
+func prepareServerListener(logger *logrus.Logger, rootRouter http.Handler, tlsConfig *tls.Config, httpConfig *config.CommonHTTPServerConfig) func() error {
 	re := regexp.MustCompile(`TLS handshake error from .* EOF`) // Avoid spurious TLS errors from load balancer
 	writer := &TLSLogFilter{logger, re}
 	serverLogger := log.New(writer, "HTTPServer ", log.LstdFlags|log.Llongfile)
@@ -148,7 +150,7 @@ func prepareMiddleware(name string, logger *logrus.Logger, promRegistry *prometh
 	return result
 }
 
-func makeNewServer(router http.Handler, tlsConfig *tls.Config, serverConfig config.CommonHTTPServerConfig, serverLogger *log.Logger) *http.Server {
+func makeNewServer(router http.Handler, tlsConfig *tls.Config, serverConfig *config.CommonHTTPServerConfig, serverLogger *log.Logger) *http.Server {
 	listenAddr := fmt.Sprintf("%s:%d", serverConfig.Common.HostName, serverConfig.Common.Port)
 	return &http.Server{
 		Addr:              listenAddr,

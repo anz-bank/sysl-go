@@ -16,7 +16,7 @@ type App struct {
 // HandlerManager for Simple
 type HandlerManager struct {
 	coreCfg             *config.DefaultConfig
-	enabledHandlers     []handlerinitialiser.HandlerInitialiser
+	enabledHandlers     []handlerinitialiser.RestHandlerInitialiser
 	enabledGrpcHandlers []handlerinitialiser.GrpcHandlerInitialiser
 }
 

@@ -31,7 +31,7 @@ type swaggerFile struct {
 var swagger = swaggerFile{}
 
 // NewServiceRouter creates a new service router for Simple
-func NewServiceRouter(gc core.RestGenCallback, svcHandler *ServiceHandler) handlerinitialiser.HandlerInitialiser {
+func NewServiceRouter(gc core.RestGenCallback, svcHandler *ServiceHandler) handlerinitialiser.RestHandlerInitialiser {
 	return &ServiceRouter{gc, svcHandler, "/simple"}
 }
 
