@@ -581,7 +581,7 @@ func TestOKTypeAndJustErrorPutsHeadersInErrorWhenError(t *testing.T) {
 	require.Equal(t, `{"jsonField":"jsonVal"}`, resp.HTTPResponse.Header.Get("Context"))
 }
 
-func TestAppInitialiseHandler(t *testing.T) {
+func TestAppInitialiseHandlers(t *testing.T) {
 	t.Parallel()
 	testConfig := config.DefaultConfig{
 		Library: config.LibraryConfig{},
@@ -602,10 +602,10 @@ func TestAppInitialiseHandler(t *testing.T) {
 		GetStuffList: th.ValidGetStuffListHandlerStub,
 	}
 	var testCallback core.RestGenCallback = &Callback{}
-	handlers, err := InitialiseHandler(&testConfig, testServiceInterface, testCallback)
+	handlers, err := InitialiseHandlers(&testConfig, testServiceInterface, testCallback)
 	require.Nil(t, err)
-	require.True(t, len(handlers.enabledHandlers) > 0)
-	srvRouter, ok := (handlers.enabledHandlers[0]).(*ServiceRouter)
+	require.True(t, len(handlers.RestHandlers) > 0)
+	srvRouter, ok := (handlers.RestHandlers[0]).(*ServiceRouter)
 	require.True(t, ok)
 	reflect.DeepEqual(testCallback, srvRouter.svcHandler.genCallback)
 	reflect.DeepEqual(testServiceInterface, srvRouter.svcHandler.serviceInterface)

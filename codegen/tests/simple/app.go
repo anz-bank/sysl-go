@@ -11,12 +11,12 @@ import (
 
 // HandlerInit for Simple
 type HandlerInit struct {
-	enabledHandlers     []handlerinitialiser.HandlerInitialiser
-	enabledGrpcHandlers []handlerinitialiser.GrpcHandlerInitialiser
+	RestHandlers []handlerinitialiser.HandlerInitialiser
+	GrpcHandlers []handlerinitialiser.GrpcHandlerInitialiser
 }
 
-// InitialiseHandler ...
-func InitialiseHandler(coreCfg *config.DefaultConfig, serviceInterface ServiceInterface, serviceCallback core.RestGenCallback) (*HandlerInit, error) {
+// InitialiseHandlers ...
+func InitialiseHandlers(coreCfg *config.DefaultConfig, serviceInterface ServiceInterface, serviceCallback core.RestGenCallback) (*HandlerInit, error) {
 	var err error = nil
 	depsHTTPClient, depsErr := core.BuildDownstreamHTTPClient("deps", &coreCfg.GenCode.Downstream.(*DownstreamConfig).Deps)
 	downstreamHTTPClient, downstreamErr := core.BuildDownstreamHTTPClient("downstream", &coreCfg.GenCode.Downstream.(*DownstreamConfig).Downstream)
@@ -33,5 +33,5 @@ func InitialiseHandler(coreCfg *config.DefaultConfig, serviceInterface ServiceIn
 	serviceHandler := NewServiceHandler(serviceCallback, &serviceInterface, depsClient, downstreamClient)
 	serviceRouter := NewServiceRouter(serviceCallback, serviceHandler)
 	httpHandlers := []handlerinitialiser.HandlerInitialiser{serviceRouter}
-	return &HandlerInit{enabledHandlers: httpHandlers}, err
+	return &HandlerInit{RestHandlers: httpHandlers}, err
 }
