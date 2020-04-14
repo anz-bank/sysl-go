@@ -25,6 +25,7 @@ CodeGenTransform:
           "STRING" => "string"
           "STRING_8" => "string"
           "BOOL" => "bool"
+          "BYTES" => "[]byte"
           "DATE" => "date.Date"
           "DATETIME" => if "time_format" in t.attrs then if "stdtime" == t.attrs.time_format then "time.Time" else "convert.JSONTime" else "convert.JSONTime"
         "sequence" => "[]" + GoType(t.sequence).out
