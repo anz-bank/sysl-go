@@ -1,4 +1,5 @@
 import deps
+import downstream
 
 Simple "Simple Server" [package="simple"]:
     @basePath = "/simple"
@@ -27,6 +28,7 @@ Simple "Simple Server" [package="simple"]:
     /api-docs:
         GET:
             Deps <- GET /api-docs
+            Downstream <- GET /service-docs
             return ok <: Deps.ApiDoc
 
     /simple-api-docs:
