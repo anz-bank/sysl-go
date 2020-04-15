@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/anz-bank/sysl-go/codegen/tests/deps"
+	"github.com/anz-bank/sysl-go/codegen/tests/downstream"
 	"github.com/anz-bank/sysl-go/config"
 )
 
@@ -20,7 +21,8 @@ func NewDefaultSimpleImpl() *DefaultSimpleImpl {
 
 // GetApiDocsList Client
 type GetApiDocsListClient struct {
-	GetApiDocsList func(ctx context.Context, req *deps.GetApiDocsListRequest) (*deps.ApiDoc, error)
+	GetApiDocsList     func(ctx context.Context, req *deps.GetApiDocsListRequest) (*deps.ApiDoc, error)
+	GetServiceDocsList func(ctx context.Context, req *downstream.GetServiceDocsListRequest) (*downstream.ServiceDoc, error)
 }
 
 // GetGetSomeBytesList Client
@@ -88,4 +90,5 @@ type ServiceInterface struct {
 type DownstreamConfig struct {
 	ContextTimeout time.Duration               `yaml:"contextTimeout"`
 	Deps           config.CommonDownstreamData `yaml:"deps"`
+	Downstream     config.CommonDownstreamData `yaml:"downstream"`
 }

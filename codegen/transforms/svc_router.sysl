@@ -371,3 +371,4 @@ CodeGenTransform:
     app -> (:
       pname = if "package" in .attrs then if .attrs.package != null then .attrs.package else ToLower(.name) else ToLower(.name)
     )
+      
