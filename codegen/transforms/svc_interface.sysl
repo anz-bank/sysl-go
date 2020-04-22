@@ -102,9 +102,10 @@ CodeGenTransform:
       ReturnTypes = ep -> <ReturnTypes>(:
         let tn = ep.value.ret where (.key != "error" && .value != "ok") -> <set of string>(t:
           let packages = Split(t.value, ".") -> <set of string>(p:
-            let depList = module.apps where(.value.name == p) -> <set of string> (dep:
+            let app = if HasPrefix(p, "sequence of") then TrimPrefix(p, "sequence of ") else p
+            let depList = module.apps where(.value.name == app) -> <set of string> (dep:
               pkg = getPackage(dep.value).pname
-              prefix = p
+              prefix = app
             )
             pkg = depList flatten(.pkg)
             prefix = depList flatten(.prefix)
@@ -112,8 +113,7 @@ CodeGenTransform:
           let prefix = if packages flatten(.prefix) count == 0 then "" else packages flatten(.prefix) single + "."
           let package = if packages flatten(.pkg) count == 0 then "" else packages flatten(.pkg) single
 
-          out = makeType(TrimPrefix(t.value,prefix), package).out
-
+          out = makeType(Replace(t.value, prefix, "", -1), package).out
         )
         TypeName = Join(tn flatten(.out)  | {"error"}, ", ")
       )
