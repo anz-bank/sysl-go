@@ -610,3 +610,23 @@ func TestAppInitialiseHandlers(t *testing.T) {
 	reflect.DeepEqual(testCallback, srvRouter.svcHandler.genCallback)
 	reflect.DeepEqual(testServiceInterface, srvRouter.svcHandler.serviceInterface)
 }
+
+func TestApiDocsReturnsSequence(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		depsSeq := `[{"openapi":"1","swagger":"2"},{"openapi":"y","swagger":"n"}]`
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte(depsSeq))
+	}))
+	client := server.Client()
+	defer server.Close()
+
+	c := Client{
+		client: client,
+		url:    server.URL,
+	}
+
+	req := GetApiDocsListRequest{}
+	sequenceRes, err := c.GetApiDocsList(context.Background(), &req)
+	require.NoError(t, err)
+	require.True(t, len(*sequenceRes) > 0)
+}

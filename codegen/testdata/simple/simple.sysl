@@ -29,7 +29,7 @@ Simple "Simple Server" [package="simple"]:
         GET:
             Deps <- GET /api-docs
             Downstream <- GET /service-docs
-            return ok <: Deps.ApiDoc
+            return ok <: sequence of Deps.ApiDoc
 
     /simple-api-docs:
         GET:
