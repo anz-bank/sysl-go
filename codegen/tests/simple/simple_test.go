@@ -9,12 +9,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/anz-bank/sysl-go/codegen/tests/deps"
+	"github.com/anz-bank/sysl-go/codegen/tests/downstream"
 	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/convert"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/restlib"
@@ -117,7 +120,8 @@ func callHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder
 	cb := Callback{}
 
 	var depssrv deps.Service
-	sh := NewServiceHandler(cb, &si, depssrv)
+	var downstreamSrv downstream.Service
+	sh := NewServiceHandler(cb, &si, depssrv, downstreamSrv)
 
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
@@ -135,7 +139,8 @@ func callRawHandler(target string, si ServiceInterface) (*httptest.ResponseRecor
 	cb := Callback{}
 
 	var depssrv deps.Service
-	sh := NewServiceHandler(cb, &si, depssrv)
+	var downstreamSrv downstream.Service
+	sh := NewServiceHandler(cb, &si, depssrv, downstreamSrv)
 
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
@@ -153,7 +158,8 @@ func callRawIntHandler(target string, si ServiceInterface) (*httptest.ResponseRe
 	cb := Callback{}
 
 	var depssrv deps.Service
-	sh := NewServiceHandler(cb, &si, depssrv)
+	var downstreamSrv downstream.Service
+	sh := NewServiceHandler(cb, &si, depssrv, downstreamSrv)
 
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
@@ -573,4 +579,54 @@ func TestOKTypeAndJustErrorPutsHeadersInErrorWhenError(t *testing.T) {
 	require.Nil(t, h)
 	resp := err.(*common.ServerError).Cause.(*restlib.HTTPResult)
 	require.Equal(t, `{"jsonField":"jsonVal"}`, resp.HTTPResponse.Header.Get("Context"))
+}
+
+func TestAppInitialiseHandlers(t *testing.T) {
+	t.Parallel()
+	testConfig := config.DefaultConfig{
+		Library: config.LibraryConfig{},
+		GenCode: config.GenCodeConfig{
+			Downstream: &DownstreamConfig{
+				Deps: config.CommonDownstreamData{
+					ServiceURL: "http://localhost:8080/deps",
+				},
+				Downstream: config.CommonDownstreamData{
+					ServiceURL: "http://localhost:8080/downstream",
+				},
+			},
+		},
+	}
+	th := TestHandler{}
+	testServiceInterface := ServiceInterface{
+		GetRawList:   th.ValidRawHandler,
+		GetStuffList: th.ValidGetStuffListHandlerStub,
+	}
+	var testCallback core.RestGenCallback = &Callback{}
+	handlers, err := InitialiseHandlers(&testConfig, testServiceInterface, testCallback)
+	require.Nil(t, err)
+	require.True(t, len(handlers.RestHandlers) > 0)
+	srvRouter, ok := (handlers.RestHandlers[0]).(*ServiceRouter)
+	require.True(t, ok)
+	reflect.DeepEqual(testCallback, srvRouter.svcHandler.genCallback)
+	reflect.DeepEqual(testServiceInterface, srvRouter.svcHandler.serviceInterface)
+}
+
+func TestApiDocsReturnsSequence(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		depsSeq := `[{"openapi":"1","swagger":"2"},{"openapi":"y","swagger":"n"}]`
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte(depsSeq))
+	}))
+	client := server.Client()
+	defer server.Close()
+
+	c := Client{
+		client: client,
+		url:    server.URL,
+	}
+
+	req := GetApiDocsListRequest{}
+	sequenceRes, err := c.GetApiDocsList(context.Background(), &req)
+	require.NoError(t, err)
+	require.True(t, len(*sequenceRes) > 0)
 }
