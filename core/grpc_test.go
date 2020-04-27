@@ -66,11 +66,11 @@ func (r *ServerReg) RegisterServer(ctx context.Context, server *grpc.Server) {
 	test.RegisterTestServiceServer(server, &r.svr)
 }
 
-func (s ServerReg) Config() validator.Validator {
+func (r ServerReg) Config() validator.Validator {
 	return nil
 }
 
-func (s ServerReg) Name() string {
+func (r ServerReg) Name() string {
 	return ""
 }
 

@@ -34,7 +34,6 @@ func configureAdminServerListener(libraryConfig *config.LibraryConfig,
 	handlers []handlerinitialiser.HandlerInitialiser,
 	logger *logrus.Logger, promRegistry *prometheus.Registry,
 	mWare []func(handler http.Handler) http.Handler) (func() error, error) {
-
 	rootAdminRouter, adminRouter := configureRouters(libraryConfig.AdminServer.BasePath, mWare)
 
 	adminTLSConfig, err := config.MakeTLSConfig(libraryConfig.AdminServer.Common.TLS)

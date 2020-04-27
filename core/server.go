@@ -4,6 +4,7 @@ package core
 
 import (
 	"context"
+
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
 
@@ -11,11 +12,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//nolint:gocognit // Long method names are okay because only generated code will call this, not humans.
+//nolint:gocognit,funlen // Long method names are okay because only generated code will call this, not humans.
 func Server(ctx context.Context, name string, libraryConfig *config.LibraryConfig,
 	hl RestManager, grpcHl GrpcManager,
 	logger *logrus.Logger, promRegistry *prometheus.Registry) error {
-
 	mWare := prepareMiddleware(name, logger, promRegistry)
 
 	var restIsRunning, grpcIsRunning bool
