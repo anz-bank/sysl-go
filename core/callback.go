@@ -30,4 +30,7 @@ type RestGenCallback interface {
 // GrpcGenCallback is currently a subset of RestGenCallback so is defined separately for convenience
 type GrpcGenCallback interface {
 	DownstreamTimeoutContext(ctx context.Context) (context.Context, context.CancelFunc)
+	// Config returns a structure representing the server config
+	// This is returned from the status endpoint
+	Config() validator.Validator
 }
