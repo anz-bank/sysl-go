@@ -13,6 +13,7 @@ import (
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
 	"github.com/anz-bank/sysl-go/validator"
+	"github.com/prometheus/client_golang/prometheus"
 	tlog "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -55,6 +56,16 @@ func localServerConfig() config.CommonServerConfig {
 	return config.CommonServerConfig{
 		HostName: "localhost",
 		Port:     8888,
+	}
+}
+
+func localAdminServerConfig() *config.CommonHTTPServerConfig {
+	return &config.CommonHTTPServerConfig{
+		Common: config.CommonServerConfig{
+			HostName: "localhost",
+			Port:     8001,
+		},
+		BasePath: "/admin",
 	}
 }
 
@@ -123,4 +134,49 @@ func TestValidRequestResponse(t *testing.T) {
 	connectAndCheckReturn(t, grpc.WithInsecure())
 	serverHolder.svr.GracefulStop()
 	require.NoError(t, <-serverError)
+}
+
+func TestValidRequestResponseAdminServer(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer server.Close()
+
+	logger, _ := tlog.NewNullLogger()
+	adminConfig := config.LibraryConfig{
+		Log:         config.LogConfig{},
+		Profiling:   false,
+		AdminServer: localAdminServerConfig(),
+	}
+
+	cb := Callbacks{
+		timeout: 1 * time.Second,
+	}
+
+	si := GrpcServiceInterface{
+		GetStuff: GetStuffStub,
+	}
+
+	client := simple.NewClient(server.Client(), server.URL)
+	serviceHandler := NewGrpcServiceHandler(cb, &si, client)
+
+	serverHolder := ServerHolder{}
+
+	handlerManager := TestGrpcHandler{
+		cfg:      localServerConfig(),
+		handlers: []handlerinitialiser.GrpcHandlerInitialiser{serviceHandler, &serverHolder},
+	}
+
+	serverError := make(chan error)
+
+	go func() {
+		err := core.Server(context.Background(), "admin", &adminConfig, nil, &handlerManager, logger, prometheus.NewRegistry())
+		serverError <- err
+	}()
+
+	req, err := http.NewRequest("GET", "http://localhost:8001/status", nil)
+	require.Nil(t, err)
+	resp, err1 := http.DefaultClient.Do(req)
+	require.Nil(t, err1)
+	defer resp.Body.Close()
 }
