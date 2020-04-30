@@ -211,7 +211,7 @@ CodeGenTransform:
             )
 
             Result = name -> <Result> (:
-              TypeName = "handlerinitialiser.HandlerInitialiser"
+              TypeName = "handlerinitialiser.RestHandlerInitialiser"
             )
           )
           Block = name -> <Block>(:

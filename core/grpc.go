@@ -15,7 +15,6 @@ import (
 
 type GrpcManager interface {
 	EnabledGrpcHandlers() []handlerinitialiser.GrpcHandlerInitialiser
-	GrpcAdminServerConfig() *config.CommonServerConfig
 	GrpcPublicServerConfig() *config.CommonServerConfig
 }
 

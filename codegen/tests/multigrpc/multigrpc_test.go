@@ -11,6 +11,7 @@ import (
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
+	"github.com/anz-bank/sysl-go/validator"
 	tlog "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -22,6 +23,14 @@ type ServerHolder struct {
 
 func (s *ServerHolder) RegisterServer(ctx context.Context, server *grpc.Server) {
 	s.svr = server
+}
+
+func (s ServerHolder) Config() validator.Validator {
+	return nil
+}
+
+func (s ServerHolder) Name() string {
+	return ""
 }
 
 type TestGrpcHandler struct {
@@ -54,6 +63,10 @@ type Callbacks struct {
 
 func (c Callbacks) DownstreamTimeoutContext(ctx context.Context) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(ctx, c.timeout)
+}
+
+func (c Callbacks) Config() validator.Validator {
+	return nil
 }
 
 func GetCardsStub(ctx context.Context, req *pb.GetCardsRequest, client cards.GetCardsClient) (*pb.GetCardsResponse, error) {
@@ -102,7 +115,7 @@ func TestEndToEndValidRequestResponse(t *testing.T) {
 
 	go func() {
 		err := core.Server(context.Background(), "test",
-			nil, &handlerManager, logger, nil)
+			nil, nil, &handlerManager, logger, nil)
 		serverError <- err
 	}()
 
