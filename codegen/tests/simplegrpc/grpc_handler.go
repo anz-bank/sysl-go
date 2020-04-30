@@ -7,6 +7,7 @@ import (
 	"github.com/anz-bank/sysl-go/codegen/tests/simple"
 	pb "github.com/anz-bank/sysl-go/codegen/tests/simplepb"
 	"github.com/anz-bank/sysl-go/core"
+	"github.com/anz-bank/sysl-go/validator"
 	"google.golang.org/grpc"
 )
 
@@ -41,4 +42,14 @@ func (s *GrpcServiceHandler) GetStuff(ctx context.Context, req *pb.GetStuffReque
 	}
 
 	return s.serviceInterface.GetStuff(ctx, req, client)
+}
+
+// Config ...
+func (s *GrpcServiceHandler) Config() validator.Validator {
+	return s.genCallback.Config()
+}
+
+// Name ...
+func (s *GrpcServiceHandler) Name() string {
+	return "SimpleGrpc"
 }

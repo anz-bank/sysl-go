@@ -10,8 +10,9 @@ import (
 
 // LibraryConfig struct
 type LibraryConfig struct {
-	Log       LogConfig `yaml:"log"`
-	Profiling bool      `yaml:"profiling"`
+	Log         LogConfig               `yaml:"log"`
+	Profiling   bool                    `yaml:"profiling"`
+	AdminServer *CommonHTTPServerConfig `yaml:"adminServer"`
 }
 
 // LogConfig struct
