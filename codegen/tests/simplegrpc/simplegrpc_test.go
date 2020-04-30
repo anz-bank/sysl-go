@@ -12,8 +12,6 @@ import (
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
-	"github.com/anz-bank/sysl-go/validator"
-	"github.com/prometheus/client_golang/prometheus"
 	tlog "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -25,14 +23,6 @@ type ServerHolder struct {
 
 func (s *ServerHolder) RegisterServer(ctx context.Context, server *grpc.Server) {
 	s.svr = server
-}
-
-func (s ServerHolder) Config() validator.Validator {
-	return nil
-}
-
-func (s ServerHolder) Name() string {
-	return ""
 }
 
 type TestGrpcHandler struct {
@@ -59,26 +49,12 @@ func localServerConfig() config.CommonServerConfig {
 	}
 }
 
-func localAdminServerConfig() *config.CommonHTTPServerConfig {
-	return &config.CommonHTTPServerConfig{
-		Common: config.CommonServerConfig{
-			HostName: "localhost",
-			Port:     8001,
-		},
-		BasePath: "/admin",
-	}
-}
-
 type Callbacks struct {
 	timeout time.Duration
 }
 
 func (c Callbacks) DownstreamTimeoutContext(ctx context.Context) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(ctx, c.timeout)
-}
-
-func (c Callbacks) Config() validator.Validator {
-	return nil
 }
 
 func GetStuffStub(ctx context.Context, req *pb.GetStuffRequest, client GetStuffClient) (*pb.GetStuffResponse, error) {
@@ -127,56 +103,11 @@ func TestValidRequestResponse(t *testing.T) {
 	serverError := make(chan error)
 
 	go func() {
-		err := core.Server(context.Background(), "test", nil, nil, &handlerManager, logger, nil)
+		err := core.Server(context.Background(), "test", nil, &handlerManager, logger, nil)
 		serverError <- err
 	}()
 
 	connectAndCheckReturn(t, grpc.WithInsecure())
 	serverHolder.svr.GracefulStop()
 	require.NoError(t, <-serverError)
-}
-
-func TestValidRequestResponseAdminServer(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte(`{}`))
-	}))
-	defer server.Close()
-
-	logger, _ := tlog.NewNullLogger()
-	adminConfig := config.LibraryConfig{
-		Log:         config.LogConfig{},
-		Profiling:   false,
-		AdminServer: localAdminServerConfig(),
-	}
-
-	cb := Callbacks{
-		timeout: 1 * time.Second,
-	}
-
-	si := GrpcServiceInterface{
-		GetStuff: GetStuffStub,
-	}
-
-	client := simple.NewClient(server.Client(), server.URL)
-	serviceHandler := NewGrpcServiceHandler(cb, &si, client)
-
-	serverHolder := ServerHolder{}
-
-	handlerManager := TestGrpcHandler{
-		cfg:      localServerConfig(),
-		handlers: []handlerinitialiser.GrpcHandlerInitialiser{serviceHandler, &serverHolder},
-	}
-
-	serverError := make(chan error)
-
-	go func() {
-		err := core.Server(context.Background(), "admin", &adminConfig, nil, &handlerManager, logger, prometheus.NewRegistry())
-		serverError <- err
-	}()
-
-	req, err := http.NewRequest("GET", "http://localhost:8001/status", nil)
-	require.Nil(t, err)
-	resp, err1 := http.DefaultClient.Do(req)
-	require.Nil(t, err1)
-	defer resp.Body.Close()
 }

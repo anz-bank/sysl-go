@@ -32,7 +32,7 @@ type swaggerFile struct {
 var swagger = swaggerFile{}
 
 // NewServiceRouter creates a new service router for Deps
-func NewServiceRouter(gc core.RestGenCallback, svcHandler *ServiceHandler) handlerinitialiser.RestHandlerInitialiser {
+func NewServiceRouter(gc core.RestGenCallback, svcHandler *ServiceHandler) handlerinitialiser.HandlerInitialiser {
 	return &ServiceRouter{gc, svcHandler, "/deps"}
 }
 

@@ -9,7 +9,6 @@ import (
 	"github.com/anz-bank/sysl-go/config"
 	test "github.com/anz-bank/sysl-go/core/testdata/proto"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
-	"github.com/anz-bank/sysl-go/validator"
 	"github.com/sirupsen/logrus"
 	tlog "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
@@ -64,14 +63,6 @@ type ServerReg struct {
 func (r *ServerReg) RegisterServer(ctx context.Context, server *grpc.Server) {
 	r.methodsCalled["RegisterServer"] = true
 	test.RegisterTestServiceServer(server, &r.svr)
-}
-
-func (r ServerReg) Config() validator.Validator {
-	return nil
-}
-
-func (r ServerReg) Name() string {
-	return ""
 }
 
 type GrpcHandler struct {
