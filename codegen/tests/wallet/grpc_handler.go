@@ -6,7 +6,6 @@ import (
 
 	pb "github.com/anz-bank/sysl-go/codegen/tests/cardspb"
 	"github.com/anz-bank/sysl-go/core"
-	"github.com/anz-bank/sysl-go/validator"
 	"google.golang.org/grpc"
 )
 
@@ -38,14 +37,4 @@ func (s *GrpcServiceHandler) Apple(ctx context.Context, req *pb.AppleRequest) (*
 	client := AppleClient{}
 
 	return s.serviceInterface.Apple(ctx, req, client)
-}
-
-// Config ...
-func (s *GrpcServiceHandler) Config() validator.Validator {
-	return s.genCallback.Config()
-}
-
-// Name ...
-func (s *GrpcServiceHandler) Name() string {
-	return "Wallet"
 }

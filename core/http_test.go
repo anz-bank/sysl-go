@@ -110,7 +110,7 @@ func Test_makeNewServer(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			if got := makeNewServer(tt.args.router, tt.args.tlsConfig, &tt.args.serverConfig, nil); !reflect.DeepEqual(got, tt.want) {
+			if got := makeNewServer(tt.args.router, tt.args.tlsConfig, tt.args.serverConfig, nil); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("makeNewServer() = %v, want %v", got, tt.want)
 			}
 		})
@@ -157,7 +157,7 @@ func Test_prepareServerListener(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			assert.NotNil(t, prepareServerListener(tt.args.logger, tt.args.rootRouter, tt.args.tlsConfig, &tt.args.commonConfig))
+			assert.NotNil(t, prepareServerListener(tt.args.logger, tt.args.rootRouter, tt.args.tlsConfig, tt.args.commonConfig))
 		})
 	}
 }

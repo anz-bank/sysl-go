@@ -9,16 +9,11 @@ import (
 )
 
 type HandlerInitialiser interface {
+	WireRoutes(ctx context.Context, r chi.Router)
 	Name() string                // Human-friendly name of the service
 	Config() validator.Validator // Reference to config for this service.
 }
 
-type RestHandlerInitialiser interface {
-	HandlerInitialiser
-	WireRoutes(ctx context.Context, r chi.Router)
-}
-
 type GrpcHandlerInitialiser interface {
-	HandlerInitialiser
 	RegisterServer(ctx context.Context, server *grpc.Server)
 }
