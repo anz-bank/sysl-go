@@ -553,6 +553,13 @@ func TestJustOKAndJustErrorReturnsHeadersWhenOK(t *testing.T) {
 	require.Equal(t, `{"jsonField":"jsonVal"}`, h.Get("Context"))
 }
 
+func Test204OKResponse(t *testing.T) {
+	c, s := bodylessClientServer(204)
+	defer s.Close()
+	_, err := c.GetJustOkAndJustErrorList(context.Background(), &GetJustOkAndJustErrorListRequest{})
+	require.NoError(t, err)
+}
+
 func TestJustOKAndJustErrorPutsHeadersInErrorWhenError(t *testing.T) {
 	c, s := bodylessClientServer(400)
 	defer s.Close()

@@ -38,6 +38,15 @@ func Test_unmarshalNilBodyOK(t *testing.T) {
 	require.Nil(t, result.Response)
 }
 
+func Test_unmarshalPointerBodyOK(t *testing.T) {
+	result, err := unmarshal(&http.Response{}, nil, &OkType{})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.NotNil(t, result.HTTPResponse)
+	require.Nil(t, result.Body)
+	require.NotNil(t, result.Response)
+}
+
 func Test_unmarshalEmptyBodyOK(t *testing.T) {
 	result, err := unmarshal(&http.Response{}, make([]byte, 0), OkType{})
 	require.NoError(t, err)
@@ -76,6 +85,19 @@ func Test_DoHTTPRequestOkType(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte(okJSON))
+	}))
+	defer srv.Close()
+
+	result, err := DoHTTPRequest(context.Background(), srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.IsType(t, &OkType{}, result.Response)
+}
+
+func Test_DoHTTPRequest204Response(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(204)
+		_, _ = w.Write(nil)
 	}))
 	defer srv.Close()
 

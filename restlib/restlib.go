@@ -41,6 +41,11 @@ func unmarshal(resp *http.Response, body []byte, respStruct interface{}) (*HTTPR
 		panic("unmarshal expecting a non-nil http.Response")
 	}
 	if respStruct == nil || body == nil || len(body) == 0 {
+		// Obtain the respStruct's dynamic type and check if its a pointer
+		if p := reflect.TypeOf(respStruct); p != nil && p.Kind() == reflect.Ptr {
+			// Dereference the dynamic pointer type and pass the created zero value
+			return makeHTTPResult(resp, body, reflect.New(p.Elem()).Interface()), nil
+		}
 		return makeHTTPResult(resp, body, nil), nil
 	}
 
@@ -129,9 +134,13 @@ func DoHTTPRequest(ctx context.Context, client *http.Client, method string,
 	}
 
 	// OK
-	if httpResponse.StatusCode == http.StatusOK ||
-		httpResponse.StatusCode == http.StatusCreated ||
-		httpResponse.StatusCode == http.StatusAccepted {
+	switch httpResponse.StatusCode {
+	case http.StatusOK,
+		http.StatusCreated,
+		http.StatusAccepted,
+		http.StatusNonAuthoritativeInfo,
+		http.StatusNoContent,
+		http.StatusResetContent:
 		return unmarshal(httpResponse, respBody, okResponse)
 	}
 
