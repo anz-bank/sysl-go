@@ -2,6 +2,8 @@ package simplegrpc
 
 import (
 	"context"
+	"fmt"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -59,11 +61,11 @@ func localServerConfig() config.CommonServerConfig {
 	}
 }
 
-func localAdminServerConfig() *config.CommonHTTPServerConfig {
+func localAdminServerConfig(adminPort int) *config.CommonHTTPServerConfig {
 	return &config.CommonHTTPServerConfig{
 		Common: config.CommonServerConfig{
 			HostName: "localhost",
-			Port:     8001,
+			Port:     adminPort,
 		},
 		BasePath: "/admin",
 	}
@@ -141,12 +143,13 @@ func TestValidRequestResponseAdminServer(t *testing.T) {
 		_, _ = w.Write([]byte(`{}`))
 	}))
 	defer server.Close()
+	adminPort := rand.Intn(999) + 8000
 
 	logger, _ := tlog.NewNullLogger()
 	adminConfig := config.LibraryConfig{
 		Log:         config.LogConfig{},
 		Profiling:   false,
-		AdminServer: localAdminServerConfig(),
+		AdminServer: localAdminServerConfig(adminPort),
 	}
 
 	cb := Callbacks{
@@ -174,7 +177,7 @@ func TestValidRequestResponseAdminServer(t *testing.T) {
 		serverError <- err
 	}()
 
-	req, err := http.NewRequest("GET", "http://localhost:8001/status", nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("http://localhost:%d/status", adminPort), nil)
 	require.Nil(t, err)
 	resp, err1 := http.DefaultClient.Do(req)
 	require.Nil(t, err1)
