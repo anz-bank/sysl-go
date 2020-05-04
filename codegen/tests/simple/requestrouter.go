@@ -7,7 +7,6 @@ import (
 
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
-	"github.com/anz-bank/sysl-go/validator"
 	"github.com/go-chi/chi"
 )
 
@@ -57,7 +56,7 @@ func (s *ServiceRouter) WireRoutes(ctx context.Context, r chi.Router) {
 }
 
 // Config ...
-func (s *ServiceRouter) Config() validator.Validator {
+func (s *ServiceRouter) Config() interface{} {
 	return s.gc.Config()
 }
 
