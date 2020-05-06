@@ -588,7 +588,7 @@ func TestOKTypeAndJustErrorPutsHeadersInErrorWhenError(t *testing.T) {
 	require.Equal(t, `{"jsonField":"jsonVal"}`, resp.HTTPResponse.Header.Get("Context"))
 }
 
-func TestAppInitialiseHandlers(t *testing.T) {
+func TestBuildRestHandlerInitialiser(t *testing.T) {
 	t.Parallel()
 	testConfig := config.DefaultConfig{
 		Library: config.LibraryConfig{},
@@ -609,13 +609,34 @@ func TestAppInitialiseHandlers(t *testing.T) {
 		GetStuffList: th.ValidGetStuffListHandlerStub,
 	}
 	var testCallback core.RestGenCallback = &Callback{}
-	handlers, err := InitialiseHandlers(&testConfig, testServiceInterface, testCallback)
+	clients, err := BuildDownstreamClients(&testConfig)
+	handler := BuildRestHandlerInitialiser(testServiceInterface, testCallback, clients)
 	require.Nil(t, err)
-	require.True(t, len(handlers.RestHandlers) > 0)
-	srvRouter, ok := (handlers.RestHandlers[0]).(*ServiceRouter)
+	srvRouter, ok := (handler).(*ServiceRouter)
 	require.True(t, ok)
 	reflect.DeepEqual(testCallback, srvRouter.svcHandler.genCallback)
 	reflect.DeepEqual(testServiceInterface, srvRouter.svcHandler.serviceInterface)
+}
+
+func TestBuildDownstreamClients(t *testing.T) {
+	t.Parallel()
+	testConfig := config.DefaultConfig{
+		Library: config.LibraryConfig{},
+		GenCode: config.GenCodeConfig{
+			Downstream: &DownstreamConfig{
+				Deps: config.CommonDownstreamData{
+					ServiceURL: "http://localhost:8080/deps",
+				},
+				Downstream: config.CommonDownstreamData{
+					ServiceURL: "http://localhost:8080/downstream",
+				},
+			},
+		},
+	}
+	handlers, err := BuildDownstreamClients(&testConfig)
+	require.Nil(t, err)
+	require.NotNil(t, handlers.depsClient)
+	require.NotNil(t, handlers.downstreamClient)
 }
 
 func TestApiDocsReturnsSequence(t *testing.T) {
