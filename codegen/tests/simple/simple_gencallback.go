@@ -6,8 +6,6 @@ import (
 
 	"github.com/anz-bank/sysl-go/common"
 
-	"github.com/anz-bank/sysl-go/validator"
-
 	"github.com/go-chi/chi"
 )
 
@@ -25,7 +23,7 @@ func (c Callback) DownstreamTimeoutContext(ctx context.Context) (context.Context
 	return context.WithTimeout(ctx, 1*time.Second)
 }
 
-func (c Callback) Config() validator.Validator {
+func (c Callback) Config() interface{} {
 	return Config{}
 }
 
