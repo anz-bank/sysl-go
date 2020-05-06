@@ -38,7 +38,7 @@ func (g Callback) BasePath() string {
 	return g.RouterBasePath
 }
 
-func (g Callback) Config() validator.Validator {
+func (g Callback) Config() interface{} {
 	return g.UpstreamConfig
 }
 

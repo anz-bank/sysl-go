@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/anz-bank/sysl-go/common"
-	"github.com/anz-bank/sysl-go/validator"
 	"github.com/go-chi/chi"
 )
 
