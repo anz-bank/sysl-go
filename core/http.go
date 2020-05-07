@@ -12,7 +12,6 @@ import (
 
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config"
-	"github.com/anz-bank/sysl-go/handlerinitialiser"
 	"github.com/anz-bank/sysl-go/metrics"
 	"github.com/anz-bank/sysl-go/status"
 	"github.com/go-chi/chi"
@@ -20,19 +19,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type Manager interface {
-	EnabledHandlers() []handlerinitialiser.HandlerInitialiser
-	LibraryConfig() *config.LibraryConfig
-	AdminServerConfig() *config.CommonHTTPServerConfig
-	PublicServerConfig() *config.CommonHTTPServerConfig
-}
-
 type middlewareCollection struct {
 	admin  []func(handler http.Handler) http.Handler
 	public []func(handler http.Handler) http.Handler
 }
 
-func configureAdminServerListener(hl Manager, logger *logrus.Logger, promRegistry *prometheus.Registry, mWare []func(handler http.Handler) http.Handler) (func() error, error) {
+func configureAdminServerListener(hl RestManager, logger *logrus.Logger, promRegistry *prometheus.Registry, mWare []func(handler http.Handler) http.Handler) (func() error, error) {
 	rootAdminRouter, adminRouter := configureRouters(hl.AdminServerConfig().BasePath, mWare)
 
 	adminTLSConfig, err := config.MakeTLSConfig(hl.AdminServerConfig().Common.TLS)
@@ -62,7 +54,7 @@ func configureAdminServerListener(hl Manager, logger *logrus.Logger, promRegistr
 	return listenAdmin, nil
 }
 
-func configurePublicServerListener(ctx context.Context, hl Manager, logger *logrus.Logger, mWare []func(handler http.Handler) http.Handler) (func() error, error) {
+func configurePublicServerListener(ctx context.Context, hl RestManager, logger *logrus.Logger, mWare []func(handler http.Handler) http.Handler) (func() error, error) {
 	rootPublicRouter, publicRouter := configureRouters(hl.PublicServerConfig().BasePath, mWare)
 
 	publicTLSConfig, err := config.MakeTLSConfig(hl.PublicServerConfig().Common.TLS)
