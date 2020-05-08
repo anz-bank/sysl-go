@@ -263,7 +263,7 @@ CodeGenTransform:
 
   !view makeType(param <: sysl.Param, app <: string, pkg <: string) -> string:
     param -> (:
-      out = if MatchString("\\.", param.type_ref) then pkg + GoName(TrimPrefix(param.type_ref,app)).out else GoType(param).out
+      out = if MatchString("\\.", param.type) then pkg + GoName(TrimPrefix(param.type_ref,app)).out else GoType(param).out
     )
 
   !view RequestTypes(eps <: sequence of sysl.Endpoint, module <: sysl.Module) -> sequence of TopLevelDecl:
@@ -275,7 +275,7 @@ CodeGenTransform:
           StructName =  typeName
           let bodyParams = ep.value.params where ("body" in .attrs.patterns ) -> <sequence of FieldDecl>(p:
             identifier = "Request"
-            let pkg = getPackagePrefix(p.type_ref, module)
+            let pkg = getPackagePrefix(p.type, module)
             Type = makeType(p, pkg.appName, pkg.out).out
           )
           let otherParams = ep.value.pathvars | ep.value.queryvars -> <sequence of FieldDecl>(p:
