@@ -24,6 +24,7 @@ func NewServerParams(ctx context.Context, name string, config *config.DefaultCon
 	return &ServerParams{Ctx: ctx, Name: name, Config: config}
 }
 
+//nolint:gocognit // Long method names are okay because only generated code will call this, not humans.
 func (params *ServerParams) Start(opts ...ServerOption) error {
 	for _, o := range opts {
 		if err := o.Apply(params); err != nil {
@@ -57,7 +58,6 @@ func (params *ServerParams) Start(opts ...ServerOption) error {
 	} else {
 		listenPublic = func() error { select {} }
 	}
-
 	// Run the gRPC server
 	var listenPublicGrpc func() error
 	if params.grpcManager != nil && params.grpcManager.GrpcPublicServerConfig() != nil {
@@ -66,17 +66,14 @@ func (params *ServerParams) Start(opts ...ServerOption) error {
 		if err != nil {
 			return err
 		}
-
 		grpcIsRunning = true
 	} else {
 		listenPublicGrpc = func() error { select {} }
 	}
-
 	// Panic if REST&gRPC are not running
 	if !restIsRunning && !grpcIsRunning {
 		panic("Both servers are set to nil")
 	}
-
 	errChan := make(chan error, 1)
 	go func() {
 		errChan <- listenPublic()
@@ -106,6 +103,45 @@ func (o *restManagerOption) Apply(params *ServerParams) error {
 
 func WithRestManager(manager RestManager) ServerOption {
 	return &restManagerOption{manager}
+}
+
+type loggerOption struct {
+	logger *logrus.Logger
+}
+
+func (o *loggerOption) Apply(params *ServerParams) error {
+	params.logger = o.logger
+	return nil
+}
+
+func WithLogger(logger *logrus.Logger) ServerOption {
+	return &loggerOption{logger}
+}
+
+func WithPrometheusRegistry(prometheusRegistry *prometheus.Registry) ServerOption {
+	return &prometheusRegistryOption{prometheusRegistry}
+}
+
+type prometheusRegistryOption struct {
+	prometheusRegistry *prometheus.Registry
+}
+
+func (o *prometheusRegistryOption) Apply(params *ServerParams) error {
+	params.prometheusRegistry = o.prometheusRegistry
+	return nil
+}
+
+type grpcManagerOption struct {
+	grpcManager GrpcManager
+}
+
+func (o *grpcManagerOption) Apply(params *ServerParams) error {
+	params.grpcManager = o.grpcManager
+	return nil
+}
+
+func WithGrpcManager(manager GrpcManager) ServerOption {
+	return &grpcManagerOption{manager}
 }
 
 //nolint:gocognit // Long method names are okay because only generated code will call this, not humans.
