@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 	"time"
 
@@ -110,4 +111,56 @@ func TestValidRequestResponse(t *testing.T) {
 	connectAndCheckReturn(t, grpc.WithInsecure())
 	serverHolder.svr.GracefulStop()
 	require.NoError(t, <-serverError)
+}
+
+func TestBuildRestHandlerInitialiser(t *testing.T) {
+	t.Parallel()
+	testConfig := config.DefaultConfig{
+		Library: config.LibraryConfig{},
+		GenCode: config.GenCodeConfig{
+			Downstream: &DownstreamConfig{
+				Simple: config.CommonDownstreamData{
+					ServiceURL: "http://localhost:8080/deps",
+				},
+			},
+		},
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer server.Close()
+	cb := Callbacks{
+		timeout: 1 * time.Second,
+	}
+
+	si := GrpcServiceInterface{
+		GetStuff: GetStuffStub,
+	}
+
+	client := simple.NewClient(server.Client(), server.URL)
+	serviceHandler := NewGrpcServiceHandler(cb, &si, client)
+	clients, err := BuildDownstreamClients(&testConfig)
+	handler := BuildGrpcHandlerInitialiser(si, cb, clients)
+	require.Nil(t, err)
+	grpcRouter, ok := (handler).(*GrpcServiceHandler)
+	require.True(t, ok)
+	reflect.DeepEqual(cb, grpcRouter.genCallback)
+	reflect.DeepEqual(serviceHandler, grpcRouter.serviceInterface)
+}
+
+func TestBuildDownstreamClients(t *testing.T) {
+	t.Parallel()
+	testConfig := config.DefaultConfig{
+		Library: config.LibraryConfig{},
+		GenCode: config.GenCodeConfig{
+			Downstream: &DownstreamConfig{
+				Simple: config.CommonDownstreamData{
+					ServiceURL: "http://localhost:8080/deps",
+				},
+			},
+		},
+	}
+	handlers, err := BuildDownstreamClients(&testConfig)
+	require.Nil(t, err)
+	require.NotNil(t, handlers.simpleClient)
 }
