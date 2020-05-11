@@ -40,6 +40,7 @@ type Stuff struct {
 	RawTimeStuff   time.Time              `json:"rawTimeStuff"`
 	ResponseStuff  Response               `json:"responseStuff"`
 	SensitiveStuff common.SensitiveString `json:"sensitiveStuff"`
+	SequenceStuff  []Str                  `json:"sequenceStuff,omitempty"`
 	TimeStuff      convert.JSONTime       `json:"timeStuff"`
 }
 

@@ -79,6 +79,8 @@ Simple "Simple Server" [package="simple"]:
             @json_tag = "responseStuff"
         emptyStuff <: Empty:
             @json_tag = "emptyStuff"
+        sequenceStuff <: sequence of str?:
+            @json_tag = "sequenceStuff"
             
     !type BusinessLogicError [~error]:
         http_status <: string [value = "500"]
