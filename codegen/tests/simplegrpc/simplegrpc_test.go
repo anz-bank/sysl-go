@@ -101,9 +101,13 @@ func TestValidRequestResponse(t *testing.T) {
 	}
 
 	serverError := make(chan error)
+	params := &core.ServerParams{
+		Ctx:  context.Background(),
+		Name: "test",
+	}
 
 	go func() {
-		err := core.Server(context.Background(), "test", nil, &handlerManager, logger, nil)
+		err := params.Start(core.WithGrpcManager(&handlerManager), core.WithLogger(logger), core.WithRestManager(nil))
 		serverError <- err
 	}()
 
