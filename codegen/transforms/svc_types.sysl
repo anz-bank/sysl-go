@@ -46,7 +46,7 @@ CodeGenTransform:
       let patternsAttr = if "patterns" in field.value.attrs then if "no_json" in field.value.attrs.patterns && "pk" in field.value.attrs.patterns then "-" else "" else ""
       let jsonTag = if patternsAttr != "" then patternsAttr else if "json_tag" in field.value.attrs then field.value.attrs.json_tag else field.key
       let fieldTag = '`json:"' + jsonTag
-      Tag = if field.value.optional == true && field.value.type != "sequence" then (fieldTag + ',omitempty"`') else (fieldTag + '"`')
+      Tag = if field.value.optional == true then (fieldTag + ',omitempty"`') else (fieldTag + '"`')
       Type = GoType(field.value).out
     )
 
