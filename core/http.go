@@ -12,12 +12,20 @@ import (
 
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config"
+	"github.com/anz-bank/sysl-go/handlerinitialiser"
 	"github.com/anz-bank/sysl-go/metrics"
 	"github.com/anz-bank/sysl-go/status"
 	"github.com/go-chi/chi"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
+
+type RestManager interface {
+	EnabledHandlers() []handlerinitialiser.HandlerInitialiser
+	LibraryConfig() *config.LibraryConfig
+	AdminServerConfig() *config.CommonHTTPServerConfig
+	PublicServerConfig() *config.CommonHTTPServerConfig
+}
 
 type middlewareCollection struct {
 	admin  []func(handler http.Handler) http.Handler
