@@ -9,17 +9,24 @@ import (
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
 )
 
-// HandlerInit for Simple
-type HandlerInit struct {
-	RestHandlers []handlerinitialiser.HandlerInitialiser
-	GrpcHandlers []handlerinitialiser.GrpcHandlerInitialiser
+// DownstreamClients for Simple
+type DownstreamClients struct {
+	depsClient       *deps.Client
+	downstreamClient *downstream.Client
 }
 
-// InitialiseHandlers ...
-func InitialiseHandlers(coreCfg *config.DefaultConfig, serviceInterface ServiceInterface, serviceCallback core.RestGenCallback) (*HandlerInit, error) {
+// BuildRestHandlerInitialiser ...
+func BuildRestHandlerInitialiser(serviceInterface ServiceInterface, callback core.RestGenCallback, downstream *DownstreamClients) handlerinitialiser.HandlerInitialiser {
+	serviceHandler := NewServiceHandler(callback, &serviceInterface, downstream.depsClient, downstream.downstreamClient)
+	serviceRouter := NewServiceRouter(callback, serviceHandler)
+	return serviceRouter
+}
+
+// BuildDownstreamClients ...
+func BuildDownstreamClients(cfg *config.DefaultConfig) (*DownstreamClients, error) {
 	var err error = nil
-	depsHTTPClient, depsErr := core.BuildDownstreamHTTPClient("deps", &coreCfg.GenCode.Downstream.(*DownstreamConfig).Deps)
-	downstreamHTTPClient, downstreamErr := core.BuildDownstreamHTTPClient("downstream", &coreCfg.GenCode.Downstream.(*DownstreamConfig).Downstream)
+	depsHTTPClient, depsErr := core.BuildDownstreamHTTPClient("deps", &cfg.GenCode.Downstream.(*DownstreamConfig).Deps)
+	downstreamHTTPClient, downstreamErr := core.BuildDownstreamHTTPClient("downstream", &cfg.GenCode.Downstream.(*DownstreamConfig).Downstream)
 	if depsErr != nil {
 		return nil, depsErr
 	}
@@ -28,10 +35,9 @@ func InitialiseHandlers(coreCfg *config.DefaultConfig, serviceInterface ServiceI
 		return nil, downstreamErr
 	}
 
-	depsClient := deps.NewClient(depsHTTPClient, coreCfg.GenCode.Downstream.(*DownstreamConfig).Deps.ServiceURL)
-	downstreamClient := downstream.NewClient(downstreamHTTPClient, coreCfg.GenCode.Downstream.(*DownstreamConfig).Downstream.ServiceURL)
-	serviceHandler := NewServiceHandler(serviceCallback, &serviceInterface, depsClient, downstreamClient)
-	serviceRouter := NewServiceRouter(serviceCallback, serviceHandler)
-	httpHandlers := []handlerinitialiser.HandlerInitialiser{serviceRouter}
-	return &HandlerInit{RestHandlers: httpHandlers}, err
+	depsClient := deps.NewClient(depsHTTPClient, cfg.GenCode.Downstream.(*DownstreamConfig).Deps.ServiceURL)
+	downstreamClient := downstream.NewClient(downstreamHTTPClient, cfg.GenCode.Downstream.(*DownstreamConfig).Downstream.ServiceURL)
+	return &DownstreamClients{depsClient: depsClient,
+		downstreamClient: downstreamClient,
+	}, err
 }

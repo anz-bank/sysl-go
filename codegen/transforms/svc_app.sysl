@@ -9,43 +9,153 @@ CodeGenTransform:
       ValueExpr = strValue
     )
 
-  !view makeMethodCallExpr(app <: sysl.App, module <: sysl.Module, expr1 <: string, expr2 <: string) -> Expression:
+  !view makeGrpcServiceHandlerExpr(app <: sysl.App, module <: sysl.Module, expr1 <: string, expr2 <: string) -> Expression:
     app -> (:
       let clientPkgs = makeClientPkgList(app, module) flatten(.out) -> <set of string>(pkg:
-        out = pkg + "Client"
+        out = "downstream." + pkg + "Client"
+      )      
+      ValueExpr = "NewGrpcServiceHandler(" + expr1 + "," + expr2 + "," + Join(clientPkgs flatten(.out), ",") + ")"
+    )
+
+  !view makeServiceHandlerExpr(app <: sysl.App, module <: sysl.Module, expr1 <: string, expr2 <: string) -> Expression:
+    app -> (:
+      let clientPkgs = makeClientPkgList(app, module) flatten(.out) -> <set of string>(pkg:
+        out = "downstream." + pkg + "Client"
       )      
       ValueExpr = "NewServiceHandler(" + expr1 + "," + expr2 + "," + Join(clientPkgs flatten(.out), ",") + ")"
     )
 
-  !view makeInitialiseHandlers(app <: sysl.App, module <: sysl.Module) -> TopLevelDecl:
+  !view makeBuildRestHandlerInitialiser(app <: sysl.App, module <: sysl.Module) -> TopLevelDecl:
     app -> (:
-      Comment = '// InitialiseHandlers ...'
+      Comment = '// BuildRestHandlerInitialiser ...'
       FunctionDecl = app -> <FunctionDecl>(:
-        FunctionName = "InitialiseHandlers"
+        FunctionName = "BuildRestHandlerInitialiser"
         Signature = app -> <Signature>(:
           Parameters = app -> <Parameters>(:
             ParameterList = app -> <ParameterList>(:
               ParameterDecl = app -> <ParameterDecl>(:
-                Identifier = "coreCfg"
-                TypeName = "*config.DefaultConfig"
-              )
-              let serviceInterface = app -> <ParameterDeclC>(:
-                ParameterDecl = app -> <ParameterDecl>(:
-                  Identifier = "serviceInterface"
-                  TypeName = "ServiceInterface"
-                )
+                Identifier = "serviceInterface"
+                TypeName = "ServiceInterface"
               )
               let serviceCallback = app -> <ParameterDeclC>(:
                 ParameterDecl = app -> <ParameterDecl>(:
-                  Identifier = "serviceCallback"
+                  Identifier = "callback"
                   TypeName = "core.RestGenCallback"
                 )
               )
-              ParameterDeclC = [serviceInterface] |  [serviceCallback]
+              let downstreamClients = app -> <ParameterDeclC>(:
+                ParameterDecl = app -> <ParameterDecl>(:
+                  Identifier = "downstream"
+                  TypeName = "*DownstreamClients"
+                )
+              )
+              ParameterDeclC = [serviceCallback] |  [downstreamClients]
             )
           )
           Result = app -> <Result>(:
-            TypeName = "(*HandlerInit, error)"
+            TypeName = "(handlerinitialiser.HandlerInitialiser)"
+          )
+        )
+        Block = app -> <Block>(:
+          let serviceHandlerStmt = app -> <StatementList> (:
+            Statement = app -> <Statement>(:
+              DeclareAndAssignStmt = app -> <DeclareAndAssignStmt> (:
+                Variables = "serviceHandler"
+                Expression = makeServiceHandlerExpr(app, module, "callback", "&serviceInterface")
+              )
+            )
+          )
+
+          let serviceRouterStmt = app -> <StatementList> (:
+            Statement = app -> <Statement>(:
+              DeclareAndAssignStmt = app -> <DeclareAndAssignStmt> (:
+                Variables = "serviceRouter"
+                Expression = makeValueExpr("NewServiceRouter(callback, serviceHandler)")
+              )
+            )
+          )
+
+          let retStmt = app -> <StatementList>(:
+            Statement = app -> <Statement>(:
+              ReturnStmt = app -> <ReturnStmt>(:
+                PayLoad = "serviceRouter"
+              )
+            )
+          )
+          StatementList = [serviceHandlerStmt, serviceRouterStmt, retStmt]
+        )
+      )
+    )
+  
+  !view makeBuildGrpcHandlerInitialiser(app <: sysl.App, module <: sysl.Module) -> TopLevelDecl:
+    app -> (:
+      Comment = '// BuildGrpcHandlerInitialiser ...'
+      FunctionDecl = app -> <FunctionDecl>(:
+        FunctionName = "BuildGrpcHandlerInitialiser"
+        Signature = app -> <Signature>(:
+          Parameters = app -> <Parameters>(:
+            ParameterList = app -> <ParameterList>(:
+              ParameterDecl = app -> <ParameterDecl>(:
+                Identifier = "serviceInterface"
+                TypeName = "GrpcServiceInterface"
+              )
+              let serviceCallback = app -> <ParameterDeclC>(:
+                ParameterDecl = app -> <ParameterDecl>(:
+                  Identifier = "callback"
+                  TypeName = "core.GrpcGenCallback"
+                )
+              )
+              let downstreamClients = app -> <ParameterDeclC>(:
+                ParameterDecl = app -> <ParameterDecl>(:
+                  Identifier = "downstream"
+                  TypeName = "*DownstreamClients"
+                )
+              )
+              ParameterDeclC = [serviceCallback] |  [downstreamClients]
+            )
+          )
+          Result = app -> <Result>(:
+            TypeName = "(handlerinitialiser.GrpcHandlerInitialiser)"
+          )
+        )
+        Block = app -> <Block>(:
+          let serviceHandlerStmt = app -> <StatementList> (:
+            Statement = app -> <Statement>(:
+              DeclareAndAssignStmt = app -> <DeclareAndAssignStmt> (:
+                Variables = "serviceHandler"
+                Expression = makeGrpcServiceHandlerExpr(app, module, "callback", "&serviceInterface")
+              )
+            )
+          )
+
+          let retStmt = app -> <StatementList>(:
+            Statement = app -> <Statement>(:
+              ReturnStmt = app -> <ReturnStmt>(:
+                PayLoad = "serviceHandler"
+              )
+            )
+          )
+          StatementList = [serviceHandlerStmt, retStmt]
+        )
+      )
+    )
+  
+  !view makeBuildDownstreamClients(app <: sysl.App, module <: sysl.Module) -> TopLevelDecl:
+    app -> (:
+      Comment = '// BuildDownstreamClients ...'
+      FunctionDecl = app -> <FunctionDecl>(:
+        FunctionName = "BuildDownstreamClients"
+        Signature = app -> <Signature>(:
+          Parameters = app -> <Parameters>(:
+            ParameterList = app -> <ParameterList>(:
+              ParameterDecl = app -> <ParameterDecl>(:
+                Identifier = "cfg"
+                TypeName = "*config.DefaultConfig"
+              )
+            )
+          )
+          Result = app -> <Result>(:
+            TypeName = "(*DownstreamClients, error)"
           )
         )
         Block = app -> <Block>(:
@@ -62,7 +172,7 @@ CodeGenTransform:
               Statement = pkg -> <Statement>(:
                 DeclareAndAssignStmt = pkg -> <DeclareAndAssignStmt> (:
                   Variables = pkg + "HTTPClient" + ",  "+ ToLower(pkg) + "Err"
-                  Expression = makeValueExpr("core.BuildDownstreamHTTPClient(\"" + ToLower(pkg) + "\", &coreCfg.GenCode.Downstream.(*DownstreamConfig)." + Title(ToLower(pkg)) + ")")
+                  Expression = makeValueExpr("core.BuildDownstreamHTTPClient(\"" + ToLower(pkg) + "\", &cfg.GenCode.Downstream.(*DownstreamConfig)." + Title(ToLower(pkg)) + ")")
                 )
               )
             )
@@ -87,35 +197,8 @@ CodeGenTransform:
               Statement = pkg -> <Statement>(:
                 DeclareAndAssignStmt = pkg -> <DeclareAndAssignStmt> (:
                   Variables = ToLower(pkg) + "Client"
-                  Expression = makeValueExpr(ToLower(pkg) + ".NewClient(" + ToLower(pkg) + "HTTPClient, coreCfg.GenCode.Downstream.(*DownstreamConfig)." + Title(ToLower(pkg)) + ".ServiceURL)")
+                  Expression = makeValueExpr(ToLower(pkg) + ".NewClient(" + ToLower(pkg) + "HTTPClient, cfg.GenCode.Downstream.(*DownstreamConfig)." + Title(ToLower(pkg)) + ".ServiceURL)")
                 )
-              )
-            )
-          )
-
-          let serviceHandlerStmt = app -> <StatementList> (:
-            Statement = app -> <Statement>(:
-              DeclareAndAssignStmt = app -> <DeclareAndAssignStmt> (:
-                Variables = "serviceHandler"
-                Expression = makeMethodCallExpr(app, module, "serviceCallback", "&serviceInterface")
-              )
-            )
-          )
-
-          let serviceRouterStmt = app -> <StatementList> (:
-            Statement = app -> <Statement>(:
-              DeclareAndAssignStmt = app -> <DeclareAndAssignStmt> (:
-                Variables = "serviceRouter"
-                Expression = makeValueExpr("NewServiceRouter(serviceCallback, serviceHandler)")
-              )
-            )
-          )
-
-          let restHandlersStmt = app -> <StatementList> (:
-            Statement = app -> <Statement>(:
-              DeclareAndAssignStmt = app -> <DeclareAndAssignStmt> (:
-                Variables = "httpHandlers"
-                Expression = makeValueExpr("[]handlerinitialiser.HandlerInitialiser{serviceRouter}")
               )
             )
           )
@@ -123,11 +206,14 @@ CodeGenTransform:
           let retStmt = app -> <StatementList>(:
             Statement = app -> <Statement>(:
               ReturnStmt = app -> <ReturnStmt>(:
-                PayLoad = "&HandlerInit{RestHandlers: httpHandlers}, err"
+                let pkgs = makeClientPkgList(app, module) flatten(.out) -> <set of string>(pkg:
+                  out = ToLower(pkg) + "Client: " + ToLower(pkg) + "Client,"
+                )
+                PayLoad = "&DownstreamClients{" + Join(pkgs flatten(.out),"\n") + "\n}, err"
               )
             )
           )
-          StatementList = [errorDecl] | clientPkgs flatten(.pkgHttpClientStmt) | clientPkgs flatten(.ifStmt) | clientPkgs flatten(.pkgClientStmt) | [serviceHandlerStmt, serviceRouterStmt, restHandlersStmt, retStmt]
+          StatementList = [errorDecl] | clientPkgs flatten(.pkgHttpClientStmt) | clientPkgs flatten(.ifStmt) | clientPkgs flatten(.pkgClientStmt) | [retStmt]
         )
       )
     )
@@ -184,6 +270,23 @@ CodeGenTransform:
           )
         )
       )
+
+      let downstreamClientsStruct = [.name] -> <sequence of TopLevelDecl> (name:
+        Comment = "// DownstreamClients for " + name
+        Declaration = name -> <Declaration>(:
+          StructType = name -> <StructType>(:
+            StructName = "DownstreamClients"
+            let clientPkgs = makeClientPkgList(app, module) flatten(.out) -> <set of string>(pkg:
+              pkgClientDecl = name -> <FieldDecl>(:
+                identifier = ToLower(pkg) + "Client"
+                Type = "*" + pkg + ".Client"
+              )
+            )
+            FieldDecl = clientPkgs flatten(.pkgClientDecl)
+          )
+        )
+      )
       Comment = "// Code generated by sysl DO NOT EDIT.\n"
-      TopLevelDecl = handlerInitStruct | [makeInitialiseHandlers(app, module)]
+      let handlerInitialiser = if "patterns" in app.attrs then if "gRPC" in app.attrs.patterns then makeBuildGrpcHandlerInitialiser(app, module) else makeBuildRestHandlerInitialiser(app, module) else makeBuildRestHandlerInitialiser(app, module)
+      TopLevelDecl = downstreamClientsStruct | [handlerInitialiser, makeBuildDownstreamClients(app, module)]    
     )
