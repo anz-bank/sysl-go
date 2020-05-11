@@ -64,6 +64,7 @@ func (th *TestHandler) ValidGetStuffListHandlerStub(ctx context.Context, req *Ge
 				},
 			},
 		},
+		SequenceStuff: nil,
 	}
 
 	th.reqH = headerCpy(common.RequestHeaderFromContext(ctx))
@@ -453,7 +454,7 @@ func TestClient_PassesXMLBody(t *testing.T) {
 func TestSensitive(t *testing.T) {
 	logger, hook := test.NewNullLogger()
 	logger.Error(Stuff{InnerStuff: "innerStuff", SensitiveStuff: common.NewSensitiveString("sensitiveStuff")})
-	require.Equal(t, "{{} innerStuff 0001-01-01 00:00:00 +0000 UTC {{map[]}} **************** 0001-01-01 00:00:00 +0000 UTC}", hook.LastEntry().Message)
+	require.Equal(t, "{{} innerStuff 0001-01-01 00:00:00 +0000 UTC {{map[]}} **************** [] 0001-01-01 00:00:00 +0000 UTC}", hook.LastEntry().Message)
 }
 
 func TestTimeFormat(t *testing.T) {
