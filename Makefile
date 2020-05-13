@@ -52,6 +52,7 @@ help:
 # -- Codegen ----------------------------------------------------------------------
 # Transform settings - common across all code generation
 TRANSFORMS=codegen/transforms
+ARRAI_TRANSFORMS=codegen/arrai
 
 # Input models for code generation
 TEST_IN_DIR=codegen/testdata

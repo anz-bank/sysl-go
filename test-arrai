@@ -1,0 +1,5 @@
+#!/bin/bash
+
+target="$1"
+
+make codegen/arrai/tests/$target && colordiff -wuB codegen/tests/$target/ codegen/arrai/tests/$target/ | less -FRX

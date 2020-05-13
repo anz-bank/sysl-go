@@ -1,0 +1,62 @@
+let go = //{./go};
+let sysl = //{./sysl};
+
+\(:app, :appname,, :clientImports, :endpoints, :goModule, :hasDB, :basepath, :module, :restEndpoints, ...)
+    let structName = $`Default${go.name(appname)}Impl`;
+    $`
+        ${go.prelude(app, clientImports => $`${basepath}/${.}`)}
+
+        // ${structName} ...
+        type ${structName} struct {
+        }
+
+        // New${structName} for ${appname}
+        func New${structName}() *${structName} {
+            return &${structName}{}
+        }
+
+        ${restEndpoints >> \(@: epname, @value: ep)
+            let method = go.methodName(ep);
+            $`
+                // ${method} Client
+                type ${method}Client struct {
+                    ${cond {hasDB: $`
+                        conn *sql.Conn
+                        ${ep('attr') where (//seq.has_prefix(.key, "sql_")) >>
+                            $`${//str.lower(//seq.trim_prefix(.key, "sql_"))} *sql.Stmt`
+                        }
+                    `}}
+                    ${
+                        sysl.endpoint.calls(ep) >> $`${
+                            let dep = goModule.targetApp(.('target'));
+                            let package = go.package(dep);
+                            let ep = sysl.app.endpoint(dep, .('endpoint').s);
+                            let method = go.methodName(ep);
+                            $`${method} func(ctx context.Context, req *${package}.${method}Request) (${
+                                let typed = sysl.endpoint.normalReturns(ep) >> $`*${package}.${.type::}`;
+                                let untyped = sysl.endpoint.untypedReturns(ep) >> `*http.Header`;
+                                typed ++ untyped ++ ["error"]
+                            ::, })`
+                        }`
+                    ::\i}
+                }
+            `
+        ::\i}
+
+        // ServiceInterface for ${appname}
+        type ServiceInterface struct {
+            ${endpoints >> \(@: epname, @value: ep)
+                let method = go.methodName(ep);
+                $`
+                    ${method} func(ctx context.Context, req *${method}Request, client ${method}Client) (${
+                        (sysl.endpoint.normalReturns(ep) >> $`*${cond{.seq: `[]`}}${go.typeWithPackage(.type, module)}`) ++ ["error"]
+                    ::, })`
+            ::\i}
+        }
+
+        // DownstreamConfig for ${appname}
+        type DownstreamConfig struct {
+            ContextTimeout time.Duration ``yaml:"contextTimeout"``
+            ${clientImports orderby . >> $`${go.name(.)} config.CommonDownstreamData ``yaml:"${.}"```::\i}
+        }
+    `
