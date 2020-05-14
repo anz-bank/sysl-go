@@ -1,0 +1,98 @@
+# https://github.com/anz-bank/sysl/blob/master/pkg/sysl/sysl.proto
+# Sysl data structure to handle
+\sysl (
+    grpcclient: \a \name \proj_location
+        # sysl util (move out to helper function in the future)
+        let jsontool = (
+            attr: \value \app
+                let type = app("attrs")(value);
+                type("s").s
+                    if type = 's'
+                else type("i").i
+                    if type = 'i'
+                else type("n").n
+                    if type = 'n'
+                else 'TODO a'
+                    if type = 'a'
+                else 'unknown',
+            go_type: //fn.fix(\type \t
+                {
+                    'DECIMAL':  'double',
+                    'INT':      'int64',
+                    'FLOAT':    'double',
+                    'STRING':   'string',
+                    'STRING_8': 'string',
+                    'BOOL':     'bool',
+                    'DATE':     'string',
+                    'DATETIME': 'string',
+                }(t.primitive)
+                    if t.type = 'primitive'
+                else '[]' + type(t.sequence)
+                    if t.type = 'sequence'
+                else
+                    //log.print(t)
+            )
+        );
+        let parseAttributes = \a a("attrs"); # used for properties
+        let app = a("apps")(name);
+        let endpoints = app("endpoints");
+
+        # bindings that should probably be part of the sysl tool
+        let exists = \dic \key dic where .@ = key; # helper for filter based on keys
+        let part_name = \p p("name")("part").a >> .s;
+        let param_name = \p p("type")("typeRef")("ref")("appname")("part").a >> .s;
+
+        # kind of hardcoded binding assuming the return statment is in the format "ok <: (result)"
+        let ret_param = \statements statements >> //str.split(.("ret")("payload").s, " ")(2);
+
+        $`
+            // Package ${jsontool.attr("go_package", app)} ...
+            package ${jsontool.attr("go_package", app)}
+
+            // TODO: sysl automapping between sysl types and protobuf types
+            // TODO: use protobuf from sysl to use instead of precompiled from the api repository
+
+            import (
+            	"context"
+            	"time"
+
+            	pb "${proj_location}/pkg/${jsontool.attr("go_pb_package", app)}"
+            	"google.golang.org/grpc"
+            )
+
+            // Service interface for ${jsontool.attr("go_package", app)}
+            type Service interface {
+                ${endpoints => $`${.@value("name").s}(ctx context.Context, ${.@value("param").a(0)("name").s} *pb.${param_name(.@value("param").a(0)):::}) (*pb.${ret_param(.@value("stmt").a where exists(.@item, "ret")):::}, error)` orderby .::\i}
+            }
+
+            // Client for ${part_name(app):::}
+            type Client struct {
+            	client     pb.${part_name(app):::}Client
+            	socketAddr string
+            }
+
+            // NewClient for ${part_name(app):::}
+            func NewClient(socketAddr string, connTimeout time.Duration) (*Client, error) {
+            	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), connTimeout)
+            	defer cancel()
+
+            	conn, err := grpc.DialContext(ctxWithTimeout, socketAddr, grpc.WithBlock())
+            	if err != nil {
+            		return nil, err
+            	}
+
+            	client := pb.New${part_name(app):::}Client(conn)
+
+            	return &Client{client, socketAddr}, nil
+            }
+
+            ${endpoints =>
+                $`
+                    // ${.@value("name").s} ...
+                    func (s *Client) ${.@value("name").s}(ctx context.Context, ${.@value("param").a(0)("name").s} *pb.${param_name(.@value("param").a(0)):::}) (*pb.${ret_param(.@value("stmt").a where exists(.@item, "ret")):::}, error) {
+                        return s.client.${.@value("name").s}(ctx, ${.@value("param").a(0)("name").s})
+                    }
+                `
+            orderby .:::}
+        `
+)
