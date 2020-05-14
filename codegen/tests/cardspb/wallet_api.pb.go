@@ -108,9 +108,7 @@ func init() {
 	proto.RegisterType((*AppleResponse)(nil), "cards.v1.AppleResponse")
 }
 
-func init() {
-	proto.RegisterFile("wallet_api.proto", fileDescriptor_34bd94de71a6388e)
-}
+func init() { proto.RegisterFile("wallet_api.proto", fileDescriptor_34bd94de71a6388e) }
 
 var fileDescriptor_34bd94de71a6388e = []byte{
 	// 166 bytes of a gzipped FileDescriptorProto

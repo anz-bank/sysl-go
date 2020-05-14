@@ -108,9 +108,7 @@ func init() {
 	proto.RegisterType((*GetCardsResponse)(nil), "cards.v1.GetCardsResponse")
 }
 
-func init() {
-	proto.RegisterFile("cards_api.proto", fileDescriptor_3972b0c891f2b156)
-}
+func init() { proto.RegisterFile("cards_api.proto", fileDescriptor_3972b0c891f2b156) }
 
 var fileDescriptor_3972b0c891f2b156 = []byte{
 	// 169 bytes of a gzipped FileDescriptorProto
