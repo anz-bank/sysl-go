@@ -1,7 +1,7 @@
 # https://github.com/anz-bank/sysl/blob/master/pkg/sysl/sysl.proto
 # Sysl data structure to handle
 \sysl (
-    grpcclient: \a \name \proj_location
+    grpcclient: \app_blob \app_name \proj_location
         # sysl util (move out to helper function in the future)
         let jsontool = (
             attr: \value \app
@@ -34,7 +34,7 @@
             )
         );
         let parseAttributes = \a a("attrs"); # used for properties
-        let app = a("apps")(name);
+        let app = app_blob("apps")(app_name);
         let endpoints = app("endpoints");
 
         # bindings that should probably be part of the sysl tool
