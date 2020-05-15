@@ -30,3 +30,12 @@ func BuildDownstreamClients(cfg *config.DefaultConfig) (*DownstreamClients, erro
 	simpleClient := simple.NewClient(simpleHTTPClient, cfg.GenCode.Downstream.(*DownstreamConfig).Simple.ServiceURL)
 	return &DownstreamClients{simpleClient: simpleClient}, err
 }
+
+// NewDefaultConfig ...
+func NewDefaultConfig() config.DefaultConfig {
+	return config.DefaultConfig{
+		Library: config.LibraryConfig{},
+		GenCode: config.GenCodeConfig{Downstream: &DownstreamConfig{}},
+	}
+
+}

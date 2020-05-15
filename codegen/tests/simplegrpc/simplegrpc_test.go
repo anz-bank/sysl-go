@@ -115,16 +115,9 @@ func TestValidRequestResponse(t *testing.T) {
 
 func TestBuildRestHandlerInitialiser(t *testing.T) {
 	t.Parallel()
-	testConfig := config.DefaultConfig{
-		Library: config.LibraryConfig{},
-		GenCode: config.GenCodeConfig{
-			Downstream: &DownstreamConfig{
-				Simple: config.CommonDownstreamData{
-					ServiceURL: "http://localhost:8080/deps",
-				},
-			},
-		},
-	}
+	testConfig := NewDefaultConfig()
+	downstreamConfig := testConfig.GenCode.Downstream.(*DownstreamConfig)
+	downstreamConfig.Simple.ServiceURL = "http://localhost:8080/simple"
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`{}`))
 	}))
@@ -150,16 +143,9 @@ func TestBuildRestHandlerInitialiser(t *testing.T) {
 
 func TestBuildDownstreamClients(t *testing.T) {
 	t.Parallel()
-	testConfig := config.DefaultConfig{
-		Library: config.LibraryConfig{},
-		GenCode: config.GenCodeConfig{
-			Downstream: &DownstreamConfig{
-				Simple: config.CommonDownstreamData{
-					ServiceURL: "http://localhost:8080/deps",
-				},
-			},
-		},
-	}
+	testConfig := NewDefaultConfig()
+	downstreamConfig := testConfig.GenCode.Downstream.(*DownstreamConfig)
+	downstreamConfig.Simple.ServiceURL = "http://localhost:8080/simple"
 	handlers, err := BuildDownstreamClients(&testConfig)
 	require.Nil(t, err)
 	require.NotNil(t, handlers.simpleClient)

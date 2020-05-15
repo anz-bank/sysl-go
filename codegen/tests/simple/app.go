@@ -41,3 +41,12 @@ func BuildDownstreamClients(cfg *config.DefaultConfig) (*DownstreamClients, erro
 		downstreamClient: downstreamClient,
 	}, err
 }
+
+// NewDefaultConfig ...
+func NewDefaultConfig() config.DefaultConfig {
+	return config.DefaultConfig{
+		Library: config.LibraryConfig{},
+		GenCode: config.GenCodeConfig{Downstream: &DownstreamConfig{}},
+	}
+
+}
