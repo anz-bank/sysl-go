@@ -56,7 +56,7 @@
             	"context"
             	"time"
 
-            	pb "${proj_location}/pkg/${jsontool.attr("go_pb_package", app)}"
+            	pb "${proj_location}/${jsontool.attr("go_pb_package", app)}"
             	"google.golang.org/grpc"
             )
 
