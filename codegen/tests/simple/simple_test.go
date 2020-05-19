@@ -17,7 +17,6 @@ import (
 	"github.com/anz-bank/sysl-go/codegen/tests/deps"
 	"github.com/anz-bank/sysl-go/codegen/tests/downstream"
 	"github.com/anz-bank/sysl-go/common"
-	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/convert"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/restlib"
@@ -591,19 +590,10 @@ func TestOKTypeAndJustErrorPutsHeadersInErrorWhenError(t *testing.T) {
 
 func TestBuildRestHandlerInitialiser(t *testing.T) {
 	t.Parallel()
-	testConfig := config.DefaultConfig{
-		Library: config.LibraryConfig{},
-		GenCode: config.GenCodeConfig{
-			Downstream: &DownstreamConfig{
-				Deps: config.CommonDownstreamData{
-					ServiceURL: "http://localhost:8080/deps",
-				},
-				Downstream: config.CommonDownstreamData{
-					ServiceURL: "http://localhost:8080/downstream",
-				},
-			},
-		},
-	}
+	testConfig := NewDefaultConfig()
+	downstreamConfig := testConfig.GenCode.Downstream.(*DownstreamConfig)
+	downstreamConfig.Deps.ServiceURL = "http://localhost:8080/deps"
+	downstreamConfig.Downstream.ServiceURL = "http://localhost:8080/downstream"
 	th := TestHandler{}
 	testServiceInterface := ServiceInterface{
 		GetRawList:   th.ValidRawHandler,
@@ -621,19 +611,10 @@ func TestBuildRestHandlerInitialiser(t *testing.T) {
 
 func TestBuildDownstreamClients(t *testing.T) {
 	t.Parallel()
-	testConfig := config.DefaultConfig{
-		Library: config.LibraryConfig{},
-		GenCode: config.GenCodeConfig{
-			Downstream: &DownstreamConfig{
-				Deps: config.CommonDownstreamData{
-					ServiceURL: "http://localhost:8080/deps",
-				},
-				Downstream: config.CommonDownstreamData{
-					ServiceURL: "http://localhost:8080/downstream",
-				},
-			},
-		},
-	}
+	testConfig := NewDefaultConfig()
+	downstreamConfig := testConfig.GenCode.Downstream.(*DownstreamConfig)
+	downstreamConfig.Deps.ServiceURL = "http://localhost:8080/deps"
+	downstreamConfig.Downstream.ServiceURL = "http://localhost:8080/downstream"
 	handlers, err := BuildDownstreamClients(&testConfig)
 	require.Nil(t, err)
 	require.NotNil(t, handlers.depsClient)
