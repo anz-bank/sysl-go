@@ -3,9 +3,11 @@ package simplegrpc
 
 import (
 	"context"
+	"time"
 
 	"github.com/anz-bank/sysl-go/codegen/tests/simple"
 	pb "github.com/anz-bank/sysl-go/codegen/tests/simplepb"
+	"github.com/anz-bank/sysl-go/config"
 )
 
 // GetStuff Client
@@ -16,4 +18,10 @@ type GetStuffClient struct {
 // GrpcServiceInterface for SimpleGrpc
 type GrpcServiceInterface struct {
 	GetStuff func(ctx context.Context, req *pb.GetStuffRequest, client GetStuffClient) (*pb.GetStuffResponse, error)
+}
+
+// DownstreamConfig for SimpleGrpc
+type DownstreamConfig struct {
+	ContextTimeout time.Duration               `yaml:"contextTimeout"`
+	Simple         config.CommonDownstreamData `yaml:"simple"`
 }

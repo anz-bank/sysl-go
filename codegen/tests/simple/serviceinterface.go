@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/anz-bank/sysl-go/codegen/tests/deps"
+	"github.com/anz-bank/sysl-go/codegen/tests/downstream"
 	"github.com/anz-bank/sysl-go/config"
 )
 
@@ -20,7 +21,12 @@ func NewDefaultSimpleImpl() *DefaultSimpleImpl {
 
 // GetApiDocsList Client
 type GetApiDocsListClient struct {
-	GetApiDocsList func(ctx context.Context, req *deps.GetApiDocsListRequest) (*deps.ApiDoc, error)
+	GetApiDocsList     func(ctx context.Context, req *deps.GetApiDocsListRequest) (*deps.ApiDoc, error)
+	GetServiceDocsList func(ctx context.Context, req *downstream.GetServiceDocsListRequest) (*downstream.ServiceDoc, error)
+}
+
+// GetGetSomeBytesList Client
+type GetGetSomeBytesListClient struct {
 }
 
 // GetJustOkAndJustErrorList Client
@@ -66,7 +72,8 @@ type PostStuffClient struct {
 
 // ServiceInterface for Simple
 type ServiceInterface struct {
-	GetApiDocsList            func(ctx context.Context, req *GetApiDocsListRequest, client GetApiDocsListClient) (*deps.ApiDoc, error)
+	GetApiDocsList            func(ctx context.Context, req *GetApiDocsListRequest, client GetApiDocsListClient) (*[]deps.ApiDoc, error)
+	GetGetSomeBytesList       func(ctx context.Context, req *GetGetSomeBytesListRequest, client GetGetSomeBytesListClient) (*Pdf, error)
 	GetJustOkAndJustErrorList func(ctx context.Context, req *GetJustOkAndJustErrorListRequest, client GetJustOkAndJustErrorListClient) error
 	GetJustReturnErrorList    func(ctx context.Context, req *GetJustReturnErrorListRequest, client GetJustReturnErrorListClient) error
 	GetJustReturnOkList       func(ctx context.Context, req *GetJustReturnOkListRequest, client GetJustReturnOkListClient) error
@@ -83,4 +90,5 @@ type ServiceInterface struct {
 type DownstreamConfig struct {
 	ContextTimeout time.Duration               `yaml:"contextTimeout"`
 	Deps           config.CommonDownstreamData `yaml:"deps"`
+	Downstream     config.CommonDownstreamData `yaml:"downstream"`
 }

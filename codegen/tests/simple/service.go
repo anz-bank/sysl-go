@@ -15,14 +15,16 @@ import (
 
 // Service interface for Simple
 type Service interface {
+	GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest) (*[]deps.ApiDoc, error)
+	GetGetSomeBytesList(ctx context.Context, req *GetGetSomeBytesListRequest) (*Pdf, error)
 	GetJustOkAndJustErrorList(ctx context.Context, req *GetJustOkAndJustErrorListRequest) (*http.Header, error)
 	GetJustReturnErrorList(ctx context.Context, req *GetJustReturnErrorListRequest) error
 	GetJustReturnOkList(ctx context.Context, req *GetJustReturnOkListRequest) (*http.Header, error)
 	GetOkTypeAndJustErrorList(ctx context.Context, req *GetOkTypeAndJustErrorListRequest) (*Response, error)
-	GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest) (*deps.ApiDoc, error)
 	GetOopsList(ctx context.Context, req *GetOopsListRequest) (*Response, error)
 	GetRawList(ctx context.Context, req *GetRawListRequest) (*Str, error)
 	GetRawIntList(ctx context.Context, req *GetRawIntListRequest) (*Integer, error)
+	GetSimpleAPIDocsList(ctx context.Context, req *GetSimpleAPIDocsListRequest) (*deps.ApiDoc, error)
 	GetStuffList(ctx context.Context, req *GetStuffListRequest) (*Stuff, error)
 	PostStuff(ctx context.Context, req *PostStuffRequest) (*Str, error)
 }
@@ -36,6 +38,70 @@ type Client struct {
 // NewClient for Simple
 func NewClient(client *http.Client, serviceURL string) *Client {
 	return &Client{client, serviceURL}
+}
+
+// GetApiDocsList ...
+func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest) (*[]deps.ApiDoc, error) {
+	required := []string{}
+	var okResponse []deps.ApiDoc
+
+	u, err := url.Parse(fmt.Sprintf("%s/api-docs", s.url))
+	if err != nil {
+		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
+	}
+
+	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	if err != nil {
+		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
+	}
+
+	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
+		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
+	}
+
+	OkDepsApiDocResponse, ok := result.Response.(*[]deps.ApiDoc)
+	if ok {
+		valErr := validator.Validate(OkDepsApiDocResponse)
+		if valErr != nil {
+			return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, valErr)
+		}
+
+		return OkDepsApiDocResponse, nil
+	}
+
+	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
+}
+
+// GetGetSomeBytesList ...
+func (s *Client) GetGetSomeBytesList(ctx context.Context, req *GetGetSomeBytesListRequest) (*Pdf, error) {
+	required := []string{}
+	var okResponse Pdf
+
+	u, err := url.Parse(fmt.Sprintf("%s/get-some-bytes", s.url))
+	if err != nil {
+		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
+	}
+
+	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	if err != nil {
+		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
+	}
+
+	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
+		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
+	}
+
+	OkPdfResponse, ok := result.Response.(*Pdf)
+	if ok {
+		valErr := validator.Validate(OkPdfResponse)
+		if valErr != nil {
+			return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, valErr)
+		}
+
+		return OkPdfResponse, nil
+	}
+
+	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
 }
 
 // GetJustOkAndJustErrorList ...
@@ -125,38 +191,6 @@ func (s *Client) GetOkTypeAndJustErrorList(ctx context.Context, req *GetOkTypeAn
 		}
 
 		return OkResponseResponse, nil
-	}
-
-	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
-}
-
-// GetApiDocsList ...
-func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest) (*deps.ApiDoc, error) {
-	required := []string{}
-	var okResponse deps.ApiDoc
-
-	u, err := url.Parse(fmt.Sprintf("%s/api-docs", s.url))
-	if err != nil {
-		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
-	}
-
-	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
-	if err != nil {
-		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
-	}
-
-	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
-		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
-	}
-
-	OkDepsApiDocResponse, ok := result.Response.(*deps.ApiDoc)
-	if ok {
-		valErr := validator.Validate(OkDepsApiDocResponse)
-		if valErr != nil {
-			return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, valErr)
-		}
-
-		return OkDepsApiDocResponse, nil
 	}
 
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
@@ -260,6 +294,38 @@ func (s *Client) GetRawIntList(ctx context.Context, req *GetRawIntListRequest) (
 		}
 
 		return OkIntegerResponse, nil
+	}
+
+	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
+}
+
+// GetSimpleAPIDocsList ...
+func (s *Client) GetSimpleAPIDocsList(ctx context.Context, req *GetSimpleAPIDocsListRequest) (*deps.ApiDoc, error) {
+	required := []string{}
+	var okResponse deps.ApiDoc
+
+	u, err := url.Parse(fmt.Sprintf("%s/simple-api-docs", s.url))
+	if err != nil {
+		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
+	}
+
+	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	if err != nil {
+		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
+	}
+
+	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
+		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
+	}
+
+	OkDepsApiDocResponse, ok := result.Response.(*deps.ApiDoc)
+	if ok {
+		valErr := validator.Validate(OkDepsApiDocResponse)
+		if valErr != nil {
+			return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, valErr)
+		}
+
+		return OkDepsApiDocResponse, nil
 	}
 
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)

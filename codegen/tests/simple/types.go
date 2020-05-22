@@ -40,6 +40,7 @@ type Stuff struct {
 	RawTimeStuff   time.Time              `json:"rawTimeStuff"`
 	ResponseStuff  Response               `json:"responseStuff"`
 	SensitiveStuff common.SensitiveString `json:"sensitiveStuff"`
+	SequenceStuff  []Str                  `json:"sequenceStuff,omitempty"`
 	TimeStuff      convert.JSONTime       `json:"timeStuff"`
 }
 
@@ -50,6 +51,10 @@ type ItemSet struct {
 
 // GetApiDocsListRequest ...
 type GetApiDocsListRequest struct {
+}
+
+// GetGetSomeBytesListRequest ...
+type GetGetSomeBytesListRequest struct {
 }
 
 // GetJustOkAndJustErrorListRequest ...
@@ -126,6 +131,9 @@ func (s *ItemSet) Add(item Item) {
 func (s *ItemSet) Lookup(Name string) Item {
 	return s.M[Name]
 }
+
+// Pdf ...
+type Pdf []byte
 
 // Integer ...
 type Integer int64

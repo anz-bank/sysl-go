@@ -93,9 +93,8 @@ CodeGenTransform:
         let hiImport = "github.com/anz-bank/sysl-go/handlerinitialiser"
         let bffCommonImport = "github.com/anz-bank/sysl-go/common"
         let coreImport = "github.com/anz-bank/sysl-go/core"
-        let validatorImport = "github.com/anz-bank/sysl-go/validator"
 
-        let spec = ["context", "net/http", "github.com/go-chi/chi", hiImport, bffCommonImport, coreImport, validatorImport] -> <sequence of ImportSpec> (importPath:
+        let spec = ["context", "net/http", "github.com/go-chi/chi", hiImport, bffCommonImport, coreImport] -> <sequence of ImportSpec> (importPath:
           Import = if importPath == "" then true else '"' + importPath + '"'
         )
         ImportSpec = spec
@@ -322,7 +321,7 @@ CodeGenTransform:
           Signature = name -> <Signature> (:
             Parameters = true
             Result = name -> <Result>(:
-              TypeName = "validator.Validator"
+              TypeName = "interface{}"
             )
           )
           Block = name -> <Block>(:
@@ -371,3 +370,4 @@ CodeGenTransform:
     app -> (:
       pname = if "package" in .attrs then if .attrs.package != null then .attrs.package else ToLower(.name) else ToLower(.name)
     )
+      

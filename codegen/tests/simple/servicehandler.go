@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/anz-bank/sysl-go/codegen/tests/deps"
+	"github.com/anz-bank/sysl-go/codegen/tests/downstream"
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/convert"
 	"github.com/anz-bank/sysl-go/core"
@@ -22,6 +23,7 @@ var BusinessLogicError2 common.CustomError = map[string]string{"name": "Business
 // Handler interface for Simple
 type Handler interface {
 	GetApiDocsListHandler(w http.ResponseWriter, r *http.Request)
+	GetGetSomeBytesListHandler(w http.ResponseWriter, r *http.Request)
 	GetJustOkAndJustErrorListHandler(w http.ResponseWriter, r *http.Request)
 	GetJustReturnErrorListHandler(w http.ResponseWriter, r *http.Request)
 	GetJustReturnOkListHandler(w http.ResponseWriter, r *http.Request)
@@ -36,14 +38,15 @@ type Handler interface {
 
 // ServiceHandler for Simple API
 type ServiceHandler struct {
-	genCallback      core.RestGenCallback
-	serviceInterface *ServiceInterface
-	depsDepsService  deps.Service
+	genCallback                 core.RestGenCallback
+	serviceInterface            *ServiceInterface
+	depsDepsService             deps.Service
+	downstreamDownstreamService downstream.Service
 }
 
 // NewServiceHandler for Simple
-func NewServiceHandler(genCallback core.RestGenCallback, serviceInterface *ServiceInterface, depsDepsService deps.Service) *ServiceHandler {
-	return &ServiceHandler{genCallback, serviceInterface, depsDepsService}
+func NewServiceHandler(genCallback core.RestGenCallback, serviceInterface *ServiceInterface, depsDepsService deps.Service, downstreamDownstreamService downstream.Service) *ServiceHandler {
+	return &ServiceHandler{genCallback, serviceInterface, depsDepsService, downstreamDownstreamService}
 }
 
 // GetApiDocsListHandler ...
@@ -66,7 +69,8 @@ func (s *ServiceHandler) GetApiDocsListHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	client := GetApiDocsListClient{
-		GetApiDocsList: s.depsDepsService.GetApiDocsList,
+		GetApiDocsList:     s.depsDepsService.GetApiDocsList,
+		GetServiceDocsList: s.downstreamDownstreamService.GetServiceDocsList,
 	}
 
 	apidoc, err := s.serviceInterface.GetApiDocsList(ctx, &req, client)
@@ -78,6 +82,38 @@ func (s *ServiceHandler) GetApiDocsListHandler(w http.ResponseWriter, r *http.Re
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, apidoc)
+}
+
+// GetGetSomeBytesListHandler ...
+func (s *ServiceHandler) GetGetSomeBytesListHandler(w http.ResponseWriter, r *http.Request) {
+	if s.serviceInterface.GetGetSomeBytesList == nil {
+		common.HandleError(r.Context(), w, common.InternalError, "not implemented", nil, s.genCallback.MapError)
+		return
+	}
+
+	ctx := common.RequestHeaderToContext(r.Context(), r.Header)
+	ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
+	var req GetGetSomeBytesListRequest
+
+	ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
+	defer cancel()
+	valErr := validator.Validate(&req)
+	if valErr != nil {
+		common.HandleError(ctx, w, common.BadRequestError, "Invalid request", valErr, s.genCallback.MapError)
+		return
+	}
+
+	client := GetGetSomeBytesListClient{}
+
+	pdf, err := s.serviceInterface.GetGetSomeBytesList(ctx, &req, client)
+	if err != nil {
+		common.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err, s.genCallback.MapError)
+		return
+	}
+
+	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	restlib.SetHeaders(w, headermap)
+	restlib.SendHTTPResponse(w, httpstatus, (*[]byte)(pdf))
 }
 
 // GetJustOkAndJustErrorListHandler ...

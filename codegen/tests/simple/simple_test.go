@@ -9,11 +9,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/anz-bank/sysl-go/codegen/tests/deps"
+	"github.com/anz-bank/sysl-go/codegen/tests/downstream"
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/convert"
 	"github.com/anz-bank/sysl-go/core"
@@ -61,6 +63,7 @@ func (th *TestHandler) ValidGetStuffListHandlerStub(ctx context.Context, req *Ge
 				},
 			},
 		},
+		SequenceStuff: nil,
 	}
 
 	th.reqH = headerCpy(common.RequestHeaderFromContext(ctx))
@@ -117,7 +120,8 @@ func callHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder
 	cb := Callback{}
 
 	var depssrv deps.Service
-	sh := NewServiceHandler(cb, &si, depssrv)
+	var downstreamSrv downstream.Service
+	sh := NewServiceHandler(cb, &si, depssrv, downstreamSrv)
 
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
@@ -135,7 +139,8 @@ func callRawHandler(target string, si ServiceInterface) (*httptest.ResponseRecor
 	cb := Callback{}
 
 	var depssrv deps.Service
-	sh := NewServiceHandler(cb, &si, depssrv)
+	var downstreamSrv downstream.Service
+	sh := NewServiceHandler(cb, &si, depssrv, downstreamSrv)
 
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
@@ -153,7 +158,8 @@ func callRawIntHandler(target string, si ServiceInterface) (*httptest.ResponseRe
 	cb := Callback{}
 
 	var depssrv deps.Service
-	sh := NewServiceHandler(cb, &si, depssrv)
+	var downstreamSrv downstream.Service
+	sh := NewServiceHandler(cb, &si, depssrv, downstreamSrv)
 
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
@@ -447,7 +453,7 @@ func TestClient_PassesXMLBody(t *testing.T) {
 func TestSensitive(t *testing.T) {
 	logger, hook := test.NewNullLogger()
 	logger.Error(Stuff{InnerStuff: "innerStuff", SensitiveStuff: common.NewSensitiveString("sensitiveStuff")})
-	require.Equal(t, "{{} innerStuff 0001-01-01 00:00:00 +0000 UTC {{map[]}} **************** 0001-01-01 00:00:00 +0000 UTC}", hook.LastEntry().Message)
+	require.Equal(t, "{{} innerStuff 0001-01-01 00:00:00 +0000 UTC {{map[]}} **************** [] 0001-01-01 00:00:00 +0000 UTC}", hook.LastEntry().Message)
 }
 
 func TestTimeFormat(t *testing.T) {
@@ -547,6 +553,13 @@ func TestJustOKAndJustErrorReturnsHeadersWhenOK(t *testing.T) {
 	require.Equal(t, `{"jsonField":"jsonVal"}`, h.Get("Context"))
 }
 
+func Test204OKResponse(t *testing.T) {
+	c, s := bodylessClientServer(204)
+	defer s.Close()
+	_, err := c.GetJustOkAndJustErrorList(context.Background(), &GetJustOkAndJustErrorListRequest{})
+	require.NoError(t, err)
+}
+
 func TestJustOKAndJustErrorPutsHeadersInErrorWhenError(t *testing.T) {
 	c, s := bodylessClientServer(400)
 	defer s.Close()
@@ -573,4 +586,57 @@ func TestOKTypeAndJustErrorPutsHeadersInErrorWhenError(t *testing.T) {
 	require.Nil(t, h)
 	resp := err.(*common.ServerError).Cause.(*restlib.HTTPResult)
 	require.Equal(t, `{"jsonField":"jsonVal"}`, resp.HTTPResponse.Header.Get("Context"))
+}
+
+func TestBuildRestHandlerInitialiser(t *testing.T) {
+	t.Parallel()
+	testConfig := NewDefaultConfig()
+	downstreamConfig := testConfig.GenCode.Downstream.(*DownstreamConfig)
+	downstreamConfig.Deps.ServiceURL = "http://localhost:8080/deps"
+	downstreamConfig.Downstream.ServiceURL = "http://localhost:8080/downstream"
+	th := TestHandler{}
+	testServiceInterface := ServiceInterface{
+		GetRawList:   th.ValidRawHandler,
+		GetStuffList: th.ValidGetStuffListHandlerStub,
+	}
+	var testCallback core.RestGenCallback = &Callback{}
+	clients, err := BuildDownstreamClients(&testConfig)
+	handler := BuildRestHandlerInitialiser(testServiceInterface, testCallback, clients)
+	require.Nil(t, err)
+	srvRouter, ok := (handler).(*ServiceRouter)
+	require.True(t, ok)
+	reflect.DeepEqual(testCallback, srvRouter.svcHandler.genCallback)
+	reflect.DeepEqual(testServiceInterface, srvRouter.svcHandler.serviceInterface)
+}
+
+func TestBuildDownstreamClients(t *testing.T) {
+	t.Parallel()
+	testConfig := NewDefaultConfig()
+	downstreamConfig := testConfig.GenCode.Downstream.(*DownstreamConfig)
+	downstreamConfig.Deps.ServiceURL = "http://localhost:8080/deps"
+	downstreamConfig.Downstream.ServiceURL = "http://localhost:8080/downstream"
+	handlers, err := BuildDownstreamClients(&testConfig)
+	require.Nil(t, err)
+	require.NotNil(t, handlers.depsClient)
+	require.NotNil(t, handlers.downstreamClient)
+}
+
+func TestApiDocsReturnsSequence(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		depsSeq := `[{"openapi":"1","swagger":"2"},{"openapi":"y","swagger":"n"}]`
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte(depsSeq))
+	}))
+	client := server.Client()
+	defer server.Close()
+
+	c := Client{
+		client: client,
+		url:    server.URL,
+	}
+
+	req := GetApiDocsListRequest{}
+	sequenceRes, err := c.GetApiDocsList(context.Background(), &req)
+	require.NoError(t, err)
+	require.True(t, len(*sequenceRes) > 0)
 }

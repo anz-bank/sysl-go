@@ -73,7 +73,8 @@ func Validate(v interface{}) error {
 	}
 	val := reflect.ValueOf(v)
 	if val.Kind() == reflect.Ptr && !val.IsNil() {
-		if val = val.Elem(); val.Kind() == reflect.String {
+		switch val.Elem().Kind() {
+		case reflect.String, reflect.Slice:
 			return nil
 		}
 	}

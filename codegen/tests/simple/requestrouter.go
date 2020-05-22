@@ -7,7 +7,6 @@ import (
 
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
-	"github.com/anz-bank/sysl-go/validator"
 	"github.com/go-chi/chi"
 )
 
@@ -42,6 +41,7 @@ func (s *ServiceRouter) WireRoutes(ctx context.Context, r chi.Router) {
 	r.Route(core.SelectBasePath(s.basePathFromSpec, s.gc.BasePath()), func(r chi.Router) {
 		s.gc.AddMiddleware(ctx, r)
 		r.Get("/api-docs", s.svcHandler.GetApiDocsListHandler)
+		r.Get("/get-some-bytes", s.svcHandler.GetGetSomeBytesListHandler)
 		r.Get("/just-ok-and-just-error", s.svcHandler.GetJustOkAndJustErrorListHandler)
 		r.Get("/just-return-error", s.svcHandler.GetJustReturnErrorListHandler)
 		r.Get("/just-return-ok", s.svcHandler.GetJustReturnOkListHandler)
@@ -56,7 +56,7 @@ func (s *ServiceRouter) WireRoutes(ctx context.Context, r chi.Router) {
 }
 
 // Config ...
-func (s *ServiceRouter) Config() validator.Validator {
+func (s *ServiceRouter) Config() interface{} {
 	return s.gc.Config()
 }
 
