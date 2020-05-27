@@ -49,6 +49,8 @@ func (s *ServiceRouter) WireRoutes(ctx context.Context, r chi.Router) {
 		r.Get("/oops", s.svcHandler.GetOopsListHandler)
 		r.Get("/raw", s.svcHandler.GetRawListHandler)
 		r.Get("/raw-int", s.svcHandler.GetRawIntListHandler)
+		r.Get("/raw/states", s.svcHandler.GetRawStatesListHandler)
+		r.Get("/raw/{id}/states", s.svcHandler.GetRawIdStatesListHandler)
 		r.Get("/simple-api-docs", s.svcHandler.GetSimpleAPIDocsListHandler)
 		r.Get("/stuff", s.svcHandler.GetStuffListHandler)
 		r.Post("/stuff", s.svcHandler.PostStuffHandler)

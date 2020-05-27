@@ -31,6 +31,8 @@ type Handler interface {
 	GetOopsListHandler(w http.ResponseWriter, r *http.Request)
 	GetRawListHandler(w http.ResponseWriter, r *http.Request)
 	GetRawIntListHandler(w http.ResponseWriter, r *http.Request)
+	GetRawStatesListHandler(w http.ResponseWriter, r *http.Request)
+	GetRawIdStatesListHandler(w http.ResponseWriter, r *http.Request)
 	GetSimpleAPIDocsListHandler(w http.ResponseWriter, r *http.Request)
 	GetStuffListHandler(w http.ResponseWriter, r *http.Request)
 	PostStuffHandler(w http.ResponseWriter, r *http.Request)
@@ -338,6 +340,71 @@ func (s *ServiceHandler) GetRawIntListHandler(w http.ResponseWriter, r *http.Req
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, integer)
+}
+
+// GetRawStatesListHandler ...
+func (s *ServiceHandler) GetRawStatesListHandler(w http.ResponseWriter, r *http.Request) {
+	if s.serviceInterface.GetRawStatesList == nil {
+		common.HandleError(r.Context(), w, common.InternalError, "not implemented", nil, s.genCallback.MapError)
+		return
+	}
+
+	ctx := common.RequestHeaderToContext(r.Context(), r.Header)
+	ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
+	var req GetRawStatesListRequest
+
+	ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
+	defer cancel()
+	valErr := validator.Validate(&req)
+	if valErr != nil {
+		common.HandleError(ctx, w, common.BadRequestError, "Invalid request", valErr, s.genCallback.MapError)
+		return
+	}
+
+	client := GetRawStatesListClient{}
+
+	str, err := s.serviceInterface.GetRawStatesList(ctx, &req, client)
+	if err != nil {
+		common.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err, s.genCallback.MapError)
+		return
+	}
+
+	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	restlib.SetHeaders(w, headermap)
+	restlib.SendHTTPResponse(w, httpstatus, str)
+}
+
+// GetRawIdStatesListHandler ...
+func (s *ServiceHandler) GetRawIdStatesListHandler(w http.ResponseWriter, r *http.Request) {
+	if s.serviceInterface.GetRawIdStatesList == nil {
+		common.HandleError(r.Context(), w, common.InternalError, "not implemented", nil, s.genCallback.MapError)
+		return
+	}
+
+	ctx := common.RequestHeaderToContext(r.Context(), r.Header)
+	ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
+	var req GetRawIdStatesListRequest
+
+	req.ID = restlib.GetURLParam(r, "id")
+	ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
+	defer cancel()
+	valErr := validator.Validate(&req)
+	if valErr != nil {
+		common.HandleError(ctx, w, common.BadRequestError, "Invalid request", valErr, s.genCallback.MapError)
+		return
+	}
+
+	client := GetRawIdStatesListClient{}
+
+	str, err := s.serviceInterface.GetRawIdStatesList(ctx, &req, client)
+	if err != nil {
+		common.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err, s.genCallback.MapError)
+		return
+	}
+
+	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	restlib.SetHeaders(w, headermap)
+	restlib.SendHTTPResponse(w, httpstatus, str)
 }
 
 // GetSimpleAPIDocsListHandler ...

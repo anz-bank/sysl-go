@@ -85,6 +85,15 @@ type GetRawListRequest struct {
 type GetRawIntListRequest struct {
 }
 
+// GetRawStatesListRequest ...
+type GetRawStatesListRequest struct {
+}
+
+// GetRawIdStatesListRequest ...
+type GetRawIdStatesListRequest struct {
+	ID string
+}
+
 // GetSimpleAPIDocsListRequest ...
 type GetSimpleAPIDocsListRequest struct {
 }

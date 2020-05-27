@@ -54,9 +54,9 @@ CodeGenTransform:
         out = "{" + .name + "}"
       )
       let pathVars = terms flatten(.out)
-      let path = Split(ep.value.path, "/")
+      let path = Split(Replace(Replace(ep.value.path, "{", "", -1),"{","",-1), "/")
       let method = Title(ToLower(ep.value.method))
-
+      let rawpath = Split(ep.value.path, "/")
       let methodPostfix = path -> <sequence of string> (p:
         let postfix  = if p in pathVars then "" else p
         out = Title(ToLower(postfix))
@@ -65,7 +65,7 @@ CodeGenTransform:
       let getList = if MatchString("[\\p{L}\\p{N}]$", ep.value.path) && Contains("GET", ToUpper(method)) then "List" else ""
 
       let handlerCall = "s." + "svcHandler" + "." + GoName(method + Join(methodPostfix flatten(.out), "") + withArg + getList).out + "Handler"
-      let epPath =  '"' + Join(path, "/") + '"'
+      let epPath =  '"' + Join(rawpath, "/") + '"'
       let funcName = "r." + method
 
       let nilCheck = handlerCall -> <Statement>(:

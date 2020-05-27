@@ -15,6 +15,14 @@ Simple "Simple Server" [package="simple"]:
         GET:
             return ok <: str
 
+    /raw/states:
+        GET:
+            return ok <: str
+
+    /raw/{id<:string}/states:
+        GET:
+            return ok <: str    
+
     /raw-int:
         GET:
             return ok <: integer

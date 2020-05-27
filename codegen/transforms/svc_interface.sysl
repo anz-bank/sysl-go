@@ -51,7 +51,7 @@ CodeGenTransform:
         out = "{" + .name + "}"
       )
       let pathVars = terms flatten(.out)
-      let path = Split(ep.value.path, "/")
+      let path = Split(Replace(Replace(ep.value.path, "{", "", -1),"{","",-1), "/")
       let method = Title(ToLower(ep.value.method))
 
       let methodPostfix = path -> <string> (:

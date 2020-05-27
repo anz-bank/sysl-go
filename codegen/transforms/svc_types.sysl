@@ -237,7 +237,7 @@ CodeGenTransform:
       let withArg = if MatchString("\\{\\p{L}+\\}$", urlPath) && Contains("POST", ToUpper(method)) then "WithArg" else ""
       let getList = if MatchString("[\\p{L}\\p{N}]$", urlPath) && Contains("GET", ToUpper(method)) then "List" else ""
 
-      let path = Split(urlPath, "/")
+      let path = Split(Replace(Replace(urlPath, "{", "", -1),"{","",-1), "/")
 
       let methodPostfix = path -> <sequence of string> (p:
         let postfix = if MatchString("^\\{", p) then "" else p
