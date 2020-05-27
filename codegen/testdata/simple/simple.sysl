@@ -34,6 +34,7 @@ Simple "Simple Server" [package="simple"]:
     /simple-api-docs:
         GET:
             Deps <- GET /api-docs
+            Deps <- GET /success
             return ok <: Deps.ApiDoc
 
     # /no-return-type:
