@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/tls"
 	tls2 "crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -14,6 +15,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"testing"
 	"time"
@@ -113,6 +115,7 @@ var tlsConfigSetupTests = []struct {
 		nil,
 		nil,
 		false,
+		false,
 	},
 		fmt.Errorf("invalid TLSMin config: 1.4"), "TEST: tlsConfigSetupTests #1"},
 	{TLSConfig{
@@ -122,6 +125,7 @@ var tlsConfigSetupTests = []struct {
 		[]string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"},
 		nil,
 		nil,
+		false,
 		false,
 	},
 		fmt.Errorf("invalid client authentication policy: this_is_not_a_valid_policy"), "TEST: tlsConfigSetupTests #2"},
@@ -134,6 +138,7 @@ var tlsConfigSetupTests = []struct {
 		nil,
 		nil,
 		false,
+		false,
 	}, fmt.Errorf("TLS cipher suite configuration contains more ciphers than the number of known ciphers"), "TEST: tlsConfigSetupTests #3"},
 	{TLSConfig{
 		NewString("1.3"),
@@ -142,6 +147,7 @@ var tlsConfigSetupTests = []struct {
 		[]string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"},
 		nil,
 		nil,
+		false,
 		false,
 	},
 		fmt.Errorf("invalid TLS version config"), "TEST: tlsConfigSetupTests #4"},
@@ -515,4 +521,37 @@ func TestInsecureSkipVerify(t *testing.T) {
 	tlsConfig, err := MakeTLSConfig(cfg)
 	assert.NoError(t, err)
 	assert.Equal(t, true, tlsConfig.InsecureSkipVerify)
+}
+
+func TestSelfSignedTLSConfig(t *testing.T) {
+	dir, err := ioutil.TempDir("", "TestConfigureTLS")
+	assert.NoError(t, err, "error during test setup: failed to create temp dir")
+	defer func() {
+		err = os.RemoveAll(dir)
+		assert.NoError(t, err, "warning: failed to remove temp dir: %+v", err)
+	}()
+
+	certFilename := filepath.Join(dir, "cert.pem")
+	keyFilename := filepath.Join(dir, "key.pem")
+
+	err = generateSelfSignedCert([]string{""}, "banana.example.com", certFilename, keyFilename)
+	assert.NoError(t, err, "failed to generate cert & key for test scenario")
+
+	expectedIdentityCert, err := tls.LoadX509KeyPair(certFilename, keyFilename)
+	assert.NoError(t, err)
+	cfg := &TLSConfig{
+		MinVersion:         NewString("1.2"),
+		MaxVersion:         NewString("1.3"),
+		ServerIdentity:     &ServerIdentityConfig{},
+		InsecureSkipVerify: false,
+		SelfSigned:         true,
+	}
+	tlsConfig, err := MakeTLSConfig(cfg)
+	assert.NoError(t, err)
+	assert.Equal(t, false, tlsConfig.InsecureSkipVerify)
+	assert.Nil(t, tlsConfig.CipherSuites)
+	assert.Nil(t, tlsConfig.RootCAs)
+	assert.Nil(t, tlsConfig.ClientCAs)
+	assert.Equal(t, tls.NoClientCert, tlsConfig.ClientAuth)
+	reflect.DeepEqual(expectedIdentityCert, tlsConfig.Certificates)
 }
