@@ -2,11 +2,14 @@ package simplegrpc
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
+	"reflect"
 	"testing"
 	"time"
 
-	"github.com/anz-bank/sysl-go/codegen/tests/simplegrpc/simple"
-	pb "github.com/anz-bank/sysl-go/codegen/tests/simplegrpc/simplepb"
+	"github.com/anz-bank/sysl-go/codegen/tests/simple"
+	pb "github.com/anz-bank/sysl-go/codegen/tests/simplepb"
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
@@ -55,7 +58,7 @@ func (c Callbacks) DownstreamTimeoutContext(ctx context.Context) (context.Contex
 	return context.WithTimeout(ctx, c.timeout)
 }
 
-func GetStuffStub(ctx context.Context, req *pb.GetStuffRequest, client simple.GetStuffClient) (*pb.GetStuffResponse, error) {
+func GetStuffStub(ctx context.Context, req *pb.GetStuffRequest, client GetStuffClient) (*pb.GetStuffResponse, error) {
 	resp := pb.GetStuffResponse{
 		Data: []*pb.Item{{Name: "test"}},
 	}
@@ -73,17 +76,23 @@ func connectAndCheckReturn(t *testing.T, securityOption grpc.DialOption) {
 }
 
 func TestValidRequestResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer server.Close()
+
 	logger, _ := tlog.NewNullLogger()
 
 	cb := Callbacks{
 		timeout: 1 * time.Second,
 	}
 
-	si := simple.GrpcServiceInterface{
+	si := GrpcServiceInterface{
 		GetStuff: GetStuffStub,
 	}
 
-	serviceHandler := simple.NewGrpcServiceHandler(cb, &si)
+	client := simple.NewClient(server.Client(), server.URL)
+	serviceHandler := NewGrpcServiceHandler(cb, &si, client)
 
 	serverHolder := ServerHolder{}
 
@@ -95,11 +104,49 @@ func TestValidRequestResponse(t *testing.T) {
 	serverError := make(chan error)
 
 	go func() {
-		err := core.Server(context.Background(), "test", nil, &handlerManager, logger, nil, nil)
+		err := core.Server(context.Background(), "test", nil, &handlerManager, logger, nil)
 		serverError <- err
 	}()
 
 	connectAndCheckReturn(t, grpc.WithInsecure())
 	serverHolder.svr.GracefulStop()
 	require.NoError(t, <-serverError)
+}
+
+func TestBuildRestHandlerInitialiser(t *testing.T) {
+	t.Parallel()
+	testConfig := NewDefaultConfig()
+	downstreamConfig := testConfig.GenCode.Downstream.(*DownstreamConfig)
+	downstreamConfig.Simple.ServiceURL = "http://localhost:8080/simple"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer server.Close()
+	cb := Callbacks{
+		timeout: 1 * time.Second,
+	}
+
+	si := GrpcServiceInterface{
+		GetStuff: GetStuffStub,
+	}
+
+	client := simple.NewClient(server.Client(), server.URL)
+	serviceHandler := NewGrpcServiceHandler(cb, &si, client)
+	clients, err := BuildDownstreamClients(&testConfig)
+	handler := BuildGrpcHandlerInitialiser(si, cb, clients)
+	require.Nil(t, err)
+	grpcRouter, ok := (handler).(*GrpcServiceHandler)
+	require.True(t, ok)
+	reflect.DeepEqual(cb, grpcRouter.genCallback)
+	reflect.DeepEqual(serviceHandler, grpcRouter.serviceInterface)
+}
+
+func TestBuildDownstreamClients(t *testing.T) {
+	t.Parallel()
+	testConfig := NewDefaultConfig()
+	downstreamConfig := testConfig.GenCode.Downstream.(*DownstreamConfig)
+	downstreamConfig.Simple.ServiceURL = "http://localhost:8080/simple"
+	handlers, err := BuildDownstreamClients(&testConfig)
+	require.Nil(t, err)
+	require.NotNil(t, handlers.simpleClient)
 }

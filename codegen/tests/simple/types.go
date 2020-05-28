@@ -37,14 +37,24 @@ type Status struct {
 type Stuff struct {
 	EmptyStuff     Empty                  `json:"emptyStuff"`
 	InnerStuff     string                 `json:"innerStuff"`
+	RawTimeStuff   time.Time              `json:"rawTimeStuff"`
 	ResponseStuff  Response               `json:"responseStuff"`
 	SensitiveStuff common.SensitiveString `json:"sensitiveStuff"`
+	SequenceStuff  []Str                  `json:"sequenceStuff,omitempty"`
 	TimeStuff      convert.JSONTime       `json:"timeStuff"`
 }
 
 // Generate wrapper set type
 type ItemSet struct {
 	M map[string]Item
+}
+
+// GetApiDocsListRequest ...
+type GetApiDocsListRequest struct {
+}
+
+// GetGetSomeBytesListRequest ...
+type GetGetSomeBytesListRequest struct {
 }
 
 // GetJustOkAndJustErrorListRequest ...
@@ -73,6 +83,10 @@ type GetRawListRequest struct {
 
 // GetRawIntListRequest ...
 type GetRawIntListRequest struct {
+}
+
+// GetSimpleAPIDocsListRequest ...
+type GetSimpleAPIDocsListRequest struct {
 }
 
 // GetStuffListRequest ...
@@ -117,6 +131,9 @@ func (s *ItemSet) Add(item Item) {
 func (s *ItemSet) Lookup(Name string) Item {
 	return s.M[Name]
 }
+
+// Pdf ...
+type Pdf []byte
 
 // Integer ...
 type Integer int64

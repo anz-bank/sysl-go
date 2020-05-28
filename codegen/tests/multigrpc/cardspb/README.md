@@ -1,1 +1,0 @@
-Protoc-generated Go files.

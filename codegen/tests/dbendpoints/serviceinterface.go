@@ -4,9 +4,10 @@ package dbendpoints
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
-// DefaultDbEndpointsImpl  ...
+// DefaultDbEndpointsImpl ...
 type DefaultDbEndpointsImpl struct {
 }
 
@@ -24,4 +25,9 @@ type GetCompanyLocationListClient struct {
 // ServiceInterface for DbEndpoints
 type ServiceInterface struct {
 	GetCompanyLocationList func(ctx context.Context, req *GetCompanyLocationListRequest, client GetCompanyLocationListClient) (*GetCompanyLocationResponse, error)
+}
+
+// DownstreamConfig for DbEndpoints
+type DownstreamConfig struct {
+	ContextTimeout time.Duration `yaml:"contextTimeout"`
 }

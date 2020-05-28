@@ -1,8 +1,6 @@
 package internal
 
 import (
-	"bytes"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -24,14 +22,11 @@ func NewLoggingRoundTripper(logentry *logrus.Entry, base http.RoundTripper) http
 func (t *loggingRoundtripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	start := time.Now()
 
-	var requestBodyCopy []byte
-	if t.logentry.Logger.IsLevelEnabled(logrus.DebugLevel) {
-		if req.Body != nil {
-			requestBodyCopy, _ = ioutil.ReadAll(req.Body)
-			req.Body.Close()
-			req.Body = ioutil.NopCloser(bytes.NewBuffer(requestBodyCopy))
-		}
-	}
+	var resp *http.Response
+	reqLogger, _ := NewRequestLogger(t.logentry, req)
+	defer func() {
+		reqLogger.LogResponse(resp)
+	}()
 
 	resp, err := t.base.RoundTrip(req)
 	if err != nil {
@@ -46,24 +41,11 @@ func (t *loggingRoundtripper) RoundTrip(req *http.Request) (*http.Response, erro
 
 	fields := initCommonLogFields(resp.StatusCode, reqTime, resp.Request)
 
-	entry := t.logentry.WithFields(fields)
+	entry := t.logentry.WithFields(fields).WithFields(logrus.Fields{
+		"logger": "common/internal/roundtripper.go",
+		"func":   "RoundTrip()",
+	})
+	entry.Info("Backend request completed")
 
-	switch {
-	case resp.StatusCode < 400:
-		entry.Info("Backend request completed")
-	default:
-		entry.Error("Backend request completed with error status")
-	}
-
-	if t.logentry.Logger.IsLevelEnabled(logrus.DebugLevel) {
-		rspbody, _ := ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
-		resp.Body = ioutil.NopCloser(bytes.NewBuffer(rspbody))
-
-		entry.Debugf("Request Body: %s", requestBodyCopy)
-		entry.Debugf("Request Headers: %s", req.Header)
-		entry.Debugf("Response Body: %s", rspbody)
-		entry.Debugf("Response Headers: %s", resp.Header)
-	}
 	return resp, nil
 }

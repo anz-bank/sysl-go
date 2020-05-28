@@ -69,7 +69,7 @@ CodeGenTransform:
     payload -> (:
       let packages = Split(payload, ".") -> <set of string>(p:
         let depList = module.apps where(.value.name == p) -> <set of string> (dep:
-          pkg = dep.value.attrs.package
+          pkg = getPackage(dep.value).pname
           appName = p
         )
         pkg = depList flatten(.pkg)
@@ -133,7 +133,7 @@ CodeGenTransform:
     app.endpoints -> (ep:
       let callList = ep.value.stmts where (.type == "call") -> <set of out> (call:
         let depList = module.apps where(.value.name == call.target) -> <set of out> (dep:
-          out = if "go_package" in dep.value.attrs then dep.value.attrs.go_package else dep.value.attrs.package
+          out = if "go_package" in dep.value.attrs then dep.value.attrs.go_package else getPackage(dep.value).pname
         )
         out = depList flatten(.out)
       )
@@ -171,17 +171,20 @@ CodeGenTransform:
   !view makeResultWithClientPackage(ep <: sysl.Endpoint, package <: string) -> Result:
     ep -> (:
       ReturnTypes = ep -> <ReturnTypes>(:
-        let tn = ep.value.ret -> <sequence of string>(t:
+        let tn = ep.value.ret where (.key != "error" && .value != "error") -> <sequence of string>(t:
           out = makeType(t.value, package).out
         )
         TypeName = Join(tn flatten(.out) | ["error"], ", ")
       )
     )
 
-  !view makeParams(ep <: sysl.Endpoint, allParams <: AllParams) -> Parameters:
+  !view makeParams(ep <: sysl.Endpoint, package <: string) -> Parameters:
     ep -> (:
       ParameterList = ep -> <ParameterList>(:
-        ParameterDecl = if ep.value.params where("header" in .attrs.patterns) count > 0 then paramDecl(Join(allParams.AllParams, ", "), "").ParameterDecl else paramDecl(Join(allParams.AllParams, ", "), "").ParameterDecl    
+        ParameterDecl = paramDecl("ctx", "context.Context").ParameterDecl
+        ParameterDeclC = ["req"] -> <sequence of ParameterDeclC>(ident:
+          ParameterDecl = paramDecl(ident, "*" + package + "." + methodDef(ep).methodName + "Request").ParameterDecl
+        )
       )
     )
 
@@ -190,12 +193,10 @@ CodeGenTransform:
       let emptyList = [""] where (. != "") -> <sequence of string> (s:
         out = s
       )
-      let allParams = getAllParams(ep, emptyList flatten(.out), package, module)
       identifier = methodDef(ep).methodName
       FunctionType = ep -> <FunctionType>(:
-        
         Signature = ep -> <Signature> (:
-          Parameters = makeParams(ep, allParams)
+          Parameters = makeParams(ep, package)
           Result = makeResultWithClientPackage(ep, package)
         )
       )
@@ -203,7 +204,7 @@ CodeGenTransform:
 
   !view handlerClients(app <: sysl.App, module <: sysl.Module) -> sequence of TopLevelDecl:
     app.endpoints where(.value.is_rest == false) -> (ep:
-      
+
       Comment = "// " + ep.value.name + " Client"
       Declaration = ep -> <Declaration> (:
         StructType = ep -> <StructType> (:
@@ -211,11 +212,10 @@ CodeGenTransform:
 
           let callList = ep.value.stmts where (.type == "call") -> <sequence of out> (call:
             let depList = module.apps where(.value.name == call.target) -> <sequence of out> (dep:
-              out = epHandlerMethodSpecsNoClient(dep.value.endpoints where(.value.name == call.endpoint), dep.value.attrs.package, module)
+              out = epHandlerMethodSpecsNoClient(dep.value.endpoints where(.value.name == call.endpoint), getPackage(dep.value).pname, module)
             )
             out = depList flatten(.out) flatten(.)
           )
-          
           FieldDecl = callList flatten(.out) flatten(.)
         )
       )
@@ -232,7 +232,7 @@ CodeGenTransform:
 
       ImportDecl = app -> <ImportDecl>(:
         let clientImports = makeClientImportList(app, module) flatten(.out) -> <set of string>(i:
-          out = depPath + i
+          out = depPath + "/" + i
         )
         
         let goPbPackage = if "go_pb_package" in .attrs then .attrs.go_pb_package else "pb"
@@ -261,7 +261,36 @@ CodeGenTransform:
         )
       )
 
+      let downstreamConfigImpl = [.name] -> <sequence of TopLevelDecl> (name:
+        let funcName = "DownstreamConfig"
+        Comment = "// " + funcName + " for " + name
+        Declaration = name -> <Declaration>(:
+          StructType = name -> <StructType>(:
+            StructName = funcName
+            let context = name -> <FieldDecl>(:
+              identifier = "ContextTimeout"
+              Type =  "time.Duration"
+              Tag = '`yaml:"contextTimeout"`'
+            )
+            let downstreamAppList = makeClientImportList(app, module) flatten(.out) -> <set of string>(i:
+              out = i
+            )
+            let depList = downstreamAppList flatten(.out) -> <sequence of FieldDecl> (importPath:
+              identifier = GoName(importPath).out
+              Type =  "config.CommonDownstreamData"
+              Tag = '`yaml:"' + importPath + '"`'
+            )
+            FieldDecl = [context] | depList
+          )
+        )
+      )
+
       Comment = "// Code generated by sysl DO NOT EDIT.\n"
 
-      TopLevelDecl =  handlerClients(app, module) | svcImplInterface
+      TopLevelDecl =  handlerClients(app, module) | svcImplInterface | downstreamConfigImpl
+    )
+
+  !view getPackage(app <: sysl.App) -> string:
+    app -> (:
+      pname = if "go_package" in .attrs then .attrs.go_package else if "package" in .attrs then .attrs.package else ToLower(.name)
     )

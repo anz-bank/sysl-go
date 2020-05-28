@@ -38,14 +38,14 @@ func (g Callback) BasePath() string {
 	return g.RouterBasePath
 }
 
-func (g Callback) Config() validator.Validator {
+func (g Callback) Config() interface{} {
 	return g.UpstreamConfig
 }
 
 func (g Callback) HandleError(ctx context.Context, w http.ResponseWriter, kind Kind, message string, cause error) {
 	se := CreateError(ctx, kind, message, cause)
 
-	httpError := HandleError(ctx, se)
+	httpError := MapError(ctx, se)
 
 	httpError.WriteError(ctx, w)
 }

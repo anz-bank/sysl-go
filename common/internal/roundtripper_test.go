@@ -77,10 +77,10 @@ func TestLoggingTransport_RoundTrip400Code(t *testing.T) {
 	req, err := http.NewRequest("POST", "http://localhost:1234/", body)
 	require.NoError(t, err)
 
-	res, err := transport.RoundTrip(req)
+	response, err := transport.RoundTrip(req)
 	require.NoError(t, err)
-	res.Body.Close()
 	require.True(t, tr.wasCalled)
+	defer response.Body.Close()
 
 	debugCount := 0
 	reqFound := false
@@ -89,18 +89,18 @@ func TestLoggingTransport_RoundTrip400Code(t *testing.T) {
 	for _, entry := range hook.Entries {
 		if entry.Level == logrus.DebugLevel {
 			debugCount++
-			if entry.Message == "Request Body: test" {
+			if entry.Message == "Response: header - map[]\nbody[len:9]: - resp body" {
 				reqFound = true
 			}
-			if entry.Message == "Response Body: resp body" {
+			if entry.Message == "Request: header - map[]\nbody[len:4]: - test" {
 				respFound = true
 			}
 		}
-		if entry.Message == "Backend request completed with error status" {
+		if entry.Message == "Backend request completed" {
 			statusFound = true
 		}
 	}
-	require.Equal(t, 4, debugCount)
+	require.Equal(t, 2, debugCount)
 	require.True(t, reqFound)
 	require.True(t, respFound)
 	require.True(t, statusFound)
@@ -118,10 +118,10 @@ func TestLoggingTransport_RoundTripLogFields(t *testing.T) {
 	req.Header.Add(distributedSpanIDName, "this is span id")
 	require.NoError(t, err)
 
-	res, err := transport.RoundTrip(req)
+	response, err := transport.RoundTrip(req)
 	require.NoError(t, err)
-	res.Body.Close()
 	require.True(t, tr.wasCalled)
+	defer response.Body.Close()
 
 	debugCount := 0
 	reqFound := false
@@ -133,18 +133,18 @@ func TestLoggingTransport_RoundTripLogFields(t *testing.T) {
 		require.Nil(t, entry.Data[distributedParentSpanIDName])
 		if entry.Level == logrus.DebugLevel {
 			debugCount++
-			if entry.Message == "Request Body: test" {
+			if entry.Message == "Response: header - map[]\nbody[len:9]: - resp body" {
 				reqFound = true
 			}
-			if entry.Message == "Response Body: resp body" {
+			if entry.Message == "Request: header - map[X─B3─SpanId:[this is span id] X─B3─TraceId:[this is trace id]]\nbody[len:4]: - test" {
 				respFound = true
 			}
 		}
-		if entry.Message == "Backend request completed with error status" {
+		if entry.Message == "Backend request completed" {
 			statusFound = true
 		}
 	}
-	require.Equal(t, 4, debugCount)
+	require.Equal(t, 2, debugCount)
 	require.True(t, reqFound)
 	require.True(t, respFound)
 	require.True(t, statusFound)

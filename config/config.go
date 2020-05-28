@@ -1,44 +1,62 @@
 package config
 
 import (
-	"encoding/base64"
+	"fmt"
+	"io/ioutil"
 
-	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/validator"
-	"github.com/sirupsen/logrus"
+
+	"github.com/mitchellh/mapstructure"
+	"gopkg.in/yaml.v2"
 )
 
-type LibraryConfig struct {
-	Log       LogConfig `yaml:"log"`
-	Profiling bool      `yaml:"profiling"`
+type DefaultConfig struct {
+	Library LibraryConfig `yaml:"library"`
+	GenCode GenCodeConfig `yaml:"genCode"`
 }
 
-type LogConfig struct {
-	Format       string        `yaml:"format" validate:"nonnil,oneof=color json text"`
-	Splunk       *SplunkConfig `yaml:"splunk"`
-	Level        logrus.Level  `yaml:"level" validate:"nonnil"`
-	ReportCaller bool          `yaml:"caller"`
-}
+// LoadConfig reads and validates a configuration loaded from file.
+// file: the path to the yaml-encoded config file
+// defaultConfig: a pointer to the default config struct to populate
+// customConfig: a pointer to the custom config struct to populate
+func LoadConfig(file string, defaultConfig *DefaultConfig, customConfig interface{}) error {
+	b, err := ioutil.ReadFile(file)
+	if err != nil {
+		return fmt.Errorf("read config file error: %s", err)
+	}
 
-type SplunkConfig struct {
-	TokenBase64 common.SensitiveString `yaml:"tokenBase64" validate:"nonnil,base64"`
-	Index       string                 `yaml:"index" validate:"nonnil"`
-	Target      string                 `yaml:"target" validate:"nonnil,url"`
-	Source      string                 `yaml:"source" validate:"nonnil"`
-	SourceType  string                 `yaml:"sourceType" validate:"nonnil"`
-}
+	if err = yaml.Unmarshal(b, customConfig); err != nil {
+		return fmt.Errorf("unmarshal config file error: %s", err)
+	}
 
-func (s *SplunkConfig) Token() string {
-	b, _ := base64.StdEncoding.DecodeString(s.TokenBase64.Value())
+	c := make(map[string]interface{})
+	if err = yaml.Unmarshal(b, &c); err != nil {
+		return fmt.Errorf("unmarshal config file error: %s", err)
+	}
 
-	return string(b)
-}
-
-func (c *LibraryConfig) Validate() error {
-	// existing validation
-	if err := validator.Validate(c); err != nil {
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Metadata:   nil,
+		DecodeHook: mapstructure.StringToTimeDurationHookFunc(),
+		Result:     defaultConfig,
+	})
+	if err != nil {
 		return err
 	}
 
-	return nil
+	err = decoder.Decode(c)
+	if err != nil {
+		return err
+	}
+
+	err = validator.Validate(defaultConfig)
+	if err != nil {
+		return err
+	}
+
+	err = validator.Validate(customConfig)
+	if err != nil {
+		return err
+	}
+
+	return err
 }

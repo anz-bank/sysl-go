@@ -2,12 +2,37 @@ package common
 
 import (
 	"context"
+	"net/http"
 )
 
-func HandleError(ctx context.Context, err error) HTTPError {
+const (
+	missingParam          = "Missing one or more of the required parameters"
+	internalServerError   = "Internal Server Error"
+	unauthorizedError     = "Unauthorized error"
+	downstreamUnavailable = "Downstream system is unavailable"
+	timeoutDownstream     = "Time out from down stream services"
+	unknownError          = "Unknown Error"
+)
+
+func HandleError(ctx context.Context, w http.ResponseWriter, kind Kind, message string, cause error, httpErrorMapper func(context.Context, error) *HTTPError) {
+	err := CreateError(ctx, kind, message, cause)
 	logEntry := GetLogEntryFromContext(ctx)
 	logEntry.Error(err)
+	httpError := httpErrorMapper(ctx, err)
 
+	if httpError == nil {
+		switch t := cause.(type) {
+		case CustomError:
+			httpError = t.HTTPError(ctx)
+		default:
+			e := MapError(ctx, err)
+			httpError = &e
+		}
+	}
+	httpError.WriteError(ctx, w)
+}
+
+func MapError(ctx context.Context, err error) HTTPError {
 	var (
 		httpCode        int
 		errorCode, desc string
@@ -19,37 +44,37 @@ func HandleError(ctx context.Context, err error) HTTPError {
 		case BadRequestError:
 			httpCode = 400
 			errorCode = "1001"
-			desc = "Missing one or more of the required parameters"
+			desc = missingParam
 		case InternalError:
 			httpCode = 500
 			errorCode = "9998"
-			desc = "Internal Server Error"
+			desc = internalServerError
 		case UnauthorizedError:
 			httpCode = 401
 			errorCode = "1003"
-			desc = "Unauthorized error"
+			desc = unauthorizedError
 		case DownstreamUnavailableError:
 			httpCode = 503
 			errorCode = "1013"
-			desc = "Downstream system is unavailable"
+			desc = downstreamUnavailable
 		case DownstreamTimeoutError:
 			httpCode = 504
 			errorCode = "1005"
-			desc = "Time out from down stream services"
+			desc = timeoutDownstream
 		default:
 			httpCode = 500
 			errorCode = "9999"
-			desc = "Unknown Error"
+			desc = unknownError
 		}
 	default:
 		if ctx.Err() == context.DeadlineExceeded {
 			httpCode = 504
 			errorCode = "1005"
-			desc = "Time out from down stream services"
+			desc = timeoutDownstream
 		} else {
 			httpCode = 500
 			errorCode = "9999"
-			desc = "Unknown Error"
+			desc = unknownError
 		}
 	}
 

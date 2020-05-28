@@ -3,6 +3,7 @@ package restlib
 import (
 	"context"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -46,6 +47,15 @@ func TestUnmarshalNilBodyOK(t *testing.T) {
 	require.Nil(t, result.Response)
 }
 
+func TestUnmarshalPointerBodyOK(t *testing.T) {
+	result, err := unmarshal(&http.Response{}, nil, &OkType{})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.NotNil(t, result.HTTPResponse)
+	require.Nil(t, result.Body)
+	require.NotNil(t, result.Response)
+}
+
 func TestUnmarshalEmptyBodyOK(t *testing.T) {
 	result, err := unmarshal(&http.Response{}, make([]byte, 0), OkType{})
 	require.NoError(t, err)
@@ -84,6 +94,19 @@ func TestDoHTTPRequestOkType(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte(okJSON))
+	}))
+	defer srv.Close()
+
+	result, err := DoHTTPRequest(context.Background(), srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.IsType(t, &OkType{}, result.Response)
+}
+
+func TestDoHTTPRequest204Response(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(204)
+		_, _ = w.Write(nil)
 	}))
 	defer srv.Close()
 
@@ -140,4 +163,88 @@ func TestDoHTTPRequestXMLBody(t *testing.T) {
 	strRes, isString := result.Response.(string)
 	require.True(t, isString)
 	require.True(t, xmlBody == strRes)
+}
+
+type testResp struct {
+	Data string `json:"jdata" xml:"xdata"`
+}
+
+func TestSendHTTPResponseJSONBody(t *testing.T) {
+	// Given
+	recorder := httptest.NewRecorder()
+	recorder.Header().Set("Content-Type", "application/json")
+
+	resp := testResp{Data: "test"}
+
+	// When
+	SendHTTPResponse(recorder, 200, resp)
+
+	// Then
+	result := recorder.Result()
+	require.NotNil(t, result)
+	require.Equal(t, 200, result.StatusCode)
+	b, err := ioutil.ReadAll(result.Body)
+	defer result.Body.Close()
+	require.NoError(t, err)
+	require.Equal(t, "{\"jdata\":\"test\"}\n", string(b))
+}
+
+func TestSendHTTPResponseXMLBody(t *testing.T) {
+	// Given
+	recorder := httptest.NewRecorder()
+	recorder.Header().Set("Content-Type", "text/xml; charset=utf-8")
+
+	resp := testResp{Data: "test"}
+
+	// When
+	SendHTTPResponse(recorder, 200, resp)
+
+	// Then
+	result := recorder.Result()
+	require.NotNil(t, result)
+	require.Equal(t, 200, result.StatusCode)
+	b, err := ioutil.ReadAll(result.Body)
+	defer result.Body.Close()
+	require.NoError(t, err)
+	require.Equal(t, "<testResp><xdata>test</xdata></testResp>", string(b))
+}
+
+func TestSendHTTPResponseBinaryBody(t *testing.T) {
+	// Given
+	recorder := httptest.NewRecorder()
+	recorder.Header().Set("Content-Type", "application/octet-stream")
+
+	// When
+	data := []byte("test binary data")
+	SendHTTPResponse(recorder, 200, data)
+
+	// Then
+	result := recorder.Result()
+	require.NotNil(t, result)
+	require.Equal(t, 200, result.StatusCode)
+	b, err := ioutil.ReadAll(result.Body)
+	defer result.Body.Close()
+	require.NoError(t, err)
+	require.Equal(t, data, b)
+}
+
+type ByteWrapper []byte
+
+func TestSendHTTPResponseBinaryBody2(t *testing.T) {
+	// Given
+	recorder := httptest.NewRecorder()
+	recorder.Header().Set("Content-Type", "application/pdf")
+
+	// When
+	data := ByteWrapper("test binary data")
+	SendHTTPResponse(recorder, 200, (*[]byte)(&data))
+
+	// Then
+	result := recorder.Result()
+	require.NotNil(t, result)
+	require.Equal(t, 200, result.StatusCode)
+	b, err := ioutil.ReadAll(result.Body)
+	defer result.Body.Close()
+	require.NoError(t, err)
+	require.Equal(t, ([]byte)(data), b)
 }

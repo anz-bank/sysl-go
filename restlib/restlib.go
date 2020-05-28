@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -40,6 +41,11 @@ func unmarshal(resp *http.Response, body []byte, respStruct interface{}) (*HTTPR
 		panic("unmarshal expecting a non-nil http.Response")
 	}
 	if respStruct == nil || body == nil || len(body) == 0 {
+		// Obtain the respStruct's dynamic type and check if its a pointer
+		if p := reflect.TypeOf(respStruct); p != nil && p.Kind() == reflect.Ptr {
+			// Dereference the dynamic pointer type and pass the created zero value
+			return makeHTTPResult(resp, body, reflect.New(p.Elem()).Interface()), nil
+		}
 		return makeHTTPResult(resp, body, nil), nil
 	}
 
@@ -63,7 +69,7 @@ func unmarshal(resp *http.Response, body []byte, respStruct interface{}) (*HTTPR
 }
 
 // DoHTTPRequest returns HTTPResult
-//nolint:funlen
+//nolint:funlen // TODO: Refactor this function to be shorter
 func DoHTTPRequest(ctx context.Context, client *http.Client, method string,
 	urlString string, body interface{}, required []string,
 	okResponse interface{}, errorResponse interface{}) (*HTTPResult, error) {
@@ -128,9 +134,13 @@ func DoHTTPRequest(ctx context.Context, client *http.Client, method string,
 	}
 
 	// OK
-	if httpResponse.StatusCode == http.StatusOK ||
-		httpResponse.StatusCode == http.StatusCreated ||
-		httpResponse.StatusCode == http.StatusAccepted {
+	switch httpResponse.StatusCode {
+	case http.StatusOK,
+		http.StatusCreated,
+		http.StatusAccepted,
+		http.StatusNonAuthoritativeInfo,
+		http.StatusNoContent,
+		http.StatusResetContent:
 		return unmarshal(httpResponse, respBody, okResponse)
 	}
 
@@ -148,9 +158,23 @@ func DoHTTPRequest(ctx context.Context, client *http.Client, method string,
 func SendHTTPResponse(w http.ResponseWriter, httpStatus int, responses ...interface{}) {
 	w.WriteHeader(httpStatus)
 
+	contentType := w.Header().Get("Content-Type")
+
 	for _, resp := range responses {
 		if resp != nil {
-			_ = json.NewEncoder(w).Encode(resp)
+			switch {
+			case strings.Contains(contentType, "xml"):
+				_ = xml.NewEncoder(w).Encode(resp)
+			case strings.Contains(contentType, "octet-stream"), strings.Contains(contentType, "pdf"):
+				switch data := resp.(type) {
+				case *[]byte:
+					_, _ = w.Write(*data)
+				case []byte:
+					_, _ = w.Write(data)
+				}
+			default:
+				_ = json.NewEncoder(w).Encode(resp)
+			}
 			return
 		}
 	}

@@ -29,6 +29,7 @@ CodeGenTransform:
           "STRING" => "string"
           "STRING_8" => "string"
           "BOOL" => "bool"
+          "BYTES" => "[]byte"
           "DATE" => "date.Date"
           "DATETIME" => "time.Time"
         "sequence" => "[]" + GoType(t.sequence).out
@@ -118,7 +119,7 @@ CodeGenTransform:
         )
       )
     )
-    
+
   !view makeFunctionCall(funcName <: string, arg0 <: Expression, rest <: sequence of Expression) -> FuncArgsRest:
     funcName -> (:
       Expression = funcName -> <Expression>(:
@@ -228,7 +229,7 @@ CodeGenTransform:
       )
     )
 
-  !view castResult(ret <: sysl.Ret) -> StatementList:
+  !view castResult(ret <: sysl.Ret, module <: sysl.Module) -> StatementList:
     ret -> (:
       let name = makeType(ret.value)
 
@@ -236,7 +237,7 @@ CodeGenTransform:
         DeclareAndAssignStmt = ret -> <DeclareAndAssignStmt> (:
           Variables = GoName(ret.key).out + name.varName + 'Response, ok'
           Expression = ret -> <Expression> (:
-            ValueExpr = "result.Response.(*" + name.typeName + ")"
+            ValueExpr = "result.Response.(*" + makeTypeWithClientPackage(Replace(ret.value, getClientPackage(ret.value, module).prefix, "", -1), getClientPackage(ret.value, module).package).out + ")"
           )
         )
       )
@@ -290,20 +291,20 @@ CodeGenTransform:
       )
     )
 
-  !view castResults(ep <: sysl.Endpoint) -> Block:
+  !view castResults(ep <: sysl.Endpoint, module <: sysl.Module) -> Block:
     ep -> (:
       let casting = ep.value.ret where (.key != "error" && .value != "ok" && .value != "error") -> <sequence of string> (rt:
-        out = [castResult(rt), returnCastResult(rt, ep)]
+        out = [castResult(rt, module), returnCastResult(rt, ep)]
       )
       let test = casting flatten(.out)
       StatementList = test flatten(.)
     )
 
-  !view declareResponseAsNil(ret <: sysl.Ret) -> Statement:
+  !view declareResponseAsNil(ret <: sysl.Ret, module <: sysl.Module) -> Statement:
     ret -> (:
       VarDecl = ret -> <VarDecl> (:
         identifier = GoName(ret.key).out + makeType(ret.value).varName + "Response"
-        TypeName = "*" + makeType(ret.value).typeName
+        TypeName = makeTypeWithClientPackage(Replace(ret.value, getClientPackage(ret.value, module).prefix, "", -1), getClientPackage(ret.value, module).package).out
       )
     )
 
@@ -355,22 +356,22 @@ CodeGenTransform:
       )
     )
 
-  !view declareResp(varName <: string, ep <: sysl.Endpoint) -> Block:
+  !view declareResp(varName <: string, ep <: sysl.Endpoint, module <: sysl.Module) -> Block:
     ep -> (:
       StatementList = ep.value.ret where(.key == varName) -> <sequence of StatementList>(d:
         Statement = d -> <Statement> (:
           VarDecl = d -> <VarDecl> (:
             identifier = varName + "Response"
-            TypeName = makeType(d.value).typeName
+            TypeName = makeTypeWithClientPackage(Replace(d.value, getClientPackage(d.value, module).prefix, "", -1), getClientPackage(d.value, module).package).out
           )
         )
       )
     )
 
-  !view declareReturnTypeArray(ep <: sysl.Endpoint) -> Block:
+  !view declareReturnTypeArray(ep <: sysl.Endpoint, module <: sysl.Module) -> Block:
     ep -> (:
-      let okDecl = declareResp("ok", ep).StatementList
-      let errorDecl = declareResp("error", ep).StatementList
+      let okDecl = declareResp("ok", ep, module).StatementList
+      let errorDecl = declareResp("error", ep, module).StatementList
 
       StatementList =  okDecl | errorDecl
     )
@@ -516,7 +517,7 @@ CodeGenTransform:
       out = if resultTypes flatten(.typeName) count > 0 then Join(resultTypes flatten(.typeName),", ") + ", " else ""
     )
 
-  !view HttpMethodStatments(appName <: string, ep <: sysl.Endpoint) -> Block:
+  !view HttpMethodStatments(appName <: string, ep <: sysl.Endpoint, module <: sysl.Module) -> Block:
     ep -> (:
       let requiredHeaders = ep.value.params where("header" in .attrs.patterns && "required" in .attrs.patterns)
       let required = declareHeaders("required", "string", requiredHeaders flatten(.attrs.name))
@@ -527,15 +528,15 @@ CodeGenTransform:
         out = t.value
       )
 
-      let responses = declareReturnTypeArray(ep).StatementList
+      let responses = declareReturnTypeArray(ep, module).StatementList
       let retIfErr = returnIfError("err != nil", emptyStatements("").StatementList,  nilResponseGenerator(ep).out + 'common.CreateError(ctx, common.InternalError, "failed to parse url", err)')
       let stmts =  [required] | responses | [urlVariable(ep), retIfErr]
       StatementList = if ep.value.queryvars count ==:
-       0 => stmts | [callRestLib(ep), callRestLibCheck(appName, ep), castErrorCodeCheck(ep)] | castResults(ep).StatementList | [castFallThroughCheck(ep)]
-       else stmts | [declareQueryVar("q")] | addQueryParams(ep) | addOptionalQueryParams(ep) | [updateRawQuery("") , callRestLib(ep), callRestLibCheck(appName, ep), castErrorCodeCheck(ep)] | castResults(ep).StatementList | [castFallThroughCheck(ep)]
+       0 => stmts | [callRestLib(ep), callRestLibCheck(appName, ep), castErrorCodeCheck(ep)] | castResults(ep, module).StatementList | [castFallThroughCheck(ep)]
+       else stmts | [declareQueryVar("q")] | addQueryParams(ep) | addOptionalQueryParams(ep) | [updateRawQuery("") , callRestLib(ep), callRestLibCheck(appName, ep), castErrorCodeCheck(ep)] | castResults(ep, module).StatementList | [castFallThroughCheck(ep)]
     )
 
-  !view ClientMethods(appName <: string, eps <: set of sysl.Endpoints) -> sequence of TopLevelDecl:
+  !view ClientMethods(appName <: string, eps <: set of sysl.Endpoints, module <: sysl.Module) -> sequence of TopLevelDecl:
     eps -> (ep:
       let funcName = methodName(ep.value.method, ep.value.path).out
       Comment = '// ' + funcName + ' ...'
@@ -544,8 +545,8 @@ CodeGenTransform:
           ReceiverType = "s *Client"
         )
         FunctionName = funcName
-        Signature = methodSignature(ep)
-        Block = HttpMethodStatments(appName, ep)
+        Signature = methodSignature(ep, module)
+        Block = HttpMethodStatments(appName, ep, module)
       )
     )
 
@@ -568,17 +569,39 @@ CodeGenTransform:
       varName = TrimPrefix(safeType, "[]")
     )
 
-  !view makeResult(ep <: sysl.Endpoint) -> Result:
+  !view makeTypeWithClientPackage(input <: string, package <: string) -> string:
+    input -> (:
+      let pkgString = if package == "" then "" else package + "."
+      let userType = if HasPrefix(input, "sequence of") then "[]" + pkgString + GoName(TrimPrefix(input, "sequence of ")).out else pkgString + GoName(input).out
+      out = if input in ["error"] then input else userType
+    )  
+
+  !view getClientPackage(input <: string, module <: sysl.Module) -> string:
+    input -> (:
+      let packages = Split(input, ".") -> <set of string>(p:
+        let app = if HasPrefix(p, "sequence of") then TrimPrefix(p, "sequence of ") else p
+        let depList = module.apps where(.value.name == app) -> <set of string> (dep:
+          pkg = getPackage(dep.value).pname
+          prefix = app
+        )
+        pkg = depList flatten(.pkg)
+        prefix = depList flatten(.prefix)
+      )
+      prefix = if packages flatten(.prefix) count == 0 then "" else packages flatten(.prefix) single + "."
+      package = if packages flatten(.pkg) count == 0 then "" else packages flatten(.pkg) single
+    )
+  
+  !view makeResult(ep <: sysl.Endpoint, module <: sysl.Module) -> Result:
     ep -> (:
       ReturnTypes = ep -> <ReturnTypes>(:
         let tn = ep.value.ret where (.key != "error" && .value != "error") -> <sequence of string>(t:
-          out = if t.value == "ok" then "*http.Header" else "*" + makeType(t.value).out
+          out = if t.value == "ok" then "*http.Header" else "*" + makeTypeWithClientPackage(Replace(t.value, getClientPackage(t.value, module).prefix, "", -1), getClientPackage(t.value, module).package).out
         )
         TypeName = Join(tn flatten(.out) | ["error"], ", ")
       )
     )
 
-  !view methodSignature(ep <: sysl.Endpoint) -> Signature:
+  !view methodSignature(ep <: sysl.Endpoint, module <: sysl.Module) -> Signature:
     ep -> (:
       Parameters = ep -> <Parameters>(:
         ParameterList = ep -> <ParameterList>(:
@@ -599,13 +622,13 @@ CodeGenTransform:
           )
         )
       )
-      Result = makeResult(ep)
+      Result = makeResult(ep, module)
     )
 
-  !view GoMethods(eps <: set of sysl.Endpoints) -> sequence of MethodSpec:
+  !view GoMethods(eps <: set of sysl.Endpoints, module <: sysl.Module) -> sequence of MethodSpec:
     eps -> (ep:
       MethodName = methodName(ep.value.method, ep.value.path).out
-      Signature = methodSignature(ep)
+      Signature = methodSignature(ep, module)
     )
 
   !view varDecl(name <: string, typeName <: string) -> TopLevelDecl:
@@ -619,18 +642,19 @@ CodeGenTransform:
       )
     )
 
-  !view goFile(app <: sysl.App) -> goFile:
+  !view goFile(app <: sysl.App, module <: sysl.Module) -> goFile:
     app -> (:
 
       PackageClause = app -> <package> (:
-        let pname = if .attrs.package != null then .attrs.package else app.name
+        let pname = getPackage(app).pname
         PackageName = ToLower(pname)
       )
 
       ImportDecl = app -> <ImportDecl>(:
+        let validator = "github.com/anz-bank/sysl-go/validator"
         let restLib = "github.com/anz-bank/sysl-go/restlib"
         let bffLib = "github.com/anz-bank/sysl-go/common"
-        let spec = ["context", "fmt", "net/http", "net/url", restLib, bffLib] -> <sequence of ImportSpec> (importPath:
+        let spec = ["context", "fmt", "net/http", "net/url", restLib, bffLib, validator] -> <sequence of ImportSpec> (importPath:
           Import = if importPath == "" then true else '"' + importPath + '"'
         )
         ImportSpec = spec
@@ -642,7 +666,7 @@ CodeGenTransform:
         Declaration = title -> <Declaration>(:
           InterfaceType = title -> <InterfaceType>(:
             InterfaceName = title
-            MethodSpec =  GoMethods(app.endpoints)
+            MethodSpec =  GoMethods(app.endpoints, module)
           )
         )
       )
@@ -711,5 +735,10 @@ CodeGenTransform:
       )
       Comment = "// Code generated by sysl DO NOT EDIT.\n"
 
-      TopLevelDecl = GoInterfaces(app.union) | svcInterface | clientStruct |  makeClient  |  ClientMethods(.name, app.endpoints)
+      TopLevelDecl = GoInterfaces(app.union) | svcInterface | clientStruct |  makeClient  |  ClientMethods(.name, app.endpoints, module)
+    )
+
+  !view getPackage(app <: sysl.App) -> string:
+    app -> (:
+      pname = if "go_package" in .attrs then .attrs.go_package else if "package" in .attrs then if .attrs.package != null then .attrs.package else ToLower(.name) else ToLower(.name)
     )

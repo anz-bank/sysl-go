@@ -23,6 +23,7 @@ import (
 )
 
 // TLS
+//nolint:goconst // Better readability inline
 func TestTLSCiphers(t *testing.T) {
 	req := require.New(t)
 
@@ -202,6 +203,7 @@ func TestConfigureTLS(t *testing.T) {
 	req.Equal(expectedTLS, tlsCfg)
 }
 
+//nolint:goconst // Better readability inline
 func TestTLSClientAuth(t *testing.T) {
 	req := require.New(t)
 
@@ -314,7 +316,6 @@ func makeX509Template(organisation string) (*x509.Certificate, error) {
 	}, nil
 }
 
-//nolint:funlen
 func generateSelfSignedCert(hosts []string, organisation string, certFilename, keyFilename string) error {
 	pemBlockForKey := func(priv *ecdsa.PrivateKey) (*pem.Block, error) {
 		b, err := x509.MarshalECPrivateKey(priv)
@@ -467,7 +468,6 @@ func TestGetTrustedCAsFromSystem(t *testing.T) {
 		assert.NotNil(t, res)
 	}
 }
-
 var tlsInvalidTLSTrustedCertPoolConfigTests = []struct {
 	in   *TrustedCertPoolConfig
 	name string

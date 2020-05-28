@@ -81,9 +81,9 @@ func TestProxyHandlerFromConfig(t *testing.T) {
 	}
 	testURL, _ := url.Parse(testTransport.ProxyURL)
 	fn := proxyHandlerFromConfig(&testTransport)
-	url, err := fn(dummyReq)
+	requestURL, err := fn(dummyReq)
 	require.NoError(t, err)
-	require.Equal(t, url, testURL)
+	require.Equal(t, requestURL, testURL)
 }
 
 func TestProxyHandlerFromConfigDefaultProxy(t *testing.T) {
@@ -94,9 +94,9 @@ func TestProxyHandlerFromConfigDefaultProxy(t *testing.T) {
 		UseProxy: true,
 	}
 	fn := proxyHandlerFromConfig(&testTransport)
-	url, err := fn(dummyReq)
+	requestURL, err := fn(dummyReq)
 	require.NoError(t, err)
-	require.Equal(t, url.String(), `http://localhost:3128`)
+	require.Equal(t, `http://localhost:3128`, requestURL.String())
 }
 
 func TestProxyHandlerFromConfigNoProxy(t *testing.T) {

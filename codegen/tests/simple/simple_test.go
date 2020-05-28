@@ -9,12 +9,16 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/anz-bank/sysl-go/codegen/tests/deps"
+	"github.com/anz-bank/sysl-go/codegen/tests/downstream"
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/convert"
+	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/restlib"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
@@ -59,6 +63,7 @@ func (th *TestHandler) ValidGetStuffListHandlerStub(ctx context.Context, req *Ge
 				},
 			},
 		},
+		SequenceStuff: nil,
 	}
 
 	th.reqH = headerCpy(common.RequestHeaderFromContext(ctx))
@@ -98,10 +103,25 @@ func (th *TestHandler) InvalidHander(ctx context.Context, req *GetStuffListReque
 	return nil, errors.New("invalid")
 }
 
+func callHandlerError(cb core.RestGenCallback, target string, message string, cause error) (*httptest.ResponseRecorder, *test.Hook) {
+	r := httptest.NewRequest("GET", target, nil)
+	w := httptest.NewRecorder()
+
+	r.Header.Set("Accept", "application/json")
+	logger, hook := test.NewNullLogger()
+	r = r.WithContext(common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger)))
+	ctx := common.RequestHeaderToContext(r.Context(), r.Header)
+	common.HandleError(ctx, w, common.InternalError, message, cause, cb.MapError)
+
+	return w, hook
+}
+
 func callHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *test.Hook) {
 	cb := Callback{}
 
-	sh := NewServiceHandler(cb, &si)
+	var depssrv deps.Service
+	var downstreamSrv downstream.Service
+	sh := NewServiceHandler(cb, &si, depssrv, downstreamSrv)
 
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
@@ -118,7 +138,9 @@ func callHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder
 func callRawHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *test.Hook) {
 	cb := Callback{}
 
-	sh := NewServiceHandler(cb, &si)
+	var depssrv deps.Service
+	var downstreamSrv downstream.Service
+	sh := NewServiceHandler(cb, &si, depssrv, downstreamSrv)
 
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
@@ -135,7 +157,9 @@ func callRawHandler(target string, si ServiceInterface) (*httptest.ResponseRecor
 func callRawIntHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *test.Hook) {
 	cb := Callback{}
 
-	sh := NewServiceHandler(cb, &si)
+	var depssrv deps.Service
+	var downstreamSrv downstream.Service
+	sh := NewServiceHandler(cb, &si, depssrv, downstreamSrv)
 
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
@@ -157,6 +181,40 @@ func TestHandlerNotImplemented(t *testing.T) {
 	body, _ := ioutil.ReadAll(resp.Body)
 	require.JSONEq(t, `{"status":{"code":"9998", "description":"Internal Server Error"}}`, string(body))
 	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=not implemented, Cause=%!s(<nil>))", hook.LastEntry().Message)
+}
+
+func TestHandleErrorLogMappedErrorIfReturned(t *testing.T) {
+	cb := Callback{&common.HTTPError{HTTPCode: 500, Code: "1001", Description: "foo"}}
+	w, hook := callHandlerError(cb, "http://example.com/stuff", "foo", nil)
+
+	resp := w.Result()
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	require.JSONEq(t, `{"status":{"code":"1001", "description":"foo"}}`, string(body))
+	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=foo, Cause=%!s(<nil>))", hook.LastEntry().Message)
+}
+func TestHandleErrorLogCustomError(t *testing.T) {
+	cb := Callback{}
+	var e error = BusinessLogicError
+
+	w, hook := callHandlerError(cb, "http://example.com/stuff", "foo", e)
+
+	resp := w.Result()
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	require.JSONEq(t, `{"status":{"code":"1001", "description":"foo"}}`, string(body))
+	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=foo, Cause=BusinessLogicError(common.CustomError{\"http_code\":\"1001\", \"http_message\":\"foo\", \"http_status\":\"500\", \"name\":\"BusinessLogicError\"}))", hook.LastEntry().Message)
+}
+
+func TestHandleErrorLogDefaultError(t *testing.T) {
+	cb := Callback{}
+	w, hook := callHandlerError(cb, "http://example.com/stuff", "foo", nil)
+
+	resp := w.Result()
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	require.JSONEq(t, `{"status":{"code":"9998", "description":"Internal Server Error"}}`, string(body))
+	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=foo, Cause=%!s(<nil>))", hook.LastEntry().Message)
 }
 
 func TestHandlerMissingEndpoint(t *testing.T) {
@@ -203,7 +261,7 @@ func TestHandlerValid(t *testing.T) {
 	resp := w.Result()
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
-	require.JSONEq(t, `{"emptyStuff":{}, "innerStuff":"response","responseStuff":{"Data":{"M":{"James":{"A1":"SpencerSt", "A2":"CollinsSt"}, "John":{"A1":"CollinsSt", "A2":"LonasDaleSt"}}}}, "sensitiveStuff":"****************", "timeStuff":"0001-01-01T00:00:00.000+0000"}`, string(body))
+	require.JSONEq(t, `{"emptyStuff":{}, "innerStuff":"response", "rawTimeStuff":"0001-01-01T00:00:00Z", "responseStuff":{"Data":{"M":{"James":{"A1":"SpencerSt", "A2":"CollinsSt"}, "John":{"A1":"CollinsSt", "A2":"LonasDaleSt"}}}}, "sensitiveStuff":"****************", "timeStuff":"0001-01-01T00:00:00.000+0000"}`, string(body))
 }
 
 func TestRawHandlerValid(t *testing.T) {
@@ -395,7 +453,34 @@ func TestClient_PassesXMLBody(t *testing.T) {
 func TestSensitive(t *testing.T) {
 	logger, hook := test.NewNullLogger()
 	logger.Error(Stuff{InnerStuff: "innerStuff", SensitiveStuff: common.NewSensitiveString("sensitiveStuff")})
-	require.Equal(t, "{{} innerStuff {{map[]}} **************** 0001-01-01 00:00:00 +0000 UTC}", hook.LastEntry().Message)
+	require.Equal(t, "{{} innerStuff 0001-01-01 00:00:00 +0000 UTC {{map[]}} **************** [] 0001-01-01 00:00:00 +0000 UTC}", hook.LastEntry().Message)
+}
+
+func TestTimeFormat(t *testing.T) {
+	stuff := Stuff{}
+	isStdTime := func(s interface{}) bool {
+		switch s.(type) {
+		case time.Time:
+			return true
+		default:
+			return false
+		}
+	}
+
+	isConvertTime := func(s interface{}) bool {
+		switch s.(type) {
+		case convert.JSONTime:
+			return true
+		default:
+			return false
+		}
+	}
+
+	require.True(t, isStdTime(stuff.RawTimeStuff))
+	require.False(t, isConvertTime(stuff.RawTimeStuff))
+
+	require.True(t, isConvertTime(stuff.TimeStuff))
+	require.False(t, isStdTime(stuff.TimeStuff))
 }
 
 func TestCommentsPassed(t *testing.T) {
@@ -468,6 +553,13 @@ func TestJustOKAndJustErrorReturnsHeadersWhenOK(t *testing.T) {
 	require.Equal(t, `{"jsonField":"jsonVal"}`, h.Get("Context"))
 }
 
+func Test204OKResponse(t *testing.T) {
+	c, s := bodylessClientServer(204)
+	defer s.Close()
+	_, err := c.GetJustOkAndJustErrorList(context.Background(), &GetJustOkAndJustErrorListRequest{})
+	require.NoError(t, err)
+}
+
 func TestJustOKAndJustErrorPutsHeadersInErrorWhenError(t *testing.T) {
 	c, s := bodylessClientServer(400)
 	defer s.Close()
@@ -494,4 +586,57 @@ func TestOKTypeAndJustErrorPutsHeadersInErrorWhenError(t *testing.T) {
 	require.Nil(t, h)
 	resp := err.(*common.ServerError).Cause.(*restlib.HTTPResult)
 	require.Equal(t, `{"jsonField":"jsonVal"}`, resp.HTTPResponse.Header.Get("Context"))
+}
+
+func TestBuildRestHandlerInitialiser(t *testing.T) {
+	t.Parallel()
+	testConfig := NewDefaultConfig()
+	downstreamConfig := testConfig.GenCode.Downstream.(*DownstreamConfig)
+	downstreamConfig.Deps.ServiceURL = "http://localhost:8080/deps"
+	downstreamConfig.Downstream.ServiceURL = "http://localhost:8080/downstream"
+	th := TestHandler{}
+	testServiceInterface := ServiceInterface{
+		GetRawList:   th.ValidRawHandler,
+		GetStuffList: th.ValidGetStuffListHandlerStub,
+	}
+	var testCallback core.RestGenCallback = &Callback{}
+	clients, err := BuildDownstreamClients(&testConfig)
+	handler := BuildRestHandlerInitialiser(testServiceInterface, testCallback, clients)
+	require.Nil(t, err)
+	srvRouter, ok := (handler).(*ServiceRouter)
+	require.True(t, ok)
+	reflect.DeepEqual(testCallback, srvRouter.svcHandler.genCallback)
+	reflect.DeepEqual(testServiceInterface, srvRouter.svcHandler.serviceInterface)
+}
+
+func TestBuildDownstreamClients(t *testing.T) {
+	t.Parallel()
+	testConfig := NewDefaultConfig()
+	downstreamConfig := testConfig.GenCode.Downstream.(*DownstreamConfig)
+	downstreamConfig.Deps.ServiceURL = "http://localhost:8080/deps"
+	downstreamConfig.Downstream.ServiceURL = "http://localhost:8080/downstream"
+	handlers, err := BuildDownstreamClients(&testConfig)
+	require.Nil(t, err)
+	require.NotNil(t, handlers.depsClient)
+	require.NotNil(t, handlers.downstreamClient)
+}
+
+func TestApiDocsReturnsSequence(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		depsSeq := `[{"openapi":"1","swagger":"2"},{"openapi":"y","swagger":"n"}]`
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte(depsSeq))
+	}))
+	client := server.Client()
+	defer server.Close()
+
+	c := Client{
+		client: client,
+		url:    server.URL,
+	}
+
+	req := GetApiDocsListRequest{}
+	sequenceRes, err := c.GetApiDocsList(context.Background(), &req)
+	require.NoError(t, err)
+	require.True(t, len(*sequenceRes) > 0)
 }
