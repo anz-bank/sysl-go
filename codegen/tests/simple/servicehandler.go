@@ -361,6 +361,7 @@ func (s *ServiceHandler) GetSimpleAPIDocsListHandler(w http.ResponseWriter, r *h
 
 	client := GetSimpleAPIDocsListClient{
 		GetApiDocsList: s.depsDepsService.GetApiDocsList,
+		GetSuccessList: s.depsDepsService.GetSuccessList,
 	}
 
 	apidoc, err := s.serviceInterface.GetSimpleAPIDocsList(ctx, &req, client)
