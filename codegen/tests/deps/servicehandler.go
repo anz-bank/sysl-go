@@ -13,6 +13,7 @@ import (
 // Handler interface for Deps
 type Handler interface {
 	GetApiDocsListHandler(w http.ResponseWriter, r *http.Request)
+	GetSuccessListHandler(w http.ResponseWriter, r *http.Request)
 }
 
 // ServiceHandler for Deps API
@@ -56,4 +57,36 @@ func (s *ServiceHandler) GetApiDocsListHandler(w http.ResponseWriter, r *http.Re
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, apidoc)
+}
+
+// GetSuccessListHandler ...
+func (s *ServiceHandler) GetSuccessListHandler(w http.ResponseWriter, r *http.Request) {
+	if s.serviceInterface.GetSuccessList == nil {
+		common.HandleError(r.Context(), w, common.InternalError, "not implemented", nil, s.genCallback.MapError)
+		return
+	}
+
+	ctx := common.RequestHeaderToContext(r.Context(), r.Header)
+	ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
+	var req GetSuccessListRequest
+
+	ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
+	defer cancel()
+	valErr := validator.Validate(&req)
+	if valErr != nil {
+		common.HandleError(ctx, w, common.BadRequestError, "Invalid request", valErr, s.genCallback.MapError)
+		return
+	}
+
+	client := GetSuccessListClient{}
+
+	err := s.serviceInterface.GetSuccessList(ctx, &req, client)
+	if err != nil {
+		common.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err, s.genCallback.MapError)
+		return
+	}
+
+	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	restlib.SetHeaders(w, headermap)
+	restlib.SendHTTPResponse(w, httpstatus, nil)
 }
