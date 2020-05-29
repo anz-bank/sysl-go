@@ -71,6 +71,12 @@ type GrpcHandler struct {
 	methodsCalled map[string]bool
 }
 
+func (h *GrpcHandler) Interceptors() []grpc.UnaryServerInterceptor {
+	h.methodsCalled["Interceptors"] = true
+
+	return []grpc.UnaryServerInterceptor{}
+}
+
 func (h *GrpcHandler) EnabledGrpcHandlers() []handlerinitialiser.GrpcHandlerInitialiser {
 	h.methodsCalled["EnabledGrpcHandlers"] = true
 
@@ -121,7 +127,7 @@ func Test_encryptionConfigUsed(t *testing.T) {
 
 	cfg := localSecureServer()
 
-	grpcServer, err := newGrpcServer(&cfg, logger)
+	grpcServer, err := newGrpcServer(&cfg, logger, nil)
 	require.NoError(t, err)
 	defer grpcServer.GracefulStop()
 	test.RegisterTestServiceServer(grpcServer, &TestServer{})
@@ -193,6 +199,7 @@ func Test_libMakesCorrectHandlerCalls(t *testing.T) {
 	}()
 
 	connectAndCheckReturn(t, grpc.WithInsecure())
+	require.True(t, handler.methodsCalled["Interceptors"])
 	require.True(t, handler.methodsCalled["EnabledGrpcHandlers"])
 	require.True(t, handler.methodsCalled["GrpcPublicServerConfig"])
 	require.True(t, handler.reg.methodsCalled["RegisterServer"])
@@ -204,7 +211,24 @@ func Test_NewGrpcServerWithValidConfig(t *testing.T) {
 		Port:     3000,
 	}
 	logger, _ := tlog.NewNullLogger()
-	newServer, err := newGrpcServer(&cfg, logger)
+	newServer, err := newGrpcServer(&cfg, logger, nil)
+	require.NoError(t, err)
+	require.NotNil(t, newServer)
+}
+
+func Test_NewGrpcServerWithCustomInterceptor(t *testing.T) {
+	interceptor := func() grpc.UnaryServerInterceptor {
+		return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+			return handler(ctx, req)
+		}
+	}
+
+	cfg := config.CommonServerConfig{
+		HostName: "host",
+		Port:     3000,
+	}
+	logger, _ := tlog.NewNullLogger()
+	newServer, err := newGrpcServer(&cfg, logger, interceptor())
 	require.NoError(t, err)
 	require.NotNil(t, newServer)
 }
