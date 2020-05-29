@@ -19,9 +19,14 @@ func NewDefaultDepsImpl() *DefaultDepsImpl {
 type GetApiDocsListClient struct {
 }
 
+// GetSuccessList Client
+type GetSuccessListClient struct {
+}
+
 // ServiceInterface for Deps
 type ServiceInterface struct {
 	GetApiDocsList func(ctx context.Context, req *GetApiDocsListRequest, client GetApiDocsListClient) (*ApiDoc, error)
+	GetSuccessList func(ctx context.Context, req *GetSuccessListRequest, client GetSuccessListClient) error
 }
 
 // DownstreamConfig for Deps

@@ -29,6 +29,10 @@ type Status struct {
 type GetApiDocsListRequest struct {
 }
 
+// GetSuccessListRequest ...
+type GetSuccessListRequest struct {
+}
+
 // *ApiDoc validator
 func (s *ApiDoc) Validate() error {
 	return validator.Validate(s)
