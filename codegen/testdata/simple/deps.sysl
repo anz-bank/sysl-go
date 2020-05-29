@@ -7,6 +7,10 @@ Deps "Downstream Server" [package="deps"]:
             return ok <: ApiDoc
             return error <: status
 
+    /success:
+        GET:
+            return ok
+
     !type ApiDoc:
         swagger <: string:
             @json_tag = "swagger"
