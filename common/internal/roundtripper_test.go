@@ -136,7 +136,7 @@ func TestLoggingTransport_RoundTripLogFields(t *testing.T) {
 			if entry.Message == "Response: header - map[]\nbody[len:9]: - resp body" {
 				reqFound = true
 			}
-			if entry.Message == "Request: header - map[X─B3─SpanId:[this is span id] X─B3─TraceId:[this is trace id]]\nbody[len:4]: - test" {
+			if entry.Message == "Request: header - map[X-B3-Spanid:[this is span id] X-B3-Traceid:[this is trace id]]\nbody[len:4]: - test" {
 				respFound = true
 			}
 		}
