@@ -468,6 +468,7 @@ func TestGetTrustedCAsFromSystem(t *testing.T) {
 		assert.NotNil(t, res)
 	}
 }
+
 var tlsInvalidTLSTrustedCertPoolConfigTests = []struct {
 	in   *TrustedCertPoolConfig
 	name string
