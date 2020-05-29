@@ -45,8 +45,8 @@ func initCommonLogFields(status int, reqTime time.Duration, req *http.Request) l
 }
 
 const (
-	distributedTraceIDName      = "X─B3─TraceId"
-	distributedSpanIDName       = "X─B3─SpanId"
+	distributedTraceIDName      = "X-B3-Traceid"
+	distributedSpanIDName       = "X-B3-Spanid"
 	distributedParentSpanIDName = "X-B3-ParentSpanId"
 )
 
