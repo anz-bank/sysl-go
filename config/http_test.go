@@ -33,19 +33,6 @@ func defaultAdminServer() CommonHTTPServerConfig {
 	}
 }
 
-func defaultPublicServer() CommonHTTPServerConfig {
-	return CommonHTTPServerConfig{
-		Common: CommonServerConfig{
-			HostName: "public host",
-			Port:     3000,
-			TLS:      nil,
-		},
-		BasePath:     "/public",
-		ReadTimeout:  1 * time.Second,
-		WriteTimeout: 2 * time.Second,
-	}
-}
-
 func TestValidateGlobalConfigLoPort(t *testing.T) {
 	config := defaultAdminServer()
 	config.Common.Port = -1
