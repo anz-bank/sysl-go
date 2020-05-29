@@ -29,6 +29,10 @@ type TestGrpcHandler struct {
 	handlers []handlerinitialiser.GrpcHandlerInitialiser
 }
 
+func (h *TestGrpcHandler) Interceptors() []grpc.UnaryServerInterceptor {
+	return []grpc.UnaryServerInterceptor{}
+}
+
 func (h *TestGrpcHandler) EnabledGrpcHandlers() []handlerinitialiser.GrpcHandlerInitialiser {
 	return h.handlers
 }
