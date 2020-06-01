@@ -540,9 +540,14 @@ func TestSelfSignedTLSConfig(t *testing.T) {
 	expectedIdentityCert, err := tls.LoadX509KeyPair(certFilename, keyFilename)
 	assert.NoError(t, err)
 	cfg := &TLSConfig{
-		MinVersion:         NewString("1.2"),
-		MaxVersion:         NewString("1.3"),
-		ServerIdentity:     &ServerIdentityConfig{},
+		MinVersion: NewString("1.2"),
+		MaxVersion: NewString("1.3"),
+		ServerIdentity: &ServerIdentityConfig{
+			&CertKeyPair{
+				CertPath: &certFilename,
+				KeyPath:  &keyFilename,
+			},
+		},
 		InsecureSkipVerify: false,
 		SelfSigned:         true,
 	}
