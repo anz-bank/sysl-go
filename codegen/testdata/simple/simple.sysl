@@ -19,9 +19,13 @@ Simple "Simple Server" [package="simple"]:
         GET:
             return ok <: str
 
-    /raw/{id<:string}/states:
+    /raw/{id<:string}/states [~vars_in_url_name]:
         GET:
-            return ok <: str    
+            return ok <: str
+
+    /raw/{id<:string}/states2:
+        GET:
+            return ok <: str     
 
     /raw-int:
         GET:

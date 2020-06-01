@@ -33,6 +33,7 @@ type Handler interface {
 	GetRawIntListHandler(w http.ResponseWriter, r *http.Request)
 	GetRawStatesListHandler(w http.ResponseWriter, r *http.Request)
 	GetRawIdStatesListHandler(w http.ResponseWriter, r *http.Request)
+	GetRawStates2ListHandler(w http.ResponseWriter, r *http.Request)
 	GetSimpleAPIDocsListHandler(w http.ResponseWriter, r *http.Request)
 	GetStuffListHandler(w http.ResponseWriter, r *http.Request)
 	PostStuffHandler(w http.ResponseWriter, r *http.Request)
@@ -397,6 +398,39 @@ func (s *ServiceHandler) GetRawIdStatesListHandler(w http.ResponseWriter, r *htt
 	client := GetRawIdStatesListClient{}
 
 	str, err := s.serviceInterface.GetRawIdStatesList(ctx, &req, client)
+	if err != nil {
+		common.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err, s.genCallback.MapError)
+		return
+	}
+
+	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	restlib.SetHeaders(w, headermap)
+	restlib.SendHTTPResponse(w, httpstatus, str)
+}
+
+// GetRawStates2ListHandler ...
+func (s *ServiceHandler) GetRawStates2ListHandler(w http.ResponseWriter, r *http.Request) {
+	if s.serviceInterface.GetRawStates2List == nil {
+		common.HandleError(r.Context(), w, common.InternalError, "not implemented", nil, s.genCallback.MapError)
+		return
+	}
+
+	ctx := common.RequestHeaderToContext(r.Context(), r.Header)
+	ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
+	var req GetRawStates2ListRequest
+
+	req.ID = restlib.GetURLParam(r, "id")
+	ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
+	defer cancel()
+	valErr := validator.Validate(&req)
+	if valErr != nil {
+		common.HandleError(ctx, w, common.BadRequestError, "Invalid request", valErr, s.genCallback.MapError)
+		return
+	}
+
+	client := GetRawStates2ListClient{}
+
+	str, err := s.serviceInterface.GetRawStates2List(ctx, &req, client)
 	if err != nil {
 		common.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err, s.genCallback.MapError)
 		return

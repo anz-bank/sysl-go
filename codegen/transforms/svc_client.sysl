@@ -73,7 +73,7 @@ CodeGenTransform:
       let withArg = if MatchString("\\{\\p{L}+\\}$", urlPath) && Contains("POST", ToUpper(method)) then "WithArg" else ""
       let getList = if MatchString("[\\p{L}\\p{N}]$", urlPath) && Contains("GET", ToUpper(method)) then "List" else ""
 
-      let path = Split(Replace(Replace(urlPath, "{", "", -1),"{","",-1), "/")
+      let path = Split(urlPath, "/")
 
       let methodPostfix = path -> <sequence of string> (p:
         let postfix = if MatchString("^\\{", p) then "" else p
@@ -538,7 +538,9 @@ CodeGenTransform:
 
   !view ClientMethods(appName <: string, eps <: set of sysl.Endpoints, module <: sysl.Module) -> sequence of TopLevelDecl:
     eps -> (ep:
-      let funcName = methodName(ep.value.method, ep.value.path).out
+      let Patterns = if ep.attrs count > 0 && "patterns" in ep.attrs then ep.attrs.patterns else [""]
+      let urlPath = if "vars_in_url_name" in Patterns then Replace(Replace(ep.value.path, "{", "", -1),"{","",-1) else ep.value.path
+      let funcName = methodName(ep.value.method, urlPath).out
       Comment = '// ' + funcName + ' ...'
       MethodDecl = ep -> <MethodDecl>(:
         Receiver = ep -> <Receiver>(:
@@ -609,7 +611,9 @@ CodeGenTransform:
             Identifier = "ctx"
             TypeName = "context.Context"
           )
-          let requestParam = methodName(ep.value.method, ep.value.path).out -> <Param>(:
+          let Patterns = if ep.attrs count > 0 && "patterns" in ep.attrs then ep.attrs.patterns else [""]
+          let urlPath = if "vars_in_url_name" in Patterns then Replace(Replace(ep.value.path, "{", "", -1),"{","",-1) else ep.value.path
+          let requestParam = methodName(ep.value.method, urlPath).out -> <Param>(:
             ident = "req"
             typ = "*" + . + "Request"
           )
@@ -627,7 +631,9 @@ CodeGenTransform:
 
   !view GoMethods(eps <: set of sysl.Endpoints, module <: sysl.Module) -> sequence of MethodSpec:
     eps -> (ep:
-      MethodName = methodName(ep.value.method, ep.value.path).out
+      let Patterns = if ep.attrs count > 0 && "patterns" in ep.attrs then ep.attrs.patterns else [""]
+      let urlPath = if "vars_in_url_name" in Patterns then Replace(Replace(ep.value.path, "{", "", -1),"{","",-1) else ep.value.path
+      MethodName = methodName(ep.value.method, urlPath).out
       Signature = methodSignature(ep, module)
     )
 

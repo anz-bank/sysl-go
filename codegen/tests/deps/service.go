@@ -71,21 +71,14 @@ func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest)
 // GetSuccessList ...
 func (s *Client) GetSuccessList(ctx context.Context, req *GetSuccessListRequest) (*http.Header, error) {
 	required := []string{}
-	var errorResponse Status
-
 	u, err := url.Parse(fmt.Sprintf("%s/success", s.url))
 	if err != nil {
 		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
 	}
 
-	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, nil, &errorResponse)
+	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, nil, nil)
 	if err != nil {
-		response, ok := err.(*restlib.HTTPResult)
-		if !ok {
-			return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Deps <- GET "+u.String(), err)
-		}
-
-		return nil, common.CreateDownstreamError(ctx, common.DownstreamResponseError, response.HTTPResponse, response.Body, &errorResponse)
+		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Deps <- GET "+u.String(), err)
 	}
 
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {

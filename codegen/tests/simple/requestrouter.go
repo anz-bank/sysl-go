@@ -51,6 +51,7 @@ func (s *ServiceRouter) WireRoutes(ctx context.Context, r chi.Router) {
 		r.Get("/raw-int", s.svcHandler.GetRawIntListHandler)
 		r.Get("/raw/states", s.svcHandler.GetRawStatesListHandler)
 		r.Get("/raw/{id}/states", s.svcHandler.GetRawIdStatesListHandler)
+		r.Get("/raw/{id}/states2", s.svcHandler.GetRawStates2ListHandler)
 		r.Get("/simple-api-docs", s.svcHandler.GetSimpleAPIDocsListHandler)
 		r.Get("/stuff", s.svcHandler.GetStuffListHandler)
 		r.Post("/stuff", s.svcHandler.PostStuffHandler)
