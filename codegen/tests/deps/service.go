@@ -15,6 +15,7 @@ import (
 // Service interface for Deps
 type Service interface {
 	GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest) (*ApiDoc, error)
+	GetSuccessList(ctx context.Context, req *GetSuccessListRequest) (*http.Header, error)
 }
 
 // Client for Deps API
@@ -65,4 +66,31 @@ func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest)
 	}
 
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
+}
+
+// GetSuccessList ...
+func (s *Client) GetSuccessList(ctx context.Context, req *GetSuccessListRequest) (*http.Header, error) {
+	required := []string{}
+	var errorResponse Status
+
+	u, err := url.Parse(fmt.Sprintf("%s/success", s.url))
+	if err != nil {
+		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
+	}
+
+	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, nil, &errorResponse)
+	if err != nil {
+		response, ok := err.(*restlib.HTTPResult)
+		if !ok {
+			return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Deps <- GET "+u.String(), err)
+		}
+
+		return nil, common.CreateDownstreamError(ctx, common.DownstreamResponseError, response.HTTPResponse, response.Body, &errorResponse)
+	}
+
+	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
+		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
+	}
+
+	return &result.HTTPResponse.Header, nil
 }

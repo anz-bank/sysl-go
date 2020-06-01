@@ -93,7 +93,10 @@ CodeGenTransform:
         let tn = ep.value.ret where (.key != "error" && .value != "ok" && .value != "error") -> <sequence of string>(t:
           out = makeType(t.value, package).out
         )
-        TypeName = Join(tn flatten(.out) | ["error"], ", ")
+        let ok = ep.value.ret where (.value == "ok") -> <sequence of string>(t:
+          out = "*http.Header"
+        )
+        TypeName = Join(tn flatten(.out) | ok flatten(.out) | ["error"], ", ")
       )
     )
 
@@ -224,7 +227,7 @@ CodeGenTransform:
         )
         let config = "github.com/anz-bank/sysl-go/config"
         let databaseImport = "database/sql"
-        let initWithoutDB = [config, "context", "time"]
+        let initWithoutDB = [config, "context", "time", "net/http"]
         let initWithDB = initWithoutDB | [databaseImport]
 
         let spec = if IsDataBaseApp(app).out then initWithDB else initWithoutDB | clientImports flatten(.out) -> <sequence of ImportSpec> (importPath:

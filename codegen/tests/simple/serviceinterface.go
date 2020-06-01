@@ -3,6 +3,7 @@ package simple
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/anz-bank/sysl-go/codegen/tests/deps"
@@ -60,6 +61,7 @@ type GetRawIntListClient struct {
 // GetSimpleAPIDocsList Client
 type GetSimpleAPIDocsListClient struct {
 	GetApiDocsList func(ctx context.Context, req *deps.GetApiDocsListRequest) (*deps.ApiDoc, error)
+	GetSuccessList func(ctx context.Context, req *deps.GetSuccessListRequest) (*http.Header, error)
 }
 
 // GetStuffList Client
