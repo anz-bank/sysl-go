@@ -8,19 +8,21 @@ import (
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
+	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 )
 
 type GrpcManager interface {
+	Interceptors() []grpc.UnaryServerInterceptor
 	EnabledGrpcHandlers() []handlerinitialiser.GrpcHandlerInitialiser
 	GrpcAdminServerConfig() *config.CommonServerConfig
 	GrpcPublicServerConfig() *config.CommonServerConfig
 }
 
 func configurePublicGrpcServerListener(ctx context.Context, hl GrpcManager, logger *logrus.Logger) (func() error, error) {
-	server, err := newGrpcServer(hl.GrpcPublicServerConfig(), logger)
+	server, err := newGrpcServer(hl.GrpcPublicServerConfig(), logger, hl.Interceptors()...)
 	if err != nil {
 		return nil, err
 	}
@@ -67,15 +69,17 @@ type interceptor struct {
 	logger *logrus.Logger
 }
 
-func (i interceptor) unaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	entry := i.logger.WithField("traceid", "traceid")
-	newCtx := common.LoggerToContext(ctx, i.logger, entry)
+func (i interceptor) unaryInterceptor() grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		entry := i.logger.WithField("traceid", "traceid")
+		newCtx := common.LoggerToContext(ctx, i.logger, entry)
 
-	return handler(newCtx, req)
+		return handler(newCtx, req)
+	}
 }
 
 // NewGrpcServer creates a grpc.Server based on passed configuration
-func newGrpcServer(cfg *config.CommonServerConfig, logger *logrus.Logger) (*grpc.Server, error) {
+func newGrpcServer(cfg *config.CommonServerConfig, logger *logrus.Logger, interceptors ...grpc.UnaryServerInterceptor) (*grpc.Server, error) {
 	opts, err := config.ExtractGrpcServerOptions(cfg)
 	if err != nil {
 		return nil, err
@@ -85,7 +89,11 @@ func newGrpcServer(cfg *config.CommonServerConfig, logger *logrus.Logger) (*grpc
 		logger: logger,
 	}
 
-	opts = append(opts, grpc.UnaryInterceptor(i.unaryInterceptor))
+	interceptors = append(interceptors, i.unaryInterceptor())
+
+	opts = append(opts, grpcMiddleware.WithUnaryServerChain(
+		interceptors...,
+	))
 
 	return grpc.NewServer(opts...), nil
 }
