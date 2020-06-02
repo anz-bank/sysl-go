@@ -3,6 +3,7 @@ package wallet
 
 import (
 	"context"
+	"time"
 
 	pb "github.com/anz-bank/sysl-go/codegen/tests/cardspb"
 )
@@ -14,4 +15,9 @@ type AppleClient struct {
 // GrpcServiceInterface for Wallet
 type GrpcServiceInterface struct {
 	Apple func(ctx context.Context, req *pb.AppleRequest, client AppleClient) (*pb.AppleResponse, error)
+}
+
+// DownstreamConfig for Wallet
+type DownstreamConfig struct {
+	ContextTimeout time.Duration `yaml:"contextTimeout"`
 }
