@@ -268,7 +268,9 @@ CodeGenTransform:
 
   !view RequestTypes(eps <: sequence of sysl.Endpoint, module <: sysl.Module) -> sequence of TopLevelDecl:
     eps -> (ep:
-      let typeName = methodName(ep.value.method, ep.value.path).out + "Request"
+      let Patterns = if ep.attrs count > 0 && "patterns" in ep.attrs then ep.attrs.patterns else [""]
+      let urlPath = if "vars_in_url_name" in Patterns then Replace(Replace(ep.value.path, "{", "", -1),"{","",-1) else ep.value.path
+      let typeName = methodName(ep.value.method, urlPath).out + "Request"
       Comment = '// ' + typeName + ' ...'
       Declaration = ep -> <Declaration>(:
         StructType = ep -> <StructType>(:

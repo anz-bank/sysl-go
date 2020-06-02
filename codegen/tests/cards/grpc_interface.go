@@ -3,6 +3,7 @@ package cards
 
 import (
 	"context"
+	"time"
 
 	pb "github.com/anz-bank/sysl-go/codegen/tests/cardspb"
 )
@@ -14,4 +15,9 @@ type GetCardsClient struct {
 // GrpcServiceInterface for Cards
 type GrpcServiceInterface struct {
 	GetCards func(ctx context.Context, req *pb.GetCardsRequest, client GetCardsClient) (*pb.GetCardsResponse, error)
+}
+
+// DownstreamConfig for Cards
+type DownstreamConfig struct {
+	ContextTimeout time.Duration `yaml:"contextTimeout"`
 }

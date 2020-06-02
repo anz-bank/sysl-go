@@ -24,6 +24,9 @@ type Service interface {
 	GetOopsList(ctx context.Context, req *GetOopsListRequest) (*Response, error)
 	GetRawList(ctx context.Context, req *GetRawListRequest) (*Str, error)
 	GetRawIntList(ctx context.Context, req *GetRawIntListRequest) (*Integer, error)
+	GetRawStatesList(ctx context.Context, req *GetRawStatesListRequest) (*Str, error)
+	GetRawIdStatesList(ctx context.Context, req *GetRawIdStatesListRequest) (*Str, error)
+	GetRawStates2List(ctx context.Context, req *GetRawStates2ListRequest) (*Str, error)
 	GetSimpleAPIDocsList(ctx context.Context, req *GetSimpleAPIDocsListRequest) (*deps.ApiDoc, error)
 	GetStuffList(ctx context.Context, req *GetStuffListRequest) (*Stuff, error)
 	PostStuff(ctx context.Context, req *PostStuffRequest) (*Str, error)
@@ -294,6 +297,102 @@ func (s *Client) GetRawIntList(ctx context.Context, req *GetRawIntListRequest) (
 		}
 
 		return OkIntegerResponse, nil
+	}
+
+	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
+}
+
+// GetRawStatesList ...
+func (s *Client) GetRawStatesList(ctx context.Context, req *GetRawStatesListRequest) (*Str, error) {
+	required := []string{}
+	var okResponse Str
+
+	u, err := url.Parse(fmt.Sprintf("%s/raw/states", s.url))
+	if err != nil {
+		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
+	}
+
+	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	if err != nil {
+		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
+	}
+
+	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
+		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
+	}
+
+	OkStrResponse, ok := result.Response.(*Str)
+	if ok {
+		valErr := validator.Validate(OkStrResponse)
+		if valErr != nil {
+			return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, valErr)
+		}
+
+		return OkStrResponse, nil
+	}
+
+	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
+}
+
+// GetRawIdStatesList ...
+func (s *Client) GetRawIdStatesList(ctx context.Context, req *GetRawIdStatesListRequest) (*Str, error) {
+	required := []string{}
+	var okResponse Str
+
+	u, err := url.Parse(fmt.Sprintf("%s/raw/%v/states", s.url, req.ID))
+	if err != nil {
+		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
+	}
+
+	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	if err != nil {
+		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
+	}
+
+	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
+		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
+	}
+
+	OkStrResponse, ok := result.Response.(*Str)
+	if ok {
+		valErr := validator.Validate(OkStrResponse)
+		if valErr != nil {
+			return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, valErr)
+		}
+
+		return OkStrResponse, nil
+	}
+
+	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
+}
+
+// GetRawStates2List ...
+func (s *Client) GetRawStates2List(ctx context.Context, req *GetRawStates2ListRequest) (*Str, error) {
+	required := []string{}
+	var okResponse Str
+
+	u, err := url.Parse(fmt.Sprintf("%s/raw/%v/states2", s.url, req.ID))
+	if err != nil {
+		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
+	}
+
+	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	if err != nil {
+		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
+	}
+
+	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
+		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
+	}
+
+	OkStrResponse, ok := result.Response.(*Str)
+	if ok {
+		valErr := validator.Validate(OkStrResponse)
+		if valErr != nil {
+			return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, valErr)
+		}
+
+		return OkStrResponse, nil
 	}
 
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)

@@ -99,6 +99,18 @@ func (th *TestHandler) ValidRawIntHandler(ctx context.Context, req *GetRawIntLis
 	return &s, nil
 }
 
+func (th *TestHandler) ValidRawIdStatesListHandler(ctx context.Context, req *GetRawIdStatesListRequest, client GetRawIdStatesListClient) (*Str, error) {
+	var s Str = "raw"
+
+	th.reqH = headerCpy(common.RequestHeaderFromContext(ctx))
+
+	respH, status := common.RespHeaderAndStatusFromContext(ctx)
+	th.respH = headerCpy(respH)
+	th.s = status
+
+	return &s, nil
+}
+
 func (th *TestHandler) InvalidHander(ctx context.Context, req *GetStuffListRequest, client GetStuffListClient) (*Stuff, error) {
 	return nil, errors.New("invalid")
 }
@@ -150,6 +162,25 @@ func callRawHandler(target string, si ServiceInterface) (*httptest.ResponseRecor
 	r = r.WithContext(common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger)))
 
 	sh.GetRawListHandler(w, r)
+
+	return w, hook
+}
+
+func callRawIdStateHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *test.Hook) {
+	cb := Callback{}
+
+	var depssrv deps.Service
+	var downstreamSrv downstream.Service
+	sh := NewServiceHandler(cb, &si, depssrv, downstreamSrv)
+
+	r := httptest.NewRequest("GET", target, nil)
+	w := httptest.NewRecorder()
+
+	r.Header.Set("Accept", "application/json")
+	logger, hook := test.NewNullLogger()
+	r = r.WithContext(common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger)))
+
+	sh.GetRawIdStatesListHandler(w, r)
 
 	return w, hook
 }
@@ -290,6 +321,20 @@ func TestRawIntHandlerValid(t *testing.T) {
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	require.JSONEq(t, `123`, string(body))
+}
+
+func TestGetRawIdStatesListHandlerValid(t *testing.T) {
+	th := TestHandler{}
+	si := ServiceInterface{
+		GetRawIdStatesList: th.ValidRawIdStatesListHandler,
+	}
+
+	w, _ := callRawIdStateHandler("http://example.com/raw/56/states", si)
+
+	resp := w.Result()
+	defer resp.Body.Close()
+	body, _ := ioutil.ReadAll(resp.Body)
+	require.JSONEq(t, `"raw"`, string(body))
 }
 
 func TestHandlerDownstreamInvalid(t *testing.T) {
