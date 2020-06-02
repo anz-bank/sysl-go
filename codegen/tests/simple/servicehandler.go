@@ -419,7 +419,7 @@ func (s *ServiceHandler) GetRawStates2ListHandler(w http.ResponseWriter, r *http
 	ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
 	var req GetRawStates2ListRequest
 
-	req.ID = restlib.GetURLParam(r, "id")
+	req.ID = restlib.GetURLParamForInt(r, "id")
 	ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
 	defer cancel()
 	valErr := validator.Validate(&req)

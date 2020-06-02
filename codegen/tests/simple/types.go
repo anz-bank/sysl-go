@@ -96,7 +96,7 @@ type GetRawIdStatesListRequest struct {
 
 // GetRawStates2ListRequest ...
 type GetRawStates2ListRequest struct {
-	ID string
+	ID int64
 }
 
 // GetSimpleAPIDocsListRequest ...

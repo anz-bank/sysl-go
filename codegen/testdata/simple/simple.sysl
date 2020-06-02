@@ -23,7 +23,7 @@ Simple "Simple Server" [package="simple"]:
         GET:
             return ok <: str
 
-    /raw/{id<:string}/states2:
+    /raw/{id<:int64}/states2:
         GET:
             return ok <: str     
 
