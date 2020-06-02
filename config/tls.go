@@ -65,6 +65,7 @@ type TLSConfig struct {
 	ServerIdentity     *ServerIdentityConfig  `yaml:"serverIdentity"`
 	TrustedCertPool    *TrustedCertPoolConfig `yaml:"trustedCertPool"`
 	InsecureSkipVerify bool                   `yaml:"insecureSkipVerify"`
+	SelfSigned         bool                   `yaml:"selfSigned"`
 }
 
 type TrustedCertPoolConfig struct {
@@ -241,6 +242,8 @@ func buildPool(cfg *TrustedCertPoolConfig) (*x509.CertPool, error) {
 }
 
 func GetTrustedCAs(cfg *TLSConfig) (*x509.CertPool, error) {
+	// certificates exchanged are self signed mostly applicable for dev env
+	// skip setting for rootcas, clientcas and cipher suites
 	if cfg.TrustedCertPool != nil {
 		if *cfg.TrustedCertPool.Mode != SYSMODE {
 			pool, err := buildPool(cfg.TrustedCertPool)
@@ -259,6 +262,23 @@ func GetTrustedCAs(cfg *TLSConfig) (*x509.CertPool, error) {
 	return x509.SystemCertPool()
 }
 
+func makeSelfSignedTLSConfig(cfg *TLSConfig) (*tls.Config, error) {
+	tlsMin, tlsMax, err := TLSVersions(cfg)
+	if err != nil {
+		return nil, err
+	}
+	ourIdentityCertificates, err := OurIdentityCertificates(cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &tls.Config{
+		MinVersion:   tlsMin,
+		MaxVersion:   tlsMax,
+		Certificates: ourIdentityCertificates,
+		ClientAuth:   tls.NoClientCert,
+	}, nil
+}
+
 func MakeTLSConfig(cfg *TLSConfig) (*tls.Config, error) {
 	if cfg == nil {
 		return nil, nil
@@ -267,6 +287,10 @@ func MakeTLSConfig(cfg *TLSConfig) (*tls.Config, error) {
 	if cfg.InsecureSkipVerify {
 		//nolint:gosec // This is configured by the user
 		return &tls.Config{InsecureSkipVerify: true}, nil
+	}
+
+	if cfg.SelfSigned {
+		return makeSelfSignedTLSConfig(cfg)
 	}
 
 	trustedCAs, err := GetTrustedCAs(cfg)
@@ -310,8 +334,6 @@ func MakeTLSConfig(cfg *TLSConfig) (*tls.Config, error) {
 		// Certificate authorities to trust when receiving certs from end users (i.e. acting as server)
 		ClientCAs:  trustedCAs,
 		ClientAuth: *policy,
-
-		// Downstream (internal) configuration
 		// Certificate authorities to trust when receiving certs from other servers (making requests, i.e acting as client)
 		RootCAs: trustedCAs,
 	}
