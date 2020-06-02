@@ -357,7 +357,9 @@ CodeGenTransform:
         out = "{" + .name + "}"
       )
       let pathVars = terms flatten(.out)
-      let path = Split(ep.value.path, "/")
+      
+      let Patterns = if ep.attrs count > 0 && "patterns" in ep.attrs then ep.attrs.patterns else [""]
+      let path = if "vars_in_url_name" in Patterns then Split(Replace(Replace(ep.value.path, "{", "", -1),"{","",-1), "/") else Split(ep.value.path, "/")
       let method = Title(ToLower(ep.value.method))
 
       let methodPostfix = path -> <sequence of string> (p:
@@ -512,11 +514,12 @@ CodeGenTransform:
 
   !view getReqVars(allParams <: AllParams) -> Block:
     allParams -> (:
-      let pps = getParamStatements(allParams.PathParams, "restlib.GetURLParam")
+      let intpps = getParamStatements(allParams.PathParams where(.paramType == "int64"), "restlib.GetURLParamForInt")
+      let pps = getParamStatements(allParams.PathParams  where(.paramType != "int64"), "restlib.GetURLParam")
       let reqQps = getParamStatements(allParams.ReqQueryParams, "restlib.GetQueryParam")
       let optQps = getOptParamStatements(allParams.OptQueryParams, "restlib.GetQueryParam").StatementList
       let reqHs = getParamStatementsDecl(allParams.ReqHeaderParams, "restlib.GetHeaderParam")
-      StatementList = pps | reqQps | optQps | reqHs
+      StatementList = intpps | pps | reqQps | optQps | reqHs
     )
 
   !view getBodyParams(bodyParams <: BodyParams, packageName <: string) -> Block:

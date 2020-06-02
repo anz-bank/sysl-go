@@ -16,6 +16,12 @@ func GetRawIntList(ctx context.Context, req *GetRawIntListRequest, client GetRaw
 	return &s, nil
 }
 
+func GetRawIdStatesList(ctx context.Context, req *GetRawIdStatesListRequest, client GetRawIdStatesListClient) (*Str, error) {
+	var s Str = "raw"
+
+	return &s, nil
+}
+
 func GetStuffList(ctx context.Context, req *GetStuffListRequest, client GetStuffListClient) (*Stuff, error) {
 	s := Stuff{
 		InnerStuff: "response",
