@@ -10,16 +10,52 @@ type HTTPError struct {
 	HTTPCode    int    `json:"-"`
 	Code        string `json:"code,omitempty"`
 	Description string `json:"description,omitempty"`
+
+	extraFields map[string]interface{}
+}
+
+func (httpError *HTTPError) AddField(key string, val interface{}) {
+	if httpError.extraFields == nil {
+		httpError.extraFields = map[string]interface{}{}
+	}
+	httpError.extraFields[key] = val
+}
+
+type KV struct {
+	K string
+	V interface{}
+}
+type wrappedError struct {
+	e      error
+	fields []KV
+}
+
+func (w wrappedError) Error() string {
+	return w.e.Error()
+}
+func WrappedError(err error, fields ...KV) error {
+	return wrappedError{
+		e:      err,
+		fields: fields,
+	}
 }
 
 type httpErrorResponse struct {
-	Status *HTTPError `json:"status"`
+	Status interface{} `json:"status"`
 }
 
 func (httpError *HTTPError) WriteError(ctx context.Context, w http.ResponseWriter) {
 	logEntry := GetLogEntryFromContext(ctx)
+	var marshalTarget interface{}
 
-	b, err := json.Marshal(httpErrorResponse{httpError})
+	marshalTarget = httpError
+	if len(httpError.extraFields) > 0 {
+		httpError.extraFields["code"] = httpError.Code
+		httpError.extraFields["description"] = httpError.Description
+		marshalTarget = httpError.extraFields
+	}
+
+	b, err := json.Marshal(httpErrorResponse{marshalTarget})
 	if err != nil {
 		logEntry.Error(err)
 		b = []byte(`{"status":{"code": "1234", "description": "Unknown Error"}}`)

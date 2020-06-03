@@ -18,6 +18,13 @@ func HandleError(ctx context.Context, w http.ResponseWriter, kind Kind, message 
 	err := CreateError(ctx, kind, message, cause)
 	logEntry := GetLogEntryFromContext(ctx)
 	logEntry.Error(err)
+
+	var fields []KV
+	if w, ok := cause.(wrappedError); ok {
+		fields = w.fields
+		err = CreateError(ctx, kind, message, w.e)
+	}
+
 	httpError := httpErrorMapper(ctx, err)
 
 	if httpError == nil {
@@ -29,6 +36,11 @@ func HandleError(ctx context.Context, w http.ResponseWriter, kind Kind, message 
 			httpError = &e
 		}
 	}
+
+	for _, f := range fields {
+		httpError.AddField(f.K, f.V)
+	}
+
 	httpError.WriteError(ctx, w)
 }
 
