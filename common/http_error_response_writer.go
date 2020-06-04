@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -31,8 +32,9 @@ type wrappedError struct {
 }
 
 func (w wrappedError) Error() string {
-	return w.e.Error()
+	return fmt.Sprintf("%s --- %+v", w.e.Error(), w.fields)
 }
+
 func WrappedError(err error, fields ...KV) error {
 	return wrappedError{
 		e:      err,
