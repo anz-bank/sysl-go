@@ -22,7 +22,7 @@ func (e CustomError) HTTPError(ctx context.Context) *HTTPError {
 	}
 	httpCode := getOrDefault(e, "http_code", "")
 	httpMessage := getOrDefault(e, "http_message", "")
-	return &HTTPError{httpStatus, httpCode, httpMessage}
+	return &HTTPError{httpStatus, httpCode, httpMessage, nil}
 }
 
 func getOrDefault(m map[string]string, key string, dflt string) string {
