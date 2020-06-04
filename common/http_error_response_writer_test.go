@@ -67,3 +67,27 @@ func TestHttpError_WriteError(t *testing.T) {
 		})
 	}
 }
+
+func TestHttpError_WriteErrorWithExtraFields(t *testing.T) {
+	logger, _ := test.NewNullLogger()
+	ctx := LoggerToContext(context.Background(), logger, logger.WithField("test", "test"))
+	err := HTTPError{
+		HTTPCode:    400,
+		Code:        "1234",
+		Description: "Missing one or more of the required parameters",
+	}
+	body := `{"status":{"aaa":123,"code":"1234","description":"Missing one or more of the required parameters","zzz":"hello"}}`
+	statusCode := http.StatusBadRequest
+	err.AddField("aaa", 123)
+	err.AddField("zzz", "hello")
+
+	w := httptest.NewRecorder()
+	err.WriteError(ctx, w)
+	resp := w.Result()
+	defer resp.Body.Close()
+	b, _ := ioutil.ReadAll(resp.Body)
+
+	require.Equal(t, statusCode, resp.StatusCode)
+	require.Equal(t, body, string(b))
+	require.Equal(t, "application/json;charset=UTF-8", resp.Header.Get("Content-Type"))
+}
