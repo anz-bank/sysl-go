@@ -6,15 +6,13 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config"
 	test "github.com/anz-bank/sysl-go/core/testdata/proto"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
-	"github.com/sirupsen/logrus"
-	tlog "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/grpclog"
 )
 
 type TestServer struct{}
@@ -104,13 +102,13 @@ func connectAndCheckReturn(t *testing.T, securityOption grpc.DialOption) {
 }
 
 func Test_makeGrpcListenFuncListens(t *testing.T) {
-	logger, _ := tlog.NewNullLogger()
+	ctx, _ := common.NewTestContextWithLoggerHook()
 
 	grpcServer := grpc.NewServer()
 	defer grpcServer.GracefulStop()
 	test.RegisterTestServiceServer(grpcServer, &TestServer{})
 
-	listener := makeGrpcListenFunc(grpcServer, logger, localServer())
+	listener := makeGrpcListenFunc(ctx, grpcServer, localServer())
 	go func() {
 		err := listener()
 		require.NoError(t, err)
@@ -121,18 +119,16 @@ func Test_makeGrpcListenFuncListens(t *testing.T) {
 
 func Test_encryptionConfigUsed(t *testing.T) {
 	t.Skip("Skipping as required certs not present")
-	logger, hook := tlog.NewNullLogger()
-	grpclog.SetLoggerV2(grpclog.NewLoggerV2(logger.WriterLevel(logrus.InfoLevel),
-		logger.WriterLevel(logrus.WarnLevel), logger.WriterLevel(logrus.ErrorLevel)))
+	ctx, hook := common.NewTestContextWithLoggerHook()
 
 	cfg := localSecureServer()
 
-	grpcServer, err := newGrpcServer(&cfg, logger, nil)
+	grpcServer, err := newGrpcServer(&cfg, nil)
 	require.NoError(t, err)
 	defer grpcServer.GracefulStop()
 	test.RegisterTestServiceServer(grpcServer, &TestServer{})
 
-	listener := makeGrpcListenFunc(grpcServer, logger, cfg)
+	listener := makeGrpcListenFunc(ctx, grpcServer, cfg)
 	go func() {
 		err = listener()
 		require.NoError(t, err)
@@ -150,13 +146,13 @@ func Test_encryptionConfigUsed(t *testing.T) {
 func Test_serverUsesGivenLogger(t *testing.T) {
 	os.Setenv("GRPC_GO_LOG_VERBOSITY_LEVEL", "99")
 
-	logger, hook := tlog.NewNullLogger()
+	ctx, hook := common.NewTestContextWithLoggerHook()
 
 	grpcServer := grpc.NewServer()
 	defer grpcServer.GracefulStop()
 	test.RegisterTestServiceServer(grpcServer, &TestServer{})
 
-	listener := prepareGrpcServerListener(logger, grpcServer, localServer())
+	listener := prepareGrpcServerListener(ctx, grpcServer, localServer())
 	go func() {
 		err := listener()
 		require.NoError(t, err)
@@ -178,7 +174,7 @@ func Test_serverUsesGivenLogger(t *testing.T) {
 }
 
 func Test_libMakesCorrectHandlerCalls(t *testing.T) {
-	logger, _ := tlog.NewNullLogger()
+	ctx, _ := common.NewTestContextWithLoggerHook()
 
 	handler := GrpcHandler{
 		cfg: localServer(),
@@ -189,7 +185,7 @@ func Test_libMakesCorrectHandlerCalls(t *testing.T) {
 		methodsCalled: make(map[string]bool),
 	}
 
-	listener, err := configurePublicGrpcServerListener(context.Background(), &handler, logger)
+	listener, err := configurePublicGrpcServerListener(ctx, &handler)
 	require.NoError(t, err)
 	require.NotNil(t, listener)
 
@@ -210,8 +206,7 @@ func Test_NewGrpcServerWithValidConfig(t *testing.T) {
 		HostName: "host",
 		Port:     3000,
 	}
-	logger, _ := tlog.NewNullLogger()
-	newServer, err := newGrpcServer(&cfg, logger, nil)
+	newServer, err := newGrpcServer(&cfg, nil)
 	require.NoError(t, err)
 	require.NotNil(t, newServer)
 }
@@ -227,8 +222,7 @@ func Test_NewGrpcServerWithCustomInterceptor(t *testing.T) {
 		HostName: "host",
 		Port:     3000,
 	}
-	logger, _ := tlog.NewNullLogger()
-	newServer, err := newGrpcServer(&cfg, logger, interceptor())
+	newServer, err := newGrpcServer(&cfg, interceptor())
 	require.NoError(t, err)
 	require.NotNil(t, newServer)
 }

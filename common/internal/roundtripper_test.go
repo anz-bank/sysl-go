@@ -2,16 +2,12 @@ package internal
 
 import (
 	"bytes"
-	"context"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"testing"
 
-	"github.com/sirupsen/logrus"
-
-	"github.com/sirupsen/logrus/hooks/test"
-
+	"github.com/anz-bank/pkg/log"
 	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/mock"
@@ -31,11 +27,11 @@ func (m *mockRountTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 }
 
 func TestLoggingRoundtripper(t *testing.T) {
-	logger, _ := test.NewNullLogger()
+	ctx, _ := NewTestContextWithLoggerHook()
 	base := mockRountTripper{}
 	base.On("RoundTrip", mock.Anything).Return(&http.Response{}, nil)
 
-	tt := NewLoggingRoundTripper(logger.WithContext(context.Background()), &base)
+	tt := NewLoggingRoundTripper(ctx, &base)
 
 	body := bytes.NewBufferString("test")
 	req, err := http.NewRequest("GET", "localhost/", body)
@@ -69,10 +65,9 @@ func (r *testRoundtripper) RoundTrip(req *http.Request) (*http.Response, error) 
 }
 func TestLoggingTransport_RoundTrip400Code(t *testing.T) {
 	tr := testRoundtripper{false, 400}
-	logger, hook := test.NewNullLogger()
-	logger.Level = logrus.DebugLevel
-
-	transport := NewLoggingRoundTripper(logger.WithContext(context.Background()), &tr)
+	ctx, hook := NewTestContextWithLoggerHook()
+	ctx = log.WithConfigs(log.SetVerboseMode(true)).Onto(ctx)
+	transport := NewLoggingRoundTripper(ctx, &tr)
 	body := bytes.NewBufferString("test")
 	req, err := http.NewRequest("POST", "http://localhost:1234/", body)
 	require.NoError(t, err)
@@ -87,7 +82,7 @@ func TestLoggingTransport_RoundTrip400Code(t *testing.T) {
 	respFound := false
 	statusFound := false
 	for _, entry := range hook.Entries {
-		if entry.Level == logrus.DebugLevel {
+		if entry.Verbose {
 			debugCount++
 			if entry.Message == "Response: header - map[]\nbody[len:9]: - resp body" {
 				reqFound = true
@@ -108,10 +103,9 @@ func TestLoggingTransport_RoundTrip400Code(t *testing.T) {
 
 func TestLoggingTransport_RoundTripLogFields(t *testing.T) {
 	tr := testRoundtripper{false, 400}
-	logger, hook := test.NewNullLogger()
-	logger.Level = logrus.DebugLevel
-
-	transport := NewLoggingRoundTripper(logger.WithContext(context.Background()), &tr)
+	ctx, hook := NewTestContextWithLoggerHook()
+	ctx = log.WithConfigs(log.SetVerboseMode(true)).Onto(ctx)
+	transport := NewLoggingRoundTripper(ctx, &tr)
 	body := bytes.NewBufferString("test")
 	req, err := http.NewRequest("POST", "http://localhost:1234/", body)
 	req.Header.Add(distributedTraceIDName, "this is trace id")
@@ -128,10 +122,13 @@ func TestLoggingTransport_RoundTripLogFields(t *testing.T) {
 	respFound := false
 	statusFound := false
 	for _, entry := range hook.Entries {
-		require.Equal(t, "this is trace id", entry.Data[distributedTraceIDName])
-		require.Equal(t, "this is span id", entry.Data[distributedSpanIDName])
-		require.Nil(t, entry.Data[distributedParentSpanIDName])
-		if entry.Level == logrus.DebugLevel {
+		entryTraceIDName, _ := entry.Data.Get(distributedTraceIDName)
+		entrySpanIDName, _ := entry.Data.Get(distributedSpanIDName)
+		entryDistributedParentSpanIDName, _ := entry.Data.Get(distributedParentSpanIDName)
+		require.Equal(t, "this is trace id", entryTraceIDName)
+		require.Equal(t, "this is span id", entrySpanIDName)
+		require.Nil(t, entryDistributedParentSpanIDName)
+		if entry.Verbose {
 			debugCount++
 			if entry.Message == "Response: header - map[]\nbody[len:9]: - resp body" {
 				reqFound = true

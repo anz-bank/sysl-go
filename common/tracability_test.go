@@ -2,13 +2,11 @@ package common
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"net/http"
 	"strings"
 	"testing"
 
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )
 
@@ -28,22 +26,22 @@ func TestTraceabilityMiddleware(t *testing.T) {
 	for i, tt := range tests {
 		tt := tt
 		t.Run(fmt.Sprintf("TestTraceabilityMiddleware#%d", i), func(t *testing.T) {
-			logger, loghook := test.NewNullLogger()
+			ctx, loghook := NewTestContextWithLoggerHook()
 
-			mware := TraceabilityMiddleware(logger)
+			mware := TraceabilityMiddleware(ctx)
 			body := bytes.NewBufferString("test")
 			req, err := http.NewRequest("GET", "localhost/", body)
 			require.Nil(t, err)
-			req = req.WithContext(context.Background())
+			req = req.WithContext(ctx)
 			if tt.reqid != nil {
 				req.Header.Add("RequestID", *tt.reqid)
 			}
 
 			fn := mware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 				if tt.expectWarning {
-					require.NotEmpty(t, loghook.Entries)
+					require.NotEmpty(t, &loghook.Entries)
 				} else {
-					require.Empty(t, loghook.Entries)
+					require.Empty(t, &loghook.Entries)
 					require.Equal(t, strings.ToLower(*tt.reqid), strings.ToLower(GetTraceIDFromContext(r.Context()).String()))
 				}
 			}))

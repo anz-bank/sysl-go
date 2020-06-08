@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/sirupsen/logrus/hooks/test"
 )
 
 type testHandler struct {
@@ -34,18 +32,13 @@ func (t *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(t.body)
 }
 
-func contextWithLogger() context.Context {
-	logger, _ := test.NewNullLogger()
-	return LoggerToContext(context.Background(), logger, nil)
-}
-
 func TestTimeoutHandler_NoCallbackCalledIfNotTimeout(t *testing.T) {
 	req := require.New(t)
 	tester := defaultTestHandler()
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(200); _, _ = w.Write([]byte("OK")) })
 
-	timeoutmware := Timeout(contextWithLogger(), time.Second, tester)
+	timeoutmware := Timeout(context.Background(), time.Second, tester)
 	ts := httptest.NewServer(timeoutmware(handler))
 	defer ts.Close()
 
@@ -69,7 +62,7 @@ func TestTimeoutHandler_CallbackCalledIfTimeout(t *testing.T) {
 		_, _ = w.Write([]byte("OK"))
 	})
 
-	timeoutmware := Timeout(contextWithLogger(), time.Millisecond, tester)
+	timeoutmware := Timeout(context.Background(), time.Millisecond, tester)
 
 	ts := httptest.NewServer(timeoutmware(handler))
 	defer ts.Close()
@@ -94,7 +87,7 @@ func TestTimeoutHandler_NoPanicRethrow(t *testing.T) {
 		panic("HElp")
 	})
 
-	timeoutmware := Timeout(contextWithLogger(), time.Millisecond, tester)
+	timeoutmware := Timeout(context.Background(), time.Millisecond, tester)
 	ts := httptest.NewServer(timeoutmware(handler))
 	defer ts.Close()
 
@@ -124,7 +117,7 @@ func TestTimeoutHandler_ContextTimoutMoreThanWriteTimeout(t *testing.T) {
 		}
 	})
 
-	timeoutmware := Timeout(contextWithLogger(), 10*time.Millisecond, tester)
+	timeoutmware := Timeout(context.Background(), 10*time.Millisecond, tester)
 	ts := httptest.NewUnstartedServer(timeoutmware(handler))
 	ts.Config.WriteTimeout = 5 * time.Millisecond
 	ts.Start()
@@ -147,7 +140,7 @@ func TestTimeoutHandler_ContextTimoutLessThanWriteTimeout(t *testing.T) {
 		}
 	})
 
-	timeoutmware := Timeout(contextWithLogger(), 5*time.Millisecond, tester)
+	timeoutmware := Timeout(context.Background(), 5*time.Millisecond, tester)
 	ts := httptest.NewUnstartedServer(timeoutmware(handler))
 	ts.Config.WriteTimeout = 10 * time.Millisecond
 	ts.Start()
@@ -176,7 +169,7 @@ func TestTimeoutHandler_ContextTimoutAndWriteTimeoutTooShort(t *testing.T) {
 		}
 	})
 
-	timeoutmware := Timeout(contextWithLogger(), 10*time.Millisecond, tester)
+	timeoutmware := Timeout(context.Background(), 10*time.Millisecond, tester)
 	ts := httptest.NewUnstartedServer(timeoutmware(handler))
 	ts.Config.WriteTimeout = 10 * time.Millisecond
 	ts.Start()

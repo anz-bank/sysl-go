@@ -10,14 +10,11 @@ import (
 	"time"
 
 	"github.com/anz-bank/sysl-go/common"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )
 
 func getContext() context.Context {
-	logger, _ := test.NewNullLogger()
-	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
+	ctx, _ := common.NewTestContextWithLoggerHook()
 	return ctx
 }
 

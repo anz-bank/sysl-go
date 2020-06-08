@@ -5,6 +5,9 @@ package core
 import (
 	"context"
 
+	"github.com/anz-bank/pkg/log"
+	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/logconfig"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
@@ -12,7 +15,8 @@ import (
 type ServerParams struct {
 	Ctx                context.Context
 	Name               string
-	logger             *logrus.Logger
+	logrusLogger       *logrus.Logger
+	pkgLoggerConfigs   []log.Config
 	restManager        Manager
 	grpcManager        GrpcManager
 	prometheusRegistry *prometheus.Registry
@@ -27,9 +31,39 @@ func NewServerParams(ctx context.Context, name string, opts ...ServerOption) *Se
 	return params
 }
 
-//nolint:gocognit // Long method are okay because only generated code will call this, not humans.
+//nolint:gocognit,funlen // Long method are okay because only generated code will call this, not humans.
 func (params *ServerParams) Start() error {
-	mWare := prepareMiddleware(params.Name, params.logger, params.prometheusRegistry)
+	ctx := params.Ctx
+
+	// initialise the logger
+	// sysl-go always uses a pkg logger internally. if custom code passes in a logrus logger, a
+	// mechanism which is deprecated, then a hook is added to the internal pkg logger that forwards
+	// logged events to the provided logrus logger.
+	// sysl-go can be requested to log in a verbose manner. logger in a verbose manner logs additional
+	// details within log events where appropriate. the mechanism to set this verbose manner is to
+	// either have a sufficiently high logrus log level or the verbose mode set against the pkg logger.
+	configs := params.pkgLoggerConfigs
+	verboseLogging := false
+	if params.logrusLogger != nil {
+		configs = append(configs, log.AddHooks(&logrusHook{params.logrusLogger}))
+		ctx = common.LoggerToContext(ctx, params.logrusLogger, nil)
+		verboseLogging = params.logrusLogger.Level >= logrus.DebugLevel
+	}
+	ctx = log.WithConfigs(configs...).Onto(ctx)
+	verboseMode := log.SetVerboseMode(true)
+	for _, config := range configs {
+		if config == verboseMode {
+			verboseLogging = true
+			break
+		}
+	}
+
+	ctx = context.WithValue(ctx, logconfig.IsVerboseLoggingKey{},
+		&logconfig.IsVerboseLogging{
+			Flag: verboseLogging,
+		})
+	// prepare the middleware
+	mWare := prepareMiddleware(ctx, params.Name, params.prometheusRegistry)
 
 	var restIsRunning, grpcIsRunning bool
 
@@ -37,7 +71,7 @@ func (params *ServerParams) Start() error {
 	var listenAdmin func() error
 	if params.restManager != nil && params.restManager.AdminServerConfig() != nil {
 		var err error
-		listenAdmin, err = configureAdminServerListener(params.restManager, params.logger, params.prometheusRegistry, mWare.admin)
+		listenAdmin, err = configureAdminServerListener(ctx, params.restManager, params.prometheusRegistry, mWare.admin)
 		if err != nil {
 			return err
 		}
@@ -49,7 +83,7 @@ func (params *ServerParams) Start() error {
 	var listenPublic func() error
 	if params.restManager != nil && params.restManager.PublicServerConfig() != nil {
 		var err error
-		listenPublic, err = configurePublicServerListener(params.Ctx, params.restManager, params.logger, mWare.public)
+		listenPublic, err = configurePublicServerListener(ctx, params.restManager, mWare.public)
 		if err != nil {
 			return err
 		}
@@ -62,7 +96,7 @@ func (params *ServerParams) Start() error {
 	var listenPublicGrpc func() error
 	if params.grpcManager != nil && params.grpcManager.GrpcPublicServerConfig() != nil {
 		var err error
-		listenPublicGrpc, err = configurePublicGrpcServerListener(params.Ctx, params.grpcManager, params.logger)
+		listenPublicGrpc, err = configurePublicGrpcServerListener(ctx, params.grpcManager)
 		if err != nil {
 			return err
 		}
@@ -107,16 +141,29 @@ func WithRestManager(manager Manager) ServerOption {
 	return &restManagerOption{manager}
 }
 
-type loggerOption struct {
+type logrusLoggerOption struct {
 	logger *logrus.Logger
 }
 
-func (o *loggerOption) apply(params *ServerParams) {
-	params.logger = o.logger
+func (o *logrusLoggerOption) apply(params *ServerParams) {
+	params.logrusLogger = o.logger
 }
 
+// Deprecated: Use WithPkgLogger instead
 func WithLogrusLogger(logger *logrus.Logger) ServerOption {
-	return &loggerOption{logger}
+	return &logrusLoggerOption{logger}
+}
+
+type pkgLoggerOption struct {
+	configs []log.Config
+}
+
+func (o *pkgLoggerOption) apply(params *ServerParams) {
+	params.pkgLoggerConfigs = o.configs
+}
+
+func WithPkgLogger(configs ...log.Config) ServerOption {
+	return &pkgLoggerOption{configs}
 }
 
 func WithPrometheusRegistry(prometheusRegistry *prometheus.Registry) ServerOption {
@@ -143,9 +190,11 @@ func WithGrpcManager(manager GrpcManager) ServerOption {
 	return &grpcManagerOption{manager}
 }
 
+// Deprecated: Use ServerParams instead
 //nolint:gocognit // Long method names are okay because only generated code will call this, not humans.
 func Server(ctx context.Context, name string, hl Manager, grpcHl GrpcManager, logger *logrus.Logger, promRegistry *prometheus.Registry) error {
 	return NewServerParams(ctx, name,
+		WithPkgLogger(),
 		WithLogrusLogger(logger),
 		WithRestManager(hl),
 		WithGrpcManager(grpcHl),

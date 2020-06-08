@@ -1,24 +1,19 @@
 package core
 
 import (
-	"bytes"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
+	"github.com/anz-bank/sysl-go/common"
 	"github.com/stretchr/testify/require"
-
-	"github.com/sirupsen/logrus"
 )
 
 func TestRecoverer(t *testing.T) {
-	l := logrus.New()
-	buffer := bytes.Buffer{}
-	l.SetOutput(&buffer)
+	ctx, _ := common.NewTestContextWithLoggerHook()
 
-	ts := httptest.NewServer(Recoverer(l)(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+	ts := httptest.NewServer(Recoverer(ctx)(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 		panic("Test")
 	})))
 	defer ts.Close()
@@ -28,6 +23,5 @@ func TestRecoverer(t *testing.T) {
 	if res != nil {
 		defer res.Body.Close()
 	}
-
-	require.True(t, strings.Contains(buffer.String(), "Panic: Test"))
+	require.Panics(t, nil, "Panic: Test")
 }

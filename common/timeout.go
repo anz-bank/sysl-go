@@ -9,6 +9,8 @@ import (
 	"runtime/debug"
 	"sync"
 	"time"
+
+	"github.com/anz-bank/pkg/log"
 )
 
 // Timeout is a middleware that cancels ctx after a given timeout or call a special handler on timeout
@@ -78,7 +80,7 @@ func (h *timeoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer func() {
 			if p := recover(); p != nil {
-				GetLoggerFromContext(h.ctx).Error(string(debug.Stack()))
+				log.Error(ctx, errors.New(string(debug.Stack())))
 				panicChan <- p
 			}
 		}()

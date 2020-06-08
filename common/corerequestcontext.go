@@ -6,13 +6,16 @@ import (
 
 	"github.com/anz-bank/sysl-go/common/internal"
 
+	"github.com/anz-bank/pkg/log"
 	"github.com/sirupsen/logrus"
 )
 
+// Deprecated: Use ServerParams.WithPkgLogger instead
 func GetLogEntryFromContext(ctx context.Context) *logrus.Entry {
 	return getCoreContext(ctx).entry
 }
 
+// Deprecated: Use ServerParams.WithPkgLogger instead
 func GetLoggerFromContext(ctx context.Context) *logrus.Logger {
 	return getCoreContext(ctx).logger
 }
@@ -37,6 +40,7 @@ type respHeaderAndStatusContext struct {
 }
 
 // LoggerToContext create a new context containing the logger
+// Deprecated: Use ServerParams.WithPkgLogger instead
 func LoggerToContext(ctx context.Context, logger *logrus.Logger, entry *logrus.Entry) context.Context {
 	return context.WithValue(ctx, coreRequestContextKey{}, &coreRequestContext{logger, entry})
 }
@@ -84,21 +88,16 @@ func UpdateResponseStatus(ctx context.Context, status int) error {
 	return nil
 }
 
-func CoreRequestContextMiddleware(logger *logrus.Logger) func(next http.Handler) http.Handler {
+func CoreRequestContextMiddleware() func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-
-			entry := logger.WithField(traceIDLogField, GetTraceIDFromContext(ctx))
-			ctx = LoggerToContext(r.Context(), logger, entry)
+			ctx := log.With(traceIDLogField, GetTraceIDFromContext(r.Context())).Onto(r.Context())
 
 			ctx = internal.AddResponseBodyMonitorToContext(ctx)
-			defer internal.CheckForUnclosedResponses(ctx, entry)
-
-			reqLogger, entry := internal.NewRequestLogger(entry, r)
+			defer internal.CheckForUnclosedResponses(ctx)
+			reqLogger, entry := internal.NewRequestLogger(ctx, r)
 			w = reqLogger.ResponseWriter(w)
 			defer reqLogger.FlushLog()
-			ctx = LoggerToContext(ctx, logger, entry)
 
 			r = r.WithContext(ctx)
 
@@ -141,6 +140,6 @@ type tempRoundtripper struct {
 }
 
 func (t *tempRoundtripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	logentry := GetLogEntryFromContext(r.Context()).WithField("Downsteam", t.name)
-	return internal.NewLoggingRoundTripper(logentry, t.base).RoundTrip(r)
+	ctx := log.With("Downsteam", t.name).Onto(r.Context())
+	return internal.NewLoggingRoundTripper(ctx, t.base).RoundTrip(r)
 }

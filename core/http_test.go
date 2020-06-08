@@ -12,8 +12,6 @@ import (
 	"github.com/anz-bank/sysl-go/status"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/anz-bank/sysl-go/config"
 
 	"github.com/stretchr/testify/assert"
@@ -24,9 +22,9 @@ func newString(s string) *string {
 }
 
 func Test_prepareMiddleware(t *testing.T) {
-	testLogger := logrus.StandardLogger()
+	ctx, _ := common.NewTestContextWithLoggerHook()
+
 	type args struct {
-		logger        *logrus.Logger
 		cfg           *config.LibraryConfig
 		buildMetadata *status.BuildMetadata
 		promRegistry  *prometheus.Registry
@@ -40,15 +38,14 @@ func Test_prepareMiddleware(t *testing.T) {
 		{
 			name: "",
 			args: args{
-				logger:        testLogger,
 				cfg:           &config.LibraryConfig{},
 				buildMetadata: &status.BuildMetadata{},
 				promRegistry:  nil,
 			},
 			want: []func(http.Handler) http.Handler{
-				Recoverer(testLogger),
-				common.TraceabilityMiddleware(testLogger),
-				common.CoreRequestContextMiddleware(testLogger),
+				Recoverer(ctx),
+				common.TraceabilityMiddleware(ctx),
+				common.CoreRequestContextMiddleware(),
 			},
 			wantErr: false,
 		},
@@ -56,7 +53,7 @@ func Test_prepareMiddleware(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			got := prepareMiddleware("server", tt.args.logger, tt.args.promRegistry)
+			got := prepareMiddleware(ctx, "server", tt.args.promRegistry)
 			assert.NotEmpty(t, got)
 		})
 	}
@@ -118,8 +115,9 @@ func Test_makeNewServer(t *testing.T) {
 }
 
 func Test_prepareServerListener(t *testing.T) {
+	ctx, _ := common.NewTestContextWithLoggerHook()
+
 	type args struct {
-		logger       *logrus.Logger
 		rootRouter   http.Handler
 		tlsConfig    *tls.Config
 		commonConfig config.CommonHTTPServerConfig
@@ -132,7 +130,6 @@ func Test_prepareServerListener(t *testing.T) {
 		{
 			name: "",
 			args: args{
-				logger:     logrus.StandardLogger(),
 				rootRouter: nil,
 				tlsConfig: &tls.Config{
 					ServerName: "Hello",
@@ -157,7 +154,7 @@ func Test_prepareServerListener(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			assert.NotNil(t, prepareServerListener(tt.args.logger, tt.args.rootRouter, tt.args.tlsConfig, tt.args.commonConfig))
+			assert.NotNil(t, prepareServerListener(ctx, tt.args.rootRouter, tt.args.tlsConfig, tt.args.commonConfig))
 		})
 	}
 }

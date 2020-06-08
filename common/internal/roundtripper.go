@@ -1,21 +1,20 @@
 package internal
 
 import (
+	"context"
 	"net/http"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 type loggingRoundtripper struct {
-	logentry *logrus.Entry
-	base     http.RoundTripper
+	ctx  context.Context
+	base http.RoundTripper
 }
 
-func NewLoggingRoundTripper(logentry *logrus.Entry, base http.RoundTripper) http.RoundTripper {
+func NewLoggingRoundTripper(ctx context.Context, base http.RoundTripper) http.RoundTripper {
 	return &loggingRoundtripper{
-		logentry: logentry,
-		base:     base,
+		ctx:  ctx,
+		base: base,
 	}
 }
 
@@ -23,7 +22,7 @@ func (t *loggingRoundtripper) RoundTrip(req *http.Request) (*http.Response, erro
 	start := time.Now()
 
 	var resp *http.Response
-	reqLogger, _ := NewRequestLogger(t.logentry, req)
+	reqLogger, _ := NewRequestLogger(t.ctx, req)
 	defer func() {
 		reqLogger.LogResponse(resp)
 	}()
@@ -41,11 +40,6 @@ func (t *loggingRoundtripper) RoundTrip(req *http.Request) (*http.Response, erro
 
 	fields := initCommonLogFields(resp.StatusCode, reqTime, resp.Request)
 
-	entry := t.logentry.WithFields(fields).WithFields(logrus.Fields{
-		"logger": "common/internal/roundtripper.go",
-		"func":   "RoundTrip()",
-	})
-	entry.Info("Backend request completed")
-
+	fields.Info(t.ctx, "Backend request completed")
 	return resp, nil
 }

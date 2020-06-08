@@ -3,20 +3,20 @@ package core
 import (
 	"regexp"
 
-	"github.com/sirupsen/logrus"
+	"github.com/anz-bank/pkg/log"
 )
 
 type TLSLogFilter struct {
-	logger *logrus.Logger
+	logger log.Logger
 	re     *regexp.Regexp
 }
 
 func (t *TLSLogFilter) Write(p []byte) (n int, err error) {
-	level := logrus.WarnLevel
 	if t.re.Match(p) {
-		level = logrus.DebugLevel
+		t.logger.Debug(string(p))
+	} else {
+		t.logger.Info(string(p))
 	}
-	t.logger.Log(level, string(p))
 
 	return len(p), nil
 }

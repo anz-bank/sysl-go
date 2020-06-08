@@ -8,6 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 
+	"github.com/anz-bank/pkg/log"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -49,4 +50,27 @@ func NewTestCoreRequestContextWithLogger(logger *logrus.Logger) context.Context 
 		})
 
 	return ctx
+}
+
+type TestHook struct {
+	Entries []log.LogEntry
+}
+
+func (t *TestHook) OnLogged(entry *log.LogEntry) error {
+	t.Entries = append(t.Entries, *entry)
+	return nil
+}
+
+func (t *TestHook) LastEntry() *log.LogEntry {
+	i := len(t.Entries) - 1
+	if i < 0 {
+		return nil
+	}
+	return &t.Entries[i]
+}
+
+func NewTestContextWithLoggerHook() (context.Context, *TestHook) {
+	loghook := TestHook{}
+	ctx := log.WithConfigs(log.AddHooks(&loghook)).Onto(context.Background())
+	return ctx, &loghook
 }
