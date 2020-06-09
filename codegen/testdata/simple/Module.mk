@@ -43,43 +43,6 @@ $(SIMPLE_ROUTER): $(TRANSFORMS)/svc_router.sysl $(SIMPLE_SYSL)
 $(SIMPLE_CLIENT): $(TRANSFORMS)/svc_client.sysl $(SIMPLE_SYSL)
 	$(run-sysl)
 
-$(SIMPLE_JSON): $(patsubst %,$(TEST_IN_DIR)/$(SIMPLE_IN)/%.sysl,simple deps downstream)
-	sysl pb --mode=json --root $(TEST_IN_DIR) $(SIMPLE_IN)/simple.sysl > $@ || rm -f $@
-
-ARRAI_OUT=codegen/arrai/tests
-
-GENFILES = \
-	$(ARRAI_OUT)/%/app.go \
-	$(ARRAI_OUT)/%/error_types.go \
-	$(ARRAI_OUT)/%/requestrouter.go \
-	$(ARRAI_OUT)/%/service.go \
-	$(ARRAI_OUT)/%/servicehandler.go \
-	$(ARRAI_OUT)/%/serviceinterface.go \
-	$(ARRAI_OUT)/%/types.go
-
-ARRAI_FILES = \
-
-$(ARRAI_OUT)/%: $(GENFILES)
-	touch $@
-
-.PRECIOUS: $(patsubst %%,simple,$(GENFILES))
-$(GENFILES) : codegen/testdata/%/simple.sysl.json \
-		$(patsubst %,$(ARRAI_TRANSFORMS)/%.arrai,\
-			service \
-			svc_app \
-			svc_service \
-			svc_error_types \
-			svc_types \
-			svc_interface \
-			svc_handler \
-			svc_router \
-			go \
-			sysl \
-		)
-	mkdir -p $(ARRAI_OUT)/$*
-	$(ARRAI_TRANSFORMS)/service.arrai github.com/anz-bank/sysl-go/codegen/tests $< Simple | tar xf - -C $(ARRAI_OUT)/$*
-	goimports -w $(ARRAI_OUT)/$* || :
-
 $(SIMPLE_APP): $(TRANSFORMS)/svc_app.sysl $(MODEL)
 	$(run-sysl)
 

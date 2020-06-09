@@ -3,7 +3,8 @@
 let go   = //{./go};
 let sysl = //{./sysl};
 
-let [_, basepath, json, appname] = //os.args;
+let [_, basepath, json, appname, exclude] = //os.args;
+let exclude = //seq.split(",")(exclude) => $"${.@item}.go";
 let module = //encoding.json.decode(cond json {"-": //os.stdin, _: //os.file(json)});
 let goModule = go.module(module);
 let app = module("apps")(appname);
@@ -31,4 +32,4 @@ let config = (
     "requestrouter.go":    //{./svc_router},
     "service.go":          //{./svc_service},
     "types.go":            //{./svc_types},
-} >> .(config))
+} where . !<: exclude >> .(config))

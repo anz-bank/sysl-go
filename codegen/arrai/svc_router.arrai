@@ -1,6 +1,6 @@
 let go = //{./go};
 
-\(:app, :appname, :restEndpoints, ...) $`
+\(:app, :appname, :basepath, :restEndpoints, ...) $`
     ${go.prelude(app, {})}
 
     // Router interface for ${appname}
@@ -25,7 +25,7 @@ let go = //{./go};
 
     // NewServiceRouter creates a new service router for ${appname}
     func NewServiceRouter(gc core.RestGenCallback, svcHandler *ServiceHandler) handlerinitialiser.HandlerInitialiser {
-        return &ServiceRouter{gc, svcHandler, "/simple"}
+        return &ServiceRouter{gc, svcHandler, "${app('attrs')('basePath')?('s').s:""}"}
     }
 
     // WireRoutes ...

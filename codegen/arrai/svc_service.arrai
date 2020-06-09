@@ -46,7 +46,7 @@ let sysl = //{./sysl};
                     q := u.Query()
                     ${
                         queryParams => .@item orderby (.('type')('sourceContext')('start') -> [.('col'), .('line')]) >>
-                            let star = cond {.('type')('opt').b: "*"};
+                            let star = cond {.('type')('opt')?.b:false: "*"};
                             let var = $`req.${go.name(.('name').s)}`;
                             let valueExpr = cond go.type(.('type')) {
                                 ($`${star}string`): $`${star}${var}`,

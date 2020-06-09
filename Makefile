@@ -52,7 +52,6 @@ help:
 # -- Codegen ----------------------------------------------------------------------
 # Transform settings - common across all code generation
 TRANSFORMS=codegen/transforms
-ARRAI_TRANSFORMS=codegen/arrai
 
 # Input models for code generation
 TEST_IN_DIR=codegen/testdata
@@ -88,3 +87,56 @@ gen: ## Run sysl codegen and proto codegen
 .PHONY: gen
 
 include $(TEST_IN_DIR)/*/Module.mk
+
+
+# Arr.ai codegen
+
+ARRAI_TRANSFORMS=codegen/arrai
+
+simple.app = Simple
+
+dbendpoints.app = DbEndpoints
+
+deps.app = Deps
+deps.exclude = app
+
+downstream.app = Downstream
+downstream.exclude = app
+
+.SECONDARY: $(patsubst %,codegen/testdata/%/sysl.json,simple dpendpoints deps downstream)
+
+codegen/testdata/%/sysl.json: $(wildcard codegen/testdata/%/*.sysl)
+	sysl pb --mode=json --root $(TEST_IN_DIR) $*/$*.sysl > $@ || rm -f $@
+
+ARRAI_OUT=codegen/arrai/tests
+
+GENFILES = \
+	$(ARRAI_OUT)/%/app.go \
+	$(ARRAI_OUT)/%/error_types.go \
+	$(ARRAI_OUT)/%/requestrouter.go \
+	$(ARRAI_OUT)/%/service.go \
+	$(ARRAI_OUT)/%/servicehandler.go \
+	$(ARRAI_OUT)/%/serviceinterface.go \
+	$(ARRAI_OUT)/%/types.go
+
+$(ARRAI_OUT)/%: $(GENFILES)
+	touch $@
+
+.SECONDARY: $(patsubst %%,simple,$(GENFILES))
+$(GENFILES) : codegen/testdata/%/sysl.json \
+		$(patsubst %,$(ARRAI_TRANSFORMS)/%.arrai,\
+			service \
+			svc_app \
+			svc_service \
+			svc_error_types \
+			svc_types \
+			svc_interface \
+			svc_handler \
+			svc_router \
+			go \
+			sysl \
+		)
+	mkdir -p $(ARRAI_OUT)/$*
+	$(ARRAI_TRANSFORMS)/service.arrai github.com/anz-bank/sysl-go/codegen/tests $< $($*.app) "$($*.exclude)" \
+		| tar xf - -C $(ARRAI_OUT)/$*
+	goimports -w $(ARRAI_OUT)/$* || :
