@@ -7,7 +7,7 @@ NamedImport: Name Import;
 TopLevelDecl: Comment '\n' (Declaration | FunctionDecl | MethodDecl);
 Declaration: VarDecl | VarDeclWithVal | ConstDecl | StructType | InterfaceType | AliasDecl;
 StructType : 'type' StructName 'struct' '{\n' FieldDecl* '}\n\n';
-FieldDecl: '\t' identifier (Type | FunctionType)? Tag? '\n';
+FieldDecl: '\t' identifier (Type | FunctionType)? Tag? Comment? '\n';
 IdentifierList: identifier IdentifierListC*;
 IdentifierListC: ',' identifier;
 FunctionType: 'func' Signature;
@@ -28,7 +28,7 @@ ParameterDecl  : Identifier TypeName;
 ParameterDeclC: ',' ParameterDecl;
 
 InterfaceType      : 'type' InterfaceName 'interface'  '{\n'  MethodSpec* '}\n\n' MethodDecl*;
-MethodSpec         : '\t' MethodName Signature '\n' | InterfaceTypeName ;
+MethodSpec         : '\t' MethodName Signature Comment? '\n' | InterfaceTypeName ;
 MethodDecl: 'func' Receiver FunctionName Signature? Block? '\n\n';
 Receiver: '(' ReceiverType ')';
 AliasDecl: 'type' identifier Type? '\n\n';

@@ -57,6 +57,7 @@ Go:
     identifier <: string
     __FieldDecl_Type <: __FieldDecl_Type?
     Tag <: string?
+    Comment <: string?
 
   !type IdentifierList:
     identifier <: string
@@ -132,6 +133,7 @@ Go:
   !type __Choice_Combination_MethodSpec_MethodName_Signature:
     MethodName <: string
     Signature <: Signature
+    Comment <: string?
 
   !union __Choice_MethodSpec:
     __Choice_Combination_MethodSpec_MethodName_Signature

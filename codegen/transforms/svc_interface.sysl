@@ -151,6 +151,7 @@ CodeGenTransform:
   !view epHandlerMethodSpecsWithClient(eps <: sequence of sysl.Endpoint, module <: sysl.Module) -> sequence of FieldDecl:
     eps -> (ep:
       identifier = methodDef(ep).methodName
+      Comment = if ep.attrs count > 0 && "feature" in ep.attrs then "// ~feature: " + ep.attrs.feature else ""
       FunctionType = ep -> <FunctionType>(:
 
         Signature = ep -> <Signature> (:
