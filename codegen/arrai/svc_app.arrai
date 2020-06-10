@@ -1,0 +1,46 @@
+let go = //{./go};
+
+\(:app, :appname, :basepath, :clientImports, :module, ...) $`
+    ${go.prelude(app, clientImports => $`${basepath}/${.}`)}
+
+    // DownstreamClients for ${appname}
+    type DownstreamClients struct {
+        ${clientImports orderby . >> $`${.}Client *${.}.Client`::\i}
+    }
+
+    // BuildRestHandlerInitialiser ...
+    func BuildRestHandlerInitialiser(serviceInterface ServiceInterface, callback core.RestGenCallback, downstream *DownstreamClients) handlerinitialiser.HandlerInitialiser {
+        serviceHandler := NewServiceHandler(callback, &serviceInterface${
+            clientImports orderby . >> $`, downstream.${.}Client`
+        ::})
+        serviceRouter := NewServiceRouter(callback, serviceHandler)
+        return serviceRouter
+    }
+
+    // BuildDownstreamClients ...
+    func BuildDownstreamClients(cfg *config.DefaultConfig) (*DownstreamClients, error) {
+        var err error = nil
+        ${clientImports orderby . >> $`
+            ${.}HTTPClient, ${.}Err := core.BuildDownstreamHTTPClient("${.}", &cfg.GenCode.Downstream.(*DownstreamConfig).${go.name(.)})
+        `::\i}
+        ${clientImports orderby . >> $`
+            if ${.}Err != nil {
+                return nil, ${.}Err
+            }
+        `::\i}
+        ${clientImports orderby . >> $`
+            ${.}Client := ${.}.NewClient(${.}HTTPClient, cfg.GenCode.Downstream.(*DownstreamConfig).${go.name(.)}.ServiceURL)
+        `::\i}
+
+        return &DownstreamClients{${clientImports orderby . >> $`${.}Client: ${.}Client,`::\i}
+        }, err
+    }
+
+    // NewDefaultConfig ...
+    func NewDefaultConfig() config.DefaultConfig {
+        return config.DefaultConfig{
+            Library: config.LibraryConfig{},
+            GenCode: config.GenCodeConfig{Downstream: &DownstreamConfig{}},
+        }
+    }
+`

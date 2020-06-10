@@ -94,14 +94,16 @@ include $(TEST_IN_DIR)/*/Module.mk
 ARRAI_TRANSFORMS=codegen/arrai
 
 simple.app = Simple
+simple.groups = rest-app
 
 dbendpoints.app = DbEndpoints
+dpendpoints.groups = rest-app
 
 deps.app = Deps
-deps.exclude = app
+deps.groups = rest-service
 
 downstream.app = Downstream
-downstream.exclude = app
+downstream.groups = rest-service
 
 .SECONDARY: $(patsubst %,codegen/testdata/%/sysl.json,simple dpendpoints deps downstream)
 
@@ -137,6 +139,6 @@ $(GENFILES) : codegen/testdata/%/sysl.json \
 			sysl \
 		)
 	mkdir -p $(ARRAI_OUT)/$*
-	$(ARRAI_TRANSFORMS)/service.arrai github.com/anz-bank/sysl-go/codegen/tests $< $($*.app) "$($*.exclude)" \
+	$(ARRAI_TRANSFORMS)/service.arrai github.com/anz-bank/sysl-go/codegen/tests $< $($*.app) "$($*.groups)" \
 		| tar xf - -C $(ARRAI_OUT)/$*
 	goimports -w $(ARRAI_OUT)/$* || :

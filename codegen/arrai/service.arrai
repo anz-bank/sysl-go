@@ -3,33 +3,58 @@
 let go   = //{./go};
 let sysl = //{./sysl};
 
-let [_, basepath, json, appname, exclude] = //os.args;
-let exclude = //seq.split(",")(exclude) => $"${.@item}.go";
+# codegen groups
+
+let restClient = {"error_types", "service", "types"};
+let restService = restClient | {"requestrouter", "servicehandler", "serviceinterface"};
+
+let grpcService = {"grpc_handler", "grpc_interface"};
+
+let codegenGroups = {
+    "rest-service": restService,
+    "rest-app":     restService | {"app"},
+    "rest-client":  restClient,
+    "grpc-service": grpcService,
+    "grpc-app":     grpcService | {"app"},
+} >> => $"${.}.go";
+
+let _ = //log.print((:codegenGroups));
+
+# main
+
+let [_, basepath, json, appname, groups] = //os.args;
+
+
+let include = //rel.union(//seq.split(",", groups) => codegenGroups(.@item));
+
+let _ = //log.print((:groups, :include));
+
 let module = //encoding.json.decode(cond json {"-": //os.stdin, _: //os.file(json)});
 let goModule = go.module(module);
 let app = module("apps")(appname);
-let appname = sysl.app.name(app);
 let endpoints = app("endpoints") orderby .@;
 let restEndpoints = endpoints where .@item.@value('restParams')?:();
-let clientImports = goModule.clientImports(restEndpoints);
-let hasDB = "DB" <: sysl.patterns(app);
+
 let config = (
     :app,
-    :appname,
     :basepath,
-    :clientImports,
     :endpoints,
-    :goModule,
-    :hasDB,
     :module,
     :restEndpoints,
+    :goModule,
+    appname:       sysl.app.name(app),
+    clientImports: goModule.clientImports(restEndpoints),
+    hasDB:         "DB" <: sysl.patterns(app),
 );
+
 //archive.tar.tar({
     "app.go":              //{./svc_app},
     "error_types.go":      //{./svc_error_types},
-    "servicehandler.go":   //{./svc_handler},
-    "serviceinterface.go": //{./svc_interface},
+    # "grpc_handler.go":     //{./grpc_handler},
+    # "grpc_interface.go":   //{./grpc_interface},
     "requestrouter.go":    //{./svc_router},
     "service.go":          //{./svc_service},
+    "servicehandler.go":   //{./svc_handler},
+    "serviceinterface.go": //{./svc_interface},
     "types.go":            //{./svc_types},
-} where . !<: exclude >> .(config))
+} where .@ <: include >> .(config))
