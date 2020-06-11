@@ -20,6 +20,7 @@ import (
 	"github.com/anz-bank/sysl-go/convert"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/restlib"
+	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -114,21 +115,21 @@ func (th *TestHandler) InvalidHander(ctx context.Context, req *GetStuffListReque
 	return nil, errors.New("invalid")
 }
 
-func callHandlerError(cb core.RestGenCallback, target string, message string, cause error) (*httptest.ResponseRecorder, *common.TestHook) {
+func callHandlerError(cb core.RestGenCallback, target string, message string, cause error) (*httptest.ResponseRecorder, *testutil.TestHook) {
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
 
 	r.Header.Set("Accept", "application/json")
-	ctx, hook := common.NewTestContextWithLoggerHook()
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
 	common.HandleError(ctx, w, common.InternalError, message, cause, cb.MapError)
 
 	return w, hook
 }
 
-func callHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *common.TestHook) {
+func callHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *testutil.TestHook) {
 	cb := Callback{}
 
-	ctx, hook := common.NewTestContextWithLoggerHook()
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
 	var depssrv deps.Service
 	var downstreamSrv downstream.Service
 	sh := NewServiceHandler(cb, &si, depssrv, downstreamSrv)
@@ -144,9 +145,9 @@ func callHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder
 	return w, hook
 }
 
-func callRawHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *common.TestHook) {
+func callRawHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *testutil.TestHook) {
 	cb := Callback{}
-	ctx, hook := common.NewTestContextWithLoggerHook()
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
 
 	var depssrv deps.Service
 	var downstreamSrv downstream.Service
@@ -163,10 +164,10 @@ func callRawHandler(target string, si ServiceInterface) (*httptest.ResponseRecor
 	return w, hook
 }
 
-func callRawIdStateHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *common.TestHook) {
+func callRawIdStateHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *testutil.TestHook) {
 	cb := Callback{}
 
-	ctx, hook := common.NewTestContextWithLoggerHook()
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
 	var depssrv deps.Service
 	var downstreamSrv downstream.Service
 	sh := NewServiceHandler(cb, &si, depssrv, downstreamSrv)
@@ -182,9 +183,9 @@ func callRawIdStateHandler(target string, si ServiceInterface) (*httptest.Respon
 	return w, hook
 }
 
-func callRawIntHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *common.TestHook) {
+func callRawIntHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *testutil.TestHook) {
 	cb := Callback{}
-	ctx, hook := common.NewTestContextWithLoggerHook()
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
 
 	var depssrv deps.Service
 	var downstreamSrv downstream.Service

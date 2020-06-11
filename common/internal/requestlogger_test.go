@@ -7,11 +7,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestLogger_FlushLog(t *testing.T) {
-	ctx, hook := NewTestContextWithLoggerHook()
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
 
 	req, err := http.NewRequest("GET", "http://example.com/foo", nil)
 	require.NoError(t, err)
@@ -43,7 +44,7 @@ func TestLogger_FlushLog(t *testing.T) {
 }
 
 func TestRequestLogger_NilBody(t *testing.T) {
-	ctx, _ := NewTestContextWithLoggerHook()
+	ctx, _ := testutil.NewTestContextWithLoggerHook()
 
 	req, err := http.NewRequest("DELETE", "http://example.com/foo", nil)
 	require.NoError(t, err)
@@ -54,7 +55,7 @@ func TestRequestLogger_NilBody(t *testing.T) {
 }
 
 func TestRequestLogger_ResponseWriter(t *testing.T) {
-	ctx, hook := NewTestContextWithLoggerHook()
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
 
 	req, err := http.NewRequest("GET", "http://example.com/foo", nil)
 	require.NoError(t, err)

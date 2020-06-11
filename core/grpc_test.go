@@ -6,10 +6,10 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config"
 	test "github.com/anz-bank/sysl-go/core/testdata/proto"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
+	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -102,7 +102,7 @@ func connectAndCheckReturn(t *testing.T, securityOption grpc.DialOption) {
 }
 
 func Test_makeGrpcListenFuncListens(t *testing.T) {
-	ctx, _ := common.NewTestContextWithLoggerHook()
+	ctx, _ := testutil.NewTestContextWithLoggerHook()
 
 	grpcServer := grpc.NewServer()
 	defer grpcServer.GracefulStop()
@@ -119,7 +119,7 @@ func Test_makeGrpcListenFuncListens(t *testing.T) {
 
 func Test_encryptionConfigUsed(t *testing.T) {
 	t.Skip("Skipping as required certs not present")
-	ctx, hook := common.NewTestContextWithLoggerHook()
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
 
 	cfg := localSecureServer()
 
@@ -146,7 +146,7 @@ func Test_encryptionConfigUsed(t *testing.T) {
 func Test_serverUsesGivenLogger(t *testing.T) {
 	os.Setenv("GRPC_GO_LOG_VERBOSITY_LEVEL", "99")
 
-	ctx, hook := common.NewTestContextWithLoggerHook()
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
 
 	grpcServer := grpc.NewServer()
 	defer grpcServer.GracefulStop()
@@ -174,7 +174,7 @@ func Test_serverUsesGivenLogger(t *testing.T) {
 }
 
 func Test_libMakesCorrectHandlerCalls(t *testing.T) {
-	ctx, _ := common.NewTestContextWithLoggerHook()
+	ctx, _ := testutil.NewTestContextWithLoggerHook()
 
 	handler := GrpcHandler{
 		cfg: localServer(),

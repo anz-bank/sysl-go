@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,7 +27,7 @@ func TestTraceabilityMiddleware(t *testing.T) {
 	for i, tt := range tests {
 		tt := tt
 		t.Run(fmt.Sprintf("TestTraceabilityMiddleware#%d", i), func(t *testing.T) {
-			ctx, loghook := NewTestContextWithLoggerHook()
+			ctx, loghook := testutil.NewTestContextWithLoggerHook()
 
 			mware := TraceabilityMiddleware(ctx)
 			body := bytes.NewBufferString("test")

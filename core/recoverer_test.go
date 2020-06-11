@@ -6,12 +6,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestRecoverer(t *testing.T) {
-	ctx, _ := common.NewTestContextWithLoggerHook()
+
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
 
 	ts := httptest.NewServer(Recoverer(ctx)(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 		panic("Test")
@@ -23,5 +24,5 @@ func TestRecoverer(t *testing.T) {
 	if res != nil {
 		defer res.Body.Close()
 	}
-	require.Panics(t, nil, "Panic: Test")
+	require.NotEmpty(t, hook.Entries)
 }

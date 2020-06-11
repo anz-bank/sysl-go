@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/anz-bank/pkg/log"
+	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/mock"
@@ -27,7 +28,7 @@ func (m *mockRountTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 }
 
 func TestLoggingRoundtripper(t *testing.T) {
-	ctx, _ := NewTestContextWithLoggerHook()
+	ctx, _ := testutil.NewTestContextWithLoggerHook()
 	base := mockRountTripper{}
 	base.On("RoundTrip", mock.Anything).Return(&http.Response{}, nil)
 
@@ -65,7 +66,7 @@ func (r *testRoundtripper) RoundTrip(req *http.Request) (*http.Response, error) 
 }
 func TestLoggingTransport_RoundTrip400Code(t *testing.T) {
 	tr := testRoundtripper{false, 400}
-	ctx, hook := NewTestContextWithLoggerHook()
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
 	ctx = log.WithConfigs(log.SetVerboseMode(true)).Onto(ctx)
 	transport := NewLoggingRoundTripper(ctx, &tr)
 	body := bytes.NewBufferString("test")
@@ -103,7 +104,7 @@ func TestLoggingTransport_RoundTrip400Code(t *testing.T) {
 
 func TestLoggingTransport_RoundTripLogFields(t *testing.T) {
 	tr := testRoundtripper{false, 400}
-	ctx, hook := NewTestContextWithLoggerHook()
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
 	ctx = log.WithConfigs(log.SetVerboseMode(true)).Onto(ctx)
 	transport := NewLoggingRoundTripper(ctx, &tr)
 	body := bytes.NewBufferString("test")

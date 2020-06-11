@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/testutil"
 
 	"github.com/anz-bank/sysl-go/status"
 	"github.com/prometheus/client_golang/prometheus"
@@ -22,7 +23,7 @@ func newString(s string) *string {
 }
 
 func Test_prepareMiddleware(t *testing.T) {
-	ctx, _ := common.NewTestContextWithLoggerHook()
+	ctx, _ := testutil.NewTestContextWithLoggerHook()
 
 	type args struct {
 		cfg           *config.LibraryConfig
@@ -115,7 +116,7 @@ func Test_makeNewServer(t *testing.T) {
 }
 
 func Test_prepareServerListener(t *testing.T) {
-	ctx, _ := common.NewTestContextWithLoggerHook()
+	ctx, _ := testutil.NewTestContextWithLoggerHook()
 
 	type args struct {
 		rootRouter   http.Handler

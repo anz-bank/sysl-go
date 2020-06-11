@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func getContext() context.Context {
-	ctx, _ := common.NewTestContextWithLoggerHook()
+	ctx, _ := testutil.NewTestContextWithLoggerHook()
 	return ctx
 }
 

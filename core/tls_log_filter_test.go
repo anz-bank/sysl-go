@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	pkgLog "github.com/anz-bank/pkg/log"
-	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +22,7 @@ func TestTLSLogFilter_Write(t *testing.T) {
 	} {
 		tt := tt
 		t.Run(fmt.Sprintf("TestTLSLogFilter_Write-%d", i), func(t *testing.T) {
-			ctx, hook := common.NewTestContextWithLoggerHook()
+			ctx, hook := testutil.NewTestContextWithLoggerHook()
 			logger := pkgLog.From(ctx)
 			re := regexp.MustCompile(`hit`)
 			writer := &TLSLogFilter{logger, re}

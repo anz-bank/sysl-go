@@ -1,4 +1,4 @@
-package internal
+package testutil
 
 import (
 	"context"
@@ -14,6 +14,14 @@ type TestHook struct {
 func (h *TestHook) OnLogged(entry *log.LogEntry) error {
 	h.Entries = append(h.Entries, *entry)
 	return nil
+}
+
+func (t *TestHook) LastEntry() *log.LogEntry {
+	i := len(t.Entries) - 1
+	if i < 0 {
+		return nil
+	}
+	return &t.Entries[i]
 }
 
 func NewTestContextWithLoggerHook() (context.Context, *TestHook) {

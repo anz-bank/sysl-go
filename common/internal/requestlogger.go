@@ -79,8 +79,7 @@ func (r *nopLogger) ResponseWriter(base http.ResponseWriter) http.ResponseWriter
 func (r *nopLogger) FlushLog()                                                   {}
 
 func NewRequestLogger(ctx context.Context, req *http.Request) (RequestLogger, context.Context) {
-	isDebugLogLevelCtx := getDebugLogLevelCtx(ctx)
-	if isDebugLogLevelCtx != nil && isDebugLogLevelCtx.Flag {
+	if isVerboseLogging(ctx) {
 		l := &requestLogger{
 			ctx:        InitFieldsFromRequest(req).Onto(ctx),
 			protoMajor: req.ProtoMajor,
@@ -97,10 +96,10 @@ func NewRequestLogger(ctx context.Context, req *http.Request) (RequestLogger, co
 	return &nopLogger{}, ctx
 }
 
-func getDebugLogLevelCtx(ctx context.Context) *logconfig.IsVerboseLogging {
+func isVerboseLogging(ctx context.Context) bool {
 	v, ok := ctx.Value(logconfig.IsVerboseLoggingKey{}).(*logconfig.IsVerboseLogging)
 	if ok {
-		return v
+		return v.Flag
 	}
-	return nil
+	return false
 }
