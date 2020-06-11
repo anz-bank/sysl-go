@@ -11,8 +11,8 @@ type TestHook struct {
 	Entries []log.LogEntry
 }
 
-func (h *TestHook) OnLogged(entry *log.LogEntry) error {
-	h.Entries = append(h.Entries, *entry)
+func (t *TestHook) OnLogged(entry *log.LogEntry) error {
+	t.Entries = append(t.Entries, *entry)
 	return nil
 }
 

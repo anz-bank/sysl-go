@@ -11,7 +11,6 @@ import (
 )
 
 func TestRecoverer(t *testing.T) {
-
 	ctx, hook := testutil.NewTestContextWithLoggerHook()
 
 	ts := httptest.NewServer(Recoverer(ctx)(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
