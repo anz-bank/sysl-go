@@ -6,32 +6,24 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
+	pkgLog "github.com/anz-bank/pkg/log"
+	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTLSLogFilter_Write(t *testing.T) {
 	type testData struct {
-		in    string
-		level logrus.Level
+		in string
 	}
-
 	for i, tt := range []testData{
 		{
-			in:    "hit hit\n",
-			level: logrus.DebugLevel,
-		},
-		{
-			in:    "misssssss\n",
-			level: logrus.WarnLevel,
+			in: "misssssss\n",
 		},
 	} {
 		tt := tt
 		t.Run(fmt.Sprintf("TestTLSLogFilter_Write-%d", i), func(t *testing.T) {
-			logger, hook := test.NewNullLogger()
-			logger.Level = logrus.TraceLevel
-
+			ctx, hook := testutil.NewTestContextWithLoggerHook()
+			logger := pkgLog.From(ctx)
 			re := regexp.MustCompile(`hit`)
 			writer := &TLSLogFilter{logger, re}
 			serverLogger := log.New(writer, "", 0)
@@ -40,7 +32,6 @@ func TestTLSLogFilter_Write(t *testing.T) {
 
 			require.Equal(t, 1, len(hook.Entries))
 			require.Equal(t, tt.in, hook.LastEntry().Message)
-			require.Equal(t, tt.level, hook.LastEntry().Level)
 		})
 	}
 }

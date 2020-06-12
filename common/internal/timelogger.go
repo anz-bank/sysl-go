@@ -1,11 +1,13 @@
 package internal
 
 import (
+	"context"
+	"errors"
 	"net/http"
 	"time"
 
+	"github.com/anz-bank/pkg/log"
 	"github.com/go-chi/chi/middleware"
-	"github.com/sirupsen/logrus"
 )
 
 type RequestTimer struct {
@@ -23,25 +25,24 @@ func NewRequestTimer(w http.ResponseWriter, r *http.Request) RequestTimer {
 	return rt
 }
 
-func (r RequestTimer) Log(entry *logrus.Entry) {
+func (r RequestTimer) Log(ctx context.Context) {
 	latency := time.Since(r.start)
 	status := r.RespWrapper.Status()
 
 	fields := initCommonLogFields(status, latency, r.r)
 	switch {
 	case status < 400:
-		entry.WithFields(fields).Info("Request completed")
+		log.Info(fields.Onto(ctx), "Request completed")
 	default:
-		entry.WithFields(fields).Error("Request completed with error status")
+		log.Error(fields.Onto(ctx), errors.New("request completed with error status"))
 	}
 }
 
-func initCommonLogFields(status int, reqTime time.Duration, req *http.Request) logrus.Fields {
-	fields := InitFieldsFromRequest(req)
-	fields["status"] = status
-	fields["took"] = reqTime
-	fields["latency"] = reqTime.Nanoseconds()
-	return fields
+func initCommonLogFields(status int, reqTime time.Duration, req *http.Request) log.Fields {
+	return InitFieldsFromRequest(req).
+		With("status", status).
+		With("took", reqTime).
+		With("latency", reqTime.Nanoseconds())
 }
 
 const (
@@ -52,20 +53,19 @@ const (
 
 var distributedTracingIDs = []string{distributedTraceIDName, distributedSpanIDName, distributedParentSpanIDName}
 
-func InitFieldsFromRequest(req *http.Request) logrus.Fields {
-	fields := logrus.Fields{
-		"remote":  req.RemoteAddr,
-		"request": req.URL,
-		"method":  req.Method,
-	}
-	addDistributedTracingFields(req.Header, fields)
-	return fields
+func InitFieldsFromRequest(req *http.Request) log.Fields {
+	return distributedTracingFields(req.Header).
+		With("remote", req.RemoteAddr).
+		With("request", req.URL).
+		With("method", req.Method)
 }
 
-func addDistributedTracingFields(header http.Header, fields logrus.Fields) {
+func distributedTracingFields(header http.Header) log.Fields {
+	fields := log.Fields{}
 	for _, name := range distributedTracingIDs {
 		if val := header.Get(name); val != "" {
-			fields[name] = val
+			fields = fields.Chain(log.With(name, val))
 		}
 	}
+	return fields
 }
