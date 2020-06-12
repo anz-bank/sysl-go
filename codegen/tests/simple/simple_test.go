@@ -209,7 +209,8 @@ func TestHandlerNotImplemented(t *testing.T) {
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	require.JSONEq(t, `{"status":{"code":"9998", "description":"Internal Server Error"}}`, string(body))
-	require.Equal(t, "{\"Kind\":2,\"Message\":\"not implemented\",\"Cause\":null}", hook.LastEntry().Message)
+	logValue, _ := hook.LastEntry().Data.Get("error_message")
+	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=not implemented, Cause=%!s(<nil>))", logValue)
 }
 
 func TestHandleErrorLogMappedErrorIfReturned(t *testing.T) {
@@ -220,7 +221,8 @@ func TestHandleErrorLogMappedErrorIfReturned(t *testing.T) {
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	require.JSONEq(t, `{"status":{"code":"1001", "description":"foo"}}`, string(body))
-	require.Equal(t, "{\"Kind\":2,\"Message\":\"foo\",\"Cause\":null}", hook.LastEntry().Message)
+	logValue, _ := hook.LastEntry().Data.Get("error_message")
+	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=foo, Cause=%!s(<nil>))", logValue)
 }
 func TestHandleErrorLogCustomError(t *testing.T) {
 	cb := Callback{}
@@ -232,7 +234,8 @@ func TestHandleErrorLogCustomError(t *testing.T) {
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	require.JSONEq(t, `{"status":{"code":"1001", "description":"foo"}}`, string(body))
-	require.Equal(t, "{\"Kind\":2,\"Message\":\"foo\",\"Cause\":{\"http_code\":\"1001\",\"http_message\":\"foo\",\"http_status\":\"500\",\"name\":\"BusinessLogicError\"}}", hook.LastEntry().Message)
+	logValue, _ := hook.LastEntry().Data.Get("error_message")
+	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=foo, Cause=BusinessLogicError(common.CustomError{\"http_code\":\"1001\", \"http_message\":\"foo\", \"http_status\":\"500\", \"name\":\"BusinessLogicError\"}))", logValue)
 }
 
 func TestHandleErrorLogDefaultError(t *testing.T) {
@@ -243,7 +246,8 @@ func TestHandleErrorLogDefaultError(t *testing.T) {
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	require.JSONEq(t, `{"status":{"code":"9998", "description":"Internal Server Error"}}`, string(body))
-	require.Equal(t, "{\"Kind\":2,\"Message\":\"foo\",\"Cause\":null}", hook.LastEntry().Message)
+	logValue, _ := hook.LastEntry().Data.Get("error_message")
+	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=foo, Cause=%!s(<nil>))", logValue)
 }
 
 func TestHandlerMissingEndpoint(t *testing.T) {
@@ -253,7 +257,8 @@ func TestHandlerMissingEndpoint(t *testing.T) {
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	require.JSONEq(t, `{"status":{"code":"9998", "description":"Internal Server Error"}}`, string(body))
-	require.Equal(t, "{\"Kind\":2,\"Message\":\"not implemented\",\"Cause\":null}", hook.LastEntry().Message)
+	logValue, _ := hook.LastEntry().Data.Get("error_message")
+	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=not implemented, Cause=%!s(<nil>))", logValue)
 }
 
 func TestHandlerRequestHeaderInContext(t *testing.T) {

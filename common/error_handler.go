@@ -2,7 +2,6 @@ package common
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/anz-bank/pkg/log"
@@ -19,8 +18,7 @@ const (
 
 func HandleError(ctx context.Context, w http.ResponseWriter, kind Kind, message string, cause error, httpErrorMapper func(context.Context, error) *HTTPError) {
 	err := CreateError(ctx, kind, message, cause)
-	bytes, _ := json.Marshal(err)
-	log.Error(ctx, err, string(bytes))
+	log.Error(ctx, err)
 
 	var fields []KV
 	if w, ok := cause.(wrappedError); ok {
