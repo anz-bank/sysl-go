@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/anz-bank/pkg/log"
 )
 
 type HTTPError struct {
@@ -47,7 +49,6 @@ type httpErrorResponse struct {
 }
 
 func (httpError *HTTPError) WriteError(ctx context.Context, w http.ResponseWriter) {
-	logEntry := GetLogEntryFromContext(ctx)
 	var marshalTarget interface{}
 
 	marshalTarget = httpError
@@ -59,7 +60,7 @@ func (httpError *HTTPError) WriteError(ctx context.Context, w http.ResponseWrite
 
 	b, err := json.Marshal(httpErrorResponse{marshalTarget})
 	if err != nil {
-		logEntry.Error(err)
+		log.Error(ctx, err)
 		b = []byte(`{"status":{"code": "1234", "description": "Unknown Error"}}`)
 		httpError.HTTPCode = http.StatusInternalServerError
 	}

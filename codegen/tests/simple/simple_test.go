@@ -20,7 +20,7 @@ import (
 	"github.com/anz-bank/sysl-go/convert"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/restlib"
-	"github.com/sirupsen/logrus"
+	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -115,22 +115,21 @@ func (th *TestHandler) InvalidHander(ctx context.Context, req *GetStuffListReque
 	return nil, errors.New("invalid")
 }
 
-func callHandlerError(cb core.RestGenCallback, target string, message string, cause error) (*httptest.ResponseRecorder, *test.Hook) {
+func callHandlerError(cb core.RestGenCallback, target string, message string, cause error) (*httptest.ResponseRecorder, *testutil.TestHook) {
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
 
 	r.Header.Set("Accept", "application/json")
-	logger, hook := test.NewNullLogger()
-	r = r.WithContext(common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger)))
-	ctx := common.RequestHeaderToContext(r.Context(), r.Header)
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
 	common.HandleError(ctx, w, common.InternalError, message, cause, cb.MapError)
 
 	return w, hook
 }
 
-func callHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *test.Hook) {
+func callHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *testutil.TestHook) {
 	cb := Callback{}
 
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
 	var depssrv deps.Service
 	var downstreamSrv downstream.Service
 	sh := NewServiceHandler(cb, &si, depssrv, downstreamSrv)
@@ -139,16 +138,16 @@ func callHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder
 	w := httptest.NewRecorder()
 
 	r.Header.Set("Accept", "application/json")
-	logger, hook := test.NewNullLogger()
-	r = r.WithContext(common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger)))
+	r = r.WithContext(ctx)
 
 	sh.GetStuffListHandler(w, r)
 
 	return w, hook
 }
 
-func callRawHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *test.Hook) {
+func callRawHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *testutil.TestHook) {
 	cb := Callback{}
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
 
 	var depssrv deps.Service
 	var downstreamSrv downstream.Service
@@ -158,17 +157,17 @@ func callRawHandler(target string, si ServiceInterface) (*httptest.ResponseRecor
 	w := httptest.NewRecorder()
 
 	r.Header.Set("Accept", "application/json")
-	logger, hook := test.NewNullLogger()
-	r = r.WithContext(common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger)))
+	r = r.WithContext(ctx)
 
 	sh.GetRawListHandler(w, r)
 
 	return w, hook
 }
 
-func callRawIdStateHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *test.Hook) {
+func callRawIdStateHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *testutil.TestHook) {
 	cb := Callback{}
 
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
 	var depssrv deps.Service
 	var downstreamSrv downstream.Service
 	sh := NewServiceHandler(cb, &si, depssrv, downstreamSrv)
@@ -177,16 +176,16 @@ func callRawIdStateHandler(target string, si ServiceInterface) (*httptest.Respon
 	w := httptest.NewRecorder()
 
 	r.Header.Set("Accept", "application/json")
-	logger, hook := test.NewNullLogger()
-	r = r.WithContext(common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger)))
+	r = r.WithContext(ctx)
 
 	sh.GetRawIdStatesListHandler(w, r)
 
 	return w, hook
 }
 
-func callRawIntHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *test.Hook) {
+func callRawIntHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *testutil.TestHook) {
 	cb := Callback{}
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
 
 	var depssrv deps.Service
 	var downstreamSrv downstream.Service
@@ -196,8 +195,7 @@ func callRawIntHandler(target string, si ServiceInterface) (*httptest.ResponseRe
 	w := httptest.NewRecorder()
 
 	r.Header.Set("Accept", "application/json")
-	logger, hook := test.NewNullLogger()
-	r = r.WithContext(common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger)))
+	r = r.WithContext(ctx)
 
 	sh.GetRawIntListHandler(w, r)
 
@@ -211,7 +209,8 @@ func TestHandlerNotImplemented(t *testing.T) {
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	require.JSONEq(t, `{"status":{"code":"9998", "description":"Internal Server Error"}}`, string(body))
-	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=not implemented, Cause=%!s(<nil>))", hook.LastEntry().Message)
+	logValue, _ := hook.LastEntry().Data.Get("error_message")
+	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=not implemented, Cause=%!s(<nil>))", logValue)
 }
 
 func TestHandleErrorLogMappedErrorIfReturned(t *testing.T) {
@@ -222,7 +221,8 @@ func TestHandleErrorLogMappedErrorIfReturned(t *testing.T) {
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	require.JSONEq(t, `{"status":{"code":"1001", "description":"foo"}}`, string(body))
-	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=foo, Cause=%!s(<nil>))", hook.LastEntry().Message)
+	logValue, _ := hook.LastEntry().Data.Get("error_message")
+	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=foo, Cause=%!s(<nil>))", logValue)
 }
 func TestHandleErrorLogCustomError(t *testing.T) {
 	cb := Callback{}
@@ -234,7 +234,8 @@ func TestHandleErrorLogCustomError(t *testing.T) {
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	require.JSONEq(t, `{"status":{"code":"1001", "description":"foo"}}`, string(body))
-	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=foo, Cause=BusinessLogicError(common.CustomError{\"http_code\":\"1001\", \"http_message\":\"foo\", \"http_status\":\"500\", \"name\":\"BusinessLogicError\"}))", hook.LastEntry().Message)
+	logValue, _ := hook.LastEntry().Data.Get("error_message")
+	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=foo, Cause=BusinessLogicError(common.CustomError{\"http_code\":\"1001\", \"http_message\":\"foo\", \"http_status\":\"500\", \"name\":\"BusinessLogicError\"}))", logValue)
 }
 
 func TestHandleErrorLogDefaultError(t *testing.T) {
@@ -245,7 +246,8 @@ func TestHandleErrorLogDefaultError(t *testing.T) {
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	require.JSONEq(t, `{"status":{"code":"9998", "description":"Internal Server Error"}}`, string(body))
-	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=foo, Cause=%!s(<nil>))", hook.LastEntry().Message)
+	logValue, _ := hook.LastEntry().Data.Get("error_message")
+	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=foo, Cause=%!s(<nil>))", logValue)
 }
 
 func TestHandlerMissingEndpoint(t *testing.T) {
@@ -255,7 +257,8 @@ func TestHandlerMissingEndpoint(t *testing.T) {
 	defer resp.Body.Close()
 	body, _ := ioutil.ReadAll(resp.Body)
 	require.JSONEq(t, `{"status":{"code":"9998", "description":"Internal Server Error"}}`, string(body))
-	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=not implemented, Cause=%!s(<nil>))", hook.LastEntry().Message)
+	logValue, _ := hook.LastEntry().Data.Get("error_message")
+	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=not implemented, Cause=%!s(<nil>))", logValue)
 }
 
 func TestHandlerRequestHeaderInContext(t *testing.T) {
@@ -369,10 +372,7 @@ func TestClientDecodesValidJSONResponse(t *testing.T) {
 		url:    server.URL,
 	}
 
-	logger, _ := test.NewNullLogger()
-	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
-
-	result, err := c.GetStuffList(ctx, &GetStuffListRequest{})
+	result, err := c.GetStuffList(context.Background(), &GetStuffListRequest{})
 	require.NoError(t, err)
 	require.Equal(t, Stuff{InnerStuff: "test"}, *result)
 }
@@ -392,9 +392,7 @@ func validQueryParamTest(t *testing.T, req GetStuffListRequest, query string) {
 		client: client,
 		url:    server.URL,
 	}
-
-	logger, _ := test.NewNullLogger()
-	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
+	ctx := context.Background()
 
 	_, err := c.GetStuffList(ctx, &req)
 	require.NoError(t, err)
@@ -416,12 +414,9 @@ func validXMLMsgTest(t *testing.T, req PostStuffRequest, xmlBody string) {
 		client: client,
 		url:    server.URL,
 	}
-
-	logger, _ := test.NewNullLogger()
 	reqHeader := http.Header{}
 	reqHeader.Add("Content-Type", "text/xml; charset=utf-8")
-	ctx := common.RequestHeaderToContext(common.LoggerToContext(context.Background(), logger,
-		logrus.NewEntry(logger)), reqHeader)
+	ctx := common.RequestHeaderToContext(context.Background(), reqHeader)
 	strRes, err := c.PostStuff(ctx, &req)
 	assert.Equal(t, string(*strRes), xmlBody)
 	require.NoError(t, err)
@@ -564,9 +559,7 @@ func bodylessClientServer(statusToReturn int) (*Client, *httptest.Server) {
 func TestJustOKReturnsHeaders(t *testing.T) {
 	c, s := bodylessClientServer(200)
 	defer s.Close()
-
-	logger, _ := test.NewNullLogger()
-	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
+	ctx := context.Background()
 
 	h, err := c.GetJustReturnOkList(ctx, &GetJustReturnOkListRequest{})
 	require.NoError(t, err)
@@ -576,11 +569,7 @@ func TestJustOKReturnsHeaders(t *testing.T) {
 func TestJustErrorPutsHeadersInError(t *testing.T) {
 	c, s := bodylessClientServer(400)
 	defer s.Close()
-
-	logger, _ := test.NewNullLogger()
-	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
-
-	err := c.GetJustReturnErrorList(ctx, &GetJustReturnErrorListRequest{})
+	err := c.GetJustReturnErrorList(context.Background(), &GetJustReturnErrorListRequest{})
 	require.Error(t, err)
 	resp := err.(*common.ServerError).Cause.(*restlib.HTTPResult)
 	require.Equal(t, `{"jsonField":"jsonVal"}`, resp.HTTPResponse.Header.Get("Context"))
@@ -589,11 +578,7 @@ func TestJustErrorPutsHeadersInError(t *testing.T) {
 func TestJustOKAndJustErrorReturnsHeadersWhenOK(t *testing.T) {
 	c, s := bodylessClientServer(200)
 	defer s.Close()
-
-	logger, _ := test.NewNullLogger()
-	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
-
-	h, err := c.GetJustOkAndJustErrorList(ctx, &GetJustOkAndJustErrorListRequest{})
+	h, err := c.GetJustOkAndJustErrorList(context.Background(), &GetJustOkAndJustErrorListRequest{})
 	require.NoError(t, err)
 	require.Equal(t, `{"jsonField":"jsonVal"}`, h.Get("Context"))
 }
@@ -609,10 +594,7 @@ func TestJustOKAndJustErrorPutsHeadersInErrorWhenError(t *testing.T) {
 	c, s := bodylessClientServer(400)
 	defer s.Close()
 
-	logger, _ := test.NewNullLogger()
-	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
-
-	h, err := c.GetJustOkAndJustErrorList(ctx, &GetJustOkAndJustErrorListRequest{})
+	h, err := c.GetJustOkAndJustErrorList(context.Background(), &GetJustOkAndJustErrorListRequest{})
 	require.Error(t, err)
 	require.Nil(t, h)
 	resp := err.(*common.ServerError).Cause.(*restlib.HTTPResult)
@@ -623,10 +605,7 @@ func TestOKTypeAndJustErrorPutsHeadersInErrorWhenError(t *testing.T) {
 	c, s := bodylessClientServer(400)
 	defer s.Close()
 
-	logger, _ := test.NewNullLogger()
-	ctx := common.LoggerToContext(context.Background(), logger, logrus.NewEntry(logger))
-
-	h, err := c.GetOkTypeAndJustErrorList(ctx, &GetOkTypeAndJustErrorListRequest{})
+	h, err := c.GetOkTypeAndJustErrorList(context.Background(), &GetOkTypeAndJustErrorListRequest{})
 	require.Error(t, err)
 	require.Nil(t, h)
 	resp := err.(*common.ServerError).Cause.(*restlib.HTTPResult)

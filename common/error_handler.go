@@ -3,6 +3,8 @@ package common
 import (
 	"context"
 	"net/http"
+
+	"github.com/anz-bank/pkg/log"
 )
 
 const (
@@ -16,8 +18,7 @@ const (
 
 func HandleError(ctx context.Context, w http.ResponseWriter, kind Kind, message string, cause error, httpErrorMapper func(context.Context, error) *HTTPError) {
 	err := CreateError(ctx, kind, message, cause)
-	logEntry := GetLogEntryFromContext(ctx)
-	logEntry.Error(err)
+	log.Error(ctx, err)
 
 	var fields []KV
 	if w, ok := cause.(wrappedError); ok {

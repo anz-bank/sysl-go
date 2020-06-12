@@ -7,15 +7,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/anz-bank/pkg/log"
+	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
-
-	"github.com/sirupsen/logrus/hooks/test"
 )
 
 func TestCheckForUnclosedResponses(t *testing.T) {
-	logger, hook := test.NewNullLogger()
+	testContext, hook := testutil.NewTestContextWithLoggerHook()
 	// setup the monitor
-	ctx := AddResponseBodyMonitorToContext(context.Background())
+	ctx := AddResponseBodyMonitorToContext(testContext)
 
 	// create a response which doesnt get read
 	body := strings.NewReader("test string")
@@ -29,18 +29,17 @@ func TestCheckForUnclosedResponses(t *testing.T) {
 
 	// test
 	require.Panics(t, func() {
-		CheckForUnclosedResponses(ctx, logger.WithField("test", "test"))
+		CheckForUnclosedResponses(ctx)
 	})
 
-	for _, entry := range hook.Entries {
-		require.Equal(t, "\"internal.openBodyError{cause:\\\"/test\\\", err:\\\"response body not closed\\\"} \\n\"", entry.Message)
-	}
+	require.NotEmpty(t, hook.Entries)
 }
 
 func TestCheckForUnclosedResponses_AllClosed(t *testing.T) {
-	logger, hook := test.NewNullLogger()
+	logger := log.NewNullLogger()
 	// setup the monitor
 	ctx := AddResponseBodyMonitorToContext(context.Background())
+	ctx = log.WithLogger(logger).With("test", "test").Onto(ctx)
 
 	// create a response which doesnt get read
 	testData := "test string"
@@ -61,8 +60,6 @@ func TestCheckForUnclosedResponses_AllClosed(t *testing.T) {
 	resp.Body.Close()
 
 	require.NotPanics(t, func() {
-		CheckForUnclosedResponses(ctx, logger.WithField("test", "test"))
+		CheckForUnclosedResponses(ctx)
 	})
-
-	require.Empty(t, hook.Entries)
 }

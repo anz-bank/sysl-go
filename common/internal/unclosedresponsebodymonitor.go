@@ -2,12 +2,13 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"sync"
 
-	"github.com/sirupsen/logrus"
+	"github.com/anz-bank/pkg/log"
 )
 
 type unclosedResponseBodyMonitorContextKey struct{}
@@ -27,7 +28,7 @@ func AddResponseToMonitor(ctx context.Context, resp *http.Response) {
 	}
 }
 
-func CheckForUnclosedResponses(ctx context.Context, entry *logrus.Entry) {
+func CheckForUnclosedResponses(ctx context.Context) {
 	if val, ok := ctx.Value(unclosedResponseBodyMonitorContextKey{}).(*unclosedResponseBodyMonitor); ok {
 		openBodyErrors := OpenResponseBodyErrors{}
 		for _, body := range val.getResponsesWithOpenBodies() {
@@ -40,7 +41,9 @@ func CheckForUnclosedResponses(ctx context.Context, entry *logrus.Entry) {
 
 		openBodyCount := len(openBodyErrors.errors)
 		if openBodyCount > 0 {
-			entry.Panic(openBodyErrors.Error())
+			err := errors.New(openBodyErrors.Error())
+			log.Error(ctx, err)
+			panic(err)
 		}
 	}
 }

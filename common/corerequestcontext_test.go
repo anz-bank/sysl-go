@@ -6,23 +6,20 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCoreRequestContextMiddleware(t *testing.T) {
-	logger, _ := test.NewNullLogger()
-
-	mware := CoreRequestContextMiddleware(logger)
+	_, _, ctx := NewTestCoreRequestContext()
+	mware := CoreRequestContextMiddleware()
 	body := bytes.NewBufferString("test")
 	req, err := http.NewRequest("GET", "localhost/", body)
 	require.Nil(t, err)
-	req = req.WithContext(context.Background())
+	req = req.WithContext(ctx)
 
 	fn := mware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		coreCtx := getCoreContext(r.Context())
 		require.NotNil(t, coreCtx)
-		require.Equal(t, logger, coreCtx.logger)
 	}))
 
 	fn.ServeHTTP(nil, req)
