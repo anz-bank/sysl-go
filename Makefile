@@ -97,7 +97,7 @@ simple.app = Simple
 simple.groups = rest-app
 
 dbendpoints.app = DbEndpoints
-dpendpoints.groups = rest-app
+dbendpoints.groups = rest-app
 
 deps.app = Deps
 deps.groups = rest-service
@@ -142,3 +142,5 @@ $(GENFILES) : codegen/testdata/%/sysl.json \
 	$(ARRAI_TRANSFORMS)/service.arrai github.com/anz-bank/sysl-go/codegen/tests $< $($*.app) "$($*.groups)" \
 		| tar xf - -C $(ARRAI_OUT)/$*
 	goimports -w $(ARRAI_OUT)/$* || :
+
+arrai: $(patsubst %,codegen/arrai/tests/%,simple deps downstream dbendpoints)
