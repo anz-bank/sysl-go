@@ -73,12 +73,12 @@ func CreateError(ctx context.Context, kind Kind, message string, cause error) er
 		return err
 	}
 
-	e, ok := cause.(*ServerError)
-	if !ok {
+	switch cause.(type) {
+	case ErrorKinder, CustomError, wrappedError:
+		return cause
+	default:
 		return &ServerError{Kind: kind, Message: message, Cause: cause}
 	}
-
-	return e
 }
 
 func CheckContextTimeout(ctx context.Context, message string, cause error) error {

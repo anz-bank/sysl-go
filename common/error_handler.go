@@ -29,7 +29,7 @@ func HandleError(ctx context.Context, w http.ResponseWriter, kind Kind, message 
 	httpError := httpErrorMapper(ctx, err)
 
 	if httpError == nil {
-		switch t := cause.(type) {
+		switch t := err.(type) {
 		case CustomError:
 			httpError = t.HTTPError(ctx)
 		default:
