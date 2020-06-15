@@ -240,7 +240,7 @@ func TestHandleErrorLogCustomError(t *testing.T) {
 
 func TestHandleErrorLogDefaultError(t *testing.T) {
 	cb := Callback{}
-	w, hook := callHandlerError(cb, "http://example.com/stuff", "foo", nil)
+	w, hook := callHandlerError(cb, "http://example.com/stuff?it=0", "foo", nil)
 
 	resp := w.Result()
 	defer resp.Body.Close()
@@ -267,7 +267,7 @@ func TestHandlerRequestHeaderInContext(t *testing.T) {
 		GetStuffList: th.ValidGetStuffListHandlerStub,
 	}
 
-	_, _ = callHandler("http://example.com/stuff", si)
+	_, _ = callHandler("http://example.com/stuff?it=42", si)
 
 	require.Equal(t, "application/json", th.reqH.Get("Accept"))
 }
@@ -278,7 +278,7 @@ func TestHandlerResponseHeaderInContext(t *testing.T) {
 		GetStuffList: th.ValidGetStuffListHandlerStub,
 	}
 
-	_, _ = callHandler("http://example.com/stuff", si)
+	_, _ = callHandler("http://example.com/stuff?it=42", si)
 
 	require.Equal(t, 200, th.s)
 	require.Equal(t, 0, len(th.respH))
@@ -290,7 +290,7 @@ func TestHandlerValid(t *testing.T) {
 		GetStuffList: th.ValidGetStuffListHandlerStub,
 	}
 
-	w, _ := callHandler("http://example.com/stuff", si)
+	w, _ := callHandler("http://example.com/stuff?it=21", si)
 
 	resp := w.Result()
 	defer resp.Body.Close()
@@ -304,7 +304,7 @@ func TestRawHandlerValid(t *testing.T) {
 		GetRawList: th.ValidRawHandler,
 	}
 
-	w, _ := callRawHandler("http://example.com/raw", si)
+	w, _ := callRawHandler("http://example.com/raw?bt=true", si)
 
 	resp := w.Result()
 	defer resp.Body.Close()
@@ -359,7 +359,7 @@ func TestHandlerDownstreamInvalid(t *testing.T) {
 func TestClientDecodesValidJSONResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Test request parameters
-		require.Equal(t, r.URL.String(), "/stuff")
+		require.Equal(t, r.URL.String(), "/stuff?it=0")
 		// Send response to be tested
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte(`{"innerStuff":"test"}`))
@@ -429,7 +429,7 @@ func TestClientPassesValidOptionalStringParam(t *testing.T) {
 		St: &testString,
 	}
 
-	validQueryParamTest(t, req, "/stuff?st=test+string")
+	validQueryParamTest(t, req, "/stuff?it=0&st=test+string")
 }
 
 func TestClientPassesValidOptionalBoolParam(t *testing.T) {
@@ -440,7 +440,7 @@ func TestClientPassesValidOptionalBoolParam(t *testing.T) {
 		Bt: &testBool,
 	}
 
-	validQueryParamTest(t, req, "/stuff?bt=true")
+	validQueryParamTest(t, req, "/stuff?bt=true&it=0")
 }
 
 func TestClientPassesValidOptionalIntParam(t *testing.T) {
@@ -450,7 +450,7 @@ func TestClientPassesValidOptionalIntParam(t *testing.T) {
 		Dt: nil,
 		St: nil,
 		Bt: nil,
-		It: &testInt,
+		It: testInt,
 	}
 
 	validQueryParamTest(t, req, "/stuff?it=42")
@@ -461,10 +461,10 @@ func TestClientPassesValidOptionalDatetimeParam(t *testing.T) {
 		Dt: &convert.JSONTime{Time: time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)},
 		St: nil,
 		Bt: nil,
-		It: nil,
+		It: 0,
 	}
 
-	validQueryParamTest(t, req, "/stuff?dt=2009-11-10+23%3A00%3A00+%2B0000+UTC")
+	validQueryParamTest(t, req, "/stuff?dt=2009-11-10+23%3A00%3A00+%2B0000+UTC&it=0")
 }
 
 func TestClientPassesAllValidOptionalParams(t *testing.T) {
@@ -476,7 +476,7 @@ func TestClientPassesAllValidOptionalParams(t *testing.T) {
 		Dt: &convert.JSONTime{Time: time.Date(2009, time.November, 10, 23, 0, 0, 0, time.UTC)},
 		St: &testString,
 		Bt: &testBool,
-		It: &testInt,
+		It: testInt,
 	}
 
 	validQueryParamTest(t, req, "/stuff?bt=true&dt=2009-11-10+23%3A00%3A00+%2B0000+UTC&it=42&st=test+string")

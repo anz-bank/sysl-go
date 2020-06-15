@@ -248,6 +248,9 @@ func (s *Client) GetRawList(ctx context.Context, req *GetRawListRequest) (*Str, 
 		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
 	}
 
+	q := u.Query()
+	q.Add("bt", fmt.Sprintf("%v", req.Bt))
+	u.RawQuery = q.Encode()
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
 	if err != nil {
 		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
@@ -441,6 +444,7 @@ func (s *Client) GetStuffList(ctx context.Context, req *GetStuffListRequest) (*S
 	}
 
 	q := u.Query()
+	q.Add("it", fmt.Sprintf("%v", req.It))
 	if req.Dt != nil {
 		q.Add("dt", fmt.Sprintf("%v", *req.Dt))
 	}
@@ -451,10 +455,6 @@ func (s *Client) GetStuffList(ctx context.Context, req *GetStuffListRequest) (*S
 
 	if req.Bt != nil {
 		q.Add("bt", fmt.Sprintf("%v", *req.Bt))
-	}
-
-	if req.It != nil {
-		q.Add("it", fmt.Sprintf("%v", *req.It))
 	}
 
 	u.RawQuery = q.Encode()
