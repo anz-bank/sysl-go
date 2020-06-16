@@ -10,8 +10,8 @@ import (
 )
 
 func TestCoreRequestContextMiddleware(t *testing.T) {
-	_, _, ctx := NewTestCoreRequestContext()
-	mware := CoreRequestContextMiddleware()
+	logger, _, ctx := NewTestCoreRequestContext()
+	mware := CoreRequestContextMiddleware(logger)
 	body := bytes.NewBufferString("test")
 	req, err := http.NewRequest("GET", "localhost/", body)
 	require.Nil(t, err)
@@ -20,6 +20,7 @@ func TestCoreRequestContextMiddleware(t *testing.T) {
 	fn := mware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 		coreCtx := getCoreContext(r.Context())
 		require.NotNil(t, coreCtx)
+		require.Equal(t, logger, coreCtx.logger)
 	}))
 
 	fn.ServeHTTP(nil, req)
