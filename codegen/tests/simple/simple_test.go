@@ -235,7 +235,7 @@ func TestHandleErrorLogCustomError(t *testing.T) {
 	body, _ := ioutil.ReadAll(resp.Body)
 	require.JSONEq(t, `{"status":{"code":"1001", "description":"foo"}}`, string(body))
 	logValue, _ := hook.LastEntry().Data.Get("error_message")
-	require.Equal(t, "ServerError(Kind=Internal Server Error, Message=foo, Cause=BusinessLogicError(common.CustomError{\"http_code\":\"1001\", \"http_message\":\"foo\", \"http_status\":\"500\", \"name\":\"BusinessLogicError\"}))", logValue)
+	require.Equal(t, "BusinessLogicError(common.CustomError{\"http_code\":\"1001\", \"http_message\":\"foo\", \"http_status\":\"500\", \"name\":\"BusinessLogicError\"})", logValue)
 }
 
 func TestHandleErrorLogDefaultError(t *testing.T) {
