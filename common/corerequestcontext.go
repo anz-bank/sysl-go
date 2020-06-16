@@ -88,10 +88,18 @@ func UpdateResponseStatus(ctx context.Context, status int) error {
 	return nil
 }
 
-func CoreRequestContextMiddleware() func(next http.Handler) http.Handler {
+func CoreRequestContextMiddleware(logger ...*logrus.Logger) func(next http.Handler) http.Handler {
+	var ctxlogger *logrus.Logger
+	if len(logger) == 1 {
+		ctxlogger = logger[0]
+	}
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			ctx := log.With(traceIDLogField, GetTraceIDFromContext(r.Context())).Onto(r.Context())
+			ctx := r.Context()
+			if ctxlogger != nil {
+				ctx = LoggerToContext(ctx, ctxlogger, nil)
+			}
+			ctx = log.With(traceIDLogField, GetTraceIDFromContext(ctx)).Onto(ctx)
 
 			ctx = internal.AddResponseBodyMonitorToContext(ctx)
 			defer internal.CheckForUnclosedResponses(ctx)
