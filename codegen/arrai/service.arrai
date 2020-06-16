@@ -36,7 +36,7 @@ cond {
             "app.go":              //{./svc_app},
             "error_types.go":      //{./svc_error_types},
             # "grpc_handler.go":     //{./grpc_handler},
-            "grpc_interface.go":   //{./grpc_interface},
+            # "grpc_interface.go":   //{./grpc_interface},
             "requestrouter.go":    //{./svc_router},
             "service.go":          //{./svc_service},
             "servicehandler.go":   //{./svc_handler},
