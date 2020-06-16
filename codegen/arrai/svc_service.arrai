@@ -52,11 +52,15 @@ let sysl = //{./sysl};
                                 ($`${star}string`): $`${star}${var}`,
                                 _:                $`fmt.Sprintf("%v", ${star}${var})`,
                             };
-                            $`
-                                if ${var} != nil {
-                                    q.Add("${queryParamName(.)}", ${valueExpr})
-                                }
-                            `
+                            let add = $`q.Add("${queryParamName(.)}", ${valueExpr})`;
+                            cond {
+                                star: $`
+                                    if ${var} != nil {
+                                        ${add}
+                                    }
+                                `,
+                                _: add,
+                            }
                     ::\i}
                     u.RawQuery = q.Encode()
                 `}

@@ -31,9 +31,15 @@ let sysl = //{./sysl};
     func NewServiceHandler(genCallback core.RestGenCallback, serviceInterface *ServiceInterface${
         clientImports orderby . >> $`, ${.}${go.name(.)}Service ${.}.Service`
     ::}) *ServiceHandler {
+        ${cond {hasDB: $`
+            db, err := database.GetDBHandle()
+            if err != nil {
+                    return nil
+            }
+        `}}
         return &ServiceHandler{genCallback, serviceInterface${
             clientImports orderby . >> $`, ${.}${go.name(.)}Service`
-        ::}}
+        ::}${cond {hasDB: $`, db`}}}
     }
 
     ${restEndpoints >> \(@value: ep, ...)
@@ -43,7 +49,7 @@ let sysl = //{./sysl};
         let queryParams = ep('restParams')('queryParam')?.a:[];
         let headerParams = [];
         let optQueryParams =
-            ep('restParams') -> queryParams
+            queryParams where .@item('type')('opt')?.b:false
                 orderby sysl.source(.@item('type'))
                 >> \(@item: {'name': (s: name), 'type': type, ...}, ...)
                     (
@@ -81,7 +87,7 @@ let sysl = //{./sysl};
                 ${queryParams where !.@item('type')('opt')?.b:false >> \{'name': (s: name), ...}
                     $`req.${go.name(name)} = restlib.GetQueryParam(r, "${name}")`
                 ::\i:\n}
-                ${optQueryParams >> $`var ${.var} string`::\i\n}
+                ${optQueryParams >> $`var ${.var} string`::\i\n:\n}
                 ${cond {optQueryParams: 'var convErr error'}}
                 ${optQueryParams >> $`${.var} = restlib.GetQueryParam(r, "${.name}")`::\i}
                 ${optQueryParams >>
@@ -111,6 +117,31 @@ let sysl = //{./sysl};
                     return
                 }
 
+                ${cond {hasDB: $`
+                    conn, err := s.DB.Conn(ctx)
+                    if err != nil {
+                            common.HandleError(ctx, w, common.InternalError, "Database connection could not be retrieved", err, s.genCallback.MapError)
+                            return
+                    }
+
+                    defer conn.Close()
+                    retrievebycompanyandlocationStmt, err_retrievebycompanyandlocation := conn.PrepareContext(ctx, "select company.abnnumber, company.companyname, company.companycountry, department.deptid, department.deptname, department.deptloc from company JOIN department ON company.abnnumber=department.abn WHERE department.deptloc=? and company.companyname=? order by company.abnnumber;")
+                    if err_retrievebycompanyandlocation != nil {
+                            common.HandleError(ctx, w, common.InternalError, "could not parse the sql query with the name sql_retrieveByCompanyAndLocation", err_retrievebycompanyandlocation, s.genCallback.MapError)
+                            return
+                    }
+
+                    tx, err := conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
+                    if err != nil {
+                            common.HandleError(ctx, w, common.DownstreamUnavailableError, "DB Transaction could not be created", err, s.genCallback.MapError)
+                            return
+                    }
+
+                    client := GetCompanyLocationListClient{
+                            conn:                         conn,
+                            retrievebycompanyandlocation: retrievebycompanyandlocationStmt,
+                    }
+                `}}
                 client := ${methodName}Client{
                     ${sysl.endpoint.calls(ep) >>
                         let dep = goModule.targetApp(.('target'));
@@ -123,9 +154,18 @@ let sysl = //{./sysl};
 
                 ${returns >> $`${//str.lower(.type(.type count - 1))}, `::}err := s.serviceInterface.${methodName}(ctx, &req, client)
                 if err != nil {
+                    ${cond {hasDB: $`tx.Rollback()`}}
                     common.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err, s.genCallback.MapError)
                     return
                 }
+ 
+                ${cond {hasDB: $`
+                    commitErr := tx.Commit()
+                    if commitErr != nil {
+                            common.HandleError(ctx, w, common.InternalError, "Failed to commit the transaction", commitErr, s.genCallback.MapError)
+                            return
+                    }
+                `}}
 
                 headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
                 restlib.SetHeaders(w, headermap)
