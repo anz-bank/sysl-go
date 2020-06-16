@@ -32,10 +32,18 @@ let endpoint =
     let untypedReturns = \ep
         returns(ep) where (.@item -> .var = "ok" && .type = [""]) rank (:.@);
 
+    let sqlStatements = \ep
+        ep('attrs')?:{} where (//seq.has_prefix("sql_", .@)) => (
+            @: //str.lower(//seq.trim_prefix("sql_", .@)),
+            @value: .@value('s').s,
+        );
+
+
     (
         :calls,
         :returns,
         :normalReturns,
+        :sqlStatements,
         :untypedReturns,
     );
 

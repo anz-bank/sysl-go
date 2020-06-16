@@ -1,8 +1,6 @@
 #!/bin/bash
 # Usage: ./test-arrai [out]
 
-set -x
-
 out="${1+/$1}"
 
 go_gen=codegen/tests$out

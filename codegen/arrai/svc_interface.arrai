@@ -22,9 +22,7 @@ let sysl = //{./sysl};
                 type ${method}Client struct {
                     ${cond {hasDB: $`
                         conn *sql.Conn
-                        ${ep('attr')?:{} where (//seq.has_prefix(.key, "sql_")) >>
-                            $`${//str.lower(//seq.trim_prefix(.key, "sql_"))} *sql.Stmt`
-                        }
+                        ${sysl.endpoint.sqlStatements(ep) => $`${.@} *sql.Stmt` orderby .::\i}
                     `}}
                     ${
                         sysl.endpoint.calls(ep) >> $`${
