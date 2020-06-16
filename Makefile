@@ -93,6 +93,8 @@ include $(TEST_IN_DIR)/*/Module.mk
 
 ARRAI_TRANSFORMS=codegen/arrai
 
+targets = simple deps downstream dbendpoints
+
 simple.app = Simple
 simple.groups = rest-app
 
@@ -105,7 +107,7 @@ deps.groups = rest-service
 downstream.app = Downstream
 downstream.groups = rest-service
 
-.SECONDARY: $(patsubst %,codegen/testdata/%/sysl.json,simple dpendpoints deps downstream)
+.SECONDARY: $(patsubst %,codegen/testdata/%/sysl.json,$(targets))
 
 codegen/testdata/%/sysl.json: $(wildcard codegen/testdata/%/*.sysl)
 	sysl pb --mode=json --root $(TEST_IN_DIR) $*/$*.sysl > $@ || rm -f $@
@@ -142,8 +144,6 @@ $(GENFILES) : codegen/testdata/%/sysl.json \
 	$(ARRAI_TRANSFORMS)/service.arrai github.com/anz-bank/sysl-go/codegen/tests $< $($*.app) "$($*.groups)" \
 		| tar xf - -C $(ARRAI_OUT)/$*
 	goimports -w $(ARRAI_OUT)/$* || :
-
-targets = simple deps downstream dbendpoints
 
 arrai: $(patsubst %,codegen/arrai/tests/%,$(targets))
 
