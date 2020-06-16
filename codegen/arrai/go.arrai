@@ -92,7 +92,7 @@ let prelude = \app \imports $`
         "github.com/anz-bank/sysl-go/handlerinitialiser"
         "github.com/anz-bank/sysl-go/restlib"
         "github.com/anz-bank/sysl-go/validator"
-        ${imports => $"${.:q}" orderby .::\i}
+        ${imports => cond . {(:alias, package: pkg): $`${alias} ${pkg:q}`, _: $`${.:q}`} orderby .::\i}
     )`; #" # This weird comment suppresses a weird syntax highlighter bug.
 
 let methodName =
@@ -100,17 +100,21 @@ let methodName =
     let hasArg = //re.compile(`\{(\p{L}+)\}$`).match;
     let hasList = //re.compile(`[\p{L}\p{N}]$`).match; # TODO: Should be \[...\]
     \ep
-        let {'restParams': {'method': (s: method), 'path': (s: path), ...r}, ...m} = ep;
-        let vars_in_url_name = "vars_in_url_name" <: sysl.patterns(ep);
-        let withArg = cond {hasArg(path) && //str.upper(method) = "POST": "WithArg"};
-        let getList = cond {hasList(path) && //str.upper(method) = "GET": "List"};
-        let methodPostfix = //seq.split("/")(//seq.trim_prefix("/", path)) >>
-            let postfix = cond hasArg(.) {
-                [[_, arg]]: cond {vars_in_url_name: arg},
-                _: .,
-            };
-            //str.title(//str.lower(postfix));
-        name(//str.title(//str.lower(method)) ++ $"${methodPostfix::}") ++ withArg ++ getList;
+        cond ep {
+            {'restParams': {'method': (s: method), 'path': (s: path), ...r}, ...m}:
+                let vars_in_url_name = "vars_in_url_name" <: sysl.patterns(ep);
+                let withArg = cond {hasArg(path) && //str.upper(method) = "POST": "WithArg"};
+                let getList = cond {hasList(path) && //str.upper(method) = "GET": "List"};
+                let methodPostfix = //seq.split("/")(//seq.trim_prefix("/", path)) >>
+                    let postfix = cond hasArg(.) {
+                        [[_, arg]]: cond {vars_in_url_name: arg},
+                        _: .,
+                    };
+                    //str.title(//str.lower(postfix));
+                name(//str.title(//str.lower(method)) ++ $"${methodPostfix::}") ++ withArg ++ getList,
+            {'name': name}:
+                name,
+        };
 
 let module = \module
     let typeWithClientPackage = \(:type, :seq, ...)
@@ -146,7 +150,19 @@ let module = \module
         //rel.union(eps => \(@item: (@value: ep, ...), ...)
             sysl.endpoint.calls(ep) => package(targetApp(.@item('target'))));
 
+    let callSignature = \call
+        let dep = targetApp(call('target'));
+        let package = package(dep);
+        let ep = sysl.app.endpoint(dep, call('endpoint').s);
+        let method = methodName(ep);
+        $`${method} func(ctx context.Context, req *${package}.${method}Request) (${
+            let typed = sysl.endpoint.normalReturns(ep) >> $`*${package}.${.type >> name(.)::}`;
+            let untyped = sysl.endpoint.untypedReturns(ep) >> `*http.Header`;
+            typed ++ untyped ++ ["error"]
+        ::, })`;
+
     (
+        :callSignature,
         :clientImports,
         :methodSignature,
         :targetApp,

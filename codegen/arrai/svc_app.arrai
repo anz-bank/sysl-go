@@ -1,6 +1,7 @@
 let go = //{./go};
+let sysl = //{./sysl};
 
-\(:app, :appname, :basepath, :clientImports, :module, ...) $`
+\(:app, :appname, :basepath, :clientImports, :module, :restEndpoints, ...) $`
     ${go.prelude(app, clientImports => $`${basepath}/${.}`)}
 
     // DownstreamClients for ${appname}
@@ -8,14 +9,27 @@ let go = //{./go};
         ${clientImports orderby . >> $`${.}Client *${.}.Client`::\i}
     }
 
-    // BuildRestHandlerInitialiser ...
-    func BuildRestHandlerInitialiser(serviceInterface ServiceInterface, callback core.RestGenCallback, downstream *DownstreamClients) handlerinitialiser.HandlerInitialiser {
-        serviceHandler := NewServiceHandler(callback, &serviceInterface${
-            clientImports orderby . >> $`, downstream.${.}Client`
-        ::})
-        serviceRouter := NewServiceRouter(callback, serviceHandler)
-        return serviceRouter
-    }
+    ${cond {
+        "gRPC" <: sysl.patterns(app): $`
+            // BuildGrpcHandlerInitialiser ...
+            func BuildGrpcHandlerInitialiser(serviceInterface GrpcServiceInterface, callback core.GrpcGenCallback, downstream *DownstreamClients) handlerinitialiser.GrpcHandlerInitialiser {
+                serviceHandler := NewGrpcServiceHandler(callback, &serviceInterface${
+                    clientImports orderby . >> $`, downstream.${.}Client`
+                ::})
+                return serviceHandler
+            }
+        `,
+        _: $`
+            // BuildRestHandlerInitialiser ...
+            func BuildRestHandlerInitialiser(serviceInterface ServiceInterface, callback core.RestGenCallback, downstream *DownstreamClients) handlerinitialiser.HandlerInitialiser {
+                serviceHandler := NewServiceHandler(callback, &serviceInterface${
+                    clientImports orderby . >> $`, downstream.${.}Client`
+                ::})
+                serviceRouter := NewServiceRouter(callback, serviceHandler)
+                return serviceRouter
+            }
+        `
+    }}
 
     // BuildDownstreamClients ...
     func BuildDownstreamClients(cfg *config.DefaultConfig) (*DownstreamClients, error) {

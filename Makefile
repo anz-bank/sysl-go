@@ -93,19 +93,27 @@ include $(TEST_IN_DIR)/*/Module.mk
 
 ARRAI_TRANSFORMS=codegen/arrai
 
-targets = simple deps downstream dbendpoints
-
-simple.app = Simple
-simple.groups = rest-app
-
-dbendpoints.app = DbEndpoints
-dbendpoints.groups = rest-app
+targets = \
+	dbendpoints \
+	deps \
+	downstream \
+	simple \
+	simplegrpc
 
 deps.app = Deps
 deps.groups = rest-service
 
+dbendpoints.app = DbEndpoints
+dbendpoints.groups = rest-service
+
 downstream.app = Downstream
 downstream.groups = rest-service
+
+simple.app = Simple
+simple.groups = rest-app
+
+simplegrpc.app = SimpleGrpc
+simplegrpc.groups = grpc-app
 
 .SECONDARY: $(patsubst %,codegen/testdata/%/sysl.json,$(targets))
 
@@ -114,21 +122,10 @@ codegen/testdata/%/sysl.json: $(wildcard codegen/testdata/%/*.sysl)
 
 ARRAI_OUT=codegen/arrai/tests
 
-GENFILES = \
-	$(ARRAI_OUT)/%/app.go \
-	$(ARRAI_OUT)/%/error_types.go \
-	$(ARRAI_OUT)/%/requestrouter.go \
-	$(ARRAI_OUT)/%/service.go \
-	$(ARRAI_OUT)/%/servicehandler.go \
-	$(ARRAI_OUT)/%/serviceinterface.go \
-	$(ARRAI_OUT)/%/types.go
-
-$(ARRAI_OUT)/%: $(GENFILES)
-	touch $@
-
-.SECONDARY: $(patsubst %%,simple,$(GENFILES))
-$(GENFILES) : codegen/testdata/%/sysl.json \
+$(ARRAI_OUT)/% : codegen/testdata/%/sysl.json \
 		$(patsubst %,$(ARRAI_TRANSFORMS)/%.arrai,\
+			grpc_handler \
+			grpc_interface \
 			service \
 			svc_app \
 			svc_service \
@@ -140,16 +137,9 @@ $(GENFILES) : codegen/testdata/%/sysl.json \
 			go \
 			sysl \
 		)
-	mkdir -p $(ARRAI_OUT)/$*
-	$(ARRAI_TRANSFORMS)/service.arrai github.com/anz-bank/sysl-go/codegen/tests $< $($*.app) "$($*.groups)" \
-		| tar xf - -C $(ARRAI_OUT)/$*
-	goimports -w $(ARRAI_OUT)/$* || :
+	mkdir -p $@
+	$(ARRAI_TRANSFORMS)/service.arrai github.com/anz-bank/sysl-go/codegen/tests $< $($*.app) "$($*.groups)" | tar xf - -C $@
+	goimports -w $@ || :
+	touch $@
 
 arrai: $(patsubst %,codegen/arrai/tests/%,$(targets))
-
-deps: $(patsubst %,Makefile.%.dep,$(targets))
-
-Makefile.%.dep: Makefile $(ARRAI_TRANSFORMS)/service.arrai
-	$(ARRAI_TRANSFORMS)/service.arrai $(ARRAI_OUT) dummy.json $* "deps,$($*.groups)" > $@ || { rm $@ && false; }
-
-include Makefile.*.dep

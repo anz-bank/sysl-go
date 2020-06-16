@@ -11,7 +11,6 @@ let restService = restClient | {"requestrouter", "servicehandler", "serviceinter
 let grpcService = {"grpc_handler", "grpc_interface"};
 
 let codegenGroups = {
-    "deps": {},
     "rest-service": restService,
     "rest-app":     restService | {"app"},
     "rest-client":  restClient,
@@ -26,41 +25,36 @@ let [_, basepath, json, appname, groups] = //os.args;
 let groups = //seq.split(",", groups) => .@item;
 let include = //rel.union(groups => codegenGroups(.));
 
-cond {
-    "deps" <: groups:
-        let dir = $`${basepath}/${appname}`;
-        $`${dir}: ${include => $"\\\n\t\t${dir}/${.}" orderby .:: }`,
+let generators = {
+    "app.go":              //{./svc_app},
+    "error_types.go":      //{./svc_error_types},
+    "grpc_handler.go":     //{./grpc_handler},
+    "grpc_interface.go":   //{./grpc_interface},
+    "requestrouter.go":    //{./svc_router},
+    "service.go":          //{./svc_service},
+    "servicehandler.go":   //{./svc_handler},
+    "serviceinterface.go": //{./svc_interface},
+    "types.go":            //{./svc_types},
+} where .@ <: include;
 
-    _:
-        let generators = {
-            "app.go":              //{./svc_app},
-            "error_types.go":      //{./svc_error_types},
-            # "grpc_handler.go":     //{./grpc_handler},
-            # "grpc_interface.go":   //{./grpc_interface},
-            "requestrouter.go":    //{./svc_router},
-            "service.go":          //{./svc_service},
-            "servicehandler.go":   //{./svc_handler},
-            "serviceinterface.go": //{./svc_interface},
-            "types.go":            //{./svc_types},
-        } where .@ <: include;
+let module = //encoding.json.decode(cond json {"-": //os.stdin, _: //os.file(json)});
+let goModule = go.module(module);
+let app = module("apps")(appname);
+let endpoints = app("endpoints") orderby .@;
+let restEndpoints = endpoints where .@item.@value('restParams')?:();
+let nonRestEndpoints = endpoints where !.@item.@value('restParams')?:();
 
-        let module = //encoding.json.decode(cond json {"-": //os.stdin, _: //os.file(json)});
-        let goModule = go.module(module);
-        let app = module("apps")(appname);
-        let endpoints = app("endpoints") orderby .@;
-        let restEndpoints = endpoints where .@item.@value('restParams')?:();
+let config = (
+    :app,
+    :basepath,
+    :endpoints,
+    :module,
+    :restEndpoints,
+    :nonRestEndpoints,
+    :goModule,
+    appname:       sysl.app.name(app),
+    clientImports: goModule.clientImports(endpoints),
+    hasDB:         "DB" <: sysl.patterns(app),
+);
 
-        let config = (
-            :app,
-            :basepath,
-            :endpoints,
-            :module,
-            :restEndpoints,
-            :goModule,
-            appname:       sysl.app.name(app),
-            clientImports: goModule.clientImports(restEndpoints),
-            hasDB:         "DB" <: sysl.patterns(app),
-        );
-
-        //archive.tar.tar(generators >> .(config)),
-}
+//archive.tar.tar(generators >> .(config) where .@value)

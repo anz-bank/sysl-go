@@ -157,7 +157,7 @@ let sysl = //{./sysl};
             return &Client{client, serviceURL}
         }
 
-        ${endpoints >> \ep
+        ${endpoints where cond .@item.@value {{'restParams': _, ...}: true} >> \ep
             let ep = ep.@value;
             let funcName = go.methodName(ep);
             $`

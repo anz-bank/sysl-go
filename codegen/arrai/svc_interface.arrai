@@ -24,19 +24,7 @@ let sysl = //{./sysl};
                         conn *sql.Conn
                         ${sysl.endpoint.sqlStatements(ep) => $`${.@} *sql.Stmt` orderby .::\i}
                     `}}
-                    ${
-                        sysl.endpoint.calls(ep) >> $`${
-                            let dep = goModule.targetApp(.('target'));
-                            let package = go.package(dep);
-                            let ep = sysl.app.endpoint(dep, .('endpoint').s);
-                            let method = go.methodName(ep);
-                            $`${method} func(ctx context.Context, req *${package}.${method}Request) (${
-                                let typed = sysl.endpoint.normalReturns(ep) >> $`*${package}.${.type::}`;
-                                let untyped = sysl.endpoint.untypedReturns(ep) >> `*http.Header`;
-                                typed ++ untyped ++ ["error"]
-                            ::, })`
-                        }`
-                    ::\i}
+                    ${sysl.endpoint.calls(ep) >> goModule.callSignature(.)::\i}
                 }
             `
         ::\i}

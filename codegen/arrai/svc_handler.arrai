@@ -43,7 +43,7 @@ let sysl = //{./sysl};
     }
 
     ${restEndpoints >> \(@value: ep, ...)
-        let methodName = go.methodName(ep);
+        let method = go.methodName(ep);
         let returns = sysl.endpoint.normalReturns(ep);
         let urlParams = ep('restParams')('urlParam')?.a:[];
         let queryParams = ep('restParams')('queryParam')?.a:[];
@@ -58,16 +58,16 @@ let sysl = //{./sysl};
                         var: $`${go.name(name)}Param`,
                     );
         $`
-            // ${methodName}Handler ...
-            func (s *ServiceHandler) ${methodName}Handler(w http.ResponseWriter, r *http.Request) {
-                if s.serviceInterface.${methodName} == nil {
+            // ${method}Handler ...
+            func (s *ServiceHandler) ${method}Handler(w http.ResponseWriter, r *http.Request) {
+                if s.serviceInterface.${method} == nil {
                     common.HandleError(r.Context(), w, common.InternalError, "not implemented", nil, s.genCallback.MapError)
                     return
                 }
 
                 ctx := common.RequestHeaderToContext(r.Context(), r.Header)
                 ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
-                var req ${methodName}Request
+                var req ${method}Request
 
                 ${cond ep('restParams')('method').s {('POST', 'PUT'): $`
                     decoder := json.NewDecoder(r.Body)
@@ -137,22 +137,9 @@ let sysl = //{./sysl};
                             return
                     }
                 `}}
-                client := ${methodName}Client{
-                    ${sysl.endpoint.calls(ep) >>
-                        let dep = goModule.targetApp(.('target'));
-                        let package = go.package(dep);
-                        let ep = sysl.app.endpoint(dep, .('endpoint').s);
-                        let method = go.methodName(ep);
-                        $`${method}: s.${package}${go.name(package)}Service.${method},`
-                    ::\i:\n}${
-                        cond {hasDB: $`
-                            conn: conn,
-                            ${sysl.endpoint.sqlStatements(ep) => $`${.@}: ${.@}Stmt,` orderby .::\i}
-                        `}
-                    }
-                }
+                ${//{./client}((:module, :ep, :method, :hasDB))}
 
-                ${returns >> $`${//str.lower(.type(.type count - 1))}, `::}err := s.serviceInterface.${methodName}(ctx, &req, client)
+                ${returns >> $`${//str.lower(.type(.type count - 1))}, `::}err := s.serviceInterface.${method}(ctx, &req, client)
                 if err != nil {
                     ${cond {hasDB: $`tx.Rollback()`}}
                     common.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err, s.genCallback.MapError)

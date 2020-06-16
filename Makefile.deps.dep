@@ -1,7 +1,0 @@
-codegen/arrai/tests/deps: \
-		codegen/arrai/tests/deps/error_types.go \
-		codegen/arrai/tests/deps/requestrouter.go \
-		codegen/arrai/tests/deps/service.go \
-		codegen/arrai/tests/deps/servicehandler.go \
-		codegen/arrai/tests/deps/serviceinterface.go \
-		codegen/arrai/tests/deps/types.go
