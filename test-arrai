@@ -2,4 +2,4 @@
 
 target="$1"
 
-make codegen/arrai/tests/$target && colordiff -wuB codegen/tests/$target/ codegen/arrai/tests/$target/ | less -FRX
+make arrai && colordiff -wuB codegen/tests/ codegen/arrai/tests/ | less -FRX

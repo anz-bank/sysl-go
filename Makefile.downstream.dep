@@ -1,0 +1,7 @@
+codegen/arrai/tests/downstream: \
+		codegen/arrai/tests/downstream/error_types.go \
+		codegen/arrai/tests/downstream/requestrouter.go \
+		codegen/arrai/tests/downstream/service.go \
+		codegen/arrai/tests/downstream/servicehandler.go \
+		codegen/arrai/tests/downstream/serviceinterface.go \
+		codegen/arrai/tests/downstream/types.go

@@ -1,0 +1,8 @@
+codegen/arrai/tests/simple: \
+		codegen/arrai/tests/simple/app.go \
+		codegen/arrai/tests/simple/error_types.go \
+		codegen/arrai/tests/simple/requestrouter.go \
+		codegen/arrai/tests/simple/service.go \
+		codegen/arrai/tests/simple/servicehandler.go \
+		codegen/arrai/tests/simple/serviceinterface.go \
+		codegen/arrai/tests/simple/types.go

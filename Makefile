@@ -143,4 +143,13 @@ $(GENFILES) : codegen/testdata/%/sysl.json \
 		| tar xf - -C $(ARRAI_OUT)/$*
 	goimports -w $(ARRAI_OUT)/$* || :
 
-arrai: $(patsubst %,codegen/arrai/tests/%,simple deps downstream dbendpoints)
+targets = simple deps downstream dbendpoints
+
+arrai: $(patsubst %,codegen/arrai/tests/%,$(targets))
+
+deps: $(patsubst %,Makefile.%.dep,$(targets))
+
+Makefile.%.dep: Makefile $(ARRAI_TRANSFORMS)/service.arrai
+	$(ARRAI_TRANSFORMS)/service.arrai $(ARRAI_OUT) dummy.json $* "deps,$($*.groups)" > $@ || { rm $@ && false; }
+
+include Makefile.*.dep

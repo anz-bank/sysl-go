@@ -1,0 +1,8 @@
+codegen/arrai/tests/dbendpoints: \
+		codegen/arrai/tests/dbendpoints/app.go \
+		codegen/arrai/tests/dbendpoints/error_types.go \
+		codegen/arrai/tests/dbendpoints/requestrouter.go \
+		codegen/arrai/tests/dbendpoints/service.go \
+		codegen/arrai/tests/dbendpoints/servicehandler.go \
+		codegen/arrai/tests/dbendpoints/serviceinterface.go \
+		codegen/arrai/tests/dbendpoints/types.go
