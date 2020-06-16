@@ -37,7 +37,12 @@ let orderedTypes = \types
                                 {'opt': (b: true), ...}: ['omitempty'],
                                 _: [],
                             });
-                        $'${fieldName} ${go.type(attrDef)} `json:"${jsonTag::,}"`'
+                        let validateTag =
+                            cond attrDef {
+                                {'attrs': {'validate': {'s': (s: tag)}, ...}, ...}: [$` validate:"${tag}"`],
+                                _: [""],
+                            };
+                        $'${fieldName} ${go.type(attrDef)} `json:"${jsonTag::,}"${validateTag::}`'
                     ::\i}
                 }
             `

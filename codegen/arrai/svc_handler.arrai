@@ -47,7 +47,7 @@ let sysl = //{./sysl};
         let returns = sysl.endpoint.normalReturns(ep);
         let urlParams = ep('restParams')('urlParam')?.a:[];
         let queryParams = ep('restParams')('queryParam')?.a:[];
-        let headerParams = [];
+        let headerParams = ep('param')?.a:{} where {'header', 'required'} (<=) sysl.patterns(.@item('type'));
         let optQueryParams =
             queryParams where .@item('type')('opt')?.b:false
                 orderby sysl.source(.@item('type'))
@@ -106,7 +106,17 @@ let sysl = //{./sysl};
                     `
                 ::\i}
                 ${headerParams >> \{'name': (s: name), ...}
+                    let name = type('attrs')?('name')('s').s:name;
                     $`${go.name(name)} := restlib.GetHeaderParam(r, "${name}")`
+                ::\i:\n}
+                ${headerParams >> \{'name': (s: name), 'type': type, ...}
+                    let name = type('attrs')?('name')('s').s:name;
+                    cond {'required' <: sysl.patterns(type): $`
+                        if ${go.name(name)} == "" {
+                            common.HandleError(ctx, w, common.BadRequestError, "${name} header length is zero", nil, s.genCallback.MapError)
+                            return
+                        }
+                    `}
                 ::\i:\n}
 
                 ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
