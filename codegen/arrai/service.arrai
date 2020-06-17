@@ -23,7 +23,10 @@ let codegenGroups = {
 let [_, basepath, json, appname, groups] = //os.args;
 
 let groups = //seq.split(",", groups) => .@item;
-let include = //rel.union(groups => codegenGroups(.));
+let include = //rel.union(groups => cond {
+    //seq.has_suffix(".go", .): {.},
+    _: codegenGroups(.),
+});
 
 let generators = {
     "app.go":              //{./svc_app},
