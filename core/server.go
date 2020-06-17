@@ -46,6 +46,7 @@ func (params *ServerParams) Start() error {
 	verboseLogging := false
 	if params.logrusLogger != nil {
 		configs = append(configs, log.AddHooks(&logrusHook{params.logrusLogger}))
+		configs = append(configs, log.SetLogCaller(params.logrusLogger.ReportCaller))
 		ctx = common.LoggerToContext(ctx, params.logrusLogger, nil)
 		verboseLogging = params.logrusLogger.Level >= logrus.DebugLevel
 	}
