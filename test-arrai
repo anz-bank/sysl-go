@@ -1,0 +1,19 @@
+#!/bin/bash
+# Usage: ./test-arrai [out]
+
+out="${1+/$1}"
+
+go_gen=codegen/tests$out
+arrai_gen=codegen/arrai/tests$out
+
+target=arrai
+if [ -n "$out" ]; then
+    target=$arrai_gen
+fi
+
+make $target && \
+    colordiff \
+        --exclude-from=<(find codegen/tests/ -type f | xargs grep -L 'Code generated' | sed 's|.*/||') \
+        -rwuB \
+        $go_gen/ $arrai_gen/ \
+    | less -FRX
