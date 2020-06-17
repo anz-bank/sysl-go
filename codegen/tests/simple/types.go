@@ -79,6 +79,7 @@ type GetOopsListRequest struct {
 
 // GetRawListRequest ...
 type GetRawListRequest struct {
+	Bt bool
 }
 
 // GetRawIntListRequest ...
@@ -108,7 +109,7 @@ type GetStuffListRequest struct {
 	Dt *convert.JSONTime
 	St *string
 	Bt *bool
-	It *int64
+	It int64
 }
 
 // PostStuffRequest ...
