@@ -391,7 +391,11 @@ CodeGenTransform:
   !view paramAssignment(param <: sysl.Parameter, methodName <: string) -> out:
     param -> (:
       out = param -> <out> (:
-        Variables = param.varName
+        Variables = if methodName ==:
+              "restlib.GetQueryParamForBool" => param.varName + " ,convBoolErr"
+              "restlib.GetQueryParamForInt" => param.varName + " ,convIntErr"
+              "restlib.GetQueryParamForTime" => param.varName + " ,convTimeErr"
+              else param.varName
         Expression = param -> <Expression> (:
           FunctionCall = param -> <FunctionCall> (:
             FunctionName = methodName
@@ -512,14 +516,60 @@ CodeGenTransform:
       )
     )
 
+  !view createStmtListForNonStringQueryParams(allParams <: AllParams) -> Block:
+    allParams -> (:
+      let reqIntQps = getParamStatements(allParams.ReqQueryParams where(.paramType == "int64"), "restlib.GetQueryParamForInt")
+      let convIntErrDecl = ["convIntErr"] where(reqIntQps count > 0) -> <sequence of StatementList> (d:
+        Statement = d -> <Statement> (:
+          VarDecl = d -> <VarDecl>(:
+            identifier = d
+            TypeName = "error"
+          )
+        )
+      )
+      let handleIntErrStmt = ["convIntErr"] where(reqIntQps count > 0) -> <sequence of StatementList> (d:
+        Statement = handleError("convIntErr != nil", "common.BadRequestError", '"Invalid request"', d).Statement
+      )
+      let reqIntStmt = convIntErrDecl | reqIntQps | handleIntErrStmt
+
+      let reqBoolQps = getParamStatements(allParams.ReqQueryParams where(.paramType == "bool"), "restlib.GetQueryParamForBool")
+      let convBoolErrDecl = ["convBoolErr"] where(reqBoolQps count > 0) -> <sequence of StatementList> (d:
+        Statement = d -> <Statement> (:
+          VarDecl = d -> <VarDecl>(:
+            identifier = d
+            TypeName = "error"
+          )
+        )
+      )
+      let handleBoolErrStmt = ["convBoolErr"] where(reqBoolQps count > 0) -> <sequence of StatementList> (d:
+        Statement = handleError("convBoolErr != nil", "common.BadRequestError", '"Invalid request"', d).Statement
+      )
+      let reqBoolStmt = convBoolErrDecl | reqBoolQps | handleBoolErrStmt
+
+      let reqTimeQps = getParamStatements(allParams.ReqQueryParams where(.paramType == "convert.JSONTime"), "restlib.GetQueryParamForTime")
+      let convTimeErrDecl = ["convTimeErr"] where(reqTimeQps count > 0) -> <sequence of StatementList> (d:
+        Statement = d -> <Statement> (:
+          VarDecl = d -> <VarDecl>(:
+            identifier = d
+            TypeName = "error"
+          )
+        )
+      )
+      let handleTimeErrStmt = ["convTimeErr"] where(reqTimeQps count > 0) -> <sequence of StatementList> (d:
+        Statement = handleError("convTimeErr != nil", "common.BadRequestError", '"Invalid request"', d).Statement
+      )
+      let reqTimeStmt = convTimeErrDecl | reqTimeQps | handleTimeErrStmt
+      StatementList = reqIntStmt | reqBoolStmt | reqTimeStmt
+    )
+  
   !view getReqVars(allParams <: AllParams) -> Block:
     allParams -> (:
       let intpps = getParamStatements(allParams.PathParams where(.paramType == "int64"), "restlib.GetURLParamForInt")
       let pps = getParamStatements(allParams.PathParams  where(.paramType != "int64"), "restlib.GetURLParam")
-      let reqQps = getParamStatements(allParams.ReqQueryParams, "restlib.GetQueryParam")
+      let reqQps = getParamStatements(allParams.ReqQueryParams where(.paramType == "string"), "restlib.GetQueryParam")
       let optQps = getOptParamStatements(allParams.OptQueryParams, "restlib.GetQueryParam").StatementList
       let reqHs = getParamStatementsDecl(allParams.ReqHeaderParams, "restlib.GetHeaderParam")
-      StatementList = intpps | pps | reqQps | optQps | reqHs
+      StatementList = intpps | pps | reqQps | createStmtListForNonStringQueryParams(allParams).StatementList | optQps | reqHs
     )
 
   !view getBodyParams(bodyParams <: BodyParams, packageName <: string) -> Block:

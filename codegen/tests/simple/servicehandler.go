@@ -290,6 +290,14 @@ func (s *ServiceHandler) GetRawListHandler(w http.ResponseWriter, r *http.Reques
 	ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
 	var req GetRawListRequest
 
+	var convBoolErr error
+
+	req.Bt, convBoolErr = restlib.GetQueryParamForBool(r, "bt")
+	if convBoolErr != nil {
+		common.HandleError(ctx, w, common.BadRequestError, "Invalid request", convBoolErr, s.genCallback.MapError)
+		return
+	}
+
 	ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
 	defer cancel()
 	valErr := validator.Validate(&req)
@@ -487,20 +495,25 @@ func (s *ServiceHandler) GetStuffListHandler(w http.ResponseWriter, r *http.Requ
 	ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
 	var req GetStuffListRequest
 
+	var convIntErr error
+
+	req.It, convIntErr = restlib.GetQueryParamForInt(r, "it")
+	if convIntErr != nil {
+		common.HandleError(ctx, w, common.BadRequestError, "Invalid request", convIntErr, s.genCallback.MapError)
+		return
+	}
+
 	var DtParam string
 
 	var StParam string
 
 	var BtParam string
 
-	var ItParam string
-
 	var convErr error
 
 	DtParam = restlib.GetQueryParam(r, "dt")
 	StParam = restlib.GetQueryParam(r, "st")
 	BtParam = restlib.GetQueryParam(r, "bt")
-	ItParam = restlib.GetQueryParam(r, "it")
 	req.Dt, convErr = convert.StringToTimePtr(ctx, DtParam)
 	if convErr != nil {
 		common.HandleError(ctx, w, common.BadRequestError, "Invalid request", convErr, s.genCallback.MapError)
@@ -514,12 +527,6 @@ func (s *ServiceHandler) GetStuffListHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	req.Bt, convErr = convert.StringToBoolPtr(ctx, BtParam)
-	if convErr != nil {
-		common.HandleError(ctx, w, common.BadRequestError, "Invalid request", convErr, s.genCallback.MapError)
-		return
-	}
-
-	req.It, convErr = convert.StringToIntPtr(ctx, ItParam)
 	if convErr != nil {
 		common.HandleError(ctx, w, common.BadRequestError, "Invalid request", convErr, s.genCallback.MapError)
 		return
