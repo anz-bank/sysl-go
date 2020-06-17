@@ -1,0 +1,49 @@
+let go = //{./go};
+let sysl = //{./sysl};
+
+\(:app, :appname, :basepath, :clientImports, :hasDB, :module, :nonRestEndpoints, ...) $`
+        ${go.prelude(app,
+            (clientImports => $`${basepath}/${.}`)
+            | {(alias: `pb`, package: $`${basepath}/${app('attrs')('go_pb_package')('s').s}`)},
+        )}
+
+    // GrpcServiceHandler for ${appname} API
+    type GrpcServiceHandler struct {
+        genCallback         core.GrpcGenCallback
+        serviceInterface    *GrpcServiceInterface
+        unimpl              *pb.Unimplemented${appname}Server
+        ${clientImports orderby . >> $`${.}${go.name(.)}Service ${.}.Service`::\i}
+    }
+
+    // NewGrpcServiceHandler for ${appname}
+    func NewGrpcServiceHandler(genCallback core.GrpcGenCallback, serviceInterface *GrpcServiceInterface${
+        clientImports orderby . >> $`, ${.}${go.name(.)}Service ${.}.Service`
+    ::}) *GrpcServiceHandler {
+        return &GrpcServiceHandler{genCallback, serviceInterface, &(pb.Unimplemented${appname}Server{})${
+            clientImports orderby . >> $`, ${.}${go.name(.)}Service`
+        ::}}
+    }
+
+    // RegisterServer registers the ${appname} gRPC service
+    func (s *GrpcServiceHandler) RegisterServer(ctx context.Context, server *grpc.Server) {
+        pb.Register${appname}Server(server, s)
+    }
+
+    ${nonRestEndpoints >> \(@value: ep, ...)
+        let method = go.name(ep('name').s);
+        $`
+            // ${method} ...
+            func (s *GrpcServiceHandler) ${method}(ctx context.Context, req *pb.${method}Request) (*pb.${method}Response, error) {
+                if s.serviceInterface.${method} == nil {
+                    return s.unimpl.${method}(ctx, req)
+                }
+
+                ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
+                defer cancel()
+                ${//{./client}((:module, :ep, :method, :hasDB))}
+
+                return s.serviceInterface.${method}(ctx, req, client)
+            }
+        `
+    ::}
+`
