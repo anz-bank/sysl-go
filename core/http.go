@@ -138,7 +138,7 @@ func prepareMiddleware(ctx context.Context, name string, promRegistry *prometheu
 	result.addToBoth(Recoverer(ctx))
 
 	result.public = append(result.public, common.TraceabilityMiddleware(ctx))
-	result.addToBoth(common.CoreRequestContextMiddleware())
+	result.addToBoth(common.CoreRequestContextMiddlewareWithContext(ctx))
 
 	if promRegistry != nil {
 		metricsMiddleware := metrics.NewHTTPServerMetricsMiddleware(promRegistry, name, metrics.GetChiPathPattern)
