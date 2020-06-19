@@ -46,7 +46,7 @@ func Test_prepareMiddleware(t *testing.T) {
 			want: []func(http.Handler) http.Handler{
 				Recoverer(ctx),
 				common.TraceabilityMiddleware(ctx),
-				common.CoreRequestContextMiddleware(),
+				common.CoreRequestContextMiddlewareWithContext(ctx),
 			},
 			wantErr: false,
 		},
