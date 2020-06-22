@@ -48,6 +48,9 @@ let sysl = //{./sysl};
         let urlParams = ep('restParams')('urlParam')?.a:[];
         let queryParams = ep('restParams')('queryParam')?.a:[];
         let headerParams = ep('param')?.a:{} where {'header', 'required'} (<=) sysl.patterns(.@item('type'));
+        let reqQueryParams =
+            queryParams where !.@item('type')('opt')?.b:false
+            >> (. | {'goType': go.type(.('type'))});
         let optQueryParams =
             queryParams where .@item('type')('opt')?.b:false
                 orderby sysl.source(.@item('type'))
@@ -84,9 +87,31 @@ let sysl = //{./sysl};
                 ${urlParams where .@item('type')('primitive')?.s:"" != "INT" >> \{'name': (s: name), ...}
                     $`req.${go.name(name)} = restlib.GetURLParam(r, "${name}")`
                 ::\i:\n}
-                ${queryParams where !.@item('type')('opt')?.b:false >> \{'name': (s: name), ...}
+
+                ${reqQueryParams where .@item('type')('primitive')?.s:"" = "STRING" >> \{'name': (s: name), ...}
                     $`req.${go.name(name)} = restlib.GetQueryParam(r, "${name}")`
                 ::\i:\n}
+                ${
+                    let params = \type \params cond {params: $`
+                        var conv${type}Err error
+                        ${params >> \{'name': (s: name), ...} 
+                            $`
+                                req.${go.name(name)}, conv${type}Err = restlib.GetQueryParamFor${type}(r, "${name}")
+                                if convIntErr != nil {
+                                        common.HandleError(ctx, w, common.BadRequestError, "Invalid request", conv${type}Err, s.genCallback.MapError)
+                                        return
+                                }
+                            `
+                        ::\i}
+
+                    `};
+                    $`
+                        ${params('Int', reqQueryParams where .@item('goType') = "int64")}
+                        ${params('Bool', reqQueryParams where .@item('goType') = "bool")}
+                        ${params('Time', reqQueryParams where .@item('goType') = "convert.JSONTime")}
+                    `
+                }
+
                 ${optQueryParams >> $`var ${.var} string`::\i\n:\n}
                 ${cond {optQueryParams: 'var convErr error'}}
                 ${optQueryParams >> $`${.var} = restlib.GetQueryParam(r, "${.name}")`::\i}
