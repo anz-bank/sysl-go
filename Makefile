@@ -1,4 +1,4 @@
-all: test check-coverage lint tidy ## Tests, lints and checks coverage
+all: test check-coverage arrai-nodiff lint tidy ## Tests, lints and checks coverage
 
 clean:  ## Remove generated files
 
@@ -115,9 +115,9 @@ simple.groups = rest-app
 simplegrpc.app = SimpleGrpc
 simplegrpc.groups = grpc-app
 
-.SECONDARY: $(patsubst %,codegen/testdata/%/sysl.json,$(targets))
+.PRECIOUS: $(patsubst %,codegen/testdata/%/sysl.json,$(targets))
 
-codegen/testdata/%/sysl.json: $(wildcard codegen/testdata/%/*.sysl)
+codegen/testdata/%/sysl.json: codegen/testdata/%/*.sysl
 	sysl pb --mode=json --root $(TEST_IN_DIR) $*/$*.sysl > $@ || rm -f $@
 
 ARRAI_OUT=codegen/arrai/tests
@@ -143,3 +143,9 @@ $(ARRAI_OUT)/% : codegen/testdata/%/sysl.json \
 	touch $@
 
 arrai: $(patsubst %,codegen/arrai/tests/%,$(targets))
+
+.PHONY: arrai-nodiff
+arrai-nodiff: $(patsubst %,codegen/arrai/tests/%.nodiff,$(targets))
+
+codegen/arrai/tests/%.nodiff: $(ARRAI_OUT)/% $(TIDY)
+	diff -rwuBq $(TEST_OUT_DIR)/ $</ | awk 'BEGIN { err = 0 } END { exit err } /^Files .* differ$$/ { print; err = 1 }' && touch $@
