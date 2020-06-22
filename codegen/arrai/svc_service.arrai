@@ -49,7 +49,7 @@ let sysl = //{./sysl};
                     let var = \. $`req.${go.name(.('name').s)}`;
                     let valueExpr = \. \star cond go.type(.('type')) {
                         ($`${star}string`): $`${star}${var(.)}`,
-                        _:           $`fmt.Sprintf("%v", ${star}${var(.)})`,
+                        _:                  $`fmt.Sprintf("%v", ${star}${var(.)})`,
                     };
                     $`
                         ${reqQueryParams => .@item orderby sysl.source(.('type')) >>
