@@ -97,7 +97,7 @@ let sysl = //{./sysl};
                         ${params >> \{'name': (s: name), ...} 
                             $`
                                 req.${go.name(name)}, conv${type}Err = restlib.GetQueryParamFor${type}(r, "${name}")
-                                if convIntErr != nil {
+                                if conv${type}Err != nil {
                                         common.HandleError(ctx, w, common.BadRequestError, "Invalid request", conv${type}Err, s.genCallback.MapError)
                                         return
                                 }
