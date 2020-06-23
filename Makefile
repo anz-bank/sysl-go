@@ -1,4 +1,6 @@
-all: test check-coverage arrai-nodiff lint tidy ## Tests, lints and checks coverage
+# Requires protoc, protoc-gen-go and goimports.
+
+all: gen test check-coverage arrai-nodiff lint tidy ## Tests, lints and checks coverage
 
 clean:  ## Remove generated files
 
