@@ -13,13 +13,6 @@ let sysl = //{./sysl};
             returns where .@item.var = var && typeWithClientPackage(.@item) >>
                 $`var ${var}Response ${typeWithClientPackage(.)}`;
 
-        let queryParamName = \qparam
-            cond {
-                'queryParamNames' <: qparam('attrs')?:{}:
-                    $"${//seq.concat(qparam('attrs')('queryParamNames') where (qparam.name <: .) >> (. &~ {qparam.name}))::}",
-                _: qparam('name').s,
-            };
-
         let returnDownstreamError = \type \var \err
             $`return ${nils ++ [
                 $`common.CreateDownstreamError(ctx, common.Downstream${type}Error, ${var}.HTTPResponse, ${var}.Body, ${err})`
@@ -43,31 +36,34 @@ let sysl = //{./sysl};
                 return ${nils ++ [`common.CreateError(ctx, common.InternalError, "failed to parse url", err)`]::, }
             }
 
-            ${
-                let queryParams = ep('restParams')('queryParam')?.a:{};
-                cond {queryParams: $`
-                    q := u.Query()
-                    ${
-                        queryParams => .@item orderby (.('type')('sourceContext')('start') -> [.('col'), .('line')]) >>
-                            let star = cond {.('type')('opt')?.b:false: "*"};
-                            let var = $`req.${go.name(.('name').s)}`;
-                            let valueExpr = cond go.type(.('type')) {
-                                ($`${star}string`): $`${star}${var}`,
-                                _:                $`fmt.Sprintf("%v", ${star}${var})`,
-                            };
-                            let add = $`q.Add("${queryParamName(.)}", ${valueExpr})`;
-                            cond {
-                                star: $`
-                                    if ${var} != nil {
-                                        ${add}
-                                    }
-                                `,
-                                _: add,
+            ${let queryParams = ep('restParams')('queryParam')?.a:{}; cond {queryParams: $`
+                q := u.Query()
+                ${
+                    let reqQueryParams = queryParams where !.@item('type')('opt')?.b:false;
+                    let optQueryParams = queryParams where .@item('type')('opt')?.b:false;
+                    let queryParamName = \qparam cond {
+                        'queryParamNames' <: qparam('attrs')?:{}:
+                            $"${//seq.concat(qparam('attrs')('queryParamNames') where (qparam.name <: .) >> (. &~ {qparam.name}))::}",
+                        _: qparam('name').s,
+                    };
+                    let var = \. $`req.${go.name(.('name').s)}`;
+                    let valueExpr = \. \star cond go.type(.('type')) {
+                        ($`${star}string`): $`${star}${var(.)}`,
+                        _:                  $`fmt.Sprintf("%v", ${star}${var(.)})`,
+                    };
+                    $`
+                        ${reqQueryParams => .@item orderby sysl.source(.('type')) >>
+                            $`q.Add("${queryParamName(.)}", ${valueExpr(., ``)})`
+                        ::\i}
+                        ${optQueryParams => .@item orderby sysl.source(.('type')) >> $`
+                            if ${var(.)} != nil {
+                                q.Add("${queryParamName(.)}", ${valueExpr(., `*`)})
                             }
-                    ::\i}
-                    u.RawQuery = q.Encode()
-                `}
-            }${
+                        `::\i}
+                    `
+                }
+                u.RawQuery = q.Encode()
+            `}}${
                 let body = (ep('param')?.a:{} where "body" <: sysl.patterns(.@item('type'))) >> "req.Request";
                 let retvars = returns where .@item.type != [""] => .@item.var;
                 let method = ep('restParams')('method').s;
