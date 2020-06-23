@@ -6,31 +6,28 @@
         let jsontool = (
             attr: \value \app
                 let type = app("attrs")(value);
-                type("s").s
-                    if type = 's'
-                else type("i").i
-                    if type = 'i'
-                else type("n").n
-                    if type = 'n'
-                else 'TODO a'
-                    if type = 'a'
-                else 'unknown',
+                cond type {
+                    's': type("s").s,
+                    'i': type("i").i,
+                    'n': type("n").n,
+                    'a': 'TODO a',
+                    _: 'unknown'
+                },
             go_type: //fn.fix(\type \t
-                {
-                    'DECIMAL':  'double',
-                    'INT':      'int64',
-                    'FLOAT':    'double',
-                    'STRING':   'string',
-                    'STRING_8': 'string',
-                    'BOOL':     'bool',
-                    'DATE':     'string',
-                    'DATETIME': 'string',
-                }(t.primitive)
-                    if t.type = 'primitive'
-                else '[]' + type(t.sequence)
-                    if t.type = 'sequence'
-                else
-                    //log.print(t)
+                cond t.type {
+                    'primitive': {
+                        'DECIMAL':  'double',
+                        'INT':      'int64',
+                        'FLOAT':    'double',
+                        'STRING':   'string',
+                        'STRING_8': 'string',
+                        'BOOL':     'bool',
+                        'DATE':     'string',
+                        'DATETIME': 'string',
+                    }(t.primitive),
+                    'sequence': '[]' + type(t.sequence),
+                    _: //log.print(t)
+                }
             )
         );
         let parseAttributes = \a a("attrs"); # used for properties
