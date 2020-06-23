@@ -2,6 +2,7 @@ let go = //{./go};
 let sysl = //{./sysl};
 
 \(:app, :appname,, :clientImports, :endpoints, :goModule, :hasDB, :basepath, :module, :restEndpoints, ...)
+    let downstream = //{./downstream}((:appname, :clientImports, :hasDB, :module));
     let structName = $`Default${go.name(appname)}Impl`;
     $`
         ${go.prelude(app, clientImports => $`${basepath}/${.}`)}
@@ -15,34 +16,17 @@ let sysl = //{./sysl};
             return &${structName}{}
         }
 
-        ${restEndpoints >> \(@: epname, @value: ep)
-            let method = go.methodName(ep);
-            $`
-                // ${method} Client
-                type ${method}Client struct {
-                    ${cond {hasDB: $`
-                        conn *sql.Conn
-                        ${sysl.endpoint.sqlStatements(ep) => $`${.@} *sql.Stmt` orderby .::\i}
-                    `}}
-                    ${sysl.endpoint.calls(ep) >> goModule.callSignature(.)::\i}
-                }
-            `
-        ::\i}
+        ${restEndpoints >> \(@:_, @value: ep) downstream.client_struct(ep)::\i}
 
         // ServiceInterface for ${appname}
         type ServiceInterface struct {
-            ${endpoints >> \(@: epname, @value: ep)
+            ${endpoints >> \(@:_, @value: ep)
                 let method = go.methodName(ep);
-                $`
-                    ${method} func(ctx context.Context, req *${method}Request, client ${method}Client) (${
-                        (sysl.endpoint.normalReturns(ep) >> $`*${cond{.seq: `[]`}}${go.typeWithPackage(.type, module)}`) ++ ["error"]
-                    ::, })`
+                $`${method} func(ctx context.Context, req *${method}Request, client ${method}Client) (${
+                    (sysl.endpoint.normalReturns(ep) >> $`*${cond{.seq: `[]`}}${go.typeWithPackage(.type, module)}`) ++ ["error"]
+                ::, })`
             ::\i}
         }
 
-        // DownstreamConfig for ${appname}
-        type DownstreamConfig struct {
-            ContextTimeout time.Duration ``yaml:"contextTimeout"``
-            ${clientImports orderby . >> $`${go.name(.)} config.CommonDownstreamData ``yaml:"${.}"```::\i}
-        }
+        ${downstream.config}
     `

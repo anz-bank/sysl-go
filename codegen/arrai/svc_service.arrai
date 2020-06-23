@@ -52,12 +52,12 @@ let sysl = //{./sysl};
                         _:                  $`fmt.Sprintf("%v", ${star}${var(.)})`,
                     };
                     $`
-                        ${reqQueryParams => .@item orderby sysl.source(.('type')) >>
-                            $`q.Add("${queryParamName(.)}", ${valueExpr(., ``)})`
-                        ::\i}
+                        ${reqQueryParams => .@item orderby sysl.source(.('type')) >> $`
+                            q.Add("${queryParamName(.)}", ${valueExpr(., '')})
+                        `::\i}
                         ${optQueryParams => .@item orderby sysl.source(.('type')) >> $`
                             if ${var(.)} != nil {
-                                q.Add("${queryParamName(.)}", ${valueExpr(., `*`)})
+                                q.Add("${queryParamName(.)}", ${valueExpr(., '*')})
                             }
                         `::\i}
                     `
