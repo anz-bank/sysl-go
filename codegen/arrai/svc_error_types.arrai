@@ -1,0 +1,21 @@
+let sysl = //{./sysl};
+let go = //{./go};
+
+\(:module, :app, ...)
+    let err_returns = //rel.union(app("endpoints") => (sysl.endpoint.returns(.@value) => .@item))
+        where .var = "error" && .type != [""] orderby .;
+    cond {err_returns: $`
+        ${go.prelude(app, {"github.com/anz-bank/sysl-go/codegen/tests/deps"})}
+
+        ${err_returns >>
+                let type = go.name(//seq.join(".")(.type));
+                $`
+                    // Error fulfills the error type interface for ${type}
+                    func (s ${type}) Error() string {
+                        type plain ${type}
+
+                        return fmt.Sprintf("%+v", plain(s))
+                    }
+                `
+        ::\i}
+    `}

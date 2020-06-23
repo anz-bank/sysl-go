@@ -21,6 +21,12 @@ type ServerParams struct {
 	grpcManager        GrpcManager
 	prometheusRegistry *prometheus.Registry
 }
+type emptyWriter struct {
+}
+
+func (e *emptyWriter) Write(p []byte) (n int, err error) {
+	return len(p), nil
+}
 
 //nolint:gocognit // Long method names are okay because only generated code will call this, not humans.
 func NewServerParams(ctx context.Context, name string, opts ...ServerOption) *ServerParams {
@@ -45,7 +51,11 @@ func (params *ServerParams) Start() error {
 	configs := params.pkgLoggerConfigs
 	verboseLogging := false
 	if params.logrusLogger != nil {
+		// set an empty io writter against pkg logger
+		// pkg logger just becomes a proxy that forwards all logs to logrus
+		configs = append(configs, log.SetOutput(&emptyWriter{}))
 		configs = append(configs, log.AddHooks(&logrusHook{params.logrusLogger}))
+		configs = append(configs, log.SetLogCaller(params.logrusLogger.ReportCaller))
 		ctx = common.LoggerToContext(ctx, params.logrusLogger, nil)
 		verboseLogging = params.logrusLogger.Level >= logrus.DebugLevel
 	}

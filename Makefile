@@ -1,4 +1,4 @@
-all: test check-coverage lint tidy ## Tests, lints and checks coverage
+all: test check-coverage arrai-nodiff lint tidy ## Tests, lints and checks coverage
 
 clean:  ## Remove generated files
 
@@ -87,3 +87,65 @@ gen: ## Run sysl codegen and proto codegen
 .PHONY: gen
 
 include $(TEST_IN_DIR)/*/Module.mk
+
+
+# Arr.ai codegen
+
+ARRAI_TRANSFORMS=codegen/arrai
+
+targets = \
+	dbendpoints \
+	deps \
+	downstream \
+	simple \
+	simplegrpc
+
+deps.app = Deps
+deps.groups = rest-service
+
+dbendpoints.app = DbEndpoints
+dbendpoints.groups = rest-service
+
+downstream.app = Downstream
+downstream.groups = rest-service
+
+simple.app = Simple
+simple.groups = rest-app
+
+simplegrpc.app = SimpleGrpc
+simplegrpc.groups = grpc-app
+
+.PRECIOUS: $(patsubst %,codegen/testdata/%/sysl.json,$(targets))
+
+codegen/testdata/%/sysl.json: codegen/testdata/%/*.sysl
+	sysl pb --mode=json --root $(TEST_IN_DIR) $*/$*.sysl > $@ || rm -f $@
+
+ARRAI_OUT=codegen/arrai/tests
+
+$(ARRAI_OUT)/% : codegen/testdata/%/sysl.json \
+		$(patsubst %,$(ARRAI_TRANSFORMS)/%.arrai,\
+			grpc_handler \
+			grpc_interface \
+			service \
+			svc_app \
+			svc_service \
+			svc_error_types \
+			svc_types \
+			svc_interface \
+			svc_handler \
+			svc_router \
+			go \
+			sysl \
+		)
+	mkdir -p $@
+	$(ARRAI_TRANSFORMS)/service.arrai github.com/anz-bank/sysl-go/codegen/tests $< $($*.app) "$($*.groups)" | tar xf - -C $@
+	goimports -w $@ || :
+	touch $@
+
+arrai: $(patsubst %,codegen/arrai/tests/%,$(targets))
+
+.PHONY: arrai-nodiff
+arrai-nodiff: $(patsubst %,codegen/arrai/tests/%.nodiff,$(targets))
+
+codegen/arrai/tests/%.nodiff: $(ARRAI_OUT)/% $(TIDY)
+	diff -rwuBq $(TEST_OUT_DIR)/$* $</ | awk 'BEGIN { err = 0 } END { exit err } /^Files .* differ$$/ { print; err = 1 }' && touch $@

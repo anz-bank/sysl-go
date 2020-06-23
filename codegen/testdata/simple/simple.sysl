@@ -6,13 +6,13 @@ Simple "Simple Server" [package="simple"]:
     @go_package = "simple"
 
     /stuff:
-        GET ?dt=DATETIME?&st=string?&bt=bool?&it=int?:
+        GET ?dt=DATETIME?&st=string?&bt=bool?&it=int:
             return ok <: Stuff
         POST (request <: str [~body]):
             return ok <: str
 
     /raw:
-        GET:
+        GET ?bt=bool:
             return ok <: str
 
     /raw/states:

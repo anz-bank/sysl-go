@@ -12,12 +12,20 @@ import (
 
 // Deprecated: Use ServerParams.WithPkgLogger instead
 func GetLogEntryFromContext(ctx context.Context) *logrus.Entry {
-	return getCoreContext(ctx).entry
+	core := getCoreContext(ctx)
+	if core == nil {
+		return nil
+	}
+	return core.entry
 }
 
 // Deprecated: Use ServerParams.WithPkgLogger instead
 func GetLoggerFromContext(ctx context.Context) *logrus.Logger {
-	return getCoreContext(ctx).logger
+	core := getCoreContext(ctx)
+	if core == nil {
+		return nil
+	}
+	return core.logger
 }
 
 func NewLoggingRoundTripper(name string, base http.RoundTripper) http.RoundTripper {
@@ -88,10 +96,20 @@ func UpdateResponseStatus(ctx context.Context, status int) error {
 	return nil
 }
 
-func CoreRequestContextMiddleware() func(next http.Handler) http.Handler {
+func CoreRequestContextMiddleware(logger *logrus.Logger) func(next http.Handler) http.Handler {
+	ctx := LoggerToContext(context.Background(), logger, nil)
+	return CoreRequestContextMiddlewareWithContext(ctx)
+}
+
+func CoreRequestContextMiddlewareWithContext(ctx context.Context) func(next http.Handler) http.Handler {
+	ctxlogger := GetLoggerFromContext(ctx)
+	pkgLogger := log.From(ctx)
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			ctx := log.With(traceIDLogField, GetTraceIDFromContext(r.Context())).Onto(r.Context())
+			ctx := r.Context()
+			ctx = LoggerToContext(ctx, ctxlogger, nil)
+			ctx = log.WithLogger(pkgLogger).Onto(ctx)
+			ctx = log.With(traceIDLogField, GetTraceIDFromContext(ctx)).Onto(ctx)
 
 			ctx = internal.AddResponseBodyMonitorToContext(ctx)
 			defer internal.CheckForUnclosedResponses(ctx)
@@ -114,24 +132,30 @@ func CoreRequestContextMiddleware() func(next http.Handler) http.Handler {
 type coreRequestContextKey struct{}
 
 func getCoreContext(ctx context.Context) *coreRequestContext {
-	return ctx.Value(coreRequestContextKey{}).(*coreRequestContext)
+	coreRequestCtx := ctx.Value(coreRequestContextKey{})
+	if coreRequestCtx == nil {
+		return nil
+	}
+	return coreRequestCtx.(*coreRequestContext)
 }
 
 type reqHeaderContextKey struct{}
 type respHeaderAndStatusContextKey struct{}
 
 func getReqHeaderContext(ctx context.Context) *reqHeaderContext {
-	if ctx.Value(reqHeaderContextKey{}) == nil {
+	reqHeaderCtx := ctx.Value(reqHeaderContextKey{})
+	if reqHeaderCtx == nil {
 		return nil
 	}
-	return ctx.Value(reqHeaderContextKey{}).(*reqHeaderContext)
+	return reqHeaderCtx.(*reqHeaderContext)
 }
 
 func getRespHeaderAndStatusContext(ctx context.Context) *respHeaderAndStatusContext {
-	if ctx.Value(respHeaderAndStatusContextKey{}) == nil {
+	respHeaderAndStatusCtx := ctx.Value(respHeaderAndStatusContextKey{})
+	if respHeaderAndStatusCtx == nil {
 		return nil
 	}
-	return ctx.Value(respHeaderAndStatusContextKey{}).(*respHeaderAndStatusContext)
+	return respHeaderAndStatusCtx.(*respHeaderAndStatusContext)
 }
 
 type tempRoundtripper struct {
