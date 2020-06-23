@@ -50,7 +50,7 @@
             "context"
             "time"
 
-            pb "${basepath}/${//seq.sub(jsontool.attr("package", app), ".", "/")}"
+            pb "${basepath}/${//seq.sub(jsontool.attr("go_pb_package", app), ".", "/")}"
             "google.golang.org/grpc"
         )
 
