@@ -19,7 +19,7 @@ db-gen: $(DB_ALL_FILES)
 
 .PHONY: db-clean
 db-clean:
-	rm $(DB_ALL_FILES)
+	rm -f $(DB_ALL_FILES)
 
 clean: db-clean
 gen: db-gen
