@@ -43,7 +43,7 @@
         let param_name = \p p("type")("typeRef")("ref")("appname")("part").a >> .s;
 
         # kind of hardcoded binding assuming the return statment is in the format "ok <: (result)"
-        let ret_param = \statements statements >> //seq.split(.("ret")("payload").s, " ")(2);
+        let ret_param = \statements statements >> //seq.split(" ", .("ret")("payload").s)(2);
 
         $`
             // Package ${jsontool.attr("go_package", app)} ...
