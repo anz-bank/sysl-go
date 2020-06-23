@@ -36,7 +36,7 @@
     let part_name = \p p("name")("part").a >> .s;
     let param_name = \p p("type")("typeRef")("ref")("appname")("part").a >> .s;
 
-    # kind of hardcoded binding assuming the return statment is in the format "ok <: (result)"
+    # kind of hardcoded binding assuming the return statement is in the format "ok <: (result)"
     let ret_param = \statements statements >> //seq.split(" ", .("ret")("payload").s)(2);
 
     $`
@@ -50,7 +50,7 @@
             "context"
             "time"
 
-            pb "${basepath}/${jsontool.attr("go_pb_package", app)}"
+            pb "${basepath}/${//seq.sub(jsontool.attr("package", app), ".", "/")}"
             "google.golang.org/grpc"
         )
 
