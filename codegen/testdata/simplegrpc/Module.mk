@@ -17,7 +17,7 @@ simplegrpc-gen: $(SIMPLEGRPC_SYSL_FILES) $(SIMPLEGRPC_PROTO_FILES) $(SIMPLE_APP)
 
 .PHONY: simplegrpc-clean
 simplegrpc-clean:
-	rm $(SIMPLEGRPC_SYSL_FILES) $(SIMPLEGRPC_PROTO_FILES)
+	rm -f $(SIMPLEGRPC_SYSL_FILES) $(SIMPLEGRPC_PROTO_FILES)
 
 clean: simplegrpc-clean
 gen: simplegrpc-gen
