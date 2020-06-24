@@ -21,7 +21,7 @@ simple-gen: $(SIMPLE_ALL_FILES)
 
 .PHONY: simple-clean
 simple-clean:
-	rm $(SIMPLE_ALL_FILES)
+	rm -f $(SIMPLE_ALL_FILES)
 
 SIMPLE_SYSL=$(TEST_IN_DIR)/$(SIMPLE_IN)/simple.sysl
 
@@ -67,7 +67,7 @@ deps-gen: $(DEPS_ALL_FILES)
 
 .PHONY: deps-clean
 deps-clean:
-	rm $(DEPS_ALL_FILES)
+	rm -f $(DEPS_ALL_FILES)
 
 $(DEPS_ERRORS): $(TRANSFORMS)/svc_error_types.sysl $(MODEL)
 	$(run-sysl)
@@ -111,7 +111,7 @@ downstream-gen: $(DOWNSTREAM_ALL_FILES)
 
 .PHONY: downstream-clean
 downstream-clean:
-	rm $(DOWNSTREAM_ALL_FILES)
+	rm -f $(DOWNSTREAM_ALL_FILES)
 
 $(DOWNSTREAM_ERRORS): $(TRANSFORMS)/svc_error_types.sysl $(MODEL)
 	$(run-sysl)
