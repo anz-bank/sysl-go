@@ -2,7 +2,7 @@ let go = //{./go};
 let sysl = //{./sysl};
 
 \(:app, :appname,, :clientImports, :endpoints, :goModule, :hasDB, :basepath, :module, :nonRestEndpoints, ...)
-    let downstream = //{./downstream}((:appname, :clientImports, :hasDB, :module));
+    let client = //{./client}((:appname, :clientImports, :hasDB, :module));
     let structName = $`Default${go.name(appname)}Impl`;
     $`
         ${go.prelude(app,
@@ -10,7 +10,7 @@ let sysl = //{./sysl};
             | {(alias: `pb`, package: $`${basepath}/${app('attrs')('go_pb_package')('s').s}`)},
         )}
 
-        ${nonRestEndpoints >> \(@:_, @value: ep) downstream.client_struct(ep)::\i}
+        ${nonRestEndpoints >> \(@:_, @value: ep) client.client_struct(ep)::\i}
 
         // GrpcServiceInterface for ${appname}
         type GrpcServiceInterface struct {
@@ -20,5 +20,5 @@ let sysl = //{./sysl};
             ::\i}
         }
 
-        ${downstream.config}
+        ${client.config}
     `

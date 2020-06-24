@@ -2,7 +2,7 @@ let go = //{./go};
 let sysl = //{./sysl};
 
 \(:app, :appname,, :clientImports, :endpoints, :goModule, :hasDB, :basepath, :module, :restEndpoints, ...)
-    let downstream = //{./downstream}((:appname, :clientImports, :hasDB, :module));
+    let client = //{./client}((:appname, :clientImports, :hasDB, :module));
     let structName = $`Default${go.name(appname)}Impl`;
     $`
         ${go.prelude(app, clientImports => $`${basepath}/${.}`)}
@@ -16,7 +16,7 @@ let sysl = //{./sysl};
             return &${structName}{}
         }
 
-        ${restEndpoints >> \(@:_, @value: ep) downstream.client_struct(ep)::\i}
+        ${restEndpoints >> \(@:_, @value: ep) client.client_struct(ep)::\i}
 
         // ServiceInterface for ${appname}
         type ServiceInterface struct {
@@ -28,5 +28,5 @@ let sysl = //{./sysl};
             ::\i}
         }
 
-        ${downstream.config}
+        ${client.config}
     `
