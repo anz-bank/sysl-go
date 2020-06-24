@@ -33,7 +33,7 @@ multigrpc-gen: cards-gen wallet-gen $(MULTIGRPC_PROTO_FILES)
 # Clean all the generated files
 .PHONY: multigrpc-clean
 multigrpc-clean:
-	rm $(CARDS_FILES) $(WALLET_FILES) $(MULTIGRPC_PROTO_FILES)
+	rm -f $(CARDS_FILES) $(WALLET_FILES) $(MULTIGRPC_PROTO_FILES)
 
 # Add to top level gen and clean
 gen: multigrpc-gen
