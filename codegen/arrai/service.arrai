@@ -5,8 +5,8 @@ let sysl = //{./sysl};
 
 # codegen groups
 
-let restClient = {"error_types", "service", "types"};
-let restService = restClient | {"requestrouter", "servicehandler", "serviceinterface"};
+let restClient = {"error_types", "service", "types", "types_extn"};
+let restService = restClient | {"requestrouter", "servicehandler", "serviceinterface", "types_extn"};
 
 let grpcService = {"grpc_handler", "grpc_interface"};
 
@@ -38,6 +38,7 @@ let generators = {
     "servicehandler.go":   //{./svc_handler},
     "serviceinterface.go": //{./svc_interface},
     "types.go":            //{./svc_types},
+    "types_extn.go":       //{./svc_types_extn},
 } where .@ <: include;
 
 let module = //encoding.json.decode(cond json {"-": //os.stdin, _: //os.file(json)});
