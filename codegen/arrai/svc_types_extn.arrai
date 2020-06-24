@@ -6,39 +6,36 @@ let sysl = //{./sysl};
         ${go.prelude(app, {})}
         ${endpoints >> \(@value: ep, ...)
             let typename = $`${go.methodName(ep)}Request`;
-            $`
-                ${
-                    let optParams = ep('restParams')?('queryParam')?.a:{} where sysl.isPtr(.@item('type'));
-                    cond {optParams: $`func (r *${typename}) UnmarshalJSON(data []byte) error {
-                        inner := ${typename}{}
-                        err := json.Unmarshal(data, &inner)
-                        if err != nil {
-                            return err
-                        }
-                        ${ep('restParams')?:{}
-                            -> (.('queryParam')?.a:{}) ++ (.('urlParam')?.a:{})
-                            where sysl.isPtr(.@item('type')) orderby sysl.source(.@item('type'))
-                            >> 
-                                let name = go.name(.@item('name').s);
-                                $`
-                                    if inner.${name} == nil {
-                                        return errors.New("${name} cannot be nil")
-                                    }
-                                `
-                        ::\i}
-                        *r = ${typename}{
-                            ${ep('restParams')?:{}
-                                -> (.('queryParam')?.a:{}) ++ (.('urlParam')?.a:{}) orderby sysl.source(.@item('type'))
-                                >> let name = go.name(.@item('name').s); $`${name}: inner.${name},`
-                            ::\i}
-                            ${(ep('param')?.a:{}) where "body" <: sysl.patterns(.@item('type')) >>
-                                $`Request: inner.Request,`
-                            ::\i}
-                        }
-                        return nil
+            $`${
+                let optParams = ep('restParams')?('queryParam')?.a:{} where sysl.isPtr(.@item('type'));
+                cond {optParams: $`func (r *${typename}) UnmarshalJSON(data []byte) error {
+                    inner := ${typename}{}
+                    err := json.Unmarshal(data, &inner)
+                    if err != nil {
+                        return err
                     }
-                `}}
-            `
+                    ${ep('restParams')?:{}
+                        -> (.('queryParam')?.a:{}) ++ (.('urlParam')?.a:{})
+                        where sysl.isPtr(.@item('type')) orderby sysl.source(.@item('type'))
+                        >> let name = go.name(.@item('name').s);
+                            $`
+                                if inner.${name} == nil {
+                                    return errors.New("${name} cannot be nil")
+                                }
+                            `
+                    ::\i}
+                    *r = ${typename}{
+                        ${ep('restParams')?:{}
+                            -> (.('queryParam')?.a:{}) ++ (.('urlParam')?.a:{}) orderby sysl.source(.@item('type'))
+                            >> let name = go.name(.@item('name').s); $`${name}: inner.${name},`
+                        ::\i}
+                        ${(ep('param')?.a:{}) where "body" <: sysl.patterns(.@item('type')) >>
+                            $`Request: inner.Request,`
+                        ::\i}
+                    }
+                    return nil
+                }
+            `}}`
         ::\i}
 
     `
