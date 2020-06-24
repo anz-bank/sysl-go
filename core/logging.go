@@ -13,7 +13,7 @@ type logrusHook struct {
 
 func (h *logrusHook) OnLogged(entry *log.LogEntry) error {
 	e := pkgLogEntryToLogrusEntry(h.logger, entry)
-	e.Log(e.Level)
+	e.Log(e.Level, e.Message)
 	return nil
 }
 

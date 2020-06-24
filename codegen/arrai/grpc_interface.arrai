@@ -2,6 +2,7 @@ let go = //{./go};
 let sysl = //{./sysl};
 
 \(:app, :appname,, :clientImports, :endpoints, :goModule, :hasDB, :basepath, :module, :nonRestEndpoints, ...)
+    let client = //{./client}((:appname, :clientImports, :hasDB, :module));
     let structName = $`Default${go.name(appname)}Impl`;
     $`
         ${go.prelude(app,
@@ -9,27 +10,15 @@ let sysl = //{./sysl};
             | {(alias: `pb`, package: $`${basepath}/${app('attrs')('go_pb_package')('s').s}`)},
         )}
 
-        ${nonRestEndpoints >> \(@value: ep, ...)
-            let name = go.name(ep('name').s);
-            $`
-                // ${name} Client
-                type ${name}Client struct {
-                    ${sysl.endpoint.calls(ep) >> goModule.callSignature(.)::\i}
-                }
-            `
-        ::}
+        ${nonRestEndpoints >> \(@:_, @value: ep) client.client_struct(ep)::\i}
 
         // GrpcServiceInterface for ${appname}
         type GrpcServiceInterface struct {
             ${nonRestEndpoints >> \(@value: ep, ...)
-                let name = ep('name').s;
+                let name = go.methodName(ep);
                 $`${name} func(ctx context.Context, req *pb.${name}Request, client ${name}Client) (*pb.${name}Response, error)`
             ::\i}
         }
 
-        // DownstreamConfig for ${appname}
-        type DownstreamConfig struct {
-            ContextTimeout time.Duration               ``yaml:"contextTimeout"``
-            ${clientImports orderby . >> $`${go.name(.)} config.CommonDownstreamData ``yaml:"${.}"```::\i}
-        }
+        ${client.config}
     `
