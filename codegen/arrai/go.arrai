@@ -112,8 +112,8 @@ let methodName =
                     };
                     //str.title(//str.lower(postfix));
                 name(//str.title(//str.lower(method)) ++ $"${methodPostfix::}") ++ withArg ++ getList,
-            {'name': name}:
-                name,
+            {'name': (:s), ...}:
+                name(s),
         };
 
 let module = \module
