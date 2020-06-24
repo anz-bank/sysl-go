@@ -4,6 +4,7 @@ package core
 
 import (
 	"context"
+	"errors"
 
 	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/common"
@@ -118,7 +119,9 @@ func (params *ServerParams) Start() error {
 
 	// Panic if REST&gRPC are not running
 	if !restIsRunning && !grpcIsRunning {
-		panic("Both servers are set to nil")
+		err := errors.New("REST and gRPC servers cannot both be nil")
+		log.Error(ctx, err)
+		panic(err)
 	}
 
 	errChan := make(chan error, 1)
