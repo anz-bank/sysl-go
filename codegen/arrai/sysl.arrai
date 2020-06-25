@@ -5,6 +5,8 @@ let app = (
         ((app('endpoints') where .@value('name').s = epname) single).@value,
 );
 
+let isPtr = \t t('opt')?:false && !({"sequence", "set"} & (t => .@));
+
 let endpoint =
     let calls = \ep
         ep('stmt').a where cond .@item {{"call":_}: true} >> .('call');
@@ -56,4 +58,5 @@ let source = \node node('sourceContext')('start') -> [.('line'), .('col')];
     :endpoint,
     :patterns,
     :source,
+    :isPtr,
 )
