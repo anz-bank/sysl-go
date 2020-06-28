@@ -4,10 +4,7 @@ let sysl = //{./sysl};
 \(:app, :appname, :basepath, :clientImports, :hasDB, :module, :nonRestEndpoints, ...)
     let client = //{./client}((:appname, :clientImports, :hasDB, :module));
     $`
-        ${go.prelude(app,
-            (clientImports => $`${basepath}/${.}`)
-            | {(alias: `pb`, package: $`${basepath}/${app('attrs')('go_pb_package')('s').s}`)},
-        )}
+        ${go.prelude(app, (clientImports => $`${basepath}/${.}`) | go.pbPackage(basepath, app))}
 
         // GrpcServiceHandler for ${appname} API
         type GrpcServiceHandler struct {
