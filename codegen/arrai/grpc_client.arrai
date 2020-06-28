@@ -15,18 +15,13 @@ let go = //{./go};
     $`
         ${go.prelude(app, (clientImports => $`${basepath}/${.}`) | go.pbPackage(basepath, app))}
 
-        // Service interface for ${appname}
-        type Service interface {
-            ${(endpoints => \(@:_, @item: (@:_, @value: ep)) methodSig(ep)) orderby .::\i}
-        }
-
         // Client for ${appname}
         type Client struct {
             client pb.${appname}Client
             addr   string
         }
 
-        // NewClient for ${appname}
+        // NewClient creates a new Client
         func NewClient(addr string, connTimeout time.Duration) (*Client, error) {
             ctxWithTimeout, cancel := context.WithTimeout(context.Background(), connTimeout)
             defer cancel()
