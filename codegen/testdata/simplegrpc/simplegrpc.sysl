@@ -7,12 +7,13 @@ SimpleGrpc "Simple Server" [package="simplegrpc", ~gRPC]:
 
     GetStuff(st <: GetStuffRequest):
             Simple <- POST /stuff
+            # GrpcDownstream <- GetDoc
             return ok <: GetStuffResponse
 
     !type GetStuffRequest:
-        innerStuff <: string [json_tag="innerStuff"]
-        sensitiveStuff <: string [json_tag="sensitiveStuff", sensitive="true"]
-        timeStuff <: DATETIME [json_tag="timeStuff"]
+        innerStuff      <: string
+        sensitiveStuff  <: string [~sensitive]
+        timeStuff       <: datetime
 
     !type GetStuffResponse:
         Data <: set of Item
