@@ -1,20 +1,14 @@
 let go = //{./go};
 
-\(:app, :appname, :basepath, :clientImports, :goModule, :hasDB, :module, :endpoints, ...)
-    let param_type = \p $`${p('type')('typeRef')('ref')('appname')('part').a >> .s:::}`;
-
-    # kind of hardcoded binding assuming the return statement is in the format "ok <: (result)"
-    let ret_param = \statements $`${statements
-        filter .@item {{'ret': _, ...}: .}
-        >> //seq.split(" ", .("ret")("payload").s)(2)
-    ::}`;
-
-    let methodSig = \{
-        'name': (s: name),
-        'param': (a: [{'name': (s: pname), 'type': ptype, ...}]),
-        'stmt': (a: stmts),
-    ...}
-        $`${name}(ctx context.Context, ${pname} *pb.${go.type(ptype)}) (*pb.${ret_param(stmts)}, error)`;
+\(:app, :appname, :basepath, :clientImports, :endpoints, ...)
+    let methodSig = \ep
+        let {'name': (s: name), 'param': (a: [param]), 'stmt': (a: stmts), ...} = ep;
+        let {'name': (s: pname), 'type': ptype, ...} = param;
+        let rparam = $`${stmts
+            filter .@item {{'ret': _, ...}: .}
+            >> //seq.split(" ", .("ret")("payload").s)(2)
+        ::}`;
+        $`${name}(ctx context.Context, ${pname} *pb.${go.type(ptype)}) (*pb.${rparam}, error)`;
 
     # TODO: sysl automapping between sysl types and protobuf types
     # TODO: use protobuf from sysl to use instead of precompiled from the api repository
