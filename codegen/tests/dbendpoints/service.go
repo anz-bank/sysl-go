@@ -32,7 +32,6 @@ func NewClient(client *http.Client, serviceURL string) *Client {
 func (s *Client) GetCompanyLocationList(ctx context.Context, req *GetCompanyLocationListRequest) (*GetCompanyLocationResponse, error) {
 	required := []string{}
 	var okResponse GetCompanyLocationResponse
-
 	u, err := url.Parse(fmt.Sprintf("%s/company/location", s.url))
 	if err != nil {
 		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
@@ -40,6 +39,7 @@ func (s *Client) GetCompanyLocationList(ctx context.Context, req *GetCompanyLoca
 
 	q := u.Query()
 	q.Add("deptLoc", req.DeptLoc)
+
 	if req.CompanyName != nil {
 		q.Add("companyName", *req.CompanyName)
 	}
@@ -53,7 +53,6 @@ func (s *Client) GetCompanyLocationList(ctx context.Context, req *GetCompanyLoca
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	OkGetCompanyLocationResponseResponse, ok := result.Response.(*GetCompanyLocationResponse)
 	if ok {
 		valErr := validator.Validate(OkGetCompanyLocationResponseResponse)

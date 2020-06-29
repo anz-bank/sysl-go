@@ -399,6 +399,26 @@ func validQueryParamTest(t *testing.T, req GetStuffListRequest, query string) {
 	require.NoError(t, err)
 }
 
+func TestJsonValidateInput(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Test request parameters
+		decoder := json.NewDecoder(r.Body)
+		req := new(GetStuffListRequest)
+		decodeErr := decoder.Decode(req)
+		require.NotNil(t, decodeErr)
+		w.WriteHeader(500)
+	}))
+	req := GetStuffListRequest{}
+	client := server.Client()
+	defer server.Close()
+
+	c := Client{
+		client: client,
+		url:    server.URL,
+	}
+	_, _ = c.GetStuffList(context.Background(), &req)
+}
+
 func validXMLMsgTest(t *testing.T, req PostStuffRequest, xmlBody string) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := make([]byte, len(xmlBody))

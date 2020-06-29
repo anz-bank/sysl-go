@@ -2,6 +2,8 @@
 package dbendpoints
 
 import (
+	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/anz-bank/sysl-go/validator"
@@ -39,6 +41,23 @@ type GetCompanyLocationResponse struct {
 type GetCompanyLocationListRequest struct {
 	DeptLoc     string
 	CompanyName *string
+}
+
+func (r *GetCompanyLocationListRequest) UnmarshalJSON(data []byte) error {
+	inner := GetCompanyLocationListRequest{}
+	err := json.Unmarshal(data, &inner)
+	if err != nil {
+		return err
+	}
+	if inner.CompanyName == nil {
+		return errors.New("CompanyName cannot be nil")
+	}
+
+	*r = GetCompanyLocationListRequest{
+		DeptLoc:     inner.DeptLoc,
+		CompanyName: inner.CompanyName,
+	}
+	return nil
 }
 
 // *Company validator

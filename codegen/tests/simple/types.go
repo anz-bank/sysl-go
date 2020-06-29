@@ -147,6 +147,33 @@ type GetStuffListRequest struct {
 	It int64
 }
 
+func (r *GetStuffListRequest) UnmarshalJSON(data []byte) error {
+	inner := GetStuffListRequest{}
+	err := json.Unmarshal(data, &inner)
+	if err != nil {
+		return err
+	}
+	if inner.Dt == nil {
+		return errors.New("Dt cannot be nil")
+	}
+
+	if inner.St == nil {
+		return errors.New("St cannot be nil")
+	}
+
+	if inner.Bt == nil {
+		return errors.New("Bt cannot be nil")
+	}
+
+	*r = GetStuffListRequest{
+		Dt: inner.Dt,
+		St: inner.St,
+		Bt: inner.Bt,
+		It: inner.It,
+	}
+	return nil
+}
+
 // PostStuffRequest ...
 type PostStuffRequest struct {
 	Request Str
