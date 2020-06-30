@@ -1,10 +1,10 @@
 let go = //{./go};
 let sysl = //{./sysl};
 
-\(:app, :appname, :basepath, :clientImports, :goModule, :hasDB, :module, :restEndpoints, ...)
-    let client = //{./client}((:appname, :clientImports, :hasDB, :module));
+\(:app, :appname, :basepath, :clientDeps, :goModule, :hasDB, :module, :restEndpoints, ...)
+    let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
     $`
-        ${go.prelude(app, clientImports => $`${basepath}/${.}`)}
+        ${go.prelude(app, clientDeps => $`${basepath}/${.import}`)}
 
         ${
             (app('types') where "error" <: sysl.patterns(.@value) orderby .@) >>> \i \.
@@ -26,12 +26,12 @@ let sysl = //{./sysl};
             genCallback      core.RestGenCallback
             serviceInterface *ServiceInterface
             ${cond {hasDB: $`DB *sql.DB`}}
-            ${clientImports orderby . >> $`${.}${go.name(.)}Service ${.}.Service`::\i}
+            ${clientDeps => .import orderby . >> $`${.}${go.name(.)}Service ${.}.Service`::\i}
         }
 
         // NewServiceHandler for ${appname}
         func NewServiceHandler(genCallback core.RestGenCallback, serviceInterface *ServiceInterface${
-            clientImports orderby . >> $`, ${.}${go.name(.)}Service ${.}.Service`
+            clientDeps => .import orderby . >> $`, ${.}${go.name(.)}Service ${.}.Service`
         ::}) *ServiceHandler {
             ${cond {hasDB: $`
                 db, err := database.GetDBHandle()
@@ -40,7 +40,7 @@ let sysl = //{./sysl};
                 }
             `}}
             return &ServiceHandler{genCallback, serviceInterface${
-                clientImports orderby . >> $`, ${.}${go.name(.)}Service`
+                clientDeps => .import orderby . >> $`, ${.}${go.name(.)}Service`
             ::}${cond {hasDB: $`, db`}}}
         }
 

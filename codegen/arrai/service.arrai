@@ -61,7 +61,7 @@ let config = (
     :nonRestEndpoints,
     :goModule,
     appname:       sysl.app.name(app),
-    clientImports: goModule.clientImports(endpoints),
+    clientDeps:    goModule.clientDeps(endpoints),
     hasDB:         "DB" <: sysl.patterns(app),
 );
 

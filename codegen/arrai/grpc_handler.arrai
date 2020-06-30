@@ -1,25 +1,36 @@
 let go = //{./go};
 let sysl = //{./sysl};
 
-\(:app, :appname, :basepath, :clientImports, :hasDB, :module, :nonRestEndpoints, ...)
-    let client = //{./client}((:appname, :clientImports, :hasDB, :module));
+\(
+    :app,
+    :appname,
+    :basepath,
+    :clientDeps,
+    :endpoints,
+    :goModule,
+    :hasDB,
+    :module,
+    :nonRestEndpoints,
+    ...
+)
+    let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
     $`
-        ${go.prelude(app, (clientImports => $`${basepath}/${.}`) | go.pbPackage(basepath, app))}
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(basepath, app))}
 
         // GrpcServiceHandler for ${appname} API
         type GrpcServiceHandler struct {
             genCallback         core.GrpcGenCallback
             serviceInterface    *GrpcServiceInterface
             unimpl              *pb.Unimplemented${appname}Server
-            ${clientImports orderby . >> $`${.}${go.name(.)}Service ${.}.Service`::\i}
+            ${clientDeps orderby . >> (goModule.depField(.) -> $`${.name} ${.type}`)::\i}
         }
 
         // NewGrpcServiceHandler for ${appname}
         func NewGrpcServiceHandler(genCallback core.GrpcGenCallback, serviceInterface *GrpcServiceInterface${
-            clientImports orderby . >> $`, ${.}${go.name(.)}Service ${.}.Service`
+            clientDeps orderby . >> (goModule.depField(.) -> $`, ${.name} ${.type}`)
         ::}) *GrpcServiceHandler {
             return &GrpcServiceHandler{genCallback, serviceInterface, &(pb.Unimplemented${appname}Server{})${
-                clientImports orderby . >> $`, ${.}${go.name(.)}Service`
+                clientDeps orderby . >> (goModule.depField(.) -> $`, ${.name}`)
             ::}}
         }
 

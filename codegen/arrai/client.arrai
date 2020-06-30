@@ -1,7 +1,7 @@
 let go = //{./go};
 let sysl = //{./sysl};
 
-\(:appname, :clientImports, :hasDB, :module)
+\(:appname, :clientDeps, :hasDB, :module)
     let goModule = go.module(module);
     (
         new: \ep
@@ -23,25 +23,24 @@ let sysl = //{./sysl};
                 }
             `,
 
-        client_struct:
-            \ep
-                let method = go.methodName(ep);
-                $`
-                    // ${method} Client
-                    type ${method}Client struct {
-                        ${cond {hasDB: $`
-                            conn *sql.Conn
-                            ${sysl.endpoint.sqlStatements(ep) => $`${.@} *sql.Stmt` orderby .::\i}
-                        `}}
-                        ${sysl.endpoint.calls(ep) >> goModule.callSignature(.)::\i}
-                    }
-                `,
+        client_struct: \ep
+            let method = go.methodName(ep);
+            $`
+                // ${method} Client
+                type ${method}Client struct {
+                    ${cond {hasDB: $`
+                        conn *sql.Conn
+                        ${sysl.endpoint.sqlStatements(ep) => $`${.@} *sql.Stmt` orderby .::\i}
+                    `}}
+                    ${sysl.endpoint.calls(ep) >> goModule.callSignature(.)::\i}
+                }
+            `,
 
         config: $`
             // DownstreamConfig for ${appname}
             type DownstreamConfig struct {
                 ContextTimeout time.Duration ``yaml:"contextTimeout"``
-                ${clientImports orderby . >>
+                ${clientDeps => .import orderby . >>
                     $`${go.name(.)} config.CommonDownstreamData ``yaml:"${.}"```
                 ::\i}
             }

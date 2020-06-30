@@ -161,13 +161,27 @@ let module = \module
             typed ++ untyped ++ ["error"]
         ::, })`;
 
-    let clientImports = \eps
+    let clientDeps = \eps
         //rel.union(eps => \(@item: (@value: ep, ...), ...)
-            sysl.endpoint.calls(ep) => package(targetApp(.@item('target'))));
+            sysl.endpoint.calls(ep) => \(@:_, @item: {'target': target, ...}) (
+                :target,
+                import: package(targetApp(target)),
+            ));
+
+    let depField = \(:import, :target) (
+        name: $`${import}${name(import)}Service`,
+        type: $`${import}.${cond {
+            'gRPC' <: sysl.patterns(targetApp(target)):
+                $`${target('part').a(0).s}Client`,
+            _:
+                `Service`,
+        }}`,
+    );
 
     (
         :callSignature,
-        :clientImports,
+        :clientDeps,
+        :depField,
         :methodSignature,
         :targetApp,
         :typeWithClientPackage,
