@@ -5,20 +5,17 @@ SimpleGrpc "Simple Server" [package="simplegrpc", ~gRPC]:
     @go_pb_package = "simplepb"
     @pb_package = "simple.v1"
 
-    GetStuff(st <: Stuff):
+    GetStuff(st <: GetStuffRequest):
             Simple <- POST /stuff
-            return ok <: Response
+            # GrpcDownstream <- GetDoc
+            return ok <: GetStuffResponse
 
-    !type Stuff:
-        innerStuff <: string:
-            @json_tag = "innerStuff"
-        sensitiveStuff <: string:
-            @json_tag = "sensitiveStuff"
-            @sensitive = "true"
-        timeStuff <: DATETIME:
-            @json_tag = "timeStuff"
+    !type GetStuffRequest:
+        innerStuff      <: string
+        sensitiveStuff  <: string [~sensitive]
+        timeStuff       <: datetime
 
-    !type Response:
+    !type GetStuffResponse:
         Data <: set of Item
 
     !type Item [json_map_key="Name"]:
