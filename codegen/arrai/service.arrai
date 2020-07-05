@@ -5,8 +5,8 @@ let sysl = //{./sysl};
 
 # codegen groups
 
-let restClient = {"error_types", "service", "types", "types_extn"};
-let restService = restClient | {"requestrouter", "servicehandler", "serviceinterface", "types_extn"};
+let restClient = {"error_types", "service", "types"};
+let restService = restClient | {"requestrouter", "servicehandler", "serviceinterface"};
 
 let grpcClient = {"grpc_client"};
 let grpcService = grpcClient | {"grpc_handler", "grpc_interface"};
