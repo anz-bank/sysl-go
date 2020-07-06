@@ -4,8 +4,12 @@ import (
 	"bytes"
 	"context"
 	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"github.com/anz-bank/sysl-go/logconfig"
+	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -24,6 +28,47 @@ func TestCoreRequestContextMiddleware(t *testing.T) {
 	}))
 
 	fn.ServeHTTP(nil, req)
+}
+
+func TestCoreRequestContextMiddleWare_VerboseLogging_LogRequestHeaderAndResponseHeader(t *testing.T) {
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
+	mware := CoreRequestContextMiddlewareWithContext(ctx)
+	body := bytes.NewBufferString("test")
+	req, err := http.NewRequest("GET", "localhost/", body)
+	require.Nil(t, err)
+	req = req.WithContext(ctx)
+	fn := mware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		coreCtx := getCoreContext(r.Context())
+		require.NotNil(t, coreCtx)
+	}))
+	w := httptest.NewRecorder()
+	defer func() {
+		//log entry include req header and resp header
+		require.Equal(t, 3, len(hook.Entries))
+		require.True(t, strings.Contains(hook.Entries[1].Message, "Request: header"))
+		require.True(t, strings.Contains(hook.Entries[2].Message, "Response: header"))
+	}()
+	fn.ServeHTTP(w, req)
+}
+
+func TestCoreRequestContextMiddleWare_NoVerboseLogging_NotLogRequestHeaderAndResponseHeader(t *testing.T) {
+	ctx, hook := testutil.NewTestContextWithLoggerHook()
+	ctx = logconfig.SetVerboseLogging(ctx, false)
+	mware := CoreRequestContextMiddlewareWithContext(ctx)
+	body := bytes.NewBufferString("test")
+	req, err := http.NewRequest("GET", "localhost/", body)
+	require.Nil(t, err)
+	req = req.WithContext(ctx)
+	fn := mware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		coreCtx := getCoreContext(r.Context())
+		require.NotNil(t, coreCtx)
+	}))
+	w := httptest.NewRecorder()
+	defer func() {
+		//log entry does not include req header and resp header
+		require.Equal(t, 1, len(hook.Entries))
+	}()
+	fn.ServeHTTP(w, req)
 }
 
 func TestTestCoreRequestContextMiddleware(t *testing.T) {

@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/anz-bank/sysl-go/logconfig"
+
 	"github.com/anz-bank/sysl-go/common/internal"
 
 	"github.com/anz-bank/pkg/log"
@@ -104,12 +106,14 @@ func CoreRequestContextMiddleware(logger *logrus.Logger) func(next http.Handler)
 func CoreRequestContextMiddlewareWithContext(ctx context.Context) func(next http.Handler) http.Handler {
 	ctxlogger := GetLoggerFromContext(ctx)
 	pkgLogger := log.From(ctx)
+	verboseLogging := logconfig.IsVerboseLogging(ctx)
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			ctx = LoggerToContext(ctx, ctxlogger, nil)
 			ctx = log.WithLogger(pkgLogger).Onto(ctx)
 			ctx = log.With(traceIDLogField, GetTraceIDFromContext(ctx)).Onto(ctx)
+			ctx = logconfig.SetVerboseLogging(ctx, verboseLogging)
 
 			ctx = internal.AddResponseBodyMonitorToContext(ctx)
 			defer internal.CheckForUnclosedResponses(ctx)
