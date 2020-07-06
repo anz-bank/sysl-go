@@ -2,6 +2,8 @@
 package simple
 
 import (
+	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/anz-bank/sysl-go/common"
@@ -21,6 +23,39 @@ type Item struct {
 	A1   string `json:"A1"`
 	A2   string `json:"A2"`
 	Name string `json:"-"`
+}
+
+// PostRequest ...
+type PostRequest struct {
+	Bt *bool            `json:"Bt,omitempty"`
+	Dt convert.JSONTime `json:"Dt"`
+	St string           `json:"St"`
+}
+
+func (t *PostRequest) UnmarshalJSON(data []byte) error {
+	inner := struct {
+		Bt *bool
+		Dt *convert.JSONTime
+		St *string
+	}{}
+	err := json.Unmarshal(data, &inner)
+	if err != nil {
+		return err
+	}
+	if inner.Dt == nil {
+		return errors.New("Dt cannot be nil")
+	}
+
+	if inner.St == nil {
+		return errors.New("St cannot be nil")
+	}
+
+	*t = PostRequest{
+		Dt: *inner.Dt,
+		St: *inner.St,
+		Bt: inner.Bt,
+	}
+	return nil
 }
 
 // Response ...
@@ -119,6 +154,11 @@ type PostStuffRequest struct {
 
 // *Item validator
 func (s *Item) Validate() error {
+	return validator.Validate(s)
+}
+
+// *PostRequest validator
+func (s *PostRequest) Validate() error {
 	return validator.Validate(s)
 }
 

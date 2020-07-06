@@ -10,6 +10,7 @@ let restService = restClient | {"requestrouter", "servicehandler", "serviceinter
 
 let grpcClient = {"grpc_client"};
 let grpcService = grpcClient | {"grpc_handler", "grpc_interface"};
+let migrate = {"types"};
 
 let codegenGroups = {
     "rest-service": restService,
@@ -18,6 +19,7 @@ let codegenGroups = {
     "grpc-service": grpcService,
     "grpc-app":     grpcService | {"app"},
     "grpc-client":  grpcClient,
+    "migrate":      migrate,
 } >> => $"${.}.go";
 
 # main
@@ -41,7 +43,6 @@ let generators = {
     "servicehandler.go":   //{./svc_handler},
     "serviceinterface.go": //{./svc_interface},
     "types.go":            //{./svc_types},
-    "types_extn.go":       //{./svc_types_extn},
 } where .@ <: include;
 
 let module = //encoding.json.decode(cond json {"-": //os.stdin, _: //os.file(json)});

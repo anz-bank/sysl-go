@@ -75,6 +75,18 @@ sysl codegen \
 goimports -w $@
 endef
 
+# Settings for migration task
+ARRAI_SERVICE_ROOT=codegen/arrai
+
+MIGRATE=migrate
+
+define run-arrai
+$(ARRAI_SERVICE_ROOT)/service.arrai \
+	$(TEST_OUT_DIR) $(TEST_IN_DIR)/$</sysl.json \
+	$< $(MIGRATE) | tar xf - -C $(TEST_OUT_DIR)/$<
+goimports -w $(TEST_OUT_DIR)/$<
+endef
+
 # PROTO_IN and PROTO_OUT are defined in Make modules
 define run-protoc
 protoc --proto_path=$(PROTO_IN) --go_out=plugins=grpc:$(PROTO_OUT) $^

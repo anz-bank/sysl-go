@@ -127,3 +127,11 @@ Simple "Simple Server" [package="simple"]:
 
     !type Status:
         statusField <: string
+
+    !type PostRequest:
+        Bt <: bool?:
+            @json_tag = "Bt"
+        Dt <: datetime:
+            @json_tag = "Dt"
+        St <: string:
+            @json_tag = "St"

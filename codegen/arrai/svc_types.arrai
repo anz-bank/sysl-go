@@ -45,6 +45,42 @@ let orderedTypes = \types
                         $'${fieldName} ${go.type(attrDef)} `json:"${jsonTag::,}"${validateTag::}`'
                     ::\i}
                 }
+                ${
+                    let optParams = entity('attrDefs') where sysl.isPtr(.@value) orderby .@ >> .@value;
+                    cond {optParams: $`func (t *${typename}) UnmarshalJSON(data []byte) error {
+                        inner := struct {
+                            ${entity('attrDefs') where sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
+                                $`${go.name(key)} ${go.type(attrDef)}`
+                            ::\i}
+                            ${entity('attrDefs') where !sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
+                                $`${go.name(key)} *${go.type(attrDef)}`
+                            ::\i}
+                        }{}
+                        err := json.Unmarshal(data, &inner)
+                        if err != nil {
+                            return err
+                        }
+                        ${entity('attrDefs') where !sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
+                            let fieldName = go.name(key);
+                            $`
+                                if inner.${fieldName} == nil {
+                                    return errors.New("${fieldName} cannot be nil")
+                                }
+                            `
+                        ::\i}
+                        *t = ${typename}{
+                            ${entity('attrDefs') where !sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
+                                let fieldName = go.name(key);
+                                $`${fieldName}: *inner.${fieldName},`
+                            ::\i}
+                            ${entity('attrDefs') where sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
+                                let fieldName = go.name(key);
+                                $`${fieldName}: inner.${fieldName},`
+                            ::\i}
+                        }
+                        return nil
+                    }`}
+                }
             `
         ::\i}
         ${entities where "json_map_key" <: (.@item.@value('attrs')?:{} => .@) >> \(@: key, ...) $`
