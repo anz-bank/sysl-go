@@ -8,7 +8,8 @@ let sysl = //{./sysl};
 let restClient = {"error_types", "service", "types"};
 let restService = restClient | {"requestrouter", "servicehandler", "serviceinterface"};
 
-let grpcService = {"grpc_handler", "grpc_interface"};
+let grpcClient = {"grpc_client"};
+let grpcService = grpcClient | {"grpc_handler", "grpc_interface"};
 
 let codegenGroups = {
     "rest-service": restService,
@@ -16,6 +17,7 @@ let codegenGroups = {
     "rest-client":  restClient,
     "grpc-service": grpcService,
     "grpc-app":     grpcService | {"app"},
+    "grpc-client":  grpcClient,
 } >> => $"${.}.go";
 
 # main
@@ -31,6 +33,7 @@ let include = //rel.union(groups => cond {
 let generators = {
     "app.go":              //{./svc_app},
     "error_types.go":      //{./svc_error_types},
+    "grpc_client.go":      //{./grpc_client},
     "grpc_handler.go":     //{./grpc_handler},
     "grpc_interface.go":   //{./grpc_interface},
     "requestrouter.go":    //{./svc_router},
@@ -38,6 +41,7 @@ let generators = {
     "servicehandler.go":   //{./svc_handler},
     "serviceinterface.go": //{./svc_interface},
     "types.go":            //{./svc_types},
+    "types_extn.go":       //{./svc_types_extn},
 } where .@ <: include;
 
 let module = //encoding.json.decode(cond json {"-": //os.stdin, _: //os.file(json)});

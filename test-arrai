@@ -11,9 +11,10 @@ if [ -n "$out" ]; then
     target=$arrai_gen
 fi
 
-make $target && \
+make -j$(nproc) $target && \
     colordiff \
         --exclude-from=<(find codegen/tests/ -type f | xargs grep -L 'Code generated' | sed 's|.*/||') \
+        --exclude='*.nodiff' \
         -rwuB \
         $go_gen/ $arrai_gen/ \
     | less -FRX

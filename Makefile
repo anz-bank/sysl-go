@@ -1,4 +1,6 @@
-all: test check-coverage arrai-nodiff lint tidy ## Tests, lints and checks coverage
+# Requires protoc, protoc-gen-go and goimports.
+
+all: gen test check-coverage arrai-nodiff lint tidy ## Tests, lints and checks coverage
 
 clean:  ## Remove generated files
 
@@ -122,21 +124,7 @@ codegen/testdata/%/sysl.json: codegen/testdata/%/*.sysl
 
 ARRAI_OUT=codegen/arrai/tests
 
-$(ARRAI_OUT)/% : codegen/testdata/%/sysl.json \
-		$(patsubst %,$(ARRAI_TRANSFORMS)/%.arrai,\
-			grpc_handler \
-			grpc_interface \
-			service \
-			svc_app \
-			svc_service \
-			svc_error_types \
-			svc_types \
-			svc_interface \
-			svc_handler \
-			svc_router \
-			go \
-			sysl \
-		)
+$(ARRAI_OUT)/% : codegen/testdata/%/sysl.json $(ARRAI_TRANSFORMS)/*.arrai
 	mkdir -p $@
 	$(ARRAI_TRANSFORMS)/service.arrai github.com/anz-bank/sysl-go/codegen/tests $< $($*.app) "$($*.groups)" | tar xf - -C $@
 	goimports -w $@ || :
