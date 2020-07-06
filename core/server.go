@@ -6,9 +6,10 @@ import (
 	"context"
 	"errors"
 
+	"github.com/anz-bank/sysl-go/logconfig"
+
 	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/common"
-	"github.com/anz-bank/sysl-go/logconfig"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
@@ -69,11 +70,8 @@ func (params *ServerParams) Start() error {
 		}
 	}
 
-	ctx = context.WithValue(ctx, logconfig.IsVerboseLoggingKey{},
-		&logconfig.IsVerboseLogging{
-			Flag: verboseLogging,
-		})
 	// prepare the middleware
+	ctx = logconfig.SetVerboseLogging(ctx, verboseLogging)
 	mWare := prepareMiddleware(ctx, params.Name, params.prometheusRegistry)
 
 	var restIsRunning, grpcIsRunning bool

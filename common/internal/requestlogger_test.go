@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/anz-bank/sysl-go/logconfig"
 	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 )
@@ -37,10 +38,11 @@ func TestLogger_FlushLog(t *testing.T) {
 	}
 	l.LogResponse(&resp)
 
-	require.Empty(t, hook.Entries)
+	require.Equal(t, 2, len(hook.Entries))
 
 	l.FlushLog()
-	require.NotEmpty(t, hook.Entries)
+	require.Equal(t, 3, len(hook.Entries))
+	require.Equal(t, "Already flushed the request", hook.LastEntry().Message)
 }
 
 func TestRequestLogger_NilBody(t *testing.T) {
@@ -57,6 +59,7 @@ func TestRequestLogger_NilBody(t *testing.T) {
 func TestRequestLogger_ResponseWriter(t *testing.T) {
 	ctx, hook := testutil.NewTestContextWithLoggerHook()
 
+	ctx = logconfig.SetVerboseLogging(ctx, false)
 	req, err := http.NewRequest("GET", "http://example.com/foo", nil)
 	require.NoError(t, err)
 
