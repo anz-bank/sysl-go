@@ -26,10 +26,8 @@ func (t *TestHook) LastEntry() *log.LogEntry {
 
 func NewTestContextWithLoggerHook() (context.Context, *TestHook) {
 	loghook := TestHook{}
-	ctxWithValue := context.WithValue(context.Background(), logconfig.IsVerboseLoggingKey{},
-		&logconfig.IsVerboseLogging{
-			Flag: true,
-		})
-	ctx := log.WithConfigs(log.AddHooks(&loghook)).Onto(ctxWithValue)
+	ctx := logconfig.SetVerboseLogging(context.Background(), true)
+	ctx = log.WithConfigs(log.SetVerboseMode(true)).Onto(ctx)
+	ctx = log.WithConfigs(log.AddHooks(&loghook)).Onto(ctx)
 	return ctx, &loghook
 }
