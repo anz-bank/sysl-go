@@ -34,9 +34,9 @@ type PostRequest struct {
 
 func (t *PostRequest) UnmarshalJSON(data []byte) error {
 	inner := struct {
-		Bt *bool
-		Dt *convert.JSONTime
-		St *string
+		Bt *bool             `json:"Bt,omitempty"`
+		Dt *convert.JSONTime `json:"Dt,omitempty"`
+		St *string           `json:"St,omitempty"`
 	}{}
 	err := json.Unmarshal(data, &inner)
 	if err != nil {
@@ -51,9 +51,9 @@ func (t *PostRequest) UnmarshalJSON(data []byte) error {
 	}
 
 	*t = PostRequest{
+		Bt: inner.Bt,
 		Dt: *inner.Dt,
 		St: *inner.St,
-		Bt: inner.Bt,
 	}
 	return nil
 }
