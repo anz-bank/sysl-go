@@ -23,13 +23,16 @@ simple-gen: $(SIMPLE_ALL_FILES)
 simple-clean:
 	rm -f $(SIMPLE_ALL_FILES)
 
+.PHONY: Simple
 SIMPLE_SYSL=$(TEST_IN_DIR)/$(SIMPLE_IN)/simple.sysl
+SIMPLE_SYSL_JSON=$(TEST_IN_DIR)/$(SIMPLE_IN)/sysl.json
+SIMPLE=Simple
 
 $(SIMPLE_ERRORS): $(TRANSFORMS)/svc_error_types.sysl $(SIMPLE_SYSL)
 	$(run-sysl)
 
-$(SIMPLE_TYPES): $(TRANSFORMS)/svc_types.sysl $(SIMPLE_SYSL)
-	$(run-sysl)
+$(SIMPLE_TYPES): $(SIMPLE) $(SIMPLE_SYSL_JSON)
+	$(run-arrai)
 
 $(SIMPLE_INTERFACE): $(TRANSFORMS)/svc_interface.sysl $(SIMPLE_SYSL)
 	$(run-sysl)
