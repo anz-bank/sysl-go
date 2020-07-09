@@ -43,8 +43,12 @@ let sysl = //{./sysl};
             // DownstreamConfig for ${appname}
             type DownstreamConfig struct {
                 ContextTimeout time.Duration ``yaml:"contextTimeout"``
-                ${clientDeps => .import orderby . >>
-                    $`${go.name(.)} config.CommonDownstreamData ``yaml:"${.}"```
+                ${clientDeps orderby . >>
+                    let config = cond {
+                        goModule.depField(.).grpc: `config.CommonGRPCDownstreamData`,
+                        _: `config.CommonDownstreamData`,
+                    };
+                    $`${go.name(.import)} ${config} ``yaml:"${.import}"```
                 ::\i}
             }
         `,
