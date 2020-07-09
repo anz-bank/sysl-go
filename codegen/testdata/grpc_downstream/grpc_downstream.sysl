@@ -1,0 +1,13 @@
+GrpcDownstream "gRPC Downstream System" [package="grpc_downstream", ~gRPC]:
+    GetServiceDoc(req <: GetServiceDocRequest):
+        return ok <: GetServiceDocResponse
+
+    !type GetServiceDocRequest:
+        docid <: string
+
+    !type GetServiceDocResponse:
+        serviceDoc <: ServiceDoc
+
+    !type ServiceDoc:
+        swagger <: string
+        openapi <: string
