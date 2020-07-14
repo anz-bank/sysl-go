@@ -10,7 +10,7 @@ let restService = restClient | {"requestrouter", "servicehandler", "serviceinter
 
 let grpcClient = {"grpc_client"};
 let grpcService = grpcClient | {"grpc_handler", "grpc_interface"};
-let migrate = {"types"};
+let migrate = {"app", "types", "error_types", "service", "requestrouter", "servicehandler", "serviceinterface"};
 
 let codegenGroups = {
     "rest-service": restService,

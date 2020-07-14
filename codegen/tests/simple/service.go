@@ -47,7 +47,6 @@ func NewClient(client *http.Client, serviceURL string) *Client {
 func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest) (*[]deps.ApiDoc, error) {
 	required := []string{}
 	var okResponse []deps.ApiDoc
-
 	u, err := url.Parse(fmt.Sprintf("%s/api-docs", s.url))
 	if err != nil {
 		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
@@ -61,7 +60,6 @@ func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest)
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	OkDepsApiDocResponse, ok := result.Response.(*[]deps.ApiDoc)
 	if ok {
 		valErr := validator.Validate(OkDepsApiDocResponse)
@@ -79,7 +77,6 @@ func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest)
 func (s *Client) GetGetSomeBytesList(ctx context.Context, req *GetGetSomeBytesListRequest) (*Pdf, error) {
 	required := []string{}
 	var okResponse Pdf
-
 	u, err := url.Parse(fmt.Sprintf("%s/get-some-bytes", s.url))
 	if err != nil {
 		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
@@ -93,7 +90,6 @@ func (s *Client) GetGetSomeBytesList(ctx context.Context, req *GetGetSomeBytesLi
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	OkPdfResponse, ok := result.Response.(*Pdf)
 	if ok {
 		valErr := validator.Validate(OkPdfResponse)
@@ -123,7 +119,6 @@ func (s *Client) GetJustOkAndJustErrorList(ctx context.Context, req *GetJustOkAn
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	return &result.HTTPResponse.Header, nil
 }
 
@@ -143,7 +138,6 @@ func (s *Client) GetJustReturnErrorList(ctx context.Context, req *GetJustReturnE
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	return nil
 }
 
@@ -163,7 +157,6 @@ func (s *Client) GetJustReturnOkList(ctx context.Context, req *GetJustReturnOkLi
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	return &result.HTTPResponse.Header, nil
 }
 
@@ -171,7 +164,6 @@ func (s *Client) GetJustReturnOkList(ctx context.Context, req *GetJustReturnOkLi
 func (s *Client) GetOkTypeAndJustErrorList(ctx context.Context, req *GetOkTypeAndJustErrorListRequest) (*Response, error) {
 	required := []string{}
 	var okResponse Response
-
 	u, err := url.Parse(fmt.Sprintf("%s/ok-type-and-just-error", s.url))
 	if err != nil {
 		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
@@ -185,7 +177,6 @@ func (s *Client) GetOkTypeAndJustErrorList(ctx context.Context, req *GetOkTypeAn
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	OkResponseResponse, ok := result.Response.(*Response)
 	if ok {
 		valErr := validator.Validate(OkResponseResponse)
@@ -203,9 +194,7 @@ func (s *Client) GetOkTypeAndJustErrorList(ctx context.Context, req *GetOkTypeAn
 func (s *Client) GetOopsList(ctx context.Context, req *GetOopsListRequest) (*Response, error) {
 	required := []string{}
 	var okResponse Response
-
 	var errorResponse Status
-
 	u, err := url.Parse(fmt.Sprintf("%s/oops", s.url))
 	if err != nil {
 		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
@@ -217,14 +206,12 @@ func (s *Client) GetOopsList(ctx context.Context, req *GetOopsListRequest) (*Res
 		if !ok {
 			return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
 		}
-
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamResponseError, response.HTTPResponse, response.Body, &errorResponse)
 	}
 
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	OkResponseResponse, ok := result.Response.(*Response)
 	if ok {
 		valErr := validator.Validate(OkResponseResponse)
@@ -242,7 +229,6 @@ func (s *Client) GetOopsList(ctx context.Context, req *GetOopsListRequest) (*Res
 func (s *Client) GetRawList(ctx context.Context, req *GetRawListRequest) (*Str, error) {
 	required := []string{}
 	var okResponse Str
-
 	u, err := url.Parse(fmt.Sprintf("%s/raw", s.url))
 	if err != nil {
 		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
@@ -250,6 +236,7 @@ func (s *Client) GetRawList(ctx context.Context, req *GetRawListRequest) (*Str, 
 
 	q := u.Query()
 	q.Add("bt", fmt.Sprintf("%v", req.Bt))
+
 	u.RawQuery = q.Encode()
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
 	if err != nil {
@@ -259,7 +246,6 @@ func (s *Client) GetRawList(ctx context.Context, req *GetRawListRequest) (*Str, 
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	OkStrResponse, ok := result.Response.(*Str)
 	if ok {
 		valErr := validator.Validate(OkStrResponse)
@@ -277,7 +263,6 @@ func (s *Client) GetRawList(ctx context.Context, req *GetRawListRequest) (*Str, 
 func (s *Client) GetRawIntList(ctx context.Context, req *GetRawIntListRequest) (*Integer, error) {
 	required := []string{}
 	var okResponse Integer
-
 	u, err := url.Parse(fmt.Sprintf("%s/raw-int", s.url))
 	if err != nil {
 		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
@@ -291,7 +276,6 @@ func (s *Client) GetRawIntList(ctx context.Context, req *GetRawIntListRequest) (
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	OkIntegerResponse, ok := result.Response.(*Integer)
 	if ok {
 		valErr := validator.Validate(OkIntegerResponse)
@@ -309,7 +293,6 @@ func (s *Client) GetRawIntList(ctx context.Context, req *GetRawIntListRequest) (
 func (s *Client) GetRawStatesList(ctx context.Context, req *GetRawStatesListRequest) (*Str, error) {
 	required := []string{}
 	var okResponse Str
-
 	u, err := url.Parse(fmt.Sprintf("%s/raw/states", s.url))
 	if err != nil {
 		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
@@ -323,7 +306,6 @@ func (s *Client) GetRawStatesList(ctx context.Context, req *GetRawStatesListRequ
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	OkStrResponse, ok := result.Response.(*Str)
 	if ok {
 		valErr := validator.Validate(OkStrResponse)
@@ -341,7 +323,6 @@ func (s *Client) GetRawStatesList(ctx context.Context, req *GetRawStatesListRequ
 func (s *Client) GetRawIdStatesList(ctx context.Context, req *GetRawIdStatesListRequest) (*Str, error) {
 	required := []string{}
 	var okResponse Str
-
 	u, err := url.Parse(fmt.Sprintf("%s/raw/%v/states", s.url, req.ID))
 	if err != nil {
 		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
@@ -355,7 +336,6 @@ func (s *Client) GetRawIdStatesList(ctx context.Context, req *GetRawIdStatesList
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	OkStrResponse, ok := result.Response.(*Str)
 	if ok {
 		valErr := validator.Validate(OkStrResponse)
@@ -373,7 +353,6 @@ func (s *Client) GetRawIdStatesList(ctx context.Context, req *GetRawIdStatesList
 func (s *Client) GetRawStates2List(ctx context.Context, req *GetRawStates2ListRequest) (*Str, error) {
 	required := []string{}
 	var okResponse Str
-
 	u, err := url.Parse(fmt.Sprintf("%s/raw/%v/states2", s.url, req.ID))
 	if err != nil {
 		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
@@ -387,7 +366,6 @@ func (s *Client) GetRawStates2List(ctx context.Context, req *GetRawStates2ListRe
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	OkStrResponse, ok := result.Response.(*Str)
 	if ok {
 		valErr := validator.Validate(OkStrResponse)
@@ -405,7 +383,6 @@ func (s *Client) GetRawStates2List(ctx context.Context, req *GetRawStates2ListRe
 func (s *Client) GetSimpleAPIDocsList(ctx context.Context, req *GetSimpleAPIDocsListRequest) (*deps.ApiDoc, error) {
 	required := []string{}
 	var okResponse deps.ApiDoc
-
 	u, err := url.Parse(fmt.Sprintf("%s/simple-api-docs", s.url))
 	if err != nil {
 		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
@@ -419,7 +396,6 @@ func (s *Client) GetSimpleAPIDocsList(ctx context.Context, req *GetSimpleAPIDocs
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	OkDepsApiDocResponse, ok := result.Response.(*deps.ApiDoc)
 	if ok {
 		valErr := validator.Validate(OkDepsApiDocResponse)
@@ -437,7 +413,6 @@ func (s *Client) GetSimpleAPIDocsList(ctx context.Context, req *GetSimpleAPIDocs
 func (s *Client) GetStuffList(ctx context.Context, req *GetStuffListRequest) (*Stuff, error) {
 	required := []string{}
 	var okResponse Stuff
-
 	u, err := url.Parse(fmt.Sprintf("%s/stuff", s.url))
 	if err != nil {
 		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
@@ -445,6 +420,7 @@ func (s *Client) GetStuffList(ctx context.Context, req *GetStuffListRequest) (*S
 
 	q := u.Query()
 	q.Add("it", fmt.Sprintf("%v", req.It))
+
 	if req.Dt != nil {
 		q.Add("dt", fmt.Sprintf("%v", *req.Dt))
 	}
@@ -466,7 +442,6 @@ func (s *Client) GetStuffList(ctx context.Context, req *GetStuffListRequest) (*S
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	OkStuffResponse, ok := result.Response.(*Stuff)
 	if ok {
 		valErr := validator.Validate(OkStuffResponse)
@@ -484,7 +459,6 @@ func (s *Client) GetStuffList(ctx context.Context, req *GetStuffListRequest) (*S
 func (s *Client) PostStuff(ctx context.Context, req *PostStuffRequest) (*Str, error) {
 	required := []string{}
 	var okResponse Str
-
 	u, err := url.Parse(fmt.Sprintf("%s/stuff", s.url))
 	if err != nil {
 		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
@@ -498,7 +472,6 @@ func (s *Client) PostStuff(ctx context.Context, req *PostStuffRequest) (*Str, er
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	OkStrResponse, ok := result.Response.(*Str)
 	if ok {
 		valErr := validator.Validate(OkStrResponse)
