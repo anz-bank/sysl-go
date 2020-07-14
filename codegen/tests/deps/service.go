@@ -33,9 +33,7 @@ func NewClient(client *http.Client, serviceURL string) *Client {
 func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest) (*ApiDoc, error) {
 	required := []string{}
 	var okResponse ApiDoc
-
 	var errorResponse Status
-
 	u, err := url.Parse(fmt.Sprintf("%s/api-docs", s.url))
 	if err != nil {
 		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
@@ -47,14 +45,12 @@ func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest)
 		if !ok {
 			return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Deps <- GET "+u.String(), err)
 		}
-
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamResponseError, response.HTTPResponse, response.Body, &errorResponse)
 	}
 
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	OkApiDocResponse, ok := result.Response.(*ApiDoc)
 	if ok {
 		valErr := validator.Validate(OkApiDocResponse)
@@ -84,6 +80,5 @@ func (s *Client) GetSuccessList(ctx context.Context, req *GetSuccessListRequest)
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	return &result.HTTPResponse.Header, nil
 }

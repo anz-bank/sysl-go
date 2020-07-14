@@ -32,9 +32,7 @@ func NewClient(client *http.Client, serviceURL string) *Client {
 func (s *Client) GetServiceDocsList(ctx context.Context, req *GetServiceDocsListRequest) (*ServiceDoc, error) {
 	required := []string{}
 	var okResponse ServiceDoc
-
 	var errorResponse Status
-
 	u, err := url.Parse(fmt.Sprintf("%s/service-docs", s.url))
 	if err != nil {
 		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
@@ -46,14 +44,12 @@ func (s *Client) GetServiceDocsList(ctx context.Context, req *GetServiceDocsList
 		if !ok {
 			return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Downstream <- GET "+u.String(), err)
 		}
-
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamResponseError, response.HTTPResponse, response.Body, &errorResponse)
 	}
 
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-
 	OkServiceDocResponse, ok := result.Response.(*ServiceDoc)
 	if ok {
 		valErr := validator.Validate(OkServiceDocResponse)
