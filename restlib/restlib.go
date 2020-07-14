@@ -188,3 +188,29 @@ func SetHeaders(w http.ResponseWriter, headerMap http.Header) {
 		}
 	}
 }
+
+// RestRequestOption is an interface that marks options that can be passed to downstream REST requests.
+type RestRequestOption interface {
+	restRequestOption()
+}
+
+// RestRequestOnResult returns a RestRequestOption that can be passed to a downstream REST request.
+// The function passed in will be called immediately after a downstream response is retrieved.
+func RestRequestOnResult(f func(result *HTTPResult, err error)) RestRequestOption {
+	return onResultRestRequestOption{f}
+}
+
+type onResultRestRequestOption struct {
+	onResult func(result *HTTPResult, err error)
+}
+
+func (o onResultRestRequestOption) restRequestOption() {}
+
+// OnRestRequestResult is called from generated code when an HTTP result is retrieved.
+func OnRestRequestResult(result *HTTPResult, err error, opts []RestRequestOption) {
+	for _, opt := range opts {
+		if onResult, ok := opt.(*onResultRestRequestOption); ok {
+			onResult.onResult(result, err)
+		}
+	}
+}
