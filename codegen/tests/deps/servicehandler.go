@@ -24,6 +24,7 @@ type ServiceHandler struct {
 
 // NewServiceHandler for Deps
 func NewServiceHandler(genCallback core.RestGenCallback, serviceInterface *ServiceInterface) *ServiceHandler {
+
 	return &ServiceHandler{genCallback, serviceInterface}
 }
 
@@ -50,6 +51,7 @@ func (s *ServiceHandler) GetApiDocsListHandler(w http.ResponseWriter, r *http.Re
 
 	apidoc, err := s.serviceInterface.GetApiDocsList(ctx, &req, client)
 	if err != nil {
+
 		common.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err, s.genCallback.MapError)
 		return
 	}
@@ -82,6 +84,7 @@ func (s *ServiceHandler) GetSuccessListHandler(w http.ResponseWriter, r *http.Re
 
 	err := s.serviceInterface.GetSuccessList(ctx, &req, client)
 	if err != nil {
+
 		common.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err, s.genCallback.MapError)
 		return
 	}

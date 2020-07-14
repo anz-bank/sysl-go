@@ -77,12 +77,13 @@ endef
 
 # Settings for migration task
 ARRAI_SERVICE_ROOT=codegen/arrai
+SYSL_GO_ROOT=github.com/anz-bank/sysl-go
 
 MIGRATE=migrate
 
 define run-arrai
 $(ARRAI_SERVICE_ROOT)/service.arrai \
-	$(TEST_OUT_DIR) $(TEST_IN_DIR)/$</sysl.json \
+	$(SYSL_GO_ROOT)/$(TEST_OUT_DIR) $(TEST_IN_DIR)/$</sysl.json \
 	$< $(MIGRATE) | tar xf - -C $(TEST_OUT_DIR)/$<
 goimports -w $(TEST_OUT_DIR)/$<
 endef

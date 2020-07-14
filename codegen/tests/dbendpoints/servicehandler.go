@@ -47,10 +47,10 @@ func (s *ServiceHandler) GetCompanyLocationListHandler(w http.ResponseWriter, r 
 	var req GetCompanyLocationListRequest
 
 	req.DeptLoc = restlib.GetQueryParam(r, "deptLoc")
+
 	var CompanyNameParam string
 
 	var convErr error
-
 	CompanyNameParam = restlib.GetQueryParam(r, "companyName")
 	req.CompanyName, convErr = convert.StringToStringPtr(ctx, CompanyNameParam)
 	if convErr != nil {
