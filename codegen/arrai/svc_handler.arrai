@@ -192,6 +192,9 @@ let sysl = //{./sysl};
                     `}}
 
                     headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+                    if headermap.Get("Content-Type") == "" {
+                        headermap.Set("Content-Type", "application/json")
+                    }
                     restlib.SetHeaders(w, headermap)
                     restlib.SendHTTPResponse(w, httpstatus${(returns >> $`, ${
                         let type = .type(.type count - 1);
