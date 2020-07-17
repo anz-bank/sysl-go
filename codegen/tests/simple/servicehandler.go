@@ -86,6 +86,9 @@ func (s *ServiceHandler) GetApiDocsListHandler(w http.ResponseWriter, r *http.Re
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, apidoc)
 }
@@ -119,6 +122,9 @@ func (s *ServiceHandler) GetGetSomeBytesListHandler(w http.ResponseWriter, r *ht
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, (*[]byte)(pdf))
 }
@@ -152,6 +158,9 @@ func (s *ServiceHandler) GetJustOkAndJustErrorListHandler(w http.ResponseWriter,
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, nil)
 }
@@ -185,6 +194,9 @@ func (s *ServiceHandler) GetJustReturnErrorListHandler(w http.ResponseWriter, r 
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, nil)
 }
@@ -218,6 +230,9 @@ func (s *ServiceHandler) GetJustReturnOkListHandler(w http.ResponseWriter, r *ht
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, nil)
 }
@@ -251,6 +266,9 @@ func (s *ServiceHandler) GetOkTypeAndJustErrorListHandler(w http.ResponseWriter,
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, response)
 }
@@ -284,6 +302,9 @@ func (s *ServiceHandler) GetOopsListHandler(w http.ResponseWriter, r *http.Reque
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, response)
 }
@@ -324,6 +345,9 @@ func (s *ServiceHandler) GetRawListHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, str)
 }
@@ -357,6 +381,9 @@ func (s *ServiceHandler) GetRawIntListHandler(w http.ResponseWriter, r *http.Req
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, integer)
 }
@@ -390,6 +417,9 @@ func (s *ServiceHandler) GetRawStatesListHandler(w http.ResponseWriter, r *http.
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, str)
 }
@@ -425,6 +455,9 @@ func (s *ServiceHandler) GetRawIdStatesListHandler(w http.ResponseWriter, r *htt
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, str)
 }
@@ -460,6 +493,9 @@ func (s *ServiceHandler) GetRawStates2ListHandler(w http.ResponseWriter, r *http
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, str)
 }
@@ -496,6 +532,9 @@ func (s *ServiceHandler) GetSimpleAPIDocsListHandler(w http.ResponseWriter, r *h
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, apidoc)
 }
@@ -564,6 +603,9 @@ func (s *ServiceHandler) GetStuffListHandler(w http.ResponseWriter, r *http.Requ
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, stuff)
 }
@@ -604,6 +646,9 @@ func (s *ServiceHandler) PostStuffHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, str)
 }

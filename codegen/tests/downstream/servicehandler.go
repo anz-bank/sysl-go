@@ -56,6 +56,9 @@ func (s *ServiceHandler) GetServiceDocsListHandler(w http.ResponseWriter, r *htt
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, servicedoc)
 }

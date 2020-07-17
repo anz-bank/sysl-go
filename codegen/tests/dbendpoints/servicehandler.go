@@ -104,6 +104,9 @@ func (s *ServiceHandler) GetCompanyLocationListHandler(w http.ResponseWriter, r 
 	}
 
 	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, getcompanylocationresponse)
 }
