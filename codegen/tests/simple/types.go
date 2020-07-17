@@ -69,6 +69,7 @@ type Status struct {
 }
 
 // Stuff just some stuff
+
 type Stuff struct {
 	EmptyStuff     Empty                  `json:"emptyStuff"`
 	InnerStuff     string                 `json:"innerStuff"`
