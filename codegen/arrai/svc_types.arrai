@@ -136,7 +136,7 @@ let orderedTypes = \types
                 `::\i}
             `
         }
-        ${aliases where .@item.@ != "Empty" >> $`
+        ${aliases where .@item.@ != "Empty" && !//seq.has_prefix("EXTERNAL_", .@item.@) >> $`
             // ${.typename} ...
             type ${.typename} ${go.type(.@value)}
         `::\i}
