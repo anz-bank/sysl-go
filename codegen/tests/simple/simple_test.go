@@ -670,12 +670,12 @@ func TestJsonValidateDtMissing(t *testing.T) {
 	postBody := `{ "St": "testString", "Bt": true }`
 	req := PostRequest{}
 	err := json.NewDecoder(strings.NewReader(postBody)).Decode(&req)
-	require.Equal(t, "Dt cannot be nil", err.Error())
+	require.Equal(t, "dt cannot be nil", err.Error())
 	require.Error(t, err)
 }
 
 func TestJsonValidateStMissing(t *testing.T) {
-	postBody := `{ "Dt": "2012-11-01T22:08:41.000+0000", "Bt": true }`
+	postBody := `{ "dt": "2012-11-01T22:08:41.000+0000", "Bt": true }`
 	req := PostRequest{}
 	err := json.NewDecoder(strings.NewReader(postBody)).Decode(&req)
 	require.Equal(t, "St cannot be nil", err.Error())
@@ -686,12 +686,12 @@ func TestJsonValidateBothMissing(t *testing.T) {
 	postBody := "{ \"Bt\": true }"
 	req := PostRequest{}
 	err := json.NewDecoder(strings.NewReader(postBody)).Decode(&req)
-	require.Equal(t, "Dt cannot be nil", err.Error())
+	require.Equal(t, "dt cannot be nil", err.Error())
 	require.Error(t, err)
 }
 
 func TestJsonValidatePassDefault(t *testing.T) {
-	postBody := `{ "Dt": "0001-01-01T00:00:00.000+0000", "Bt": true, "St": "" }`
+	postBody := `{ "dt": "0001-01-01T00:00:00.000+0000", "Bt": true, "St": "" }`
 	req := PostRequest{}
 	err := json.NewDecoder(strings.NewReader(postBody)).Decode(&req)
 	require.NoError(t, err)

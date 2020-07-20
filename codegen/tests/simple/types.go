@@ -28,14 +28,14 @@ type Item struct {
 // PostRequest ...
 type PostRequest struct {
 	Bt *bool            `json:"Bt,omitempty"`
-	Dt convert.JSONTime `json:"Dt"`
+	Dt convert.JSONTime `json:"dt"`
 	St string           `json:"St"`
 }
 
 func (t *PostRequest) UnmarshalJSON(data []byte) error {
 	inner := struct {
 		Bt *bool             `json:"Bt,omitempty"`
-		Dt *convert.JSONTime `json:"Dt,omitempty"`
+		Dt *convert.JSONTime `json:"dt,omitempty"`
 		St *string           `json:"St,omitempty"`
 	}{}
 	err := json.Unmarshal(data, &inner)
@@ -43,7 +43,7 @@ func (t *PostRequest) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	if inner.Dt == nil {
-		return errors.New("Dt cannot be nil")
+		return errors.New("dt cannot be nil")
 	}
 
 	if inner.St == nil {
