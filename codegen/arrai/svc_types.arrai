@@ -27,10 +27,7 @@ let orderedTypes = \types
                         let jsonTag =
                             cond {
                                 {"no_json", "pk"} & sysl.patterns(attrDef): ["-"],
-                                _: cond attrDef {
-                                    {'attrs': {'json_tag': tag, ...}, ...}: [tag('s').s],
-                                    _: [key],
-                                },
+                                _: sysl.evaluateJsonTag(attrDef, key),
                             }
                             ++
                             (cond attrDef {
@@ -50,20 +47,12 @@ let orderedTypes = \types
                     cond {optParams: $`func (t *${typename}) UnmarshalJSON(data []byte) error {
                         inner := struct {
                             ${entity('attrDefs') where sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
-                                let jsonTag = 
-                                    cond attrDef {
-                                        {'attrs': {'json_tag': tag, ...}, ...}: tag('s').s,
-                                        _: key,
-                                    };
-                                $'${go.name(key)} ${go.type(attrDef)} `json:"${jsonTag},omitempty"`'
+                                let jsonTag = sysl.evaluateJsonTag(attrDef, key);
+                                $'${go.name(key)} ${go.type(attrDef)} `json:"${jsonTag::,},omitempty"`'
                             ::\i}
                             ${entity('attrDefs') where !sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
-                                let jsonTag = 
-                                    cond attrDef {
-                                        {'attrs': {'json_tag': tag, ...}, ...}: tag('s').s,
-                                        _: key,
-                                    };
-                                $'${go.name(key)} *${go.type(attrDef)} `json:"${jsonTag},omitempty"`'
+                                let jsonTag = sysl.evaluateJsonTag(attrDef, key);
+                                $'${go.name(key)} *${go.type(attrDef)} `json:"${jsonTag::,},omitempty"`'
                             ::\i}
                         }{}
                         err := json.Unmarshal(data, &inner)
@@ -71,14 +60,10 @@ let orderedTypes = \types
                             return err
                         }
                         ${entity('attrDefs') where !sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
-                            let fieldTag = 
-                                cond attrDef {
-                                    {'attrs': {'json_tag': tag, ...}, ...}: tag('s').s,
-                                    _: key,
-                                };
+                            let fieldTag = sysl.evaluateJsonTag(attrDef, key);
                             $`
                                 if inner.${go.name(key)} == nil {
-                                    return errors.New("${fieldTag} cannot be nil")
+                                    return errors.New("${fieldTag::,} cannot be nil")
                                 }
                             `
                         ::\i}
