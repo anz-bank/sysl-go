@@ -56,8 +56,7 @@ let sysl = //{./sysl};
                     $`${.import}Client := ${.import}.NewClient(${.import}${prefix(.)}Client, cfg.GenCode.Downstream.(*DownstreamConfig).${go.name(.import)}.ServiceURL)`,
             }::\i}
 
-            return &DownstreamClients{
-                ${clientDeps orderby . >> $`${.import}Client: ${.import}Client,`::\i}
+            return &DownstreamClients{${clientDeps orderby . >> $`${.import}Client: ${.import}Client,`::\i}
             }, err
         }
 

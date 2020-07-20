@@ -8,7 +8,7 @@ SimpleGrpc "Simple Server" [package="simplegrpc", ~gRPC]:
 
     GetStuff(st <: GetStuffRequest):
             Simple <- POST /stuff
-            GrpcDownstream <- GetServiceDoc
+            # GrpcDownstream <- GetServiceDoc
             return ok <: GetStuffResponse
 
     !type GetStuffRequest:
