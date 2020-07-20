@@ -1,8 +1,8 @@
 let go = //{./go};
 let sysl = //{./sysl};
 
-\(:app, :appname,, :clientImports, :endpoints, :goModule, :hasDB, :basepath, :module, :restEndpoints, ...)
-    let client = //{./client}((:appname, :clientImports, :hasDB, :module));
+\(:app, :appname,, :clientImports, :endpoints, :goModule, :dbConfig, :basepath, :module, :restEndpoints, ...)
+    let client = //{./client}((:appname, :clientImports, :dbConfig, :module));
     let structName = $`Default${go.name(appname)}Impl`;
     $`
         ${go.prelude(app, clientImports => $`${basepath}/${.}`)}

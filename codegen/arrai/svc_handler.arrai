@@ -1,8 +1,9 @@
 let go = //{./go};
 let sysl = //{./sysl};
 
-\(:app, :appname, :basepath, :clientImports, :goModule, :hasDB, :module, :restEndpoints, ...)
-    let client = //{./client}((:appname, :clientImports, :hasDB, :module));
+\(:app, :appname, :basepath, :clientImports, :goModule, :dbConfig, :module, :restEndpoints, ...)
+    let hasDB = cond dbConfig {(...): true};
+    let client = //{./client}((:appname, :clientImports, :dbConfig, :module));
     $`
         ${go.prelude(app, clientImports => $`${basepath}/${.}`)}
 
@@ -162,9 +163,9 @@ let sysl = //{./sysl};
                         }
 
                         defer conn.Close()
-                        retrievebycompanyandlocationStmt, err_retrievebycompanyandlocation := conn.PrepareContext(ctx, "select company.abnnumber, company.companyname, company.companycountry, department.deptid, department.deptname, department.deptloc from company JOIN department ON company.abnnumber=department.abn WHERE department.deptloc=? and company.companyname=? order by company.abnnumber;")
-                        if err_retrievebycompanyandlocation != nil {
-                                common.HandleError(ctx, w, common.InternalError, "could not parse the sql query with the name sql_retrieveByCompanyAndLocation", err_retrievebycompanyandlocation, s.genCallback.MapError)
+                        retrievebycompanyandlocationStmt, err := conn.PrepareContext(ctx, "select company.abnnumber, company.companyname, company.companycountry, department.deptid, department.deptname, department.deptloc from company JOIN department ON company.abnnumber=department.abn WHERE department.deptloc=? and company.companyname=? order by company.abnnumber;")
+                        if err != nil {
+                                common.HandleError(ctx, w, common.InternalError, "could not parse the sql query with the name sql_retrieveByCompanyAndLocation", err, s.genCallback.MapError)
                                 return
                         }
 

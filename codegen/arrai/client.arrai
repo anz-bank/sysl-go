@@ -1,7 +1,8 @@
 let go = //{./go};
 let sysl = //{./sysl};
 
-\(:appname, :clientImports, :hasDB, :module)
+\(:appname, :clientImports, :dbConfig, :module)
+    let hasDB = cond dbConfig {(...): true};
     let goModule = go.module(module);
     (
         new: \ep

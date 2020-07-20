@@ -1,8 +1,8 @@
 let go = //{./go};
 let sysl = //{./sysl};
 
-\(:app, :appname, :basepath, :clientImports, :hasDB, :module, :nonRestEndpoints, ...)
-    let client = //{./client}((:appname, :clientImports, :hasDB, :module));
+\(:app, :appname, :basepath, :clientImports, :module, :nonRestEndpoints, ...)
+    let client = //{./client}((:appname, :clientImports, :module));
     $`
         ${go.prelude(app, (clientImports => $`${basepath}/${.}`) | go.pbPackage(basepath, app))}
 
