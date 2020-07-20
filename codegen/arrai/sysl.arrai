@@ -1,8 +1,19 @@
+let patterns = \node node('attrs')?('patterns')?('a')('elt').a:{} >> .('s').s => .@item;
+
 let app = (
     name: \app
         $`${app('name')('part').a >> .s::}`,
     endpoint: \app \epname
         ((app('endpoints') where .@value('name').s = epname) single).@value,
+
+    # dbConfig returns a tuple of DB config parameters specified as app attributes.
+    dbConfig: \app cond patterns(app) {{"DB", ...}: (
+        type: app('attrs')('db_type')?.@value.s:'',
+        name: app('attrs')('db_name')?.@value.s:'',
+        user: app('attrs')('db_user')?.@value.s:'',
+        password: app('attrs')('db_password')?.@value.s:'',
+        port: app('attrs')('db_port')?.@value.s:'',
+    )},
 );
 
 let isPtr = \t t('opt')?:false && !({"sequence", "set"} & (t => .@));
@@ -48,8 +59,6 @@ let endpoint =
         :sqlStatements,
         :untypedReturns,
     );
-
-let patterns = \node node('attrs')?('patterns')?('a')('elt').a:{} >> .('s').s => .@item;
 
 let source = \node node('sourceContext')('start') -> [.('line'), .('col')];
 

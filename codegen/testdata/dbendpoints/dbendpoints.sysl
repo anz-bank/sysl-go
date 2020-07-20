@@ -4,7 +4,7 @@
 ##                                      ##
 ##########################################
 
-DbEndpoints "DB Endpoints Specification" [package="dbendpoints", ~DB]:
+DbEndpoints "DB Endpoints Specification" [package="dbendpoints", ~DB, db_type="postgres"]:
     @contact.name = "Client Login"
     @contact.url = "https://client.sample.com/"
     @version = "1.5.0"
