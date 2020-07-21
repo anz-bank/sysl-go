@@ -18,7 +18,7 @@ let sysl = //{./sysl};
                             $`${method}: s.${package}${go.name(package)}Service.${method},`
                         ::\i:\n}
                         ${cond {hasDB: $`
-                            conn: conn,
+                            Conn: conn,
                             ${sysl.endpoint.sqlStatements(ep) => $`${.@}: ${.@}Stmt,` orderby .::\i}
                         `}}
                     }
