@@ -46,13 +46,9 @@ let orderedTypes = \types
                     let optParams = entity('attrDefs') where sysl.isPtr(.@value) orderby .@ >> .@value;
                     cond {optParams: $`func (t *${typename}) UnmarshalJSON(data []byte) error {
                         inner := struct {
-                            ${entity('attrDefs') where sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
+                            ${entity('attrDefs') orderby .@ >> \(@: key, @value: attrDef)
                                 let jsonTag = sysl.evaluateJsonTag(attrDef, key);
-                                $'${go.name(key)} ${go.type(attrDef)} `json:"${jsonTag::,},omitempty"`'
-                            ::\i}
-                            ${entity('attrDefs') where !sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
-                                let jsonTag = sysl.evaluateJsonTag(attrDef, key);
-                                $'${go.name(key)} *${go.type(attrDef)} `json:"${jsonTag::,},omitempty"`'
+                                $'${go.name(key)} ${cond { !sysl.isPtr(attrDef) : '*', _ : ''}}${go.type(attrDef)} `json:"${jsonTag::,},omitempty"`'
                             ::\i}
                         }{}
                         err := json.Unmarshal(data, &inner)
@@ -68,13 +64,9 @@ let orderedTypes = \types
                             `
                         ::\i}
                         *t = ${typename}{
-                            ${entity('attrDefs') where sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
+                            ${entity('attrDefs') orderby .@ >> \(@: key, @value: attrDef)
                                 let fieldName = go.name(key);
-                                $`${fieldName}: inner.${fieldName},`
-                            ::\i}
-                            ${entity('attrDefs') where !sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
-                                let fieldName = go.name(key);
-                                $`${fieldName}: *inner.${fieldName},`
+                                $`${fieldName}: ${cond { !sysl.isPtr(attrDef) : '*', _ : ''}}inner.${fieldName},`
                             ::\i}
                         }
                         return nil
