@@ -132,6 +132,6 @@ Simple "Simple Server" [package="simple"]:
         Bt <: bool?:
             @json_tag = "Bt"
         Dt <: datetime:
-            @json_tag = "Dt"
+            @json_tag = "dt"
         St <: string:
             @json_tag = "St"
