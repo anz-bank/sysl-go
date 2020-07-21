@@ -101,13 +101,17 @@ var CertPoolEncodingTypes = map[string]func(cfg *TrustedCertPoolConfig) (pool *x
 }
 
 func TLSVersions(cfg *TLSConfig) (min, max uint16, err error) {
-	min, ok := tlsVersions[*cfg.MinVersion]
-	if !ok {
-		return 0, 0, fmt.Errorf("invalid TLSMin config: %s", *cfg.MinVersion)
+	if cfg.MinVersion != nil {
+		var has bool
+		if min, has = tlsVersions[*cfg.MinVersion]; !has {
+			return 0, 0, fmt.Errorf("invalid TLSMin config: %s", *cfg.MinVersion)
+		}
 	}
-	max, ok = tlsVersions[*cfg.MaxVersion]
-	if !ok {
-		return 0, 0, fmt.Errorf("invalid TLSMax config: %s", *cfg.MaxVersion)
+	if cfg.MaxVersion != nil {
+		var has bool
+		if max, has = tlsVersions[*cfg.MaxVersion]; !has {
+			return 0, 0, fmt.Errorf("invalid TLSMax config: %s", *cfg.MaxVersion)
+		}
 	}
 
 	if min > max {

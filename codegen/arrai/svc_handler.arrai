@@ -1,10 +1,10 @@
 let go = //{./go};
 let sysl = //{./sysl};
 
-\(:app, :appname, :basepath, :clientImports, :goModule, :hasDB, :module, :restEndpoints, ...)
-    let client = //{./client}((:appname, :clientImports, :hasDB, :module));
+\(:app, :appname, :basepath, :clientDeps, :goModule, :hasDB, :module, :restEndpoints, ...)
+    let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
     $`
-        ${go.prelude(app, clientImports => $`${basepath}/${.}`)}
+        ${go.prelude(app, clientDeps => $`${basepath}/${.import}`)}
 
         ${
             (app('types') where "error" <: sysl.patterns(.@value) orderby .@) >>> \i \.
@@ -26,12 +26,12 @@ let sysl = //{./sysl};
             genCallback      core.RestGenCallback
             serviceInterface *ServiceInterface
             ${cond {hasDB: $`DB *sql.DB`}}
-            ${clientImports orderby . >> $`${.}${go.name(.)}Service ${.}.Service`::\i}
+            ${clientDeps orderby . >> $`${.import}${go.name(.import)}Service ${.import}.Service`::\i}
         }
 
         // NewServiceHandler for ${appname}
         func NewServiceHandler(genCallback core.RestGenCallback, serviceInterface *ServiceInterface${
-            clientImports orderby . >> $`, ${.}${go.name(.)}Service ${.}.Service`
+            clientDeps orderby . >> $`, ${.import}${go.name(.import)}Service ${.import}.Service`
         ::}) *ServiceHandler {
             ${cond {hasDB: $`
                 db, err := database.GetDBHandle()
@@ -40,7 +40,7 @@ let sysl = //{./sysl};
                 }
             `}}
             return &ServiceHandler{genCallback, serviceInterface${
-                clientImports orderby . >> $`, ${.}${go.name(.)}Service`
+                clientDeps orderby . >> $`, ${.import}${go.name(.import)}Service`
             ::}${cond {hasDB: $`, db`}}}
         }
 
@@ -73,7 +73,6 @@ let sysl = //{./sysl};
                     ctx := common.RequestHeaderToContext(r.Context(), r.Header)
                     ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
                     var req ${method}Request
-
                     ${cond ep('restParams')('method').s {('POST', 'PUT'): $`
                         decoder := json.NewDecoder(r.Body)
                         decodeErr := decoder.Decode(&req.Request)
@@ -82,7 +81,6 @@ let sysl = //{./sysl};
                                 return
                         }
                     `}}
-
                     ${urlParams where .@item('type')('primitive')?.s:"" = "INT" >> \{'name': (s: name), ...}
                         $`req.${go.name(name)} = restlib.GetURLParamForInt(r, "${name}")`
                     ::\i:\n}
@@ -113,7 +111,6 @@ let sysl = //{./sysl};
                             ${params('Time', reqQueryParams where .@item('goType') = "convert.JSONTime")}
                         `
                     }
-
                     ${optQueryParams >> $`var ${.var} string`::\i\n:\n}
                     ${cond {optQueryParams: 'var convErr error'}}
                     ${optQueryParams >> $`${.var} = restlib.GetQueryParam(r, "${.name}")`::\i}
@@ -145,7 +142,6 @@ let sysl = //{./sysl};
                             }
                         `}
                     ::\i:\n}
-
                     ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
                     defer cancel()
                     valErr := validator.Validate(&req)

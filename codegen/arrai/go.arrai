@@ -155,19 +155,35 @@ let module = \module
         let package = package(dep);
         let ep = sysl.app.endpoint(dep, ep.s);
         let method = methodName(ep);
-        $`${method} func(ctx context.Context, req *${package}.${method}Request) (${
+        let grpc = cond {'gRPC' <: sysl.patterns(dep): `, opts ...grpc.CallOption`};
+        $`${method} func(ctx context.Context, req *${package}.${method}Request${grpc}) (${
             let typed = sysl.endpoint.normalReturns(ep) >> $`*${package}.${.type >> name(.)::}`;
             let untyped = sysl.endpoint.untypedReturns(ep) >> `*http.Header`;
             typed ++ untyped ++ ["error"]
         ::, })`;
 
-    let clientImports = \eps
+    let clientDeps = \eps
         //rel.union(eps => \(@item: (@value: ep, ...), ...)
-            sysl.endpoint.calls(ep) => package(targetApp(.@item('target'))));
+            sysl.endpoint.calls(ep) => \(@:_, @item: {'target': target, ...}) (
+                :target,
+                import: package(targetApp(target)),
+            ));
+
+    let depField = \(:import, :target, ...)
+        let grpc = 'gRPC' <: sysl.patterns(targetApp(target));
+        (
+            :grpc,
+            name: $`${import}${name(import)}Service`,
+            type: $`${import}.${cond {
+                grpc: $`${target('part').a(0).s}Client`,
+                _: `Service`,
+            }}`,
+        );
 
     (
         :callSignature,
-        :clientImports,
+        :clientDeps,
+        :depField,
         :methodSignature,
         :targetApp,
         :typeWithClientPackage,
