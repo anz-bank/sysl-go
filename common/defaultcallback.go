@@ -53,3 +53,7 @@ func (g Callback) HandleError(ctx context.Context, w http.ResponseWriter, kind K
 func (g Callback) DownstreamTimeoutContext(ctx context.Context) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(ctx, g.DownstreamTimeout)
 }
+
+func (g Callback) MapError(ctx context.Context, err error) *HTTPError {
+	return nil
+}
