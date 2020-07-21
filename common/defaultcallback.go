@@ -44,10 +44,7 @@ func (g Callback) Config() interface{} {
 
 func (g Callback) HandleError(ctx context.Context, w http.ResponseWriter, kind Kind, message string, cause error) {
 	se := CreateError(ctx, kind, message, cause)
-
-	httpError := MapError(ctx, se)
-
-	httpError.WriteError(ctx, w)
+	g.MapError(ctx, se).WriteError(ctx, w)
 }
 
 func (g Callback) DownstreamTimeoutContext(ctx context.Context) (context.Context, context.CancelFunc) {
