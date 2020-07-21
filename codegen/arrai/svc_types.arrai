@@ -4,6 +4,12 @@ let sysl = //{./sysl};
 let orderedTypes = \types
     (types orderby .@) >> . + (typename: go.name(.@));
 
+let fieldJsonTag = \type \key
+    cond type {
+        {'attrs': {'json_tag': tag, ...}, ...}: [tag('s').s],
+            _: [key],
+    };
+
 \(:app, :endpoints, :module, ...)
     let entities = orderedTypes(app('types') where !sysl.patterns(.@value) && {"tuple", "relation"} & (.@value => .@));
     let aliases = orderedTypes(app('types') where !({'oneof', 'tuple', 'relation'} & (.@value => .@)));
@@ -27,7 +33,7 @@ let orderedTypes = \types
                         let jsonTag =
                             cond {
                                 {"no_json", "pk"} & sysl.patterns(attrDef): ["-"],
-                                _: sysl.evaluateJsonTag(attrDef, key),
+                                _: fieldJsonTag(attrDef, key),
                             }
                             ++
                             (cond attrDef {
@@ -47,8 +53,7 @@ let orderedTypes = \types
                     cond {optParams: $`func (t *${typename}) UnmarshalJSON(data []byte) error {
                         inner := struct {
                             ${entity('attrDefs') orderby .@ >> \(@: key, @value: attrDef)
-                                let jsonTag = sysl.evaluateJsonTag(attrDef, key);
-                                $'${go.name(key)} ${cond { !sysl.isPtr(attrDef) : '*', _ : ''}}${go.type(attrDef)} `json:"${jsonTag::,},omitempty"`'
+                                $'${go.name(key)} ${cond { !sysl.isPtr(attrDef) : '*', _ : ''}}${go.type(attrDef)} `json:"${fieldJsonTag(attrDef, key)::,},omitempty"`'
                             ::\i}
                         }{}
                         err := json.Unmarshal(data, &inner)
@@ -56,10 +61,9 @@ let orderedTypes = \types
                             return err
                         }
                         ${entity('attrDefs') where !sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
-                            let fieldTag = sysl.evaluateJsonTag(attrDef, key);
                             $`
                                 if inner.${go.name(key)} == nil {
-                                    return errors.New("${fieldTag::,} cannot be nil")
+                                    return errors.New("${fieldJsonTag(attrDef, key)::,} cannot be nil")
                                 }
                             `
                         ::\i}
