@@ -1,6 +1,6 @@
 let go = //{./go};
 
-\(:app, :appname, :basepath, :clientImports, :endpoints, ...)
+\(:app, :appname, :basepath, :clientDeps, :endpoints, ...)
     let methodSig = \ep
         let {'name': (s: name), 'param': (a: [param]), 'stmt': (a: stmts), ...} = ep;
         let {'name': (s: pname), 'type': ptype, ...} = param;
@@ -13,7 +13,7 @@ let go = //{./go};
     # TODO: sysl automapping between sysl types and protobuf types
     # TODO: use protobuf from sysl to use instead of precompiled from the api repository
     $`
-        ${go.prelude(app, (clientImports => $`${basepath}/${.}`) | go.pbPackage(basepath, app))}
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(basepath, app))}
 
         // Client implements a client for ${appname}.
         type Client struct {

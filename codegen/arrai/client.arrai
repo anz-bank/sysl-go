@@ -1,48 +1,54 @@
 let go = //{./go};
 let sysl = //{./sysl};
 
-\(:appname, :clientImports, :hasDB, :module)
+\(:appname, :clientDeps, :hasDB, :module)
     let goModule = go.module(module);
     (
         new: \ep
             let method = go.methodName(ep);
-            $`
-                ${method}Client{
-                    ${sysl.endpoint.calls(ep) >>
-                        let dep = goModule.targetApp(.('target'));
-                        let package = go.package(dep);
-                        let ep = sysl.app.endpoint(dep, .('endpoint').s);
-                        let method = go.methodName(ep);
-                        $`${method}: s.${package}${go.name(package)}Service.${method},`
-                    ::\i:\n}${
-                        cond {hasDB: $`
+            let calls = sysl.endpoint.calls(ep);
+            cond {
+                calls || hasDB: $`
+                    ${method}Client{
+                        ${calls >>
+                            let dep = goModule.targetApp(.('target'));
+                            let package = go.package(dep);
+                            let ep = sysl.app.endpoint(dep, .('endpoint').s);
+                            let method = go.methodName(ep);
+                            $`${method}: s.${package}${go.name(package)}Service.${method},`
+                        ::\i:\n}
+                        ${cond {hasDB: $`
                             conn: conn,
                             ${sysl.endpoint.sqlStatements(ep) => $`${.@}: ${.@}Stmt,` orderby .::\i}
-                        `}
-                    }
-                }
-            `,
-
-        client_struct:
-            \ep
-                let method = go.methodName(ep);
-                $`
-                    // ${method} Client
-                    type ${method}Client struct {
-                        ${cond {hasDB: $`
-                            conn *sql.Conn
-                            ${sysl.endpoint.sqlStatements(ep) => $`${.@} *sql.Stmt` orderby .::\i}
                         `}}
-                        ${sysl.endpoint.calls(ep) >> goModule.callSignature(.)::\i}
                     }
                 `,
+                _: $`${method}Client{}`,
+            },
+
+        client_struct: \ep
+            let method = go.methodName(ep);
+            $`
+                // ${method} Client
+                type ${method}Client struct {
+                    ${cond {hasDB: $`
+                        conn *sql.Conn
+                        ${sysl.endpoint.sqlStatements(ep) => $`${.@} *sql.Stmt` orderby .::\i}
+                    `}}
+                    ${sysl.endpoint.calls(ep) >> goModule.callSignature(.)::\i}
+                }
+            `,
 
         config: $`
             // DownstreamConfig for ${appname}
             type DownstreamConfig struct {
                 ContextTimeout time.Duration ``yaml:"contextTimeout"``
-                ${clientImports orderby . >>
-                    $`${go.name(.)} config.CommonDownstreamData ``yaml:"${.}"```
+                ${clientDeps orderby . >>
+                    let config = cond {
+                        goModule.depField(.).grpc: `config.CommonGRPCDownstreamData`,
+                        _: `config.CommonDownstreamData`,
+                    };
+                    $`${go.name(.import)} ${config} ``yaml:"${.import}"```
                 ::\i}
             }
         `,
