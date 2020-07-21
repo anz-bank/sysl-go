@@ -55,5 +55,6 @@ func (g Callback) DownstreamTimeoutContext(ctx context.Context) (context.Context
 }
 
 func (g Callback) MapError(ctx context.Context, err error) *HTTPError {
-	return nil
+	httpErr := MapError(ctx, err)
+	return &httpErr
 }
