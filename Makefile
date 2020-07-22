@@ -81,6 +81,8 @@ SYSL_GO_ROOT=github.com/anz-bank/sysl-go
 MIGRATE=migrate
 
 define run-arrai
+$(eval NAME := $(shell echo $< | tr '[:upper:]' '[:lower:]'))
+sysl pb --mode=json $(TEST_IN_DIR)/$(NAME)/$(NAME).sysl > $(TEST_IN_DIR)/$(NAME)/sysl.json
 $(ARRAI_SERVICE_ROOT)/service.arrai \
 	$(SYSL_GO_ROOT)/$(TEST_OUT_DIR) $(TEST_IN_DIR)/$</sysl.json \
 	$< $(MIGRATE) | tar xf - -C $(TEST_OUT_DIR)/$<
