@@ -4,10 +4,19 @@ Communication library used by SYSL-generated code written in Go.
 
 ## 1.1. Getting Started
 
-Go get the repository
+#### Go get the repository
 
-    go get github.com/anz-bank/sysl-go
+```
+go get github.com/anz-bank/sysl-go
+```
+#### Use docker
 
+```
+docker pull anzbank/sysl-go:latest
+
+docker run --rm -v $(pwd):/mount:ro anzbank/sysl-go /sysl-go/codegen/arrai/service.arrai github.com/anz-bank/sysl-template/gen /mount/api/project.json simple rest-app | tar xf - -C gen/simple
+```
+See [sysl-template](https://github.com/anz-bank/sysl-template) for more examples
 ### 1.1.1. Local Development
 
 ### 1.1.2. Prerequisites
