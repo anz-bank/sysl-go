@@ -21,7 +21,7 @@ type GetServiceDocsListClient struct {
 
 // ServiceInterface for Downstream
 type ServiceInterface struct {
-	GetServiceDocsList func(ctx context.Context, req *GetServiceDocsListRequest, client GetServiceDocsListClient) (*ServiceDoc, error)
+	GetServiceDocsList func(ctx context.Context, req *GetServiceDocsListRequest, client GetServiceDocsListClient) (*[]ServiceDoc, error)
 }
 
 // DownstreamConfig for Downstream
