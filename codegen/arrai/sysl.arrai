@@ -12,6 +12,7 @@ let app = (
         name: app('attrs')('db_name')?.@value.s:'',
         user: app('attrs')('db_user')?.@value.s:'',
         password: app('attrs')('db_password')?.@value.s:'',
+        host: app('attrs')('db_host')?.@value.s:'',
         port: app('attrs')('db_port')?.@value.s:'',
     )},
 );
