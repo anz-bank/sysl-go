@@ -1,21 +1,24 @@
 let go = //{./go};
 let sysl = //{./sysl};
 
-\(:appname, :clientImports, :hasDB, :module)
+\(:appname, :clientDeps, :dbConfig, :module)
+    let hasDB = cond dbConfig {(...): true};
     let goModule = go.module(module);
     (
         new: \ep
             let method = go.methodName(ep);
-            $`
-                ${method}Client{
-                    ${sysl.endpoint.calls(ep) >>
-                        let dep = goModule.targetApp(.('target'));
-                        let package = go.package(dep);
-                        let ep = sysl.app.endpoint(dep, .('endpoint').s);
-                        let method = go.methodName(ep);
-                        $`${method}: s.${package}${go.name(package)}Service.${method},`
-                    ::\i:\n}${
-                        cond {hasDB: $`
+            let calls = sysl.endpoint.calls(ep);
+            cond {
+                calls || hasDB: $`
+                    ${method}Client{
+                        ${calls >>
+                            let dep = goModule.targetApp(.('target'));
+                            let package = go.package(dep);
+                            let ep = sysl.app.endpoint(dep, .('endpoint').s);
+                            let method = go.methodName(ep);
+                            $`${method}: s.${package}${go.name(package)}Service.${method},`
+                        ::\i:\n}
+                        ${cond {hasDB: $`
                             Conn: conn,
                             ${sysl.endpoint.sqlStatements(ep) => $`${.@}: ${.@}Stmt,` orderby .::\i}
                         `}}
@@ -24,19 +27,18 @@ let sysl = //{./sysl};
                 _: $`${method}Client{}`,
             },
 
-        client_struct:
-            \ep
-                let method = go.methodName(ep);
-                $`
-                    // ${method} Client
-                    type ${method}Client struct {
-                        ${cond {hasDB: $`
-                            Conn *sql.Conn
-                            ${sysl.endpoint.sqlStatements(ep) => $`${.@} *sql.Stmt` orderby .::\i}
-                        `}}
-                        ${sysl.endpoint.calls(ep) >> goModule.callSignature(.)::\i}
-                    }
-                `,
+        client_struct: \ep
+            let method = go.methodName(ep);
+            $`
+                // ${method} Client
+                type ${method}Client struct {
+                    ${cond {hasDB: $`
+                        Conn *sql.Conn
+                        ${sysl.endpoint.sqlStatements(ep) => $`${.@} *sql.Stmt` orderby .::\i}
+                    `}}
+                    ${sysl.endpoint.calls(ep) >> goModule.callSignature(.)::\i}
+                }
+            `,
 
         config: $`
             // DownstreamConfig for ${appname}

@@ -8,12 +8,12 @@ let sysl = //{./sysl};
     :clientDeps,
     :endpoints,
     :goModule,
-    :hasDB,
+    :dbConfig,
     :module,
     :nonRestEndpoints,
     ...
 )
-    let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
+    let client = //{./client}((:appname, :clientDeps, :dbConfig, :module));
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(basepath, app))}
 
