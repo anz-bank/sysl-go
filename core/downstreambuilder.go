@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/anz-bank/sysl-go/common"
+	"google.golang.org/grpc"
 
 	"github.com/anz-bank/sysl-go/config"
 )
@@ -33,4 +34,8 @@ func buildDefaultHTTPClient(serviceName string) (*http.Client, error) {
 	client.Transport = common.NewLoggingRoundTripper(serviceName, client.Transport)
 
 	return client, nil
+}
+
+func BuildDownstreamGRPCClient(_ string, cfg *config.CommonGRPCDownstreamData) (*grpc.ClientConn, error) {
+	return config.DefaultGRPCClient(cfg)
 }

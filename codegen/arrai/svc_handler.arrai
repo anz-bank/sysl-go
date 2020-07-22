@@ -1,11 +1,10 @@
 let go = //{./go};
 let sysl = //{./sysl};
 
-\(:app, :appname, :basepath, :clientImports, :goModule, :dbConfig, :module, :restEndpoints, ...)
-    let hasDB = cond dbConfig {(...): true};
-    let client = //{./client}((:appname, :clientImports, :dbConfig, :module));
+\(:app, :appname, :basepath, :clientDeps, :goModule, :hasDB, :module, :restEndpoints, ...)
+    let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
     $`
-        ${go.prelude(app, clientImports => $`${basepath}/${.}`)}
+        ${go.prelude(app, clientDeps => $`${basepath}/${.import}`)}
 
         ${
             (app('types') where "error" <: sysl.patterns(.@value) orderby .@) >>> \i \.
@@ -27,12 +26,12 @@ let sysl = //{./sysl};
             genCallback      core.RestGenCallback
             serviceInterface *ServiceInterface
             ${cond {hasDB: $`DB *sql.DB`}}
-            ${clientImports orderby . >> $`${.}${go.name(.)}Service ${.}.Service`::\i}
+            ${clientDeps orderby . >> $`${.import}${go.name(.import)}Service ${.import}.Service`::\i}
         }
 
         // NewServiceHandler for ${appname}
         func NewServiceHandler(genCallback core.RestGenCallback, serviceInterface *ServiceInterface${
-            clientImports orderby . >> $`, ${.}${go.name(.)}Service ${.}.Service`
+            clientDeps orderby . >> $`, ${.import}${go.name(.import)}Service ${.import}.Service`
         ::}) *ServiceHandler {
             ${cond {hasDB: $`
                 db, err := database.GetDBHandle()
@@ -41,7 +40,7 @@ let sysl = //{./sysl};
                 }
             `}}
             return &ServiceHandler{genCallback, serviceInterface${
-                clientImports orderby . >> $`, ${.}${go.name(.)}Service`
+                clientDeps orderby . >> $`, ${.import}${go.name(.import)}Service`
             ::}${cond {hasDB: $`, db`}}}
         }
 
@@ -74,7 +73,6 @@ let sysl = //{./sysl};
                     ctx := common.RequestHeaderToContext(r.Context(), r.Header)
                     ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
                     var req ${method}Request
-
                     ${cond ep('restParams')('method').s {('POST', 'PUT'): $`
                         decoder := json.NewDecoder(r.Body)
                         decodeErr := decoder.Decode(&req.Request)
@@ -83,7 +81,6 @@ let sysl = //{./sysl};
                                 return
                         }
                     `}}
-
                     ${urlParams where .@item('type')('primitive')?.s:"" = "INT" >> \{'name': (s: name), ...}
                         $`req.${go.name(name)} = restlib.GetURLParamForInt(r, "${name}")`
                     ::\i:\n}
@@ -114,7 +111,6 @@ let sysl = //{./sysl};
                             ${params('Time', reqQueryParams where .@item('goType') = "convert.JSONTime")}
                         `
                     }
-
                     ${optQueryParams >> $`var ${.var} string`::\i\n:\n}
                     ${cond {optQueryParams: 'var convErr error'}}
                     ${optQueryParams >> $`${.var} = restlib.GetQueryParam(r, "${.name}")`::\i}
@@ -146,7 +142,6 @@ let sysl = //{./sysl};
                             }
                         `}
                     ::\i:\n}
-
                     ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
                     defer cancel()
                     valErr := validator.Validate(&req)
@@ -163,9 +158,9 @@ let sysl = //{./sysl};
                         }
 
                         defer conn.Close()
-                        retrievebycompanyandlocationStmt, err := conn.PrepareContext(ctx, "select company.abnnumber, company.companyname, company.companycountry, department.deptid, department.deptname, department.deptloc from company JOIN department ON company.abnnumber=department.abn WHERE department.deptloc=? and company.companyname=? order by company.abnnumber;")
-                        if err != nil {
-                                common.HandleError(ctx, w, common.InternalError, "could not parse the sql query with the name sql_retrieveByCompanyAndLocation", err, s.genCallback.MapError)
+                        retrievebycompanyandlocationStmt, err_retrievebycompanyandlocation := conn.PrepareContext(ctx, "select company.abnnumber, company.companyname, company.companycountry, department.deptid, department.deptname, department.deptloc from company JOIN department ON company.abnnumber=department.abn WHERE department.deptloc=? and company.companyname=? order by company.abnnumber;")
+                        if err_retrievebycompanyandlocation != nil {
+                                common.HandleError(ctx, w, common.InternalError, "could not parse the sql query with the name sql_retrieveByCompanyAndLocation", err_retrievebycompanyandlocation, s.genCallback.MapError)
                                 return
                         }
 

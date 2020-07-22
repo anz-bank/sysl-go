@@ -61,8 +61,8 @@ let config = (
     :nonRestEndpoints,
     :goModule,
     appname:       sysl.app.name(app),
-    clientImports: goModule.clientImports(endpoints),
-    dbConfig:      sysl.app.dbConfig(app),
+    clientDeps:    goModule.clientDeps(endpoints),
+    hasDB:         "DB" <: sysl.patterns(app),
 );
 
 //archive.tar.tar(generators >> .(config) where .@value)

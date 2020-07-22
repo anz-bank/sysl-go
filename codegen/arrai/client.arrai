@@ -1,8 +1,7 @@
 let go = //{./go};
 let sysl = //{./sysl};
 
-\(:appname, :clientImports, :dbConfig, :module)
-    let hasDB = cond dbConfig {(...): true};
+\(:appname, :clientImports, :hasDB, :module)
     let goModule = go.module(module);
     (
         new: \ep
@@ -19,10 +18,11 @@ let sysl = //{./sysl};
                         cond {hasDB: $`
                             Conn: conn,
                             ${sysl.endpoint.sqlStatements(ep) => $`${.@}: ${.@}Stmt,` orderby .::\i}
-                        `}
+                        `}}
                     }
-                }
-            `,
+                `,
+                _: $`${method}Client{}`,
+            },
 
         client_struct:
             \ep
@@ -42,8 +42,12 @@ let sysl = //{./sysl};
             // DownstreamConfig for ${appname}
             type DownstreamConfig struct {
                 ContextTimeout time.Duration ``yaml:"contextTimeout"``
-                ${clientImports orderby . >>
-                    $`${go.name(.)} config.CommonDownstreamData ``yaml:"${.}"```
+                ${clientDeps orderby . >>
+                    let config = cond {
+                        goModule.depField(.).grpc: `config.CommonGRPCDownstreamData`,
+                        _: `config.CommonDownstreamData`,
+                    };
+                    $`${go.name(.import)} ${config} ``yaml:"${.import}"```
                 ::\i}
             }
         `,
