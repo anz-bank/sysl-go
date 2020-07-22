@@ -49,14 +49,17 @@ func unmarshal(resp *http.Response, body []byte, respStruct interface{}) (*HTTPR
 		return makeHTTPResult(resp, body, nil), nil
 	}
 
+	contentType := resp.Header.Get("Content-Type")
+
 	e := reflect.ValueOf(respStruct).Elem()
-	if e.Kind() == reflect.String {
+	kind := e.Kind()
+
+	if kind == reflect.String || (kind == reflect.Slice && e.Type().Elem().Name() == "uint8") {
 		p := reflect.New(e.Type())
 		p.Elem().Set(reflect.ValueOf(body).Convert(e.Type()))
 		return makeHTTPResult(resp, body, p.Interface()), nil
 	}
 
-	contentType := resp.Header.Get("Content-Type")
 	if strings.Contains(contentType, "xml") {
 		respStruct = string(body)
 	} else {
@@ -165,6 +168,8 @@ func SendHTTPResponse(w http.ResponseWriter, httpStatus int, responses ...interf
 			switch {
 			case strings.Contains(contentType, "xml"):
 				_ = xml.NewEncoder(w).Encode(resp)
+			case strings.Contains(contentType, "image"):
+				_, _ = w.Write(reflect.ValueOf(resp).Elem().Bytes())
 			case strings.Contains(contentType, "octet-stream"), strings.Contains(contentType, "pdf"):
 				switch data := resp.(type) {
 				case *[]byte:
