@@ -26,9 +26,7 @@ func BuildRestHandlerInitialiser(serviceInterface ServiceInterface, callback cor
 func BuildDownstreamClients(cfg *config.DefaultConfig) (*DownstreamClients, error) {
 	var err error = nil
 	depsHTTPClient, depsErr := core.BuildDownstreamHTTPClient("deps", &cfg.GenCode.Downstream.(*DownstreamConfig).Deps)
-
 	downstreamHTTPClient, downstreamErr := core.BuildDownstreamHTTPClient("downstream", &cfg.GenCode.Downstream.(*DownstreamConfig).Downstream)
-
 	if depsErr != nil {
 		return nil, depsErr
 	}
@@ -38,7 +36,6 @@ func BuildDownstreamClients(cfg *config.DefaultConfig) (*DownstreamClients, erro
 	}
 
 	depsClient := deps.NewClient(depsHTTPClient, cfg.GenCode.Downstream.(*DownstreamConfig).Deps.ServiceURL)
-
 	downstreamClient := downstream.NewClient(downstreamHTTPClient, cfg.GenCode.Downstream.(*DownstreamConfig).Downstream.ServiceURL)
 
 	return &DownstreamClients{depsClient: depsClient,
