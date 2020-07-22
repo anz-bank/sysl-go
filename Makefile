@@ -2,8 +2,6 @@
 
 all: gen test check-coverage arrai-nodiff lint tidy ## Tests, lints and checks coverage
 
-clean:  ## Remove generated files
-
 .PHONY: all clean
 
 # -- Lint ----------------------------------------------------------------------
@@ -33,6 +31,7 @@ coverage: test  ## Show test coverage in your browser
 
 clean:
 	rm -f $(COVERFILE)
+	rm -f $(patsubst %,codegen/testdata/%/sysl.json,$(targets))
 
 CHECK_COVERAGE = awk -F '[ \t%]+' '/^total:/ && $$3 < $(COVERAGE) {exit 1}'
 FAIL_COVERAGE = { echo '$(COLOUR_RED)FAIL - Coverage below $(COVERAGE)%$(COLOUR_NORMAL)'; exit 1; }
@@ -129,8 +128,6 @@ simple.groups = rest-app
 
 simplegrpc.app = SimpleGrpc
 simplegrpc.groups = grpc-app
-
-.PRECIOUS: $(patsubst %,codegen/testdata/%/sysl.json,$(targets))
 
 codegen/testdata/%/sysl.json: codegen/testdata/%/*.sysl
 	sysl pb --mode=json --root $(TEST_IN_DIR) $*/$*.sysl > $@ || rm -f $@
