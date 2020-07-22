@@ -125,7 +125,7 @@ let module = \module
         let pkgnames = type => .@item;
         let packages = module('apps') where .@ <: pkgnames;
         cond {
-            packages: $`${cond {seq: "[]"}}${package((packages single).@value)}.${type(1)}`,
+            packages: $`${cond {seq: "[]"}}${package((packages single).@value)}.${name(type(1))}`,
             type = ["ok"]: "",
             _: $`${cond{seq: `[]`}}` ++ //str.title(//seq.concat(type)),
         };
