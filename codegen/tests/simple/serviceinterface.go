@@ -23,7 +23,7 @@ func NewDefaultSimpleImpl() *DefaultSimpleImpl {
 // GetApiDocsList Client
 type GetApiDocsListClient struct {
 	GetApiDocsList     func(ctx context.Context, req *deps.GetApiDocsListRequest) (*deps.ApiDoc, error)
-	GetServiceDocsList func(ctx context.Context, req *downstream.GetServiceDocsListRequest) (*downstream.ServiceDoc, error)
+	GetServiceDocsList func(ctx context.Context, req *downstream.GetServiceDocsListRequest) (*[]downstream.ServiceDoc, error)
 }
 
 // GetGetSomeBytesList Client
@@ -95,7 +95,7 @@ type ServiceInterface struct {
 	GetOopsList               func(ctx context.Context, req *GetOopsListRequest, client GetOopsListClient) (*Response, error)
 	GetRawList                func(ctx context.Context, req *GetRawListRequest, client GetRawListClient) (*Str, error)
 	GetRawIntList             func(ctx context.Context, req *GetRawIntListRequest, client GetRawIntListClient) (*Integer, error)
-	GetRawStatesList          func(ctx context.Context, req *GetRawStatesListRequest, client GetRawStatesListClient) (*Str, error)
+	GetRawStatesList          func(ctx context.Context, req *GetRawStatesListRequest, client GetRawStatesListClient) (*[]Status, error)
 	GetRawIdStatesList        func(ctx context.Context, req *GetRawIdStatesListRequest, client GetRawIdStatesListClient) (*Str, error)
 	GetRawStates2List         func(ctx context.Context, req *GetRawStates2ListRequest, client GetRawStates2ListClient) (*Str, error)
 	GetSimpleAPIDocsList      func(ctx context.Context, req *GetSimpleAPIDocsListRequest, client GetSimpleAPIDocsListClient) (*deps.ApiDoc, error)
