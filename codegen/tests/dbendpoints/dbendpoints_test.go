@@ -1,4 +1,4 @@
-package dbendpoints
+package dbendpoints_test
 
 import (
 	"context"
@@ -6,16 +6,18 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/anz-bank/sysl-go/codegen/arrai/tests/dbendpoints"
+	"github.com/anz-bank/sysl-go/codegen/tests/dbendpoints/impl"
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 )
 
-func callHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder, *test.Hook) {
-	cb := Callback{}
+func callHandler(target string, si dbendpoints.ServiceInterface) (*httptest.ResponseRecorder, *test.Hook) {
+	cb := common.Callback{}
 
-	sh := NewServiceHandler(cb, &si)
+	sh := dbendpoints.NewServiceHandler(cb, &si)
 
 	r := httptest.NewRequest("GET", target, nil)
 	w := httptest.NewRecorder()
@@ -30,9 +32,8 @@ func callHandler(target string, si ServiceInterface) (*httptest.ResponseRecorder
 }
 
 func TestHandler_Valid(t *testing.T) {
-	siImpl := NewDefaultDbEndpointsImpl()
-	si := ServiceInterface{
-		GetCompanyLocationList: siImpl.GetCompanyLocationList(),
+	si := dbendpoints.ServiceInterface{
+		GetCompanyLocationList: impl.GetCompanyLocationList,
 	}
 
 	w, _ := callHandler("http://example.com/company/location?companyName=ANZ&deptLoc=MELB", si)

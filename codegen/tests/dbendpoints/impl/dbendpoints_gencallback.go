@@ -1,4 +1,4 @@
-package dbendpoints
+package impl
 
 import (
 	"context"
