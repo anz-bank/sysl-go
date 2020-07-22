@@ -620,7 +620,6 @@ func (s *ServiceHandler) PostStuffHandler(w http.ResponseWriter, r *http.Request
 	ctx := common.RequestHeaderToContext(r.Context(), r.Header)
 	ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
 	var req PostStuffRequest
-
 	decoder := json.NewDecoder(r.Body)
 	decodeErr := decoder.Decode(&req.Request)
 	if decodeErr != nil {
