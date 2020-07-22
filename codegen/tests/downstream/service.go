@@ -14,7 +14,7 @@ import (
 
 // Service interface for Downstream
 type Service interface {
-	GetServiceDocsList(ctx context.Context, req *GetServiceDocsListRequest) (*ServiceDoc, error)
+	GetServiceDocsList(ctx context.Context, req *GetServiceDocsListRequest) (*[]ServiceDoc, error)
 }
 
 // Client for Downstream API
@@ -29,9 +29,9 @@ func NewClient(client *http.Client, serviceURL string) *Client {
 }
 
 // GetServiceDocsList ...
-func (s *Client) GetServiceDocsList(ctx context.Context, req *GetServiceDocsListRequest) (*ServiceDoc, error) {
+func (s *Client) GetServiceDocsList(ctx context.Context, req *GetServiceDocsListRequest) (*[]ServiceDoc, error) {
 	required := []string{}
-	var okResponse ServiceDoc
+	var okResponse []ServiceDoc
 	var errorResponse Status
 	u, err := url.Parse(fmt.Sprintf("%s/service-docs", s.url))
 	if err != nil {
@@ -50,7 +50,7 @@ func (s *Client) GetServiceDocsList(ctx context.Context, req *GetServiceDocsList
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
-	OkServiceDocResponse, ok := result.Response.(*ServiceDoc)
+	OkServiceDocResponse, ok := result.Response.(*[]ServiceDoc)
 	if ok {
 		valErr := validator.Validate(OkServiceDocResponse)
 		if valErr != nil {

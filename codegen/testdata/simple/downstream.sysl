@@ -4,7 +4,7 @@ Downstream "Downstream System" [package="downstream"]:
     /service-docs:
         GET:
             | Return whole service docs 
-            return ok <: ServiceDoc
+            return ok <: sequence of ServiceDoc
             return error <: status
 
     !type ServiceDoc:

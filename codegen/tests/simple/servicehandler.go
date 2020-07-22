@@ -409,7 +409,7 @@ func (s *ServiceHandler) GetRawStatesListHandler(w http.ResponseWriter, r *http.
 
 	client := GetRawStatesListClient{}
 
-	str, err := s.serviceInterface.GetRawStatesList(ctx, &req, client)
+	status, err := s.serviceInterface.GetRawStatesList(ctx, &req, client)
 	if err != nil {
 
 		common.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err, s.genCallback.MapError)
@@ -421,7 +421,7 @@ func (s *ServiceHandler) GetRawStatesListHandler(w http.ResponseWriter, r *http.
 		headermap.Set("Content-Type", "application/json")
 	}
 	restlib.SetHeaders(w, headermap)
-	restlib.SendHTTPResponse(w, httpstatus, str)
+	restlib.SendHTTPResponse(w, httpstatus, status)
 }
 
 // GetRawIdStatesListHandler ...
