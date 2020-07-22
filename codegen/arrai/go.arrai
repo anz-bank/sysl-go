@@ -127,7 +127,7 @@ let module = \module
         cond {
             packages: $`${cond {seq: "[]"}}${package((packages single).@value)}.${type(1)}`,
             type = ["ok"]: "",
-            _: //str.title(//seq.concat(type)),
+            _: $`${cond{seq: `[]`}}` ++ //str.title(//seq.concat(type)),
         };
 
     let targetApp = \target
@@ -157,7 +157,7 @@ let module = \module
         let method = methodName(ep);
         let grpc = cond {'gRPC' <: sysl.patterns(dep): `, opts ...grpc.CallOption`};
         $`${method} func(ctx context.Context, req *${package}.${method}Request${grpc}) (${
-            let typed = sysl.endpoint.normalReturns(ep) >> $`*${package}.${.type >> name(.)::}`;
+            let typed = sysl.endpoint.normalReturns(ep) >> $`*${cond{.seq: `[]`}}${package}.${.type >> name(.)::}`;
             let untyped = sysl.endpoint.untypedReturns(ep) >> `*http.Header`;
             typed ++ untyped ++ ["error"]
         ::, })`;
