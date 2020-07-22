@@ -62,7 +62,7 @@ let config = (
     :goModule,
     appname:       sysl.app.name(app),
     clientDeps:    goModule.clientDeps(endpoints),
-    hasDB:         "DB" <: sysl.patterns(app),
+    dbConfig:      sysl.app.dbConfig(app),
 );
 
 //archive.tar.tar(generators >> .(config) where .@value)

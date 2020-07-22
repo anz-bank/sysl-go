@@ -1,8 +1,9 @@
 let go = //{./go};
 let sysl = //{./sysl};
 
-\(:app, :appname, :basepath, :clientDeps, :goModule, :hasDB, :module, :restEndpoints, ...)
-    let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
+\(:app, :appname, :basepath, :clientDeps, :goModule, :dbConfig, :module, :restEndpoints, ...)
+    let hasDB = cond dbConfig {(...): true};
+    let client = //{./client}((:appname, :clientDeps, :dbConfig, :module));
     $`
         ${go.prelude(app, clientDeps => $`${basepath}/${.import}`)}
 
