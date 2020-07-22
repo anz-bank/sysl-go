@@ -17,7 +17,7 @@ Simple "Simple Server" [package="simple"]:
 
     /raw/states:
         GET:
-            return ok <: str
+            return ok <: sequence of Status
 
     /raw/{id<:string}/states [~vars_in_url_name]:
         GET:
