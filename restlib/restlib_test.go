@@ -20,6 +20,8 @@ type ErrorType struct {
 	Test2 string `json:"test2"`
 }
 
+type BytesType []byte
+
 const (
 	okJSON    = `{ "test":"test string" }`
 	errorJSON = `{ "test2":"test string 2" }`
@@ -63,6 +65,20 @@ func TestUnmarshalEmptyBodyOK(t *testing.T) {
 	require.NotNil(t, result.HTTPResponse)
 	require.IsType(t, []byte{}, result.Body)
 	require.Nil(t, result.Response)
+}
+
+func TestUnmarshalBytesContent(t *testing.T) {
+	header := map[string][]string{
+		"Content-Type": {"image/png"},
+	}
+	var image = []byte{1, 2}
+	result, err := unmarshal(&http.Response{Header: header}, image, &BytesType{})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.NotNil(t, result.HTTPResponse)
+	require.NotNil(t, result.Body)
+	_, ok := result.Response.(*BytesType)
+	require.True(t, ok)
 }
 
 func TestUnmarshalNilTypeOK(t *testing.T) {
@@ -247,4 +263,23 @@ func TestSendHTTPResponseBinaryBody2(t *testing.T) {
 	defer result.Body.Close()
 	require.NoError(t, err)
 	require.Equal(t, ([]byte)(data), b)
+}
+
+func TestSendHTTPResponseContentTypeImage(t *testing.T) {
+	// Given
+	recorder := httptest.NewRecorder()
+	recorder.Header().Set("Content-Type", "image/jpeg")
+
+	// When
+	data := &BytesType{1, 2}
+	SendHTTPResponse(recorder, 200, data)
+
+	// Then
+	result := recorder.Result()
+	require.NotNil(t, result)
+	require.Equal(t, 200, result.StatusCode)
+	b, err := ioutil.ReadAll(result.Body)
+	defer result.Body.Close()
+	require.NoError(t, err)
+	require.Equal(t, []byte{1, 2}, b)
 }
