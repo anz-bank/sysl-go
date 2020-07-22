@@ -152,3 +152,7 @@ codegen/arrai/tests/%.nodiff: $(ARRAI_OUT)/% $(TIDY)
 	diff -rwuBq $(TEST_OUT_DIR)/$* $</ | awk 'BEGIN { err = 0 } END { exit err } /^Files .* differ$$/ { print; err = 1 }' && touch $@
 
 include $(ARRAI_TRANSFORMS)/Module.mk
+
+.PHONY: docker
+docker:
+	docker build . -t sysl-go
