@@ -38,7 +38,7 @@ let sysl = //{./sysl};
                     `}}
                     serviceHandler := NewServiceHandler(callback, &serviceInterface${
                         clientDeps orderby . >> $`, downstream.${.import}Client`
-                    ::}${cond {hasDB: $`, db`}}
+                    ::}${cond {hasDB: $`, db`}})
                     serviceRouter := NewServiceRouter(callback, serviceHandler)
                     return serviceRouter
                 }
