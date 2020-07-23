@@ -5,7 +5,7 @@ let app = (
         ((app('endpoints') where .@value('name').s = epname) single).@value,
 );
 
-let isPtr = \t t('opt')?:false && !({"sequence", "set"} & (t => .@));
+let isPtr = \t t('opt')?:false;
 
 let endpoint =
     let calls = \ep

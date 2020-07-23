@@ -11,7 +11,7 @@ let fieldJsonTag = \type \key
     };
 
 \(:app, :endpoints, :module, ...)
-    let entities = orderedTypes(app('types') where !sysl.patterns(.@value) && {"tuple", "relation"} & (.@value => .@));
+    let entities = orderedTypes(app('types') where !({"error"} & sysl.patterns(.@value)) && {"tuple", "relation"} & (.@value => .@));
     let aliases = orderedTypes(app('types') where !({'oneof', 'tuple', 'relation'} & (.@value => .@)));
     $`
         ${go.prelude(app, {})}
@@ -50,7 +50,7 @@ let fieldJsonTag = \type \key
                 }
                 ${
                     let optParams = entity('attrDefs') where sysl.isPtr(.@value) orderby .@ >> .@value;
-                    cond {optParams: $`func (t *${typename}) UnmarshalJSON(data []byte) error {
+                    cond {{"validate"} & patterns && optParams: $`func (t *${typename}) UnmarshalJSON(data []byte) error {
                         inner := struct {
                             ${entity('attrDefs') orderby .@ >> \(@: key, @value: attrDef)
                                 $'${go.name(key)} ${cond { !sysl.isPtr(attrDef) : '*', _ : ''}}${go.type(attrDef)} `json:"${fieldJsonTag(attrDef, key)::,},omitempty"`'
