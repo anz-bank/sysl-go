@@ -1,7 +1,8 @@
 let go = //{./go};
 let sysl = //{./sysl};
 
-\(:app, :appname, :basepath, :clientDeps, :clientDeps, :module, :goModule, :restEndpoints, ...)
+\(:app, :appname, :basepath, :clientDeps, :clientDeps, :dbConfig, :module, :goModule, :restEndpoints, ...)
+    let hasDB = cond dbConfig {(...): true};
     let prefix = \dep cond {goModule.depField(dep).grpc: `GRPC`, _: `HTTP`};
     $`
         ${go.prelude(app, clientDeps => $`${basepath}/${.import}`)}
@@ -29,9 +30,15 @@ let sysl = //{./sysl};
             _: $`
                 // BuildRestHandlerInitialiser ...
                 func BuildRestHandlerInitialiser(serviceInterface ServiceInterface, callback core.RestGenCallback, downstream *DownstreamClients) handlerinitialiser.HandlerInitialiser {
+                    ${cond {hasDB: $`
+                        db, err := database.GetDBHandle()
+                        if err != nil {
+                                return nil
+                        }
+                    `}}
                     serviceHandler := NewServiceHandler(callback, &serviceInterface${
                         clientDeps orderby . >> $`, downstream.${.import}Client`
-                    ::})
+                    ::}${cond {hasDB: $`, db`}}
                     serviceRouter := NewServiceRouter(callback, serviceHandler)
                     return serviceRouter
                 }
