@@ -44,6 +44,3 @@ jobs:
           go get -u -v github.com/anz-bank/sysl/cmd/sysl
           go get -u -v github.com/arr-ai/arrai/cmd/arrai
           go get -u -v golang.org/x/tools/cmd/goimports
-
-      - name: Compare Sysl and arr.ai transforms output
-        run: PATH=$PATH:$(go env GOPATH)/bin make arrai-nodiff
