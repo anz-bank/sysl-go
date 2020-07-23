@@ -71,6 +71,7 @@ let sysl = //{./sysl};
                     cond {"ok" <: retvars: "&okResponse", _: "nil"}}, ${
                     cond {"error" <: retvars: "&errorResponse", _: "nil"}})`
             }
+            restlib.OnRestRequestResultHTTPResult(result, err, opts)
             if err != nil {
                 ${
                     let downstreamUnavailable = $`
@@ -89,7 +90,7 @@ let sysl = //{./sysl};
                     }
                 }
             }
-
+            
             if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
                 ${returnDownstreamError("Unauthorized", "result", "nil")}
             }

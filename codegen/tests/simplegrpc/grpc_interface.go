@@ -8,11 +8,12 @@ import (
 	"github.com/anz-bank/sysl-go/codegen/tests/simple"
 	pb "github.com/anz-bank/sysl-go/codegen/tests/simplepb"
 	"github.com/anz-bank/sysl-go/config"
+	"github.com/anz-bank/sysl-go/restlib"
 )
 
 // GetStuff Client
 type GetStuffClient struct {
-	PostStuff func(ctx context.Context, req *simple.PostStuffRequest) (*simple.Str, error)
+	PostStuff func(ctx context.Context, req *simple.PostStuffRequest, opts ...restlib.RestRequestOption) (*simple.Str, error)
 }
 
 // GrpcServiceInterface for SimpleGrpc

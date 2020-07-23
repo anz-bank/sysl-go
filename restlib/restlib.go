@@ -13,6 +13,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/anz-bank/sysl-go/core"
+
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/pkg/errors"
 )
@@ -192,4 +194,43 @@ func SetHeaders(w http.ResponseWriter, headerMap http.Header) {
 			w.Header().Add(k, hv)
 		}
 	}
+}
+
+// RestRequestOption is an interface that marks options that can be passed to downstream REST requests.
+type RestRequestOption interface {
+	restRequestOption()
+}
+
+// RestRequestOnResult returns a RestRequestOption that can be passed to a downstream REST request.
+// The function passed in will be called immediately after a downstream response is retrieved.
+func RestRequestOnResult(f func(result *core.RestResult, err error)) RestRequestOption {
+	return onResultRestRequestOption{f}
+}
+
+type onResultRestRequestOption struct {
+	onResult func(result *core.RestResult, err error)
+}
+
+func (o onResultRestRequestOption) restRequestOption() {}
+
+// OnRestRequestResult method will be called from tests as we don't expose the HTTPResult itself
+func OnRestRequestResult(result *core.RestResult, err error, opts []RestRequestOption) {
+	for _, opt := range opts {
+		if onResult, ok := opt.(onResultRestRequestOption); ok {
+			onResult.onResult(result, err)
+		}
+	}
+}
+
+// OnRestRequestResultHTTPResult is called from generated code when an HTTP result is retrieved.
+func OnRestRequestResultHTTPResult(result *HTTPResult, err error, opts []RestRequestOption) {
+	if result == nil || result.HTTPResponse == nil {
+		return
+	}
+	restResult := &core.RestResult{
+		StatusCode: result.HTTPResponse.StatusCode,
+		Headers:    result.HTTPResponse.Header,
+		Body:       result.Body,
+	}
+	OnRestRequestResult(restResult, err, opts)
 }

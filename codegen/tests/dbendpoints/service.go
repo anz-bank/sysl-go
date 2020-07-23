@@ -14,7 +14,7 @@ import (
 
 // Service interface for DbEndpoints
 type Service interface {
-	GetCompanyLocationList(ctx context.Context, req *GetCompanyLocationListRequest) (*GetCompanyLocationResponse, error)
+	GetCompanyLocationList(ctx context.Context, req *GetCompanyLocationListRequest, opts ...restlib.RestRequestOption) (*GetCompanyLocationResponse, error)
 }
 
 // Client for DbEndpoints API
@@ -29,7 +29,7 @@ func NewClient(client *http.Client, serviceURL string) *Client {
 }
 
 // GetCompanyLocationList ...
-func (s *Client) GetCompanyLocationList(ctx context.Context, req *GetCompanyLocationListRequest) (*GetCompanyLocationResponse, error) {
+func (s *Client) GetCompanyLocationList(ctx context.Context, req *GetCompanyLocationListRequest, opts ...restlib.RestRequestOption) (*GetCompanyLocationResponse, error) {
 	required := []string{}
 	var okResponse GetCompanyLocationResponse
 	u, err := url.Parse(fmt.Sprintf("%s/company/location", s.url))
@@ -53,6 +53,7 @@ func (s *Client) GetCompanyLocationList(ctx context.Context, req *GetCompanyLoca
 	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
 		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
 	}
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	OkGetCompanyLocationResponseResponse, ok := result.Response.(*GetCompanyLocationResponse)
 	if ok {
 		valErr := validator.Validate(OkGetCompanyLocationResponseResponse)

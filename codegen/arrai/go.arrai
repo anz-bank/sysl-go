@@ -136,7 +136,7 @@ let module = \module
     let methodSignature =
         let isError = //re.compile(`\berror\b`).match;
         \ep
-            $`(ctx context.Context, req *${methodName(ep)}Request) ${
+            $`(ctx context.Context, req *${methodName(ep)}Request, opts ...restlib.RestRequestOption) ${
                 let tn = sysl.endpoint.returns(ep) => .@item where .var != "error" => \t
                     # TODO: Remove double entry once cond array handling is fixed.
                     cond t.type {
@@ -156,7 +156,7 @@ let module = \module
         let ep = sysl.app.endpoint(dep, ep.s);
         let method = methodName(ep);
         let grpc = cond {'gRPC' <: sysl.patterns(dep): `, opts ...grpc.CallOption`};
-        $`${method} func(ctx context.Context, req *${package}.${method}Request${grpc}) (${
+        $`${method} func(ctx context.Context, req *${package}.${method}Request${grpc}, opts ...restlib.RestRequestOption) (${
             let typed = sysl.endpoint.normalReturns(ep) >> $`*${cond{.seq: `[]`}}${package}.${.type >> name(.)::}`;
             let untyped = sysl.endpoint.untypedReturns(ep) >> `*http.Header`;
             typed ++ untyped ++ ["error"]

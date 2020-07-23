@@ -9,6 +9,7 @@ import (
 	"github.com/anz-bank/sysl-go/codegen/tests/deps"
 	"github.com/anz-bank/sysl-go/codegen/tests/downstream"
 	"github.com/anz-bank/sysl-go/config"
+	"github.com/anz-bank/sysl-go/restlib"
 )
 
 // DefaultSimpleImpl ...
@@ -22,8 +23,8 @@ func NewDefaultSimpleImpl() *DefaultSimpleImpl {
 
 // GetApiDocsList Client
 type GetApiDocsListClient struct {
-	GetApiDocsList     func(ctx context.Context, req *deps.GetApiDocsListRequest) (*deps.ApiDoc, error)
-	GetServiceDocsList func(ctx context.Context, req *downstream.GetServiceDocsListRequest) (*[]downstream.ServiceDoc, error)
+	GetApiDocsList     func(ctx context.Context, req *deps.GetApiDocsListRequest, opts ...restlib.RestRequestOption) (*deps.ApiDoc, error)
+	GetServiceDocsList func(ctx context.Context, req *downstream.GetServiceDocsListRequest, opts ...restlib.RestRequestOption) (*[]downstream.ServiceDoc, error)
 }
 
 // GetGetSomeBytesList Client
@@ -72,8 +73,8 @@ type GetRawStates2ListClient struct {
 
 // GetSimpleAPIDocsList Client
 type GetSimpleAPIDocsListClient struct {
-	GetApiDocsList func(ctx context.Context, req *deps.GetApiDocsListRequest) (*deps.ApiDoc, error)
-	GetSuccessList func(ctx context.Context, req *deps.GetSuccessListRequest) (*http.Header, error)
+	GetApiDocsList func(ctx context.Context, req *deps.GetApiDocsListRequest, opts ...restlib.RestRequestOption) (*deps.ApiDoc, error)
+	GetSuccessList func(ctx context.Context, req *deps.GetSuccessListRequest, opts ...restlib.RestRequestOption) (*http.Header, error)
 }
 
 // GetStuffList Client

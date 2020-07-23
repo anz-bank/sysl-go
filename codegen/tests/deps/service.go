@@ -14,8 +14,8 @@ import (
 
 // Service interface for Deps
 type Service interface {
-	GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest) (*ApiDoc, error)
-	GetSuccessList(ctx context.Context, req *GetSuccessListRequest) (*http.Header, error)
+	GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest, opts ...restlib.RestRequestOption) (*ApiDoc, error)
+	GetSuccessList(ctx context.Context, req *GetSuccessListRequest, opts ...restlib.RestRequestOption) (*http.Header, error)
 }
 
 // Client for Deps API
@@ -30,7 +30,7 @@ func NewClient(client *http.Client, serviceURL string) *Client {
 }
 
 // GetApiDocsList ...
-func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest) (*ApiDoc, error) {
+func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest, opts ...restlib.RestRequestOption) (*ApiDoc, error) {
 	required := []string{}
 	var okResponse ApiDoc
 	var errorResponse Status
@@ -40,6 +40,7 @@ func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest)
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, &errorResponse)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		response, ok := err.(*restlib.HTTPResult)
 		if !ok {
@@ -65,7 +66,7 @@ func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest)
 }
 
 // GetSuccessList ...
-func (s *Client) GetSuccessList(ctx context.Context, req *GetSuccessListRequest) (*http.Header, error) {
+func (s *Client) GetSuccessList(ctx context.Context, req *GetSuccessListRequest, opts ...restlib.RestRequestOption) (*http.Header, error) {
 	required := []string{}
 	u, err := url.Parse(fmt.Sprintf("%s/success", s.url))
 	if err != nil {
@@ -73,6 +74,7 @@ func (s *Client) GetSuccessList(ctx context.Context, req *GetSuccessListRequest)
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, nil, nil)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Deps <- GET "+u.String(), err)
 	}

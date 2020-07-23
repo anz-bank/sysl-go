@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/core"
 	"github.com/stretchr/testify/require"
 )
 
@@ -282,4 +283,17 @@ func TestSendHTTPResponseContentTypeImage(t *testing.T) {
 	defer result.Body.Close()
 	require.NoError(t, err)
 	require.Equal(t, []byte{1, 2}, b)
+}
+
+func TestOnRestRequestResultCallback(t *testing.T) {
+	restResult := &core.RestResult{
+		StatusCode: 200,
+		Headers:    map[string][]string{"Accept": {"Json"}},
+		Body:       []byte("Here is a string...."),
+	}
+	called := false
+	OnRestRequestResult(restResult, nil, []RestRequestOption{RestRequestOnResult(func(result *core.RestResult, err error) {
+		called = true
+	})})
+	require.True(t, called)
 }

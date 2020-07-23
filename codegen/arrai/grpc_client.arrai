@@ -8,7 +8,7 @@ let go = //{./go};
             filter .@item {{'ret': _, ...}: .}
             >> //seq.split(" ", .("ret")("payload").s)(2)
         ::}`;
-        $`${name}(ctx context.Context, ${pname} *pb.${go.type(ptype)}) (*pb.${rparam}, error)`;
+        $`${name}(ctx context.Context, ${pname} *pb.${go.type(ptype)}, opts ...restlib.RestRequestOption) (*pb.${rparam}, error)`;
 
     # TODO: sysl automapping between sysl types and protobuf types
     # TODO: use protobuf from sysl to use instead of precompiled from the api repository

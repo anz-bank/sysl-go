@@ -14,7 +14,7 @@ import (
 
 // Service interface for Downstream
 type Service interface {
-	GetServiceDocsList(ctx context.Context, req *GetServiceDocsListRequest) (*[]ServiceDoc, error)
+	GetServiceDocsList(ctx context.Context, req *GetServiceDocsListRequest, opts ...restlib.RestRequestOption) (*[]ServiceDoc, error)
 }
 
 // Client for Downstream API
@@ -29,7 +29,7 @@ func NewClient(client *http.Client, serviceURL string) *Client {
 }
 
 // GetServiceDocsList ...
-func (s *Client) GetServiceDocsList(ctx context.Context, req *GetServiceDocsListRequest) (*[]ServiceDoc, error) {
+func (s *Client) GetServiceDocsList(ctx context.Context, req *GetServiceDocsListRequest, opts ...restlib.RestRequestOption) (*[]ServiceDoc, error) {
 	required := []string{}
 	var okResponse []ServiceDoc
 	var errorResponse Status
@@ -39,6 +39,7 @@ func (s *Client) GetServiceDocsList(ctx context.Context, req *GetServiceDocsList
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, &errorResponse)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		response, ok := err.(*restlib.HTTPResult)
 		if !ok {

@@ -15,21 +15,21 @@ import (
 
 // Service interface for Simple
 type Service interface {
-	GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest) (*[]deps.ApiDoc, error)
-	GetGetSomeBytesList(ctx context.Context, req *GetGetSomeBytesListRequest) (*Pdf, error)
-	GetJustOkAndJustErrorList(ctx context.Context, req *GetJustOkAndJustErrorListRequest) (*http.Header, error)
-	GetJustReturnErrorList(ctx context.Context, req *GetJustReturnErrorListRequest) error
-	GetJustReturnOkList(ctx context.Context, req *GetJustReturnOkListRequest) (*http.Header, error)
-	GetOkTypeAndJustErrorList(ctx context.Context, req *GetOkTypeAndJustErrorListRequest) (*Response, error)
-	GetOopsList(ctx context.Context, req *GetOopsListRequest) (*Response, error)
-	GetRawList(ctx context.Context, req *GetRawListRequest) (*Str, error)
-	GetRawIntList(ctx context.Context, req *GetRawIntListRequest) (*Integer, error)
-	GetRawStatesList(ctx context.Context, req *GetRawStatesListRequest) (*[]Status, error)
-	GetRawIdStatesList(ctx context.Context, req *GetRawIdStatesListRequest) (*Str, error)
-	GetRawStates2List(ctx context.Context, req *GetRawStates2ListRequest) (*Str, error)
-	GetSimpleAPIDocsList(ctx context.Context, req *GetSimpleAPIDocsListRequest) (*deps.ApiDoc, error)
-	GetStuffList(ctx context.Context, req *GetStuffListRequest) (*Stuff, error)
-	PostStuff(ctx context.Context, req *PostStuffRequest) (*Str, error)
+	GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest, opts ...restlib.RestRequestOption) (*[]deps.ApiDoc, error)
+	GetGetSomeBytesList(ctx context.Context, req *GetGetSomeBytesListRequest, opts ...restlib.RestRequestOption) (*Pdf, error)
+	GetJustOkAndJustErrorList(ctx context.Context, req *GetJustOkAndJustErrorListRequest, opts ...restlib.RestRequestOption) (*http.Header, error)
+	GetJustReturnErrorList(ctx context.Context, req *GetJustReturnErrorListRequest, opts ...restlib.RestRequestOption) error
+	GetJustReturnOkList(ctx context.Context, req *GetJustReturnOkListRequest, opts ...restlib.RestRequestOption) (*http.Header, error)
+	GetOkTypeAndJustErrorList(ctx context.Context, req *GetOkTypeAndJustErrorListRequest, opts ...restlib.RestRequestOption) (*Response, error)
+	GetOopsList(ctx context.Context, req *GetOopsListRequest, opts ...restlib.RestRequestOption) (*Response, error)
+	GetRawList(ctx context.Context, req *GetRawListRequest, opts ...restlib.RestRequestOption) (*Str, error)
+	GetRawIntList(ctx context.Context, req *GetRawIntListRequest, opts ...restlib.RestRequestOption) (*Integer, error)
+	GetRawStatesList(ctx context.Context, req *GetRawStatesListRequest, opts ...restlib.RestRequestOption) (*[]Status, error)
+	GetRawIdStatesList(ctx context.Context, req *GetRawIdStatesListRequest, opts ...restlib.RestRequestOption) (*Str, error)
+	GetRawStates2List(ctx context.Context, req *GetRawStates2ListRequest, opts ...restlib.RestRequestOption) (*Str, error)
+	GetSimpleAPIDocsList(ctx context.Context, req *GetSimpleAPIDocsListRequest, opts ...restlib.RestRequestOption) (*deps.ApiDoc, error)
+	GetStuffList(ctx context.Context, req *GetStuffListRequest, opts ...restlib.RestRequestOption) (*Stuff, error)
+	PostStuff(ctx context.Context, req *PostStuffRequest, opts ...restlib.RestRequestOption) (*Str, error)
 }
 
 // Client for Simple API
@@ -44,7 +44,7 @@ func NewClient(client *http.Client, serviceURL string) *Client {
 }
 
 // GetApiDocsList ...
-func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest) (*[]deps.ApiDoc, error) {
+func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest, opts ...restlib.RestRequestOption) (*[]deps.ApiDoc, error) {
 	required := []string{}
 	var okResponse []deps.ApiDoc
 	u, err := url.Parse(fmt.Sprintf("%s/api-docs", s.url))
@@ -53,6 +53,7 @@ func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest)
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
 	}
@@ -74,7 +75,7 @@ func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest)
 }
 
 // GetGetSomeBytesList ...
-func (s *Client) GetGetSomeBytesList(ctx context.Context, req *GetGetSomeBytesListRequest) (*Pdf, error) {
+func (s *Client) GetGetSomeBytesList(ctx context.Context, req *GetGetSomeBytesListRequest, opts ...restlib.RestRequestOption) (*Pdf, error) {
 	required := []string{}
 	var okResponse Pdf
 	u, err := url.Parse(fmt.Sprintf("%s/get-some-bytes", s.url))
@@ -83,6 +84,7 @@ func (s *Client) GetGetSomeBytesList(ctx context.Context, req *GetGetSomeBytesLi
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
 	}
@@ -104,7 +106,7 @@ func (s *Client) GetGetSomeBytesList(ctx context.Context, req *GetGetSomeBytesLi
 }
 
 // GetJustOkAndJustErrorList ...
-func (s *Client) GetJustOkAndJustErrorList(ctx context.Context, req *GetJustOkAndJustErrorListRequest) (*http.Header, error) {
+func (s *Client) GetJustOkAndJustErrorList(ctx context.Context, req *GetJustOkAndJustErrorListRequest, opts ...restlib.RestRequestOption) (*http.Header, error) {
 	required := []string{}
 	u, err := url.Parse(fmt.Sprintf("%s/just-ok-and-just-error", s.url))
 	if err != nil {
@@ -112,6 +114,7 @@ func (s *Client) GetJustOkAndJustErrorList(ctx context.Context, req *GetJustOkAn
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, nil, nil)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
 	}
@@ -123,7 +126,7 @@ func (s *Client) GetJustOkAndJustErrorList(ctx context.Context, req *GetJustOkAn
 }
 
 // GetJustReturnErrorList ...
-func (s *Client) GetJustReturnErrorList(ctx context.Context, req *GetJustReturnErrorListRequest) error {
+func (s *Client) GetJustReturnErrorList(ctx context.Context, req *GetJustReturnErrorListRequest, opts ...restlib.RestRequestOption) error {
 	required := []string{}
 	u, err := url.Parse(fmt.Sprintf("%s/just-return-error", s.url))
 	if err != nil {
@@ -131,6 +134,7 @@ func (s *Client) GetJustReturnErrorList(ctx context.Context, req *GetJustReturnE
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, nil, nil)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		return common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
 	}
@@ -142,7 +146,7 @@ func (s *Client) GetJustReturnErrorList(ctx context.Context, req *GetJustReturnE
 }
 
 // GetJustReturnOkList ...
-func (s *Client) GetJustReturnOkList(ctx context.Context, req *GetJustReturnOkListRequest) (*http.Header, error) {
+func (s *Client) GetJustReturnOkList(ctx context.Context, req *GetJustReturnOkListRequest, opts ...restlib.RestRequestOption) (*http.Header, error) {
 	required := []string{}
 	u, err := url.Parse(fmt.Sprintf("%s/just-return-ok", s.url))
 	if err != nil {
@@ -150,6 +154,7 @@ func (s *Client) GetJustReturnOkList(ctx context.Context, req *GetJustReturnOkLi
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, nil, nil)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
 	}
@@ -161,7 +166,7 @@ func (s *Client) GetJustReturnOkList(ctx context.Context, req *GetJustReturnOkLi
 }
 
 // GetOkTypeAndJustErrorList ...
-func (s *Client) GetOkTypeAndJustErrorList(ctx context.Context, req *GetOkTypeAndJustErrorListRequest) (*Response, error) {
+func (s *Client) GetOkTypeAndJustErrorList(ctx context.Context, req *GetOkTypeAndJustErrorListRequest, opts ...restlib.RestRequestOption) (*Response, error) {
 	required := []string{}
 	var okResponse Response
 	u, err := url.Parse(fmt.Sprintf("%s/ok-type-and-just-error", s.url))
@@ -170,6 +175,7 @@ func (s *Client) GetOkTypeAndJustErrorList(ctx context.Context, req *GetOkTypeAn
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
 	}
@@ -191,7 +197,7 @@ func (s *Client) GetOkTypeAndJustErrorList(ctx context.Context, req *GetOkTypeAn
 }
 
 // GetOopsList ...
-func (s *Client) GetOopsList(ctx context.Context, req *GetOopsListRequest) (*Response, error) {
+func (s *Client) GetOopsList(ctx context.Context, req *GetOopsListRequest, opts ...restlib.RestRequestOption) (*Response, error) {
 	required := []string{}
 	var okResponse Response
 	var errorResponse Status
@@ -201,6 +207,7 @@ func (s *Client) GetOopsList(ctx context.Context, req *GetOopsListRequest) (*Res
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, &errorResponse)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		response, ok := err.(*restlib.HTTPResult)
 		if !ok {
@@ -226,7 +233,7 @@ func (s *Client) GetOopsList(ctx context.Context, req *GetOopsListRequest) (*Res
 }
 
 // GetRawList ...
-func (s *Client) GetRawList(ctx context.Context, req *GetRawListRequest) (*Str, error) {
+func (s *Client) GetRawList(ctx context.Context, req *GetRawListRequest, opts ...restlib.RestRequestOption) (*Str, error) {
 	required := []string{}
 	var okResponse Str
 	u, err := url.Parse(fmt.Sprintf("%s/raw", s.url))
@@ -239,6 +246,7 @@ func (s *Client) GetRawList(ctx context.Context, req *GetRawListRequest) (*Str, 
 
 	u.RawQuery = q.Encode()
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
 	}
@@ -260,7 +268,7 @@ func (s *Client) GetRawList(ctx context.Context, req *GetRawListRequest) (*Str, 
 }
 
 // GetRawIntList ...
-func (s *Client) GetRawIntList(ctx context.Context, req *GetRawIntListRequest) (*Integer, error) {
+func (s *Client) GetRawIntList(ctx context.Context, req *GetRawIntListRequest, opts ...restlib.RestRequestOption) (*Integer, error) {
 	required := []string{}
 	var okResponse Integer
 	u, err := url.Parse(fmt.Sprintf("%s/raw-int", s.url))
@@ -269,6 +277,7 @@ func (s *Client) GetRawIntList(ctx context.Context, req *GetRawIntListRequest) (
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
 	}
@@ -290,7 +299,7 @@ func (s *Client) GetRawIntList(ctx context.Context, req *GetRawIntListRequest) (
 }
 
 // GetRawStatesList ...
-func (s *Client) GetRawStatesList(ctx context.Context, req *GetRawStatesListRequest) (*[]Status, error) {
+func (s *Client) GetRawStatesList(ctx context.Context, req *GetRawStatesListRequest, opts ...restlib.RestRequestOption) (*[]Status, error) {
 	required := []string{}
 	var okResponse []Status
 	u, err := url.Parse(fmt.Sprintf("%s/raw/states", s.url))
@@ -299,6 +308,7 @@ func (s *Client) GetRawStatesList(ctx context.Context, req *GetRawStatesListRequ
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
 	}
@@ -320,7 +330,7 @@ func (s *Client) GetRawStatesList(ctx context.Context, req *GetRawStatesListRequ
 }
 
 // GetRawIdStatesList ...
-func (s *Client) GetRawIdStatesList(ctx context.Context, req *GetRawIdStatesListRequest) (*Str, error) {
+func (s *Client) GetRawIdStatesList(ctx context.Context, req *GetRawIdStatesListRequest, opts ...restlib.RestRequestOption) (*Str, error) {
 	required := []string{}
 	var okResponse Str
 	u, err := url.Parse(fmt.Sprintf("%s/raw/%v/states", s.url, req.ID))
@@ -329,6 +339,7 @@ func (s *Client) GetRawIdStatesList(ctx context.Context, req *GetRawIdStatesList
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
 	}
@@ -350,7 +361,7 @@ func (s *Client) GetRawIdStatesList(ctx context.Context, req *GetRawIdStatesList
 }
 
 // GetRawStates2List ...
-func (s *Client) GetRawStates2List(ctx context.Context, req *GetRawStates2ListRequest) (*Str, error) {
+func (s *Client) GetRawStates2List(ctx context.Context, req *GetRawStates2ListRequest, opts ...restlib.RestRequestOption) (*Str, error) {
 	required := []string{}
 	var okResponse Str
 	u, err := url.Parse(fmt.Sprintf("%s/raw/%v/states2", s.url, req.ID))
@@ -359,6 +370,7 @@ func (s *Client) GetRawStates2List(ctx context.Context, req *GetRawStates2ListRe
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
 	}
@@ -380,7 +392,7 @@ func (s *Client) GetRawStates2List(ctx context.Context, req *GetRawStates2ListRe
 }
 
 // GetSimpleAPIDocsList ...
-func (s *Client) GetSimpleAPIDocsList(ctx context.Context, req *GetSimpleAPIDocsListRequest) (*deps.ApiDoc, error) {
+func (s *Client) GetSimpleAPIDocsList(ctx context.Context, req *GetSimpleAPIDocsListRequest, opts ...restlib.RestRequestOption) (*deps.ApiDoc, error) {
 	required := []string{}
 	var okResponse deps.ApiDoc
 	u, err := url.Parse(fmt.Sprintf("%s/simple-api-docs", s.url))
@@ -389,6 +401,7 @@ func (s *Client) GetSimpleAPIDocsList(ctx context.Context, req *GetSimpleAPIDocs
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
 	}
@@ -410,7 +423,7 @@ func (s *Client) GetSimpleAPIDocsList(ctx context.Context, req *GetSimpleAPIDocs
 }
 
 // GetStuffList ...
-func (s *Client) GetStuffList(ctx context.Context, req *GetStuffListRequest) (*Stuff, error) {
+func (s *Client) GetStuffList(ctx context.Context, req *GetStuffListRequest, opts ...restlib.RestRequestOption) (*Stuff, error) {
 	required := []string{}
 	var okResponse Stuff
 	u, err := url.Parse(fmt.Sprintf("%s/stuff", s.url))
@@ -435,6 +448,7 @@ func (s *Client) GetStuffList(ctx context.Context, req *GetStuffListRequest) (*S
 
 	u.RawQuery = q.Encode()
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
 	}
@@ -456,7 +470,7 @@ func (s *Client) GetStuffList(ctx context.Context, req *GetStuffListRequest) (*S
 }
 
 // PostStuff ...
-func (s *Client) PostStuff(ctx context.Context, req *PostStuffRequest) (*Str, error) {
+func (s *Client) PostStuff(ctx context.Context, req *PostStuffRequest, opts ...restlib.RestRequestOption) (*Str, error) {
 	required := []string{}
 	var okResponse Str
 	u, err := url.Parse(fmt.Sprintf("%s/stuff", s.url))
@@ -465,6 +479,7 @@ func (s *Client) PostStuff(ctx context.Context, req *PostStuffRequest) (*Str, er
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "POST", u.String(), req.Request, required, &okResponse, nil)
+	restlib.OnRestRequestResultHTTPResult(result, err, opts)
 	if err != nil {
 		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- POST "+u.String(), err)
 	}
