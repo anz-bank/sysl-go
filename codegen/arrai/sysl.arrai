@@ -17,7 +17,7 @@ let app = (
     )},
 );
 
-let isPtr = \t t('opt')?:false && !({"sequence", "set"} & (t => .@));
+let isPtr = \t t('opt')?:false;
 
 let endpoint =
     let calls = \ep

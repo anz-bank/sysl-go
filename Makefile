@@ -152,3 +152,7 @@ codegen/arrai/tests/%.nodiff: $(ARRAI_OUT)/% $(TIDY)
 	# TODO: Remove this check altogether once Sysl transforms are replaced.
 	if [ dbendpoints != $* ]; then diff -rwuBq $(TEST_OUT_DIR)/$* $</ | awk 'BEGIN { err = 0 } END { exit err } /^Files .* differ$$/ { print; err = 1 }'; fi && touch $@
 include $(ARRAI_TRANSFORMS)/Module.mk
+
+.PHONY: docker
+docker:
+	docker build . -t sysl-go
