@@ -39,6 +39,7 @@ func (s *Client) GetServiceDocsList(ctx context.Context, req *GetServiceDocsList
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, &errorResponse)
+	restlib.OnRestResultHTTPResult(ctx, result, err)
 	if err != nil {
 		response, ok := err.(*restlib.HTTPResult)
 		if !ok {
