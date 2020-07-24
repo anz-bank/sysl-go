@@ -49,6 +49,12 @@ type respHeaderAndStatusContext struct {
 	status int
 }
 
+type RestResult struct {
+	StatusCode int
+	Headers    map[string][]string
+	Body       []byte
+}
+
 // LoggerToContext create a new context containing the logger
 // Deprecated: Use ServerParams.WithPkgLogger instead
 func LoggerToContext(ctx context.Context, logger *logrus.Logger, entry *logrus.Entry) context.Context {
@@ -170,4 +176,21 @@ type tempRoundtripper struct {
 func (t *tempRoundtripper) RoundTrip(r *http.Request) (*http.Response, error) {
 	ctx := log.With("Downsteam", t.name).Onto(r.Context())
 	return internal.NewLoggingRoundTripper(ctx, t.base).RoundTrip(r)
+}
+
+type RestResultContextKey struct{}
+
+// Provision within the context the ability to retrieve the result of a rest request
+func ProvisionRestResult(ctx context.Context) context.Context {
+	return context.WithValue(ctx, RestResultContextKey{}, &RestResult{})
+}
+
+// Get the result of the most recent rest request. The context must be provisioned prior to the
+// request taking place with a call to ProvisionRestResult
+func GetRestResult(ctx context.Context) *RestResult {
+	raw := ctx.Value(RestResultContextKey{})
+	if raw == nil {
+		return nil
+	}
+	return raw.(*RestResult)
 }
