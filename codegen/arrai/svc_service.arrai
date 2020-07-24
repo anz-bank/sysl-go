@@ -71,6 +71,7 @@ let sysl = //{./sysl};
                     cond {"ok" <: retvars: "&okResponse", _: "nil"}}, ${
                     cond {"error" <: retvars: "&errorResponse", _: "nil"}})`
             }
+            restlib.OnRestResultHTTPResult(ctx, result, err)
             if err != nil {
                 ${
                     let downstreamUnavailable = $`
