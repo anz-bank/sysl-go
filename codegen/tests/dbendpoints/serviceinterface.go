@@ -18,7 +18,7 @@ func NewDefaultDbEndpointsImpl() *DefaultDbEndpointsImpl {
 
 // GetCompanyLocationList Client
 type GetCompanyLocationListClient struct {
-	conn                         *sql.Conn
+	Conn                         *sql.Conn
 	retrievebycompanyandlocation *sql.Stmt
 }
 
