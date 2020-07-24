@@ -4,4 +4,4 @@ RUN apk add --no-cache bash
 RUN go get golang.org/x/tools/cmd/goimports
 WORKDIR /usr
 COPY . /sysl-go
-ENTRYPOINT [ "/sysl-go/arrai-docker.sh" ]
+ENTRYPOINT [ "/sysl-go/scripts/arrai-docker.sh" ]
