@@ -8,7 +8,7 @@ import (
 
 func GetCompanyLocationList(ctx context.Context, req *db.GetCompanyLocationListRequest, client db.GetCompanyLocationListClient) (*db.GetCompanyLocationResponse, error) {
 	queryStmt := client.Retrievebycompanyandlocation
-	rows, err := queryStmt.QueryContext(ctx, req.DeptLoc, req.CompanyName)
+	rows, err := queryStmt.Query(req.DeptLoc, req.CompanyName)
 	if err != nil {
 		fmt.Println("################ error Received - " + err.Error())
 		return nil, err
