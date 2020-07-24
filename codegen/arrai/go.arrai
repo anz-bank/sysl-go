@@ -96,6 +96,7 @@ let prelude = \app \imports $`
         "github.com/anz-bank/sysl-go/restlib"
         "github.com/anz-bank/sysl-go/validator"
         "google.golang.org/grpc"
+        "github.com/rickb777/date"
         ${imports => cond . {(:alias, package: pkg): $`${alias} ${pkg:q}`, _: $`${.:q}`} orderby .::\i}
     )`;
 
