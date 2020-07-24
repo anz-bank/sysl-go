@@ -193,3 +193,28 @@ func SetHeaders(w http.ResponseWriter, headerMap http.Header) {
 		}
 	}
 }
+
+// OnRestResultHTTPResult is called from generated code when an HTTP result is retrieved.
+func OnRestResultHTTPResult(ctx context.Context, result *HTTPResult, err error) {
+	var restResult *common.RestResult = nil
+	if result != nil && result.HTTPResponse != nil {
+		restResult = &common.RestResult{
+			StatusCode: result.HTTPResponse.StatusCode,
+			Headers:    result.HTTPResponse.Header,
+			Body:       result.Body,
+		}
+	}
+	OnRestResult(ctx, restResult, err)
+}
+
+// OnRestResult method will be called from tests as we don't expose the HTTPResult itself
+func OnRestResult(ctx context.Context, result *common.RestResult, err error) {
+	raw := ctx.Value(common.RestResultContextKey{})
+	if raw == nil {
+		return
+	}
+	target := raw.(*common.RestResult)
+	target.Body = result.Body
+	target.Headers = result.Headers
+	target.StatusCode = result.StatusCode
+}

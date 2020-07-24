@@ -40,6 +40,7 @@ func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest)
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, &errorResponse)
+	restlib.OnRestResultHTTPResult(ctx, result, err)
 	if err != nil {
 		response, ok := err.(*restlib.HTTPResult)
 		if !ok {
@@ -73,6 +74,7 @@ func (s *Client) GetSuccessList(ctx context.Context, req *GetSuccessListRequest)
 	}
 
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, nil, nil)
+	restlib.OnRestResultHTTPResult(ctx, result, err)
 	if err != nil {
 		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Deps <- GET "+u.String(), err)
 	}
