@@ -3,6 +3,7 @@ module github.com/anz-bank/sysl-go
 go 1.14
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.4.1
 	github.com/anz-bank/pkg v0.0.11
 	github.com/go-chi/chi v4.0.4+incompatible
 	github.com/go-playground/universal-translator v0.17.0 // indirect
