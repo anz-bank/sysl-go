@@ -86,7 +86,8 @@ func (s *ServiceHandler) GetCompanyLocationListHandler(w http.ResponseWriter, r 
 	}
 
 	client := GetCompanyLocationListClient{
-		conn:                         conn,
+
+		Conn:                         conn,
 		retrievebycompanyandlocation: retrievebycompanyandlocationStmt,
 	}
 

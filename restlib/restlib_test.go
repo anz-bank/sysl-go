@@ -283,3 +283,31 @@ func TestSendHTTPResponseContentTypeImage(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []byte{1, 2}, b)
 }
+
+func TestRestResultContextWithoutProvision(t *testing.T) {
+	restResult := &common.RestResult{
+		StatusCode: 200,
+		Headers:    map[string][]string{"Accept": {"Json"}},
+		Body:       []byte("Here is a string...."),
+	}
+	ctx := context.Background()
+	OnRestResult(ctx, restResult, nil)
+	restResultFromCtx := common.GetRestResult(ctx)
+	require.Nil(t, restResultFromCtx)
+}
+
+func TestRestResultContextWithProvision(t *testing.T) {
+	restResult := &common.RestResult{
+		StatusCode: 200,
+		Headers:    map[string][]string{"Accept": {"Json"}},
+		Body:       []byte("Here is a string...."),
+	}
+	ctx := context.Background()
+	ctx = common.ProvisionRestResult(ctx)
+	OnRestResult(ctx, restResult, nil)
+	restResultFromCtx := common.GetRestResult(ctx)
+	require.NotNil(t, restResultFromCtx)
+	require.Equal(t, restResult.StatusCode, restResultFromCtx.StatusCode)
+	require.Equal(t, restResult.Headers, restResultFromCtx.Headers)
+	require.Equal(t, restResult.Body, restResultFromCtx.Body)
+}
