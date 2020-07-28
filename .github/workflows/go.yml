@@ -15,10 +15,8 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v2
 
-      - name: Run golangci-lint v1.29.0
+      - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v2
-        with:
-          version: v1.29.0
 
   test:
     name: Test
