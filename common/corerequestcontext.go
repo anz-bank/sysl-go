@@ -12,7 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Deprecated: Use ServerParams.WithPkgLogger instead
+// Deprecated: Use ServerParams.WithPkgLogger instead.
 func GetLogEntryFromContext(ctx context.Context) *logrus.Entry {
 	core := getCoreContext(ctx)
 	if core == nil {
@@ -21,7 +21,7 @@ func GetLogEntryFromContext(ctx context.Context) *logrus.Entry {
 	return core.entry
 }
 
-// Deprecated: Use ServerParams.WithPkgLogger instead
+// Deprecated: Use ServerParams.WithPkgLogger instead.
 func GetLoggerFromContext(ctx context.Context) *logrus.Logger {
 	core := getCoreContext(ctx)
 	if core == nil {
@@ -55,18 +55,18 @@ type RestResult struct {
 	Body       []byte
 }
 
-// LoggerToContext create a new context containing the logger
-// Deprecated: Use ServerParams.WithPkgLogger instead
+// LoggerToContext creates a new context containing the logger.
+// Deprecated: Use ServerParams.WithPkgLogger instead.
 func LoggerToContext(ctx context.Context, logger *logrus.Logger, entry *logrus.Entry) context.Context {
 	return context.WithValue(ctx, coreRequestContextKey{}, &coreRequestContext{logger, entry})
 }
 
-// RequestHeaderToContext create a new context containing the request header
+// RequestHeaderToContext creates a new context containing the request header.
 func RequestHeaderToContext(ctx context.Context, header http.Header) context.Context {
 	return context.WithValue(ctx, reqHeaderContextKey{}, &reqHeaderContext{header})
 }
 
-// RequestHeaderFromContext retrieve the request header from the context
+// RequestHeaderFromContext retrieves the request header from the context.
 func RequestHeaderFromContext(ctx context.Context) http.Header {
 	reqHeader := getReqHeaderContext(ctx)
 
@@ -76,12 +76,12 @@ func RequestHeaderFromContext(ctx context.Context) http.Header {
 	return reqHeader.header
 }
 
-// RespHeaderAndStatusToContext create a new context containing the response header and status
+// RespHeaderAndStatusToContext creates a new context containing the response header and status.
 func RespHeaderAndStatusToContext(ctx context.Context, header http.Header, status int) context.Context {
 	return context.WithValue(ctx, respHeaderAndStatusContextKey{}, &respHeaderAndStatusContext{header, status})
 }
 
-// RespHeaderAndStatusFromContext retrieve response header and status from the context
+// RespHeaderAndStatusFromContext retrieves response header and status from the context.
 func RespHeaderAndStatusFromContext(ctx context.Context) (header http.Header, status int) {
 	respHeaderAndStatus := getRespHeaderAndStatusContext(ctx)
 
@@ -180,13 +180,15 @@ func (t *tempRoundtripper) RoundTrip(r *http.Request) (*http.Response, error) {
 
 type RestResultContextKey struct{}
 
-// Provision within the context the ability to retrieve the result of a rest request
+// ProvisionRestResult provisions within the context the ability to retrieve the
+// result of a rest request.
 func ProvisionRestResult(ctx context.Context) context.Context {
 	return context.WithValue(ctx, RestResultContextKey{}, &RestResult{})
 }
 
-// Get the result of the most recent rest request. The context must be provisioned prior to the
-// request taking place with a call to ProvisionRestResult
+// GetRestResult gets the result of the most recent rest request. The context
+// must be provisioned prior to the request taking place with a call to
+// ProvisionRestResult.
 func GetRestResult(ctx context.Context) *RestResult {
 	raw := ctx.Value(RestResultContextKey{})
 	if raw == nil {

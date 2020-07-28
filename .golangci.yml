@@ -1,15 +1,63 @@
+service:
+  golangci-lint-version: 1.29.0
+
 linters-settings:
   lll:
     line-length: 180
 
 linters:
-  enable-all: true
-  disable:
-    - dupl
-    - gochecknoglobals
-    - wsl
-    - lll
-    - gomnd # Ignore magic as it seems to produce too much noise for this codebase
+  disable-all: true
+  enable:
+    - asciicheck
+    - bodyclose
+    - deadcode
+    - depguard
+    - dogsled
+    - errcheck
+    - funlen
+    - gochecknoinits
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - godox
+    - gofmt
+    - goimports
+    - golint
+    - gomodguard
+    - goprintffuncname
+    - gosimple
+    - govet
+    - ineffassign
+    - interfacer
+    - maligned
+    - misspell
+    - nakedret
+    - nolintlint
+    - prealloc
+    - rowserrcheck
+    - scopelint
+    - staticcheck
+    - structcheck
+    - typecheck
+    - unconvert
+    - unparam
+    - varcheck
+    - whitespace
+
+  # disable: # as at 1.27.0
+  #   - dupl
+  #   - gochecknoglobals
+  #   - goerr113
+  #   - gomnd
+  #   - gosec
+  #   - lll
+  #   - nestif
+  #   - stylecheck
+  #   - testpackage
+  #   - wsl
+  #   - unused
 
 issues:
   exclude-rules:

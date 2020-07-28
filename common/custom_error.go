@@ -3,6 +3,7 @@ package common
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/anz-bank/pkg/log"
@@ -19,7 +20,7 @@ func (e CustomError) HTTPError(ctx context.Context) *HTTPError {
 	httpStatus, err := strconv.Atoi(httpStatusString)
 	if err != nil {
 		log.Error(ctx, err, fmt.Sprintf("invalid http_status: %s for: %s", httpStatusString, e["name"]))
-		httpStatus = 500 //nolint: // TODO: use constant for internal server error
+		httpStatus = http.StatusInternalServerError
 	}
 	httpCode := getOrDefault(e, "http_code", "")
 	httpMessage := getOrDefault(e, "http_message", "")

@@ -90,7 +90,7 @@ func unaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServ
 	return handler(log.With("traceid", "traceid").Onto(ctx), req)
 }
 
-// NewGrpcServer creates a grpc.Server based on passed configuration
+// NewGrpcServer creates a grpc.Server based on passed configuration.
 func newGrpcServer(cfg *config.CommonServerConfig, interceptors ...grpc.UnaryServerInterceptor) (*grpc.Server, error) {
 	opts, err := config.ExtractGrpcServerOptions(cfg)
 	if err != nil {
