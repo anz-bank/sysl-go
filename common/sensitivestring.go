@@ -39,7 +39,7 @@ func (s *SensitiveString) UnmarshalYAML(unmarshal func(interface{}) error) error
 	return nil
 }
 
-// Note, this one needs to be an object receiver NOT a pointer receiver
+// Note, this one needs to be an object receiver NOT a pointer receiver.
 func (s SensitiveString) MarshalYAML() (interface{}, error) {
 	return s.String(), nil
 }

@@ -87,7 +87,7 @@ func Validate(v interface{}) error {
 // Custom validator to manage a timeout= param
 // timeout=1ms     -> 1ms max timeout, no minimum to validate
 // timeout=1ms:10s -> timeout between 1ms (inclusive) and 10s (exclusive)
-// timeout=5s:     -> 5s min timeout, no maximum
+// timeout=5s:     -> 5s min timeout, no maximum.
 func timeoutValidatorFunc(fl vv9.FieldLevel) bool {
 	parts := strings.Split(fl.Param(), ":")
 

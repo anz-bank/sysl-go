@@ -23,7 +23,7 @@ type Middleware struct {
 	getPathPattern func(ctx context.Context) string
 }
 
-// NewHTTPServerMetricsMiddleware returns a new Prometheus Middleware handler
+// NewHTTPServerMetricsMiddleware returns a new Prometheus Middleware handler.
 func NewHTTPServerMetricsMiddleware(registry *prometheus.Registry, serviceName string,
 	getPathPattern func(ctx context.Context) string) func(next http.Handler) http.Handler {
 	requestCounterVec := prometheus.NewCounterVec(

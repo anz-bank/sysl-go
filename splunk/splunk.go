@@ -164,7 +164,7 @@ func (c *Client) LogEvents(events []*Event) error {
 	return c.doRequest(buf)
 }
 
-// Writer is a convience method for creating an io.Writer from a Writer with default values
+// Writer is a convience method for creating an io.Writer from a Writer with default values.
 func (c *Client) Writer() *Writer {
 	return &Writer{
 		Client: c,
