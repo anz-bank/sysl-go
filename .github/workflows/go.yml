@@ -18,7 +18,7 @@ jobs:
       - name: Run golangci-lint 1.27.0
         uses: actions-contrib/golangci-lint@v1
         with:
-          golangci_lint_version: 1.23.8
+          golangci_lint_version: 1.27.0
 
   test:
     name: Test
