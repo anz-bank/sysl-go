@@ -8,7 +8,7 @@ linters-settings:
 linters:
   disable-all: true
   enable:
-    - asciicheck
+    # - asciicheck # not available in CI, same version (1.27.0)!
     - bodyclose
     - deadcode
     - depguard
@@ -20,6 +20,7 @@ linters:
     - goconst
     - gocritic
     - gocyclo
+    # - godot # not available in CI, same version (1.27.0)!
     - godox
     - gofmt
     - goimports
@@ -45,19 +46,18 @@ linters:
     - varcheck
     - whitespace
 
-    # Omitted as at 1.27.0.
-    # - dupl
-    # - gochecknoglobals
-    # - godot
-    # - goerr113
-    # - gomnd
-    # - gosec
-    # - lll
-    # - nestif
-    # - stylecheck
-    # - testpackage
-    # - wsl
-    # - unused
+  # disable: # as at 1.27.0
+  #   - dupl
+  #   - gochecknoglobals
+  #   - goerr113
+  #   - gomnd
+  #   - gosec
+  #   - lll
+  #   - nestif
+  #   - stylecheck
+  #   - testpackage
+  #   - wsl
+  #   - unused
 
 issues:
   exclude-rules:
