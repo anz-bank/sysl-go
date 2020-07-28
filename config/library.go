@@ -8,13 +8,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// LibraryConfig struct
+// LibraryConfig struct.
 type LibraryConfig struct {
 	Log       LogConfig `yaml:"log"`
 	Profiling bool      `yaml:"profiling"`
 }
 
-// LogConfig struct
+// LogConfig struct.
 type LogConfig struct {
 	Format       string        `yaml:"format" validate:"nonnil,oneof=color json text"`
 	Splunk       *SplunkConfig `yaml:"splunk"`
@@ -22,7 +22,7 @@ type LogConfig struct {
 	ReportCaller bool          `yaml:"caller" mapstructure:"caller"`
 }
 
-// SplunkConfig struct
+// SplunkConfig struct.
 type SplunkConfig struct {
 	TokenBase64 common.SensitiveString `yaml:"tokenBase64" validate:"nonnil,base64"`
 	Index       string                 `yaml:"index" validate:"nonnil"`

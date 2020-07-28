@@ -13,7 +13,7 @@ import (
 	"github.com/anz-bank/pkg/log"
 )
 
-// Timeout is a middleware that cancels ctx after a given timeout or call a special handler on timeout
+// Timeout is a middleware that cancels ctx after a given timeout or call a special handler on timeout.
 func Timeout(ctx context.Context, timeout time.Duration, timeoutHandler http.Handler) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return TimeoutHandler(ctx, next, timeout, timeoutHandler)

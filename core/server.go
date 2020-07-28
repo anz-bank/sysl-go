@@ -159,7 +159,7 @@ func (o *logrusLoggerOption) apply(params *ServerParams) {
 	params.logrusLogger = o.logger
 }
 
-// Deprecated: Use WithPkgLogger instead
+// Deprecated: Use WithPkgLogger instead.
 func WithLogrusLogger(logger *logrus.Logger) ServerOption {
 	return &logrusLoggerOption{logger}
 }

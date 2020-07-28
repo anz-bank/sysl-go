@@ -27,14 +27,14 @@ func DefaultCommonDownstreamData() *CommonDownstreamData {
 	}
 }
 
-// CommonDownstreamData collects all the client http configuration
+// CommonDownstreamData collects all the client http configuration.
 type CommonDownstreamData struct {
 	ServiceURL      string        `yaml:"serviceURL"`
 	ClientTransport Transport     `yaml:"clientTransport"`
 	ClientTimeout   time.Duration `yaml:"clientTimeout" validate:"timeout=1ms:60s"`
 }
 
-// Transport is used to initialise DefaultHTTPTransport
+// Transport is used to initialise DefaultHTTPTransport.
 type Transport struct {
 	Dialer                Dialer `yaml:"dialer"`
 	MaxIdleConns          int
@@ -46,7 +46,7 @@ type Transport struct {
 	UseProxy              bool       `yaml:"useProxy"`
 }
 
-// Dialer is part of the Transport struct
+// Dialer is part of the Transport struct.
 type Dialer struct {
 	Timeout   time.Duration `yaml:"timeout"`
 	KeepAlive time.Duration `yaml:"keepAlive"`
@@ -104,7 +104,7 @@ func proxyHandlerFromConfig(cfg *Transport) func(req *http.Request) (*url.URL, e
 	return nil
 }
 
-// defaultHTTPTransport returns a new *http.Transport with the same configuration as http.DefaultTransport .
+// defaultHTTPTransport returns a new *http.Transport with the same configuration as http.DefaultTransport.
 func defaultHTTPTransport(cfg *Transport) (*http.Transport, error) {
 	// Finalise the handler loading
 	tlsConfig, err := MakeTLSConfig(cfg.ClientTLS)
@@ -127,7 +127,7 @@ func defaultHTTPTransport(cfg *Transport) (*http.Transport, error) {
 	}, nil
 }
 
-// DefaultHTTPClient returns a new *http.Client with sensible defaults, in particular it has a timeout set!
+// DefaultHTTPClient returns a new *http.Client with sensible defaults, in particular it has a timeout set.
 func DefaultHTTPClient(cfg *CommonDownstreamData) (*http.Client, error) {
 	if cfg == nil {
 		cfg = DefaultCommonDownstreamData()

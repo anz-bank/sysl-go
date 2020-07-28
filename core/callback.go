@@ -7,7 +7,7 @@ import (
 	"github.com/go-chi/chi"
 )
 
-// RestGenCallback is used by `sysl-go` to call hand-crafted code
+// RestGenCallback is used by `sysl-go` to call hand-crafted code.
 type RestGenCallback interface {
 	// AddMiddleware allows hand-crafted code to add middleware to the router
 	AddMiddleware(ctx context.Context, r chi.Router)
@@ -26,7 +26,7 @@ type RestGenCallback interface {
 	DownstreamTimeoutContext(ctx context.Context) (context.Context, context.CancelFunc)
 }
 
-// GrpcGenCallback is currently a subset of RestGenCallback so is defined separately for convenience
+// GrpcGenCallback is currently a subset of RestGenCallback so is defined separately for convenience.
 type GrpcGenCallback interface {
 	DownstreamTimeoutContext(ctx context.Context) (context.Context, context.CancelFunc)
 }

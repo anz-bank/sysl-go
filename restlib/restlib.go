@@ -17,7 +17,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// HTTPResult is the result return by the library
+// HTTPResult is the result return by the library.
 type HTTPResult struct {
 	HTTPResponse *http.Response
 	Body         []byte
@@ -71,8 +71,8 @@ func unmarshal(resp *http.Response, body []byte, respStruct interface{}) (*HTTPR
 	return makeHTTPResult(resp, body, respStruct), nil
 }
 
-// DoHTTPRequest returns HTTPResult
-//nolint:funlen // TODO: Refactor this function to be shorter
+// DoHTTPRequest returns HTTPResult.
+//nolint:funlen // TODO: Refactor this function to be shorter.
 func DoHTTPRequest(ctx context.Context, client *http.Client, method string,
 	urlString string, body interface{}, required []string,
 	okResponse interface{}, errorResponse interface{}) (*HTTPResult, error) {
@@ -157,7 +157,7 @@ func DoHTTPRequest(ctx context.Context, client *http.Client, method string,
 	return nil, result
 }
 
-// SendHTTPResponse sends the http response to the client
+// SendHTTPResponse sends the http response to the client.
 func SendHTTPResponse(w http.ResponseWriter, httpStatus int, responses ...interface{}) {
 	w.WriteHeader(httpStatus)
 
@@ -185,7 +185,7 @@ func SendHTTPResponse(w http.ResponseWriter, httpStatus int, responses ...interf
 	}
 }
 
-// SetHeaders sets the headers in response
+// SetHeaders sets the headers in response.
 func SetHeaders(w http.ResponseWriter, headerMap http.Header) {
 	for k, v := range headerMap {
 		for _, hv := range v {
@@ -207,7 +207,7 @@ func OnRestResultHTTPResult(ctx context.Context, result *HTTPResult, err error) 
 	OnRestResult(ctx, restResult, err)
 }
 
-// OnRestResult method will be called from tests as we don't expose the HTTPResult itself
+// OnRestResult method will be called from tests as we don't expose the HTTPResult itself.
 func OnRestResult(ctx context.Context, result *common.RestResult, err error) {
 	raw := ctx.Value(common.RestResultContextKey{})
 	if raw == nil {
