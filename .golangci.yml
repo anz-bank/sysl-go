@@ -1,5 +1,5 @@
 service:
-  golangci-lint-version: 1.27.0
+  golangci-lint-version: 1.29.0
 
 linters-settings:
   lll:
@@ -8,7 +8,7 @@ linters-settings:
 linters:
   disable-all: true
   enable:
-    # - asciicheck # not available in CI version of golangci-lint
+    - asciicheck
     - bodyclose
     - deadcode
     - depguard
@@ -20,12 +20,12 @@ linters:
     - goconst
     - gocritic
     - gocyclo
-    # - godot # not available in CI version of golangci-lint
+    - godot
     - godox
     - gofmt
     - goimports
     - golint
-    # - gomodguard # not available in CI version of golangci-lint
+    - gomodguard
     - goprintffuncname
     - gosimple
     - govet
