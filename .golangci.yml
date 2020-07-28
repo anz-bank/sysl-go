@@ -7,9 +7,16 @@ linters:
   disable:
     - dupl
     - gochecknoglobals
-    - wsl
-    - lll
+    - godot
+    - goerr113
     - gomnd # Ignore magic as it seems to produce too much noise for this codebase
+    - gosec
+    - lll
+    - nestif
+    - stylecheck
+    - testpackage
+    - wsl
+    - unused
 
 issues:
   exclude-rules:

@@ -30,7 +30,6 @@ func (e *emptyWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-//nolint:gocognit // Long method names are okay because only generated code will call this, not humans.
 func NewServerParams(ctx context.Context, name string, opts ...ServerOption) *ServerParams {
 	params := &ServerParams{Ctx: ctx, Name: name}
 	for _, o := range opts {
