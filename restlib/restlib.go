@@ -195,20 +195,30 @@ func SetHeaders(w http.ResponseWriter, headerMap http.Header) {
 }
 
 // OnRestResultHTTPResult is called from generated code when an HTTP result is retrieved.
+// The current implementation of restlib.DoHTTPRequest returns an *HTTPResult as an error when a non-
+// successful status code is received. The implementation of this method relies on this behaviour.
+// to set the rest result in the event of a failed request.
 func OnRestResultHTTPResult(ctx context.Context, result *HTTPResult, err error) {
-	var restResult *common.RestResult = nil
-	if result != nil && result.HTTPResponse != nil {
-		restResult = &common.RestResult{
-			StatusCode: result.HTTPResponse.StatusCode,
-			Headers:    result.HTTPResponse.Header,
-			Body:       result.Body,
-		}
+	if result != nil {
+		SetRestResult(ctx, toRestResult(*result))
+	} else if res, ok := err.(*HTTPResult); ok {
+		SetRestResult(ctx, toRestResult(*res))
 	}
-	OnRestResult(ctx, restResult, err)
 }
 
-// OnRestResult method will be called from tests as we don't expose the HTTPResult itself.
-func OnRestResult(ctx context.Context, result *common.RestResult, err error) {
+func toRestResult(result HTTPResult) common.RestResult {
+	return common.RestResult{
+		StatusCode: result.HTTPResponse.StatusCode,
+		Headers:    result.HTTPResponse.Header,
+		Body:       result.Body,
+	}
+}
+
+// SetRestResult the contents of the common.RestResult stored in the context.
+// The RestResult is stored in the context through the common.ProvisionRestResult method.
+// This method is exported so that unit tests can set the rest result with appropriate
+// values as required.
+func SetRestResult(ctx context.Context, result common.RestResult) {
 	raw := ctx.Value(common.RestResultContextKey{})
 	if raw == nil {
 		return
