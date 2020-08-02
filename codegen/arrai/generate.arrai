@@ -1,0 +1,38 @@
+let go = //{./go};
+let sysl = //{./sysl};
+
+let generators = {
+    "app.go":              //{./svc_app},
+    "error_types.go":      //{./svc_error_types},
+    "grpc_client.go":      //{./grpc_client},
+    "grpc_handler.go":     //{./grpc_handler},
+    "grpc_interface.go":   //{./grpc_interface},
+    "requestrouter.go":    //{./svc_router},
+    "service.go":          //{./svc_service},
+    "servicehandler.go":   //{./svc_handler},
+    "serviceinterface.go": //{./svc_interface},
+    "types.go":            //{./svc_types},
+};
+
+(
+    config: \(:app, :basepath, :module)
+        let goModule = go.module(module);
+        let endpoints = app("endpoints") orderby .@;
+        let restEndpoints = endpoints where .@item.@value('restParams')?:();
+        let nonRestEndpoints = endpoints where !.@item.@value('restParams')?:();
+        (
+            :app,
+            :basepath,
+            :module,
+
+            :endpoints,
+            :restEndpoints,
+            :nonRestEndpoints,
+            :goModule,
+            appname:       sysl.app.name(app),
+            clientDeps:    goModule.clientDeps(endpoints),
+            hasDB:         "DB" <: sysl.patterns(app),
+        ),
+    generate: \config \include
+        generators where .@ <: include >> .(config) where .@value,
+)

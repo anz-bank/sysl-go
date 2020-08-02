@@ -21,7 +21,8 @@ let sysl = //{./sysl};
         $`
             required := []string{${
                 (ep("param")?.a:{} where {"header", "required"} (<=) sysl.patterns(.@item('type'))) >>
-                    $`"${.('type')?('attrs')?('name')?:.('name')('s').s}"`
+                    let _ = //log.print(.);
+                    $`"${.('type')?('attrs')?('name')?('s').s:(.('name').s)}"`
             ::, }}
             ${declareResp("ok")::\i}
             ${declareResp("error")::\i}

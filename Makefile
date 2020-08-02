@@ -124,7 +124,7 @@ downstream.app = Downstream
 downstream.groups = rest-service
 
 simple.app = Simple
-simple.groups = rest-app
+simple.groups = auto
 
 simplegrpc.app = SimpleGrpc
 simplegrpc.groups = grpc-app

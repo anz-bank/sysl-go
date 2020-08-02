@@ -26,7 +26,7 @@ let sysl = //{./sysl};
             genCallback      core.RestGenCallback
             serviceInterface *ServiceInterface
             ${cond {hasDB: $`DB *sql.DB`}}
-            ${clientDeps orderby . >> $`${.import}${go.name(.import)}Service ${.import}.Service`::\i}
+            ${clientDeps orderby . >> (goModule.depField(.) -> $`${.name} ${.type}`)::\i}
         }
 
         // NewServiceHandler for ${appname}
@@ -129,7 +129,7 @@ let sysl = //{./sysl};
                             }
                         `
                     ::\i}
-                    ${headerParams >> \{'name': (s: name), ...}
+                    ${headerParams >> \{'name': (s: name), 'type': type, ...}
                         let name = type('attrs')?('name')('s').s:name;
                         $`${go.name(name)} := restlib.GetHeaderParam(r, "${name}")`
                     ::\i:\n}
