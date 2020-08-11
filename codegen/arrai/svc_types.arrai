@@ -45,7 +45,8 @@ let fieldJsonTag = \type \key
                                 {'attrs': {'validate': {'s': (s: tag)}, ...}, ...}: [$` validate:"${tag}"`],
                                 _: [""],
                             };
-                        $'${fieldName} ${go.type(attrDef)} `json:"${jsonTag::,}"${validateTag::}`'
+                        $'
+                        ${fieldName} ${go.type(attrDef)} `json:"${jsonTag::,}"${validateTag::}`'
                     ::\i}
                 }
                 ${

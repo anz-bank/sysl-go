@@ -24,6 +24,7 @@ require (
 	golang.org/x/sys v0.0.0-20200327173247-9dae0f8f5775 // indirect
 	google.golang.org/genproto v0.0.0-20200330113809-af700f360a68 // indirect
 	google.golang.org/grpc v1.29.0
+	google.golang.org/grpc/cmd/protoc-gen-go-grpc v0.0.0-20200805213715-b2f0b7930d06 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gopkg.in/yaml.v2 v2.2.8

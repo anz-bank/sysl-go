@@ -127,7 +127,7 @@ simple.app = Simple
 simple.groups = auto
 
 simplegrpc.app = SimpleGrpc
-simplegrpc.groups = grpc-app
+simplegrpc.groups = auto
 
 codegen/testdata/%/sysl.json: codegen/testdata/%/*.sysl
 	sysl pb --mode=json --root $(TEST_IN_DIR) $*/$*.sysl > $@ || rm -f $@

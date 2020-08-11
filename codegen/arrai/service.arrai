@@ -3,43 +3,25 @@
 let go   = //{./go};
 let sysl = //{./sysl};
 
-let auto = "auto";
-
-# codegen groups
-
-let restClient = {"error_types", "service", "types"};
-let restService = restClient | {"requestrouter", "servicehandler", "serviceinterface"};
-
-let grpcClient = {"grpc_client"};
-let grpcService = grpcClient | {"grpc_handler", "grpc_interface"};
-
-let codegenGroups = ({
-    "rest-service": restService,
-    "rest-app":     restService | {"app"},
-    "rest-client":  restClient,
-    "grpc-service": grpcService,
-    "grpc-app":     grpcService | {"app"},
-    "grpc-client":  grpcClient,
-} >> => $"${.}.go") +> {auto: {auto}};
-
 # main
 
-let [_, basepath, json, appname, groups] = //os.args;
+let [_, basepath, json, appname, groups, ?notar:false] = //os.args;
 
 let groups = //seq.split(",", groups) => .@item;
 let include = //rel.union(groups => cond {
     //seq.has_suffix(".go", .): {.},
-    _: codegenGroups(.),
+    _: //{./generate}.groups(.),
 });
 
 let module = //encoding.json.decode(cond json {"-": //os.stdin, _: //os.file(json)});
 let app = module("apps")(appname);
 let config = (:basepath, :module, :app);
 
-//archive.tar.tar(cond {
-    auto <: include:
-        let _ = cond {include != {auto}: $"${auto} must be specified by itself".fail};
-        //{./auto}(config, codegenGroups),
+let dir = cond {
+    "auto" <: include:
+        let _ = cond {include != {"auto"}: $"auto must be specified alone".fail};
+        //{./auto}(config),
     _:
         //{./generate}.generate(//{./generate}.config(config), include),
-})
+};
+cond {notar: dir, _: //archive.tar.tar(dir)}

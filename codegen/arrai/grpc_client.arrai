@@ -1,19 +1,21 @@
 let go = //{./go};
 
-\(:app, :appname, :basepath, :clientDeps, :endpoints, ...)
+\(:app, :appname, :basepath, :clientDeps, :endpoints, :fixPBPath, ...)
     let methodSig = \ep
         let {'name': (s: name), 'param': (a: [param]), 'stmt': (a: stmts), ...} = ep;
         let {'name': (s: pname), 'type': ptype, ...} = param;
         let rparam = $`${stmts
             filter .@item {{'ret': _, ...}: .}
-            >> //seq.split(" ", .("ret")("payload").s)(2)
+            >> //seq.split(".", //seq.split(" ", .("ret")("payload").s)(2))(1)
         ::}`;
-        $`${name}(ctx context.Context, ${pname} *pb.${go.type(ptype)}) (*pb.${rparam}, error)`;
+        $`${name}(ctx context.Context, ${pname} *pb.${go.leafType(ptype)}) (*pb.${rparam}, error)`;
+
+    let pbPath = fixPBPath(//log.print(app('attrs')('source_path').@value.s));
 
     # TODO: sysl automapping between sysl types and protobuf types
     # TODO: use protobuf from sysl to use instead of precompiled from the api repository
     $`
-        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(basepath, app))}
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | {(alias: 'pb', package: pbPath)})}
 
         // Client implements a client for ${appname}.
         type Client struct {

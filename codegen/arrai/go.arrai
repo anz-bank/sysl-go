@@ -16,12 +16,13 @@ let name =
             cond {upper <: initialisms: upper, _: //str.title(v)};
         //seq.concat(uppers);
 
-let rec type = \t
+# Compute the Go type for a Sysl type. If leafOnly, then
+let typeImpl = \leafOnly //fn.fix(\typeImpl \t
     let ptr = cond {t('opt')?:false && !({"sequence", "set"} & (t => .@)): "*"};
-    let appname = cond t {
+    let appname = cond {!leafOnly: cond t {
         {'typeRef': {'ref': {'appname': {'part': (a: [(s: appname), ...])}, ...}, ...}, ...}: appname,
         _: "",
-    };
+    }};
     let typeName = cond t {
         {'attrs': {'sensitive': {'s': (s: "true")}, ...}, ...}: `common.SensitiveString`,
         {'primitive': p, ...}: cond p {
@@ -38,16 +39,17 @@ let rec type = \t
                 _: `convert.JSONTime`,
             },
         },
-        {'sequence': sequence, ...}: $`[]${type(sequence)}`,
-        {'set': set, ...}: $`${type(set)}Set`,
+        {'sequence': sequence, ...}: $`[]${typeImpl(sequence)}`,
+        {'set': set, ...}: $`${typeImpl(set)}Set`,
         {'typeRef': {'ref': {'path': (a: [(s: path)]), ...ref}, ...}, ...}:
-            name(cond appname {
-                "": path,
-                _: $`${appname}.${path}`,
-            }),
+            name(//seq.join(".", [appname, path] where .@item)),
         _: name(appname),
     };
-    ptr ++ typeName;
+    ptr ++ typeName
+);
+
+let type = typeImpl(false);
+let leafType = typeImpl(true);
 
 let varName = //re.compile(`_`).sub("");
 
@@ -66,7 +68,13 @@ let package = \app
     };
 
 let pbPackage = \basepath \app
-    {(alias: `pb`, package: $`${basepath}/${app('attrs')('go_pb_package')('s').s}`)};
+    {(
+        alias: `pb`,
+        package: $`${basepath}${cond app('attrs') {
+            {'go_pb_package': p, ...}: $`/${p('s').s}`,
+            _: '',
+        }}`,
+    )};
 
 let typeWithPackage = \type \module
     cond type {
@@ -96,6 +104,8 @@ let prelude = \app \imports $`
         "github.com/anz-bank/sysl-go/restlib"
         "github.com/anz-bank/sysl-go/validator"
         "google.golang.org/grpc"
+        "google.golang.org/grpc/codes"
+        "google.golang.org/grpc/status"
         "github.com/rickb777/date"
         ${imports => cond . {(:alias, package: pkg): $`${alias} ${pkg:q}`, _: $`${.:q}`} orderby .::\i}
     )`;
@@ -198,6 +208,7 @@ let module = \module
     :pbPackage,
     :prelude,
     :type,
+    :leafType,
     :typeWithPackage,
     :varName,
 )
