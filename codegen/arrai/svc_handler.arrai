@@ -7,7 +7,7 @@ let sysl = //{./sysl};
         ${go.prelude(app, clientDeps => $`${basepath}/${.import}`)}
 
         ${
-            (app('types') where "error" <: sysl.patterns(.@value) orderby .@) >>> \i \.
+            (app('types')?:{} where "error" <: sysl.patterns(.@value) orderby .@) >>> \i \.
                 let typename = go.name(.@);
                 $`
                     // *${typename} error

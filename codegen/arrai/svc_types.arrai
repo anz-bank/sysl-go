@@ -11,8 +11,8 @@ let fieldJsonTag = \type \key
     };
 
 \(:app, :endpoints, :module, ...)
-    let entities = orderedTypes(app('types') where !({"error"} & sysl.patterns(.@value)) && {"tuple", "relation"} & (.@value => .@));
-    let aliases = orderedTypes(app('types') where !({'oneof', 'tuple', 'relation'} & (.@value => .@)));
+    let entities = orderedTypes(app('types')?:{} where !({"error"} & sysl.patterns(.@value)) && {"tuple", "relation"} & (.@value => .@));
+    let aliases = orderedTypes(app('types')?:{} where !({'oneof', 'tuple', 'relation'} & (.@value => .@)));
     $`
         ${go.prelude(app, {})}
 
