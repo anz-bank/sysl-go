@@ -18,6 +18,18 @@ var _ = time.Parse
 // Reference imports to suppress unused errors
 var _ = date.Parse
 
+// Cat ...
+type Cat struct {
+	Age   *int64 `json:"age,omitempty"`
+	Hunts *bool  `json:"hunts,omitempty"`
+}
+
+// Dog ...
+type Dog struct {
+	Bark  *bool   `json:"bark,omitempty"`
+	Breed *string `json:"breed,omitempty"`
+}
+
 // Item ...
 type Item struct {
 	A1   string `json:"A1"`
@@ -153,6 +165,16 @@ type PostStuffRequest struct {
 	Request Str
 }
 
+// *Cat validator
+func (s *Cat) Validate() error {
+	return validator.Validate(s)
+}
+
+// *Dog validator
+func (s *Dog) Validate() error {
+	return validator.Validate(s)
+}
+
 // *Item validator
 func (s *Item) Validate() error {
 	return validator.Validate(s)
@@ -199,4 +221,14 @@ type Str string
 
 // Empty ...
 type Empty struct {
+}
+
+type Pet struct {
+	Cat
+	Dog
+}
+
+type ObjectRequest struct {
+	Cat
+	Dog
 }
