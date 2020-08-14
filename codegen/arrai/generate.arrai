@@ -46,7 +46,7 @@ let generators = {
             :goModule,
             appname:       sysl.app.name(app),
             clientDeps:    goModule.clientDeps(endpoints),
-            hasDB:         "DB" <: sysl.patterns(app),
+            hasDB:         "db" <: sysl.patterns(app),
         ),
 
     generate: \config \include
