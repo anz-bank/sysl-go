@@ -32,7 +32,7 @@ func (i *JSONTime) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// StringToIntPtr takes a string and converts it to an integer pointer
+// StringToIntPtr takes a string and converts it to an integer pointer.
 func StringToIntPtr(ctx context.Context, input string) (*int64, error) {
 	if input == "" {
 		return nil, nil
@@ -46,7 +46,7 @@ func StringToIntPtr(ctx context.Context, input string) (*int64, error) {
 	return &result, nil
 }
 
-// StringToBoolPtr takes a string and converts it to a bool pointer
+// StringToBoolPtr takes a string and converts it to a bool pointer.
 func StringToBoolPtr(ctx context.Context, input string) (*bool, error) {
 	if input == "" {
 		return nil, nil
@@ -63,7 +63,7 @@ func StringToBoolPtr(ctx context.Context, input string) (*bool, error) {
 	return &result, nil
 }
 
-// StringToStringPtr takes a string and converts it to a string pointer
+// StringToStringPtr takes a string and converts it to a string pointer.
 func StringToStringPtr(ctx context.Context, input string) (*string, error) {
 	if input == "" {
 		return nil, nil
@@ -73,7 +73,7 @@ func StringToStringPtr(ctx context.Context, input string) (*string, error) {
 	return &result, nil
 }
 
-// StringToTimePtr takes a string and converts it to a time.Time pointer
+// StringToTimePtr takes a string and converts it to a time.Time pointer.
 func StringToTimePtr(ctx context.Context, input string) (*JSONTime, error) {
 	if input == "" {
 		return nil, nil

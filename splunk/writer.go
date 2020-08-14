@@ -32,13 +32,13 @@ type Writer struct {
 
 // Associates some bytes with the time they were written
 // Helpful if we have long flush intervals to more precisely record the time at which
-// a message was written
+// a message was written.
 type message struct {
 	data      interface{}
 	writtenAt time.Time
 }
 
-// Writer asynchronously writes to splunk in batches
+// Writer asynchronously writes to splunk in batches.
 func (w *Writer) Write(obj interface{}) error {
 	// only initialise once. Keep all of our buffering in one thread
 	w.once.Do(func() {
@@ -57,12 +57,12 @@ func (w *Writer) Write(obj interface{}) error {
 }
 
 // Errors returns a buffered channel of errors. Might be filled over time, might not
-// Useful if you want to record any errors hit when sending data to splunk
+// Useful if you want to record any errors hit when sending data to splunk.
 func (w *Writer) Errors() <-chan error {
 	return w.errors
 }
 
-// listen for messages
+// listen for messages.
 func (w *Writer) listen() {
 	if w.FlushInterval <= 0 {
 		w.FlushInterval = defaultInterval
@@ -94,7 +94,7 @@ func (w *Writer) listen() {
 	}
 }
 
-// send sends data to splunk, retrying upon failure
+// send sends data to splunk, retrying upon failure.
 func (w *Writer) send(messages []*message, retries int) {
 	// Create events from our data so we can send them to splunk
 	events := make([]*Event, len(messages))

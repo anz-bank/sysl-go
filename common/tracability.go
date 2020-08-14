@@ -19,7 +19,7 @@ type requestID struct {
 
 const traceIDLogField = "traceid"
 
-// Injects a traceId UUID into the request context
+// Injects a traceId UUID into the request context.
 func TraceabilityMiddleware(ctx context.Context) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {

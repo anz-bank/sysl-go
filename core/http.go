@@ -171,7 +171,7 @@ func configureRouters(basePath string, mWare []func(handler http.Handler) http.H
 	return rootRouter, router
 }
 
-// SelectBasePath chooses between a specified base path and a dynmaically chosen one
+// SelectBasePath chooses between a specified base path and a dynmaically chosen one.
 func SelectBasePath(fromSpec, dynamic string) string {
 	switch fromSpec {
 	case "": // fromSpec not specified

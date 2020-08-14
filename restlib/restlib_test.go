@@ -285,29 +285,55 @@ func TestSendHTTPResponseContentTypeImage(t *testing.T) {
 }
 
 func TestRestResultContextWithoutProvision(t *testing.T) {
-	restResult := &common.RestResult{
-		StatusCode: 200,
-		Headers:    map[string][]string{"Accept": {"Json"}},
-		Body:       []byte("Here is a string...."),
-	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte(okJSON))
+	}))
+	defer srv.Close()
+
 	ctx := context.Background()
-	OnRestResult(ctx, restResult, nil)
-	restResultFromCtx := common.GetRestResult(ctx)
-	require.Nil(t, restResultFromCtx)
+	result, err := DoHTTPRequest(ctx, srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
+	OnRestResultHTTPResult(ctx, result, err)
+	restResult := common.GetRestResult(ctx)
+	require.Nil(t, restResult)
 }
 
-func TestRestResultContextWithProvision(t *testing.T) {
-	restResult := &common.RestResult{
-		StatusCode: 200,
-		Headers:    map[string][]string{"Accept": {"Json"}},
-		Body:       []byte("Here is a string...."),
-	}
+func TestRestResultContextOnSuccess(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte(okJSON))
+	}))
+	defer srv.Close()
+
 	ctx := context.Background()
 	ctx = common.ProvisionRestResult(ctx)
-	OnRestResult(ctx, restResult, nil)
-	restResultFromCtx := common.GetRestResult(ctx)
-	require.NotNil(t, restResultFromCtx)
-	require.Equal(t, restResult.StatusCode, restResultFromCtx.StatusCode)
-	require.Equal(t, restResult.Headers, restResultFromCtx.Headers)
-	require.Equal(t, restResult.Body, restResultFromCtx.Body)
+	result, err := DoHTTPRequest(ctx, srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
+	OnRestResultHTTPResult(ctx, result, err)
+	restResult := common.GetRestResult(ctx)
+	require.NotNil(t, restResult)
+
+	require.NotNil(t, restResult)
+	require.Equal(t, 200, restResult.StatusCode)
+	require.NotEmpty(t, restResult.Headers)
+	require.Equal(t, []byte(okJSON), restResult.Body)
+}
+
+func TestRestResultContextOnError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(400)
+		_, _ = w.Write([]byte(errorJSON))
+	}))
+	defer srv.Close()
+
+	ctx := context.Background()
+	ctx = common.ProvisionRestResult(ctx)
+	result, err := DoHTTPRequest(ctx, srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
+	OnRestResultHTTPResult(ctx, result, err)
+	restResult := common.GetRestResult(ctx)
+	require.NotNil(t, restResult)
+
+	require.NotNil(t, restResult)
+	require.Equal(t, 400, restResult.StatusCode)
+	require.NotEmpty(t, restResult.Headers)
+	require.Equal(t, []byte(errorJSON), restResult.Body)
 }

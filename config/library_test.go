@@ -53,7 +53,6 @@ func defaultLogConfig() LogConfig {
 	}
 }
 
-// Config
 func TestValidateDefaultConfig(t *testing.T) {
 	config := defaultConfig()
 	err := config.Validate()
