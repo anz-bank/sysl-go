@@ -132,11 +132,6 @@ type GetPetaListRequest struct {
 	ID string
 }
 
-// GetPetbListRequest ...
-type GetPetbListRequest struct {
-	ID string
-}
-
 // GetRawListRequest ...
 type GetRawListRequest struct {
 	Bt bool

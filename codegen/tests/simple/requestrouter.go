@@ -48,7 +48,6 @@ func (s *ServiceRouter) WireRoutes(ctx context.Context, r chi.Router) {
 		r.Get("/ok-type-and-just-error", s.svcHandler.GetOkTypeAndJustErrorListHandler)
 		r.Get("/oops", s.svcHandler.GetOopsListHandler)
 		r.Get("/petA", s.svcHandler.GetPetaListHandler)
-		r.Get("/petB", s.svcHandler.GetPetbListHandler)
 		r.Get("/raw", s.svcHandler.GetRawListHandler)
 		r.Get("/raw-int", s.svcHandler.GetRawIntListHandler)
 		r.Get("/raw/states", s.svcHandler.GetRawStatesListHandler)

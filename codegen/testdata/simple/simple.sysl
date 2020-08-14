@@ -139,9 +139,6 @@ Simple "Simple Server" [package="simple"]:
     /petA:
         GET ?id=string:
             return ok <: PetA
-    /petB:
-        GET ?id=string:
-            return ok <: PetB        
  
     !type Cat:
         id <: string 
