@@ -238,12 +238,12 @@ type PetA interface {
 	IsPetA() bool
 }
 
-// IsPetA returns true to identify it is instance of PetA
+// IsPetA returns true to identify Cat is instance of PetA
 func (i Cat) IsPetA() bool {
 	return true
 }
 
-// IsPetA returns true to identify it is instance of PetA
+// IsPetA returns true to identify Dog is instance of PetA
 func (i Dog) IsPetA() bool {
 	return true
 }
@@ -256,12 +256,12 @@ type PetB interface {
 	IsPetB() bool
 }
 
-// IsPetB returns true to identify it is instance of PetB
+// IsPetB returns true to identify Cat is instance of PetB
 func (i Cat) IsPetB() bool {
 	return true
 }
 
-// IsPetB returns true to identify it is instance of PetB
+// IsPetB returns true to identify Dog is instance of PetB
 func (i Dog) IsPetB() bool {
 	return true
 }

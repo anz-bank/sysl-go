@@ -149,7 +149,7 @@ let fieldJsonTag = \type \key
                 Is${typename}() bool
             }
             ${value('oneOf')('type').a >> .('typeRef')('ref')('path').a >> $`
-                // Is${typename} returns true to identify it is instance of ${typename}
+                // Is${typename} returns true to identify ${.@item.s} is instance of ${typename}
                 func (i ${.@item.s}) Is${typename}() bool {
                     return true
                 }  
