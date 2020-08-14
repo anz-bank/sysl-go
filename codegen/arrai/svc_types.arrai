@@ -143,7 +143,7 @@ let fieldJsonTag = \type \key
         `::\i}
         ${unions >> \(@: key, @value: value, :typename)$`
             // ${typename} can be one of following types in runtime:
-            ${value('oneOf')('type').a >> .('typeRef')('ref')('path').a >> ('// ' + .@item.s)::\i}
+            ${value('oneOf')('type').a >> .('typeRef')('ref')('path').a >> $`// ${.@item.s}`::\i}
             type ${typename} interface {
             }
         `::\i}
