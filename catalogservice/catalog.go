@@ -13,7 +13,6 @@ import (
 )
 
 func Enable(s handlerinitialiser.HandlerInitialiser, r chi.Router, specification string) {
-
 	module := []byte(specification)
 	m := afero.NewMemMapFs()
 	c := catalog.NewProjectFromJson("service", "http://plantuml.com/plantuml", "html", logrus.New(), module, m, "/-/catalog")
