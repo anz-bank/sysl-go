@@ -136,10 +136,13 @@ Simple "Simple Server" [package="simple"]:
         St <: string:
             @json_tag = "St"
 
-    /pet:
+    /petA:
         GET ?id=string:
-            return ok <: Pet
-        
+            return ok <: PetA
+    /petB:
+        GET ?id=string:
+            return ok <: PetB        
+ 
     !type Cat:
         id <: string 
         age <: int?:
@@ -154,6 +157,11 @@ Simple "Simple Server" [package="simple"]:
         breed <: string?:
             @json_tag = "breed"
 
-    !union Pet:
+    !union PetA:
         Cat
         Dog
+
+    !union PetB:
+        Cat
+        Dog
+

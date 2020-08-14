@@ -127,8 +127,13 @@ type GetOkTypeAndJustErrorListRequest struct {
 type GetOopsListRequest struct {
 }
 
-// GetPetListRequest ...
-type GetPetListRequest struct {
+// GetPetaListRequest ...
+type GetPetaListRequest struct {
+	ID string
+}
+
+// GetPetbListRequest ...
+type GetPetbListRequest struct {
 	ID string
 }
 
@@ -230,8 +235,38 @@ type Str string
 type Empty struct {
 }
 
-// Pet can be one of following types in runtime:
+// PetA can be one of following types in runtime:
 // Cat
 // Dog
-type Pet interface {
+type PetA interface {
+	// IsPetA returns true if it is instance of PetA
+	IsPetA() bool
+}
+
+// IsPetA returns true to identify it is instance of PetA
+func (i Cat) IsPetA() bool {
+	return true
+}
+
+// IsPetA returns true to identify it is instance of PetA
+func (i Dog) IsPetA() bool {
+	return true
+}
+
+// PetB can be one of following types in runtime:
+// Cat
+// Dog
+type PetB interface {
+	// IsPetB returns true if it is instance of PetB
+	IsPetB() bool
+}
+
+// IsPetB returns true to identify it is instance of PetB
+func (i Cat) IsPetB() bool {
+	return true
+}
+
+// IsPetB returns true to identify it is instance of PetB
+func (i Dog) IsPetB() bool {
+	return true
 }
