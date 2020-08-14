@@ -22,12 +22,14 @@ var _ = date.Parse
 type Cat struct {
 	Age   *int64 `json:"age,omitempty"`
 	Hunts *bool  `json:"hunts,omitempty"`
+	ID    string `json:"id"`
 }
 
 // Dog ...
 type Dog struct {
 	Bark  *bool   `json:"bark,omitempty"`
 	Breed *string `json:"breed,omitempty"`
+	ID    string  `json:"id"`
 }
 
 // Item ...
@@ -123,6 +125,11 @@ type GetOkTypeAndJustErrorListRequest struct {
 
 // GetOopsListRequest ...
 type GetOopsListRequest struct {
+}
+
+// GetPetListRequest ...
+type GetPetListRequest struct {
+	ID string
 }
 
 // GetRawListRequest ...
@@ -223,12 +230,8 @@ type Str string
 type Empty struct {
 }
 
-type Pet struct {
-	Cat
-	Dog
-}
-
-type ObjectRequest struct {
-	Cat
-	Dog
+// Pet can be one of following types in runtime:
+// Cat
+// Dog
+type Pet interface {
 }

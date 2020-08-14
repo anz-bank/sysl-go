@@ -50,6 +50,10 @@ type GetOkTypeAndJustErrorListClient struct {
 type GetOopsListClient struct {
 }
 
+// GetPetList Client
+type GetPetListClient struct {
+}
+
 // GetRawList Client
 type GetRawListClient struct {
 }
@@ -93,6 +97,7 @@ type ServiceInterface struct {
 	GetJustReturnOkList       func(ctx context.Context, req *GetJustReturnOkListRequest, client GetJustReturnOkListClient) error
 	GetOkTypeAndJustErrorList func(ctx context.Context, req *GetOkTypeAndJustErrorListRequest, client GetOkTypeAndJustErrorListClient) (*Response, error)
 	GetOopsList               func(ctx context.Context, req *GetOopsListRequest, client GetOopsListClient) (*Response, error)
+	GetPetList                func(ctx context.Context, req *GetPetListRequest, client GetPetListClient) (*Pet, error)
 	GetRawList                func(ctx context.Context, req *GetRawListRequest, client GetRawListClient) (*Str, error)
 	GetRawIntList             func(ctx context.Context, req *GetRawIntListRequest, client GetRawIntListClient) (*Integer, error)
 	GetRawStatesList          func(ctx context.Context, req *GetRawStatesListRequest, client GetRawStatesListClient) (*[]Status, error)

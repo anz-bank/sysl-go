@@ -22,6 +22,7 @@ type Service interface {
 	GetJustReturnOkList(ctx context.Context, req *GetJustReturnOkListRequest) (*http.Header, error)
 	GetOkTypeAndJustErrorList(ctx context.Context, req *GetOkTypeAndJustErrorListRequest) (*Response, error)
 	GetOopsList(ctx context.Context, req *GetOopsListRequest) (*Response, error)
+	GetPetList(ctx context.Context, req *GetPetListRequest) (*Pet, error)
 	GetRawList(ctx context.Context, req *GetRawListRequest) (*Str, error)
 	GetRawIntList(ctx context.Context, req *GetRawIntListRequest) (*Integer, error)
 	GetRawStatesList(ctx context.Context, req *GetRawStatesListRequest) (*[]Status, error)
@@ -227,6 +228,41 @@ func (s *Client) GetOopsList(ctx context.Context, req *GetOopsListRequest) (*Res
 		}
 
 		return OkResponseResponse, nil
+	}
+
+	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
+}
+
+// GetPetList ...
+func (s *Client) GetPetList(ctx context.Context, req *GetPetListRequest) (*Pet, error) {
+	required := []string{}
+	var okResponse Pet
+	u, err := url.Parse(fmt.Sprintf("%s/pet", s.url))
+	if err != nil {
+		return nil, common.CreateError(ctx, common.InternalError, "failed to parse url", err)
+	}
+
+	q := u.Query()
+	q.Add("id", req.ID)
+
+	u.RawQuery = q.Encode()
+	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
+	restlib.OnRestResultHTTPResult(ctx, result, err)
+	if err != nil {
+		return nil, common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: Simple <- GET "+u.String(), err)
+	}
+
+	if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
+		return nil, common.CreateDownstreamError(ctx, common.DownstreamUnauthorizedError, result.HTTPResponse, result.Body, nil)
+	}
+	OkPetResponse, ok := result.Response.(*Pet)
+	if ok {
+		valErr := validator.Validate(OkPetResponse)
+		if valErr != nil {
+			return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, valErr)
+		}
+
+		return OkPetResponse, nil
 	}
 
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
