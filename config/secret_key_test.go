@@ -16,7 +16,6 @@ func TestSecretKeyConfigNil(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-//nolint:funlen // Needs to be long due to struct
 func TestSecretKeyConfigValidation(t *testing.T) {
 	testData := []struct {
 		name string

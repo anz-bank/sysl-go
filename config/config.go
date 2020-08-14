@@ -18,7 +18,7 @@ type DefaultConfig struct {
 // LoadConfig reads and validates a configuration loaded from file.
 // file: the path to the yaml-encoded config file
 // defaultConfig: a pointer to the default config struct to populate
-// customConfig: a pointer to the custom config struct to populate
+// customConfig: a pointer to the custom config struct to populate.
 func LoadConfig(file string, defaultConfig *DefaultConfig, customConfig interface{}) error {
 	b, err := ioutil.ReadFile(file)
 	if err != nil {

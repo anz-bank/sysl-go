@@ -84,14 +84,14 @@ type CertKeyPair struct {
 	KeyPath  *string `yaml:"keyPath"`
 }
 
-// Cert path modes
+// Cert path modes.
 const (
 	DIRMODE  = "directory"
 	FILEMODE = "file"
 	SYSMODE  = "system"
 )
 
-// Cert encoding types
+// Cert encoding types.
 const (
 	PEM = "pem"
 )
