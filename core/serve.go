@@ -3,11 +3,13 @@ package core
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"reflect"
+	"strings"
 
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/go-chi/chi"
@@ -20,7 +22,15 @@ func Serve(
 	newRouter func(cfg *config.DefaultConfig, serviceIntf interface{}) (chi.Router, error),
 ) error {
 	if len(os.Args) != 2 {
-		return fmt.Errorf("Wrong number of arguments (usage: %s config)", os.Args[0])
+		return fmt.Errorf("Wrong number of arguments (usage: %s (config | -h | --help))", os.Args[0])
+	}
+
+	customConfig := CreateConfig(downstreamConfig, createService, serviceInterface)
+	if os.Args[1] == "--help" || os.Args[1] == "-h" {
+		fmt.Printf("Usage: %s config\n", os.Args[0])
+		describeCustomConfig(os.Stdout, customConfig)
+		fmt.Println("")
+		return nil
 	}
 
 	configPath := os.Args[1]
@@ -29,7 +39,6 @@ func Serve(
 		return err
 	}
 
-	customConfig := CreateConfig(downstreamConfig, createService, serviceInterface)
 	if err = yaml.UnmarshalStrict(configData, customConfig); err != nil {
 		return err
 	}
@@ -125,4 +134,44 @@ func GetCreateServiceConfigType(createService, serviceInterface interface{}) ref
 	}
 
 	return cs.In(1)
+}
+
+func describeCustomConfig(w io.Writer, customConfig interface{}) {
+	describeYAMLForType(w, reflect.TypeOf(customConfig), 0)
+}
+
+func describeYAMLForType(w io.Writer, t reflect.Type, indent int) {
+	outf := func(format string, args ...interface{}) {
+		parts := strings.SplitAfterN(format, "\n", 2)
+		fmt.Fprintf(w, strings.Join(parts, strings.Repeat(" ", indent)), args...)
+	}
+	switch t.Kind() {
+	case reflect.Bool:
+		outf(" bool")
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		outf(" int")
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		outf(" uint")
+	case reflect.Float32, reflect.Float64:
+		outf(" float")
+	case reflect.Array, reflect.Slice:
+		outf("\n  - ")
+		describeYAMLForType(w, t.Elem(), indent+2)
+	case reflect.Interface:
+		outf(" any")
+	// case reflect.Map:
+	case reflect.Ptr:
+		describeYAMLForType(w, t.Elem(), indent)
+	case reflect.String:
+		outf(" string")
+	case reflect.Struct:
+		n := t.NumField()
+		for i := 0; i < n; i++ {
+			f := t.Field(i)
+			outf("\n%s:", f.Name)
+			describeYAMLForType(w, f.Type, indent+2)
+		}
+	default:
+		panic(fmt.Errorf("describeYAMLForType: Unhandled type: %v", t))
+	}
 }
