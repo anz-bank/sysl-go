@@ -60,28 +60,24 @@ let sysl = //{./sysl};
             }, err
         }
 
-        // NewDefaultConfig ...
-        func NewDefaultConfig() *config.DefaultConfig {
-            return &config.DefaultConfig{
-                Library: config.LibraryConfig{},
-                GenCode: config.GenCodeConfig{Downstream: &DownstreamConfig{}},
-            }
-        }
-
         // Serve starts the server.
         // serviceCreator must be a func(ctx context.Context, config UserConfig) ()
-        func Serve(ctx context.Context, createService func(ctx context.Context, config interface{}) (*ServiceInterface, error)) error {
+        func Serve(
+            ctx context.Context,
+            appConfig interface{},
+            createService func(ctx context.Context, appConfig interface{}) (*ServiceInterface, error),
+        ) error {
             return core.Serve(
                 ctx,
-                NewDefaultConfig(),
-                func(cfg *config.DefaultConfig) (chi.Router, error) {
+                &DownstreamConfig{}, appConfig,
+                func(cfg *config.DefaultConfig, appConfig interface{}) (chi.Router, error) {
                     genCallbacks := common.DefaultCallback()
 
                     clients, err := BuildDownstreamClients(cfg)
                     if err != nil {
                         return nil, err
                     }
-                    serviceInterface, err := createService(ctx, cfg.GenCode)
+                    serviceInterface, err := createService(ctx, appConfig)
                     if err != nil {
                         return nil, err
                     }

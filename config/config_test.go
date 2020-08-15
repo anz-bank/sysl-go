@@ -37,8 +37,8 @@ type TestDownstreamConfig struct {
 
 func testDefaultConfig() DefaultConfig {
 	return DefaultConfig{
-		Library: LibraryConfig{},
-		GenCode: GenCodeConfig{
+		Library: &LibraryConfig{},
+		GenCode: &GenCodeConfig{
 			Downstream: &TestDownstreamConfig{},
 		},
 	}
