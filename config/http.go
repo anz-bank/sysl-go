@@ -9,20 +9,22 @@ import (
 	"github.com/anz-bank/sysl-go/validator"
 )
 
+func DefaultCommonTransport() *Transport {
+	return &Transport{
+		Dialer: Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+			DualStack: true,
+		},
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+}
+
 func DefaultCommonDownstreamData() *CommonDownstreamData {
 	return &CommonDownstreamData{
-		ServiceURL: "",
-		ClientTransport: Transport{
-			Dialer: Dialer{
-				Timeout:   30 * time.Second,
-				KeepAlive: 30 * time.Second,
-				DualStack: true,
-			},
-			MaxIdleConns:          100,
-			IdleConnTimeout:       90 * time.Second,
-			TLSHandshakeTimeout:   10 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
-		},
 		ClientTimeout: 60 * time.Second,
 	}
 }
@@ -30,7 +32,7 @@ func DefaultCommonDownstreamData() *CommonDownstreamData {
 // CommonDownstreamData collects all the client http configuration.
 type CommonDownstreamData struct {
 	ServiceURL      string        `yaml:"serviceURL"`
-	ClientTransport Transport     `yaml:"clientTransport"`
+	ClientTransport *Transport    `yaml:"clientTransport"`
 	ClientTimeout   time.Duration `yaml:"clientTimeout" validate:"timeout=1ms:60s"`
 }
 
@@ -106,6 +108,9 @@ func proxyHandlerFromConfig(cfg *Transport) func(req *http.Request) (*url.URL, e
 
 // defaultHTTPTransport returns a new *http.Transport with the same configuration as http.DefaultTransport.
 func defaultHTTPTransport(cfg *Transport) (*http.Transport, error) {
+	if cfg == nil {
+		cfg = DefaultCommonTransport()
+	}
 	// Finalise the handler loading
 	tlsConfig, err := MakeTLSConfig(cfg.ClientTLS)
 	if err != nil {
@@ -133,7 +138,7 @@ func DefaultHTTPClient(cfg *CommonDownstreamData) (*http.Client, error) {
 		cfg = DefaultCommonDownstreamData()
 	}
 
-	transport, err := defaultHTTPTransport(&cfg.ClientTransport)
+	transport, err := defaultHTTPTransport(cfg.ClientTransport)
 	if err != nil {
 		return nil, err
 	}

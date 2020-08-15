@@ -13,9 +13,10 @@ let include = //rel.union(groups => cond {
     _: //{./generate}.groups(.),
 });
 
-let module = //encoding.json.decode(cond json {"-": //os.stdin, _: //os.file(json)});
+let json = cond json {"-": //os.stdin, _: //os.file(json)};
+let module = //encoding.json.decode(json);
 let app = module("apps")(appname);
-let config = (:basepath, :module, :app);
+let config = (:json, :basepath, :module, :app);
 
 let dir = cond {
     "auto" <: include:

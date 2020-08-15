@@ -30,18 +30,23 @@ let sysl = //{./sysl};
         }
 
         // NewServiceHandler for ${appname}
-        func NewServiceHandler(genCallback core.RestGenCallback, serviceInterface *ServiceInterface${
-            clientDeps orderby . >> $`, ${.import}${go.name(.import)}Service ${.import}.Service`
-        ::}) *ServiceHandler {
+        func NewServiceHandler(
+            genCallback core.RestGenCallback,
+            serviceInterface *ServiceInterface,
+            ${clientDeps orderby . >> $`${.import}${go.name(.import)}Service ${.import}.Service,`::\i}
+        ) *ServiceHandler {
             ${cond {hasDB: $`
                 db, err := database.GetDBHandle()
                 if err != nil {
                         return nil
                 }
             `}}
-            return &ServiceHandler{genCallback, serviceInterface${
-                clientDeps orderby . >> $`, ${.import}${go.name(.import)}Service`
-            ::}${cond {hasDB: $`, db`}}}
+            return &ServiceHandler{
+                genCallback,
+                serviceInterface,
+                ${clientDeps orderby . >> $`${.import}${go.name(.import)}Service,`::\i}
+                ${cond {hasDB: $`db,`}}
+            }
         }
 
         ${restEndpoints >> \(@value: ep, ...)

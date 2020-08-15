@@ -3,6 +3,7 @@ let sysl = //{./sysl};
 
 let generators = {
     "app.go":              //{./svc_app},
+    "app_spec.go":         //{./app_spec},
     "error_types.go":      //{./svc_error_types},
     "grpc_client.go":      //{./grpc_client},
     "grpc_handler.go":     //{./grpc_handler},
@@ -23,10 +24,10 @@ let generators = {
         let grpcService = {"grpc_handler", "grpc_interface"};
         ({
             "rest-service": restService,
-            "rest-app":     restService | {"app"},
+            "rest-app":     restService | {"app", "app_spec"},
             "rest-client":  restClient,
             "grpc-service": grpcService,
-            "grpc-app":     grpcService | {"app"},
+            "grpc-app":     grpcService | {"app", "app_spec"},
             "grpc-client":  grpcClient,
         } >> => $"${.}.go") +> {"auto": {"auto"}},
 
