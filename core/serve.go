@@ -9,8 +9,10 @@ import (
 	"net/http"
 	"os"
 	"reflect"
+	"sort"
 	"strings"
 
+	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/go-chi/chi"
 	"gopkg.in/yaml.v2"
@@ -27,9 +29,9 @@ func Serve(
 
 	customConfig := CreateConfig(downstreamConfig, createService, serviceInterface)
 	if os.Args[1] == "--help" || os.Args[1] == "-h" {
-		fmt.Printf("Usage: %s config\n", os.Args[0])
+		fmt.Printf("Usage: %s config\n\n", os.Args[0])
 		describeCustomConfig(os.Stdout, customConfig)
-		fmt.Println("")
+		fmt.Print("\n\n")
 		return nil
 	}
 
@@ -137,13 +139,48 @@ func GetCreateServiceConfigType(createService, serviceInterface interface{}) ref
 }
 
 func describeCustomConfig(w io.Writer, customConfig interface{}) {
-	describeYAMLForType(w, reflect.TypeOf(customConfig), 0)
+	commonTypes := map[reflect.Type]string{
+		reflect.TypeOf(config.CommonServerConfig{}):   "",
+		reflect.TypeOf(config.CommonDownstreamData{}): "",
+		reflect.TypeOf(config.TLSConfig{}):            "",
+		reflect.TypeOf(common.SensitiveString{}):      "\033[1;31msensitive string\033[0m",
+	}
+
+	fmt.Fprint(w, "\033[1mConfig:\033[0m")
+	describeYAMLForType(w, reflect.TypeOf(customConfig), commonTypes, 2)
+
+	commonTypeNames := make([]string, 0, len(commonTypes))
+	commonTypesByName := make(map[string]reflect.Type, len(commonTypes))
+	for ct := range commonTypes {
+		name := fmt.Sprintf("%s.%s", ct.PkgPath(), ct.Name())
+		commonTypeNames = append(commonTypeNames, name)
+		commonTypesByName[name] = ct
+	}
+	sort.Strings(commonTypeNames)
+
+	for _, name := range commonTypeNames {
+		ct := commonTypesByName[name]
+		if commonTypes[ct] == "" {
+			delete(commonTypes, ct)
+			fmt.Fprintf(w, "\n\n\033[1;36m%q.%s:\033[0m", ct.PkgPath(), ct.Name())
+			describeYAMLForType(w, ct, commonTypes, 2)
+			commonTypes[ct] = ""
+		}
+	}
 }
 
-func describeYAMLForType(w io.Writer, t reflect.Type, indent int) {
+func describeYAMLForType(w io.Writer, t reflect.Type, commonTypes map[reflect.Type]string, indent int) {
 	outf := func(format string, args ...interface{}) {
 		parts := strings.SplitAfterN(format, "\n", 2)
 		fmt.Fprintf(w, strings.Join(parts, strings.Repeat(" ", indent)), args...)
+	}
+	if alias, has := commonTypes[t]; has {
+		if alias == "" {
+			outf(" \033[1;35m%q.%s:\033[0m", t.PkgPath(), t.Name())
+		} else {
+			outf(" %s", alias)
+		}
+		return
 	}
 	switch t.Kind() {
 	case reflect.Bool:
@@ -155,21 +192,29 @@ func describeYAMLForType(w io.Writer, t reflect.Type, indent int) {
 	case reflect.Float32, reflect.Float64:
 		outf(" float")
 	case reflect.Array, reflect.Slice:
-		outf("\n  - ")
-		describeYAMLForType(w, t.Elem(), indent+2)
+		outf("\n-")
+		describeYAMLForType(w, t.Elem(), commonTypes, indent+4)
 	case reflect.Interface:
 		outf(" any")
 	// case reflect.Map:
 	case reflect.Ptr:
-		describeYAMLForType(w, t.Elem(), indent)
+		describeYAMLForType(w, t.Elem(), commonTypes, indent)
 	case reflect.String:
 		outf(" string")
 	case reflect.Struct:
 		n := t.NumField()
 		for i := 0; i < n; i++ {
 			f := t.Field(i)
-			outf("\n%s:", f.Name)
-			describeYAMLForType(w, f.Type, indent+2)
+			yamlTag := f.Tag.Get("yaml")
+			yamlParts := strings.Split(yamlTag, ",")
+			var name string
+			if len(yamlParts) > 0 {
+				name = yamlParts[0]
+			} else {
+				name = f.Name
+			}
+			outf("\n%s:", name)
+			describeYAMLForType(w, f.Type, commonTypes, indent+4)
 		}
 	default:
 		panic(fmt.Errorf("describeYAMLForType: Unhandled type: %v", t))

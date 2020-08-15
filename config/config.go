@@ -11,8 +11,8 @@ import (
 )
 
 type DefaultConfig struct {
-	Library LibraryConfig
-	GenCode GenCodeConfig
+	Library LibraryConfig `yaml:"library"`
+	GenCode GenCodeConfig `yaml:"genCode"`
 }
 
 // LoadConfig reads and validates a configuration loaded from file.
