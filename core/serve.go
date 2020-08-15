@@ -151,7 +151,7 @@ func describeCustomConfig(w io.Writer, customConfig interface{}) {
 	}
 
 	fmt.Fprint(w, "\033[1mConfiguration file YAML schema\033[0m\n")
-	describeYAMLForType(w, reflect.TypeOf(customConfig), commonTypes, 4)
+	describeYAMLForType(w, reflect.TypeOf(customConfig), commonTypes, 0)
 
 	commonTypeNames := make([]string, 0, len(commonTypes))
 	commonTypesByName := make(map[string]reflect.Type, len(commonTypes))
