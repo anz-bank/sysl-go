@@ -16,8 +16,8 @@ import (
 
 func Serve(
 	ctx context.Context,
-	downstreamConfig, appConfig interface{},
-	newRouter func(cfg *config.DefaultConfig, appConfig interface{}) (chi.Router, error),
+	downstreamConfig, createService, serviceInterface interface{},
+	newRouter func(cfg *config.DefaultConfig, serviceIntf interface{}) (chi.Router, error),
 ) error {
 	if len(os.Args) != 2 {
 		return fmt.Errorf("Wrong number of arguments (usage: %s config)", os.Args[0])
@@ -28,7 +28,8 @@ func Serve(
 	if err != nil {
 		return err
 	}
-	customConfig := CreateConfig(downstreamConfig, appConfig)
+
+	customConfig := CreateConfig(downstreamConfig, createService, serviceInterface)
 	if err = yaml.UnmarshalStrict(configData, customConfig); err != nil {
 		return err
 	}
@@ -36,7 +37,7 @@ func Serve(
 	customConfigValue := reflect.ValueOf(customConfig).Elem()
 	library := customConfigValue.FieldByName("Library").Interface().(config.LibraryConfig)
 	genCodeValue := customConfigValue.FieldByName("GenCode")
-	app := customConfigValue.FieldByName("App").Interface()
+	appConfig := customConfigValue.FieldByName("App")
 	upstream := genCodeValue.FieldByName("Upstream").Interface().(config.UpstreamConfig)
 	downstream := genCodeValue.FieldByName("Downstream").Interface()
 
@@ -47,7 +48,17 @@ func Serve(
 			Downstream: downstream,
 		},
 	}
-	router, err := newRouter(defaultConfig, app)
+
+	createServiceResult := reflect.ValueOf(createService).Call(
+		[]reflect.Value{reflect.ValueOf(ctx), appConfig},
+	)
+	errIntf := createServiceResult[1].Interface()
+	if errIntf != nil {
+		return err.(error)
+	}
+	serviceIntf := createServiceResult[0].Interface()
+
+	router, err := newRouter(defaultConfig, serviceIntf)
 	if err != nil {
 		return err
 	}
@@ -61,7 +72,7 @@ func Serve(
 // CreateConfig uses reflection to create a new type derived from DefaultConfig,
 // but with new GenCode.Downstream and App fields holding the same types as
 // downstreaConfig and appConfig.
-func CreateConfig(downstreamConfig, appConfig interface{}) interface{} {
+func CreateConfig(downstreamConfig, createService, serviceInterface interface{}) interface{} {
 	defaultConfigType := reflect.TypeOf(config.DefaultConfig{})
 
 	libraryField, has := defaultConfigType.FieldByName("Library")
@@ -77,7 +88,7 @@ func CreateConfig(downstreamConfig, appConfig interface{}) interface{} {
 	}
 
 	downstreamConfigType := reflect.TypeOf(downstreamConfig)
-	appConfigType := reflect.TypeOf(appConfig)
+	appConfigType := GetCreateServiceConfigType(createService, serviceInterface)
 
 	return reflect.New(reflect.StructOf([]reflect.StructField{
 		libraryField,
@@ -87,4 +98,31 @@ func CreateConfig(downstreamConfig, appConfig interface{}) interface{} {
 		}), Tag: `yaml:"genCode"`},
 		{Name: "App", Type: appConfigType, Tag: `yaml:"app"`},
 	})).Interface()
+}
+
+func GetCreateServiceConfigType(createService, serviceInterface interface{}) reflect.Type {
+	cs := reflect.TypeOf(createService)
+	if cs.NumIn() != 2 {
+		panic("createService: wrong number of in params")
+	}
+	if cs.NumOut() != 2 {
+		panic("createService: wrong number of out params")
+	}
+
+	var ctx context.Context
+	if reflect.TypeOf(&ctx).Elem() != cs.In(0) {
+		panic(fmt.Errorf("createService: first in param must be of type context.Context, not %v", cs.In(0)))
+	}
+
+	serviceInterfaceType := reflect.TypeOf(serviceInterface)
+	if serviceInterfaceType != cs.Out(0) {
+		panic(fmt.Errorf("createService: second out param must be of type %v, not %v", serviceInterfaceType, cs.Out(0)))
+	}
+
+	var err error
+	if reflect.TypeOf(&err).Elem() != cs.Out(1) {
+		panic(fmt.Errorf("createService: second out param must be of type error, not %v", cs.Out(1)))
+	}
+
+	return cs.In(1)
 }

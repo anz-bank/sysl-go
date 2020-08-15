@@ -61,23 +61,26 @@ let sysl = //{./sysl};
         }
 
         // Serve starts the server.
-        // serviceCreator must be a func(ctx context.Context, config UserConfig) ()
+        //
+        // serviceCreator must be a function with the following signature:
+        //
+        //   func(ctx context.Context, config AppConfig) (*ServiceInterface, error)
+        //
+        // where AppConfig is a type defined by the application programmer to
+        // hold application-level configuration.
         func Serve(
             ctx context.Context,
-            appConfig interface{},
-            createService func(ctx context.Context, appConfig interface{}) (*ServiceInterface, error),
+            createService interface{},
         ) error {
             return core.Serve(
                 ctx,
-                &DownstreamConfig{}, appConfig,
-                func(cfg *config.DefaultConfig, appConfig interface{}) (chi.Router, error) {
+                &DownstreamConfig{}, createService, &ServiceInterface{},
+                func(cfg *config.DefaultConfig, serviceIntf interface{}) (chi.Router, error) {
+                    serviceInterface := serviceIntf.(*ServiceInterface)
+
                     genCallbacks := common.DefaultCallback()
 
                     clients, err := BuildDownstreamClients(cfg)
-                    if err != nil {
-                        return nil, err
-                    }
-                    serviceInterface, err := createService(ctx, appConfig)
                     if err != nil {
                         return nil, err
                     }
