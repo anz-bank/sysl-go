@@ -146,8 +146,8 @@ func describeCustomConfig(w io.Writer, customConfig interface{}) {
 		reflect.TypeOf(common.SensitiveString{}):      "\033[1;31msensitive string\033[0m",
 	}
 
-	fmt.Fprint(w, "\033[1mConfig:\033[0m")
-	describeYAMLForType(w, reflect.TypeOf(customConfig), commonTypes, 2)
+	fmt.Fprint(w, "\033[1mConfiguration file YAML schema\033[0m\n")
+	describeYAMLForType(w, reflect.TypeOf(customConfig), commonTypes, 4)
 
 	commonTypeNames := make([]string, 0, len(commonTypes))
 	commonTypesByName := make(map[string]reflect.Type, len(commonTypes))
@@ -162,8 +162,8 @@ func describeCustomConfig(w io.Writer, customConfig interface{}) {
 		ct := commonTypesByName[name]
 		if commonTypes[ct] == "" {
 			delete(commonTypes, ct)
-			fmt.Fprintf(w, "\n\n\033[1;36m%q.%s:\033[0m", ct.PkgPath(), ct.Name())
-			describeYAMLForType(w, ct, commonTypes, 2)
+			fmt.Fprintf(w, "\n\n\033[1;32m%q.%s:\033[0m", ct.PkgPath(), ct.Name())
+			describeYAMLForType(w, ct, commonTypes, 4)
 			commonTypes[ct] = ""
 		}
 	}
@@ -176,7 +176,7 @@ func describeYAMLForType(w io.Writer, t reflect.Type, commonTypes map[reflect.Ty
 	}
 	if alias, has := commonTypes[t]; has {
 		if alias == "" {
-			outf(" \033[1;35m%q.%s:\033[0m", t.PkgPath(), t.Name())
+			outf(" \033[1;32m%q.%s:\033[0m", t.PkgPath(), t.Name())
 		} else {
 			outf(" %s", alias)
 		}
@@ -184,23 +184,23 @@ func describeYAMLForType(w io.Writer, t reflect.Type, commonTypes map[reflect.Ty
 	}
 	switch t.Kind() {
 	case reflect.Bool:
-		outf(" bool")
+		outf(" \033[1mbool\033[0m")
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		outf(" int")
+		outf(" \033[1mint\033[0m")
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		outf(" uint")
+		outf(" \033[1muint\033[0m")
 	case reflect.Float32, reflect.Float64:
-		outf(" float")
+		outf(" \033[1mfloat\033[0m")
 	case reflect.Array, reflect.Slice:
 		outf("\n-")
 		describeYAMLForType(w, t.Elem(), commonTypes, indent+4)
 	case reflect.Interface:
-		outf(" any")
+		outf(" \033[1many\033[0m")
 	// case reflect.Map:
 	case reflect.Ptr:
 		describeYAMLForType(w, t.Elem(), commonTypes, indent)
 	case reflect.String:
-		outf(" string")
+		outf(" \033[1mstring\033[0m")
 	case reflect.Struct:
 		n := t.NumField()
 		for i := 0; i < n; i++ {
