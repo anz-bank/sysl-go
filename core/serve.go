@@ -138,12 +138,16 @@ func GetCreateServiceConfigType(createService, serviceInterface interface{}) ref
 	return cs.In(1)
 }
 
+func yamlEgComment(example, format string, args ...interface{}) string {
+	return fmt.Sprintf("\033[1;31m%s \033[0;32m# "+format+"\033[0m", append([]interface{}{example}, args...)...)
+}
+
 func describeCustomConfig(w io.Writer, customConfig interface{}) {
 	commonTypes := map[reflect.Type]string{
 		reflect.TypeOf(config.CommonServerConfig{}):   "",
 		reflect.TypeOf(config.CommonDownstreamData{}): "",
 		reflect.TypeOf(config.TLSConfig{}):            "",
-		reflect.TypeOf(common.SensitiveString{}):      "\033[1;31msensitive string\033[0m",
+		reflect.TypeOf(common.SensitiveString{}):      yamlEgComment(`"*****"`, "sensitive string"),
 	}
 
 	fmt.Fprint(w, "\033[1mConfiguration file YAML schema\033[0m\n")
@@ -176,7 +180,7 @@ func describeYAMLForType(w io.Writer, t reflect.Type, commonTypes map[reflect.Ty
 	}
 	if alias, has := commonTypes[t]; has {
 		if alias == "" {
-			outf(" \033[1;32m%q.%s:\033[0m", t.PkgPath(), t.Name())
+			outf(" " + yamlEgComment(`{}`, "%q.%s", t.PkgPath(), t.Name()))
 		} else {
 			outf(" %s", alias)
 		}
@@ -184,23 +188,22 @@ func describeYAMLForType(w io.Writer, t reflect.Type, commonTypes map[reflect.Ty
 	}
 	switch t.Kind() {
 	case reflect.Bool:
-		outf(" \033[1mbool\033[0m")
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		outf(" \033[1mint\033[0m")
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		outf(" \033[1muint\033[0m")
+		outf(" \033[1mfalse\033[0m")
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		outf(" \033[1m0\033[0m")
 	case reflect.Float32, reflect.Float64:
-		outf(" \033[1mfloat\033[0m")
+		outf(" \033[1m0.0\033[0m")
 	case reflect.Array, reflect.Slice:
 		outf("\n-")
 		describeYAMLForType(w, t.Elem(), commonTypes, indent+4)
 	case reflect.Interface:
-		outf(" \033[1many\033[0m")
+		outf(" " + yamlEgComment("{}", "any value"))
 	// case reflect.Map:
 	case reflect.Ptr:
 		describeYAMLForType(w, t.Elem(), commonTypes, indent)
 	case reflect.String:
-		outf(" \033[1mstring\033[0m")
+		outf(" \033[1m\"\"\033[0m")
 	case reflect.Struct:
 		n := t.NumField()
 		for i := 0; i < n; i++ {
