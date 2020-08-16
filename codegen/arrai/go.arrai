@@ -161,7 +161,7 @@ let module = \module
                     {}: "error",
                     _: $`(${(tn orderby .) ++ ["error"]::, })`,
                 }
-                
+
             }`;
 
     let callSignature = \{'target': target, 'endpoint': ep, ...}
@@ -170,7 +170,7 @@ let module = \module
         let ep = sysl.app.endpoint(dep, ep.s);
         let method = methodName(ep);
         let grpc = cond {'gRPC' <: sysl.patterns(dep): `, opts ...grpc.CallOption`};
-        $`${method} func(ctx context.Context, req *${package}.${method}Request${grpc}) (${
+        $`${name(package)}${method} func(ctx context.Context, req *${package}.${method}Request${grpc}) (${
             let typed = sysl.endpoint.normalReturns(ep) >> $`*${cond{.seq: `[]`}}${package}.${.type >> name(.)::}`;
             let untyped = sysl.endpoint.untypedReturns(ep) >> `*http.Header`;
             typed ++ untyped ++ ["error"]

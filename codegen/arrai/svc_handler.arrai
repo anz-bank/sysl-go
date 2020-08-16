@@ -80,7 +80,7 @@ let sysl = //{./sysl};
                     var req ${method}Request
                     ${cond ep('restParams')('method').s {('POST', 'PUT'): $`
                         decoder := json.NewDecoder(r.Body)
-                        decodeErr := decoder.Decode(&req.Request)
+                        decodeErr := decoder.Decode(&req)
                         if decodeErr != nil {
                                 common.HandleError(ctx, w, common.BadRequestError, "Error reading request body", decodeErr, s.genCallback.MapError)
                                 return
@@ -99,7 +99,7 @@ let sysl = //{./sysl};
                     ${
                         let params = \type \params cond {params: $`
                             var conv${type}Err error
-                            ${params >> \{'name': (s: name), ...} 
+                            ${params >> \{'name': (s: name), ...}
                                 $`
                                     req.${go.name(name)}, conv${type}Err = restlib.GetQueryParamFor${type}(r, "${name}")
                                     if conv${type}Err != nil {
@@ -183,7 +183,7 @@ let sysl = //{./sysl};
                         common.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err, s.genCallback.MapError)
                         return
                     }
-    
+
                     ${cond {hasDB: $`
                         commitErr := tx.Commit()
                         if commitErr != nil {
