@@ -92,6 +92,10 @@ let sysl = //{./sysl};
 
                     // Service Router
                     router := chi.NewRouter()
+                    var metadata = &debug.Metadata{}
+                    router.Use(debug.NewDebugMiddleware(metadata))
+                    router.Get("/-/trace", debug.NewDebugIndexHandler(metadata))
+                    router.Get("/-/trace/{traceId}", debug.NewDebugHandler(metadata))
                     serviceRouter := NewServiceRouter(genCallbacks, serviceHandler)
                     serviceRouter.WireRoutes(ctx, router)
                     catalogservice.Enable(serviceRouter, router, AppSpec)
