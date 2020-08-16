@@ -36,10 +36,9 @@ let endpoint =
 
     let sqlStatements = \ep
         ep('attrs')?:{} where (//seq.has_prefix("sql_", .@)) => (
-            @: //str.lower(//seq.trim_prefix("sql_", .@)),
+            @: //seq.trim_prefix("sql_", .@),
             @value: .@value('s').s,
         );
-
 
     (
         :calls,

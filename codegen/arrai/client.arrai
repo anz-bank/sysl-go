@@ -19,7 +19,7 @@ let sysl = //{./sysl};
                         ::\i:\n}
                         ${cond {hasDB: $`
                             Conn: conn,
-                            ${sysl.endpoint.sqlStatements(ep) => $`${.@}: ${.@}Stmt,` orderby .::\i}
+                            ${sysl.endpoint.sqlStatements(ep) => $`${//str.title(.@)}: ${.@}Stmt,` orderby .::\i}
                         `}}
                     }
                 `,
@@ -33,7 +33,7 @@ let sysl = //{./sysl};
                 type ${method}Client struct {
                     ${cond {hasDB: $`
                         Conn *sql.Conn
-                        ${sysl.endpoint.sqlStatements(ep) => $`${.@} *sql.Stmt` orderby .::\i}
+                        ${sysl.endpoint.sqlStatements(ep) => $`${//str.title(.@)} *sql.Stmt` orderby .::\i}
                     `}}
                     ${sysl.endpoint.calls(ep) >> goModule.callSignature(.)::\i}
                 }
