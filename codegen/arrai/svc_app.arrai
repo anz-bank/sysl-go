@@ -62,9 +62,9 @@ let sysl = //{./sysl};
 
         // Serve starts the server.
         //
-        // serviceCreator must be a function with the following signature:
+        // createService must be a function with the following signature:
         //
-        //   func(ctx context.Context, config AppConfig) (*ServiceInterface, error)
+        //   func(ctx context.Context, config AppConfig) (*${go.package(app)}.ServiceInterface, error)
         //
         // where AppConfig is a type defined by the application programmer to
         // hold application-level configuration.
