@@ -40,7 +40,7 @@ func NewDebugMiddleware(metadata *Metadata) func(next http.Handler) http.Handler
 			next.ServeHTTP(&cw, r)
 			elapsed := time.Since(start)
 
-			metadata.Record(r, cw.body, elapsed)
+			metadata.Record(r, cw.body, cw.statusCode, elapsed)
 		})
 	}
 }

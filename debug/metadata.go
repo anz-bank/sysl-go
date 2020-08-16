@@ -6,19 +6,22 @@ import (
 	"time"
 )
 
+// Entry records metadata for a single interaction.
 type Entry struct {
-	Request   http.Header `json:"request,omitempty"`
-	Response  string      `json:"response,omitempty"`
-	LatencyNs int64       `json:"latencyNs,omitempty"`
+	Request  http.Header   `json:"request,omitempty"`
+	Response string        `json:"response,omitempty"`
+	Status   int           `json:"status,omitempty"`
+	Latency  time.Duration `json:"latency,omitempty"`
 }
 
+// Metadata records all interaction entries.
 type Metadata struct {
 	Entries []Entry
 }
 
 // Record adds the metadata for a call to the Metadata store.
-func (m *Metadata) Record(req *http.Request, res string, latency time.Duration) {
-	entry := Entry{Request: req.Header, Response: res, LatencyNs: latency.Nanoseconds()}
+func (m *Metadata) Record(req *http.Request, res string, status int, latency time.Duration) {
+	entry := Entry{Request: req.Header, Response: res, Status: status, Latency: latency}
 	if entry.TraceId() != "" {
 		m.Entries = append(m.Entries, entry)
 	} else {
