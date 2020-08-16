@@ -3,8 +3,9 @@ let sysl = //{./sysl};
 
 \(:app, :appname, :basepath, :clientDeps, :goModule, :hasDB, :module, :restEndpoints, ...)
     let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
+    let dbimport = cond {hasDB: {(alias: "_", package: "github.com/mattn/go-sqlite3")}};
     $`
-        ${go.prelude(app, clientDeps => $`${basepath}/${.import}`)}
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | dbimport)}
 
         ${
             (app('types')?:{} where "error" <: sysl.patterns(.@value) orderby .@) >>> \i \.
@@ -34,19 +35,19 @@ let sysl = //{./sysl};
             genCallback core.RestGenCallback,
             serviceInterface *ServiceInterface,
             ${clientDeps orderby . >> $`${.import}${go.name(.import)}Service ${.import}.Service,`::\i}
-        ) *ServiceHandler {
+        ) (*ServiceHandler, error) {
             ${cond {hasDB: $`
-                db, err := database.GetDBHandle()
-                if err != nil {
-                        return nil
+                db, dberr := database.GetDBHandle()
+                if dberr != nil {
+                        return nil, dberr
                 }
             `}}
             return &ServiceHandler{
                 genCallback,
                 serviceInterface,
-                ${clientDeps orderby . >> $`${.import}${go.name(.import)}Service,`::\i}
                 ${cond {hasDB: $`db,`}}
-            }
+                ${clientDeps orderby . >> $`${.import}${go.name(.import)}Service,`::\i}
+            }, nil
         }
 
         ${restEndpoints >> \(@value: ep, ...)
@@ -80,7 +81,7 @@ let sysl = //{./sysl};
                     var req ${method}Request
                     ${cond ep('restParams')('method').s {('POST', 'PUT'): $`
                         decoder := json.NewDecoder(r.Body)
-                        decodeErr := decoder.Decode(&req.Request)
+                        decodeErr := decoder.Decode(&req)
                         if decodeErr != nil {
                                 common.HandleError(ctx, w, common.BadRequestError, "Error reading request body", decodeErr, s.genCallback.MapError)
                                 return
@@ -99,7 +100,7 @@ let sysl = //{./sysl};
                     ${
                         let params = \type \params cond {params: $`
                             var conv${type}Err error
-                            ${params >> \{'name': (s: name), ...} 
+                            ${params >> \{'name': (s: name), ...}
                                 $`
                                     req.${go.name(name)}, conv${type}Err = restlib.GetQueryParamFor${type}(r, "${name}")
                                     if conv${type}Err != nil {
@@ -156,23 +157,25 @@ let sysl = //{./sysl};
                     }
 
                     ${cond {hasDB: $`
-                        conn, err := s.DB.Conn(ctx)
-                        if err != nil {
-                                common.HandleError(ctx, w, common.InternalError, "Database connection could not be retrieved", err, s.genCallback.MapError)
-                                return
+                        conn, dberr := s.DB.Conn(ctx)
+                        if dberr != nil {
+                            common.HandleError(ctx, w, common.InternalError, "Database connection could not be retrieved", dberr, s.genCallback.MapError)
+                            return
                         }
 
                         defer conn.Close()
-                        retrievebycompanyandlocationStmt, err_retrievebycompanyandlocation := conn.PrepareContext(ctx, "select company.abnnumber, company.companyname, company.companycountry, department.deptid, department.deptname, department.deptloc from company JOIN department ON company.abnnumber=department.abn WHERE department.deptloc=? and company.companyname=? order by company.abnnumber;")
-                        if err_retrievebycompanyandlocation != nil {
-                                common.HandleError(ctx, w, common.InternalError, "could not parse the sql query with the name sql_retrieveByCompanyAndLocation", err_retrievebycompanyandlocation, s.genCallback.MapError)
+                        ${sysl.endpoint.sqlStatements(ep) => $`
+                            ${.@}Stmt, dberr := conn.PrepareContext(ctx, ``${//seq.sub('\n', '\n\t\t', '\n'++.@value)}``)
+                            if dberr != nil {
+                                common.HandleError(ctx, w, common.InternalError, "could not parse the sql query with the name ${.@}", dberr, s.genCallback.MapError)
                                 return
-                        }
+                            }
+                        ` orderby .::\i}
 
-                        tx, err := conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
-                        if err != nil {
-                                common.HandleError(ctx, w, common.DownstreamUnavailableError, "DB Transaction could not be created", err, s.genCallback.MapError)
-                                return
+                        tx, dberr := conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
+                        if dberr != nil {
+                            common.HandleError(ctx, w, common.DownstreamUnavailableError, "DB Transaction could not be created", dberr, s.genCallback.MapError)
+                            return
                         }
                     `}}
                     client := ${client.new(ep)}
@@ -183,12 +186,12 @@ let sysl = //{./sysl};
                         common.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err, s.genCallback.MapError)
                         return
                     }
-    
+
                     ${cond {hasDB: $`
                         commitErr := tx.Commit()
                         if commitErr != nil {
-                                common.HandleError(ctx, w, common.InternalError, "Failed to commit the transaction", commitErr, s.genCallback.MapError)
-                                return
+                            common.HandleError(ctx, w, common.InternalError, "Failed to commit the transaction", commitErr, s.genCallback.MapError)
+                            return
                         }
                     `}}
 

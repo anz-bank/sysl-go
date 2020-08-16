@@ -28,12 +28,18 @@ let sysl = //{./sysl};
             `,
             _: $`
                 // BuildRestHandlerInitialiser ...
-                func BuildRestHandlerInitialiser(serviceInterface ServiceInterface, callback core.RestGenCallback, downstream *DownstreamClients) handlerinitialiser.HandlerInitialiser {
-                    serviceHandler := NewServiceHandler(callback, &serviceInterface${
+                func BuildRestHandlerInitialiser(
+                    serviceInterface ServiceInterface,
+                    callback core.RestGenCallback,
+                    downstream *DownstreamClients,
+                ) (handlerinitialiser.HandlerInitialiser, error) {
+                    serviceHandler, err := NewServiceHandler(callback, &serviceInterface${
                         clientDeps orderby . >> $`, downstream.${.import}Client`
                     ::})
-                    serviceRouter := NewServiceRouter(callback, serviceHandler)
-                    return serviceRouter
+                    if err != nil {
+                        return nil, err
+                    }
+                    return NewServiceRouter(callback, serviceHandler), nil
                 }
             `
         }}
@@ -62,9 +68,9 @@ let sysl = //{./sysl};
 
         // Serve starts the server.
         //
-        // serviceCreator must be a function with the following signature:
+        // createService must be a function with the following signature:
         //
-        //   func(ctx context.Context, config AppConfig) (*ServiceInterface, error)
+        //   func(ctx context.Context, config AppConfig) (*${go.package(app)}.ServiceInterface, error)
         //
         // where AppConfig is a type defined by the application programmer to
         // hold application-level configuration.
@@ -84,11 +90,14 @@ let sysl = //{./sysl};
                     if err != nil {
                         return nil, err
                     }
-                    serviceHandler := NewServiceHandler(
+                    serviceHandler, err := NewServiceHandler(
                         genCallbacks,
                         serviceInterface,
                         ${clientDeps orderby . >> $`clients.${.import}Client,`::\i}
                     )
+                    if err != nil {
+                        return nil, err
+                    }
 
                     // Service Router
                     router := chi.NewRouter()

@@ -15,11 +15,11 @@ let sysl = //{./sysl};
                             let package = go.package(dep);
                             let ep = sysl.app.endpoint(dep, .('endpoint').s);
                             let method = go.methodName(ep);
-                            $`${method}: s.${package}${go.name(package)}Service.${method},`
+                            $`${go.name(package)}${method}: s.${package}${go.name(package)}Service.${method},`
                         ::\i:\n}
                         ${cond {hasDB: $`
                             Conn: conn,
-                            ${sysl.endpoint.sqlStatements(ep) => $`${.@}: ${.@}Stmt,` orderby .::\i}
+                            ${sysl.endpoint.sqlStatements(ep) => $`${//str.title(.@)}: ${.@}Stmt,` orderby .::\i}
                         `}}
                     }
                 `,
@@ -33,7 +33,7 @@ let sysl = //{./sysl};
                 type ${method}Client struct {
                     ${cond {hasDB: $`
                         Conn *sql.Conn
-                        ${sysl.endpoint.sqlStatements(ep) => $`${.@} *sql.Stmt` orderby .::\i}
+                        ${sysl.endpoint.sqlStatements(ep) => $`${//str.title(.@)} *sql.Stmt` orderby .::\i}
                     `}}
                     ${sysl.endpoint.calls(ep) >> goModule.callSignature(.)::\i}
                 }

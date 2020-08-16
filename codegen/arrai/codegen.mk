@@ -35,7 +35,7 @@ else
 SYSL_GO_ROOT = /sysl-go
 DOCKER_RUN = $(DOCKER) run --rm -v $$(pwd):/work -w /work
 PROTOC  = $(DOCKER_RUN) anzbank/protoc-gen-sysl:v0.0.24
-SYSL    = $(DOCKER_RUN) anzbank/sysl:v0.183.0
+SYSL    = $(DOCKER_RUN) anzbank/sysl:v0.185.0
 AUTOGEN = $(DOCKER_RUN) sysl-go $(AUTO)
 
 endif

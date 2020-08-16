@@ -115,8 +115,7 @@ let sysl = //{./sysl};
                         }
                     `
             ::\i}
-            ${
-                cond {
+            ${cond {
                 returns where .@item.type != [""] && .@item.var = "ok": returnDownstreamError("UnexpectedResponse", "result", "nil"),
                 returns where .@item.type = [""] && .@item.var = "ok": "return &result.HTTPResponse.Header, nil",
                 _: "return nil",
