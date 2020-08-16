@@ -59,7 +59,7 @@ let package = \app
             let attrs = app('attrs');
             cond attrs {
                 {'go_package': {'s': (s: go_package)}, ...}: go_package,
-                {'package': {'s': (s: package)}, ...}: package,
+                {'package': {'s': (s: package)}, ...}: //str.lower(package),
             },
     } || cond {
         'name' <: (app => .@):
