@@ -18,6 +18,20 @@ var _ = time.Parse
 // Reference imports to suppress unused errors
 var _ = date.Parse
 
+// Cat ...
+type Cat struct {
+	Age   *int64 `json:"age,omitempty"`
+	Hunts *bool  `json:"hunts,omitempty"`
+	ID    string `json:"id"`
+}
+
+// Dog ...
+type Dog struct {
+	Bark  *bool   `json:"bark,omitempty"`
+	Breed *string `json:"breed,omitempty"`
+	ID    string  `json:"id"`
+}
+
 // Item ...
 type Item struct {
 	A1   string `json:"A1"`
@@ -113,6 +127,11 @@ type GetOkTypeAndJustErrorListRequest struct {
 type GetOopsListRequest struct {
 }
 
+// GetPetaListRequest ...
+type GetPetaListRequest struct {
+	ID string
+}
+
 // GetRawListRequest ...
 type GetRawListRequest struct {
 	Bt bool
@@ -151,6 +170,16 @@ type GetStuffListRequest struct {
 // PostStuffRequest ...
 type PostStuffRequest struct {
 	Request Str
+}
+
+// *Cat validator
+func (s *Cat) Validate() error {
+	return validator.Validate(s)
+}
+
+// *Dog validator
+func (s *Dog) Validate() error {
+	return validator.Validate(s)
 }
 
 // *Item validator
@@ -199,4 +228,36 @@ type Str string
 
 // Empty ...
 type Empty struct {
+}
+
+// PetA can be one of following types in runtime:
+// Cat
+// Dog
+type PetA interface {
+	// isPetA is identifier method
+	isPetA()
+}
+
+// isPetA identifies Cat is instance of PetA
+func (i Cat) isPetA() {
+}
+
+// isPetA identifies Dog is instance of PetA
+func (i Dog) isPetA() {
+}
+
+// PetB can be one of following types in runtime:
+// Cat
+// Dog
+type PetB interface {
+	// isPetB is identifier method
+	isPetB()
+}
+
+// isPetB identifies Cat is instance of PetB
+func (i Cat) isPetB() {
+}
+
+// isPetB identifies Dog is instance of PetB
+func (i Dog) isPetB() {
 }
