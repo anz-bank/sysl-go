@@ -6,12 +6,26 @@ import (
 	"time"
 )
 
+// Request captures request metadata.
+type Request struct {
+	Method  string      `json:"method,omitempty"`
+	Route   string      `json:"route,omitempty"`
+	Headers http.Header `json:"request,omitempty"`
+	Body    string      `json:"reqBody,omitempty"`
+}
+
+// Response captures response metadata.
+type Response struct {
+	Status  int           `json:"status,omitempty"`
+	Latency time.Duration `json:"latency,omitempty"`
+	Headers http.Header   `json:"resHeader,omitempty"`
+	Body    string        `json:"response,omitempty"`
+}
+
 // Entry records metadata for a single interaction.
 type Entry struct {
-	Request  http.Header   `json:"request,omitempty"`
-	Response string        `json:"response,omitempty"`
-	Status   int           `json:"status,omitempty"`
-	Latency  time.Duration `json:"latency,omitempty"`
+	Request  Request  `json:"request,omitempty"`
+	Response Response `json:"response,omitempty"`
 }
 
 // Metadata records all interaction entries.
@@ -20,8 +34,19 @@ type Metadata struct {
 }
 
 // Record adds the metadata for a call to the Metadata store.
-func (m *Metadata) Record(req *http.Request, res string, status int, latency time.Duration) {
-	entry := Entry{Request: req.Header, Response: res, Status: status, Latency: latency}
+func (m *Metadata) Record(req *http.Request, method string, route string, reqBody string, res string, status int, responseHeader http.Header, latency time.Duration) {
+	entry := Entry{
+		Request{
+			Headers: req.Header,
+			Method:  method, Route: route,
+			Body: reqBody,
+		}, Response{
+			Headers: responseHeader,
+			Body:    res,
+			Status:  status,
+			Latency: latency,
+		},
+	}
 	if entry.TraceId() != "" {
 		m.Entries = append(m.Entries, entry)
 	} else {
@@ -33,7 +58,7 @@ func (m *Metadata) Record(req *http.Request, res string, status int, latency tim
 // no match.
 func (m *Metadata) GetEntryByTrace(traceId string) Entry {
 	for _, entry := range m.Entries {
-		if entry.Request.Get("traceId") == traceId {
+		if entry.TraceId() == traceId {
 			return entry
 		}
 	}
@@ -42,5 +67,5 @@ func (m *Metadata) GetEntryByTrace(traceId string) Entry {
 
 // TraceId returns the trace ID from the request header.
 func (e Entry) TraceId() string {
-	return e.Request.Get("traceId")
+	return e.Request.Headers.Get("traceId")
 }

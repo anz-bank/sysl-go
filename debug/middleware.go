@@ -1,6 +1,9 @@
 package debug
 
 import (
+	"bytes"
+	"github.com/go-chi/chi"
+	"io/ioutil"
 	"net/http"
 	"time"
 )
@@ -37,10 +40,16 @@ func NewDebugMiddleware(metadata *Metadata) func(next http.Handler) http.Handler
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 			cw := NewCapturingResponseWriter(&w)
+			bodyBytes, _ := ioutil.ReadAll(r.Body)
+			r.Body.Close() //  must close
+			r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+
 			next.ServeHTTP(&cw, r)
 			elapsed := time.Since(start)
 
-			metadata.Record(r, cw.body, cw.statusCode, elapsed)
+			method := chi.RouteContext(r.Context()).RouteMethod
+			route := chi.RouteContext(r.Context()).RoutePattern()
+			metadata.Record(r, method, route, string(bodyBytes), cw.body, cw.statusCode, cw.Header(), elapsed)
 		})
 	}
 }
