@@ -29,6 +29,7 @@ type Handler interface {
 	GetJustReturnOkListHandler(w http.ResponseWriter, r *http.Request)
 	GetOkTypeAndJustErrorListHandler(w http.ResponseWriter, r *http.Request)
 	GetOopsListHandler(w http.ResponseWriter, r *http.Request)
+	GetPetaListHandler(w http.ResponseWriter, r *http.Request)
 	GetRawListHandler(w http.ResponseWriter, r *http.Request)
 	GetRawIntListHandler(w http.ResponseWriter, r *http.Request)
 	GetRawStatesListHandler(w http.ResponseWriter, r *http.Request)
@@ -307,6 +308,44 @@ func (s *ServiceHandler) GetOopsListHandler(w http.ResponseWriter, r *http.Reque
 	}
 	restlib.SetHeaders(w, headermap)
 	restlib.SendHTTPResponse(w, httpstatus, response)
+}
+
+// GetPetaListHandler ...
+func (s *ServiceHandler) GetPetaListHandler(w http.ResponseWriter, r *http.Request) {
+	if s.serviceInterface.GetPetaList == nil {
+		common.HandleError(r.Context(), w, common.InternalError, "not implemented", nil, s.genCallback.MapError)
+		return
+	}
+
+	ctx := common.RequestHeaderToContext(r.Context(), r.Header)
+	ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
+	var req GetPetaListRequest
+
+	req.ID = restlib.GetQueryParam(r, "id")
+
+	ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
+	defer cancel()
+	valErr := validator.Validate(&req)
+	if valErr != nil {
+		common.HandleError(ctx, w, common.BadRequestError, "Invalid request", valErr, s.genCallback.MapError)
+		return
+	}
+
+	client := GetPetaListClient{}
+
+	peta, err := s.serviceInterface.GetPetaList(ctx, &req, client)
+	if err != nil {
+
+		common.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err, s.genCallback.MapError)
+		return
+	}
+
+	headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+	if headermap.Get("Content-Type") == "" {
+		headermap.Set("Content-Type", "application/json")
+	}
+	restlib.SetHeaders(w, headermap)
+	restlib.SendHTTPResponse(w, httpstatus, peta)
 }
 
 // GetRawListHandler ...
