@@ -234,34 +234,30 @@ type Empty struct {
 // Cat
 // Dog
 type PetA interface {
-	// IsPetA returns true if it is instance of PetA
-	IsPetA() bool
+	// isPetA is identifier method
+	isPetA()
 }
 
-// IsPetA returns true to identify Cat is instance of PetA
-func (i Cat) IsPetA() bool {
-	return true
+// isPetA identifies Cat is instance of PetA
+func (i Cat) isPetA() {
 }
 
-// IsPetA returns true to identify Dog is instance of PetA
-func (i Dog) IsPetA() bool {
-	return true
+// isPetA identifies Dog is instance of PetA
+func (i Dog) isPetA() {
 }
 
 // PetB can be one of following types in runtime:
 // Cat
 // Dog
 type PetB interface {
-	// IsPetB returns true if it is instance of PetB
-	IsPetB() bool
+	// isPetB is identifier method
+	isPetB()
 }
 
-// IsPetB returns true to identify Cat is instance of PetB
-func (i Cat) IsPetB() bool {
-	return true
+// isPetB identifies Cat is instance of PetB
+func (i Cat) isPetB() {
 }
 
-// IsPetB returns true to identify Dog is instance of PetB
-func (i Dog) IsPetB() bool {
-	return true
+// isPetB identifies Dog is instance of PetB
+func (i Dog) isPetB() {
 }

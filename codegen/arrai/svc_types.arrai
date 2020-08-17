@@ -145,13 +145,12 @@ let fieldJsonTag = \type \key
             // ${typename} can be one of following types in runtime:
             ${value('oneOf')('type').a >> .('typeRef')('ref')('path').a >> $`// ${.@item.s}`::\i}
             type ${typename} interface {
-                // Is${typename} returns true if it is instance of ${typename} 
-                Is${typename}() bool
+                // is${typename} is identifier method 
+                is${typename}()
             }
             ${value('oneOf')('type').a >> .('typeRef')('ref')('path').a >> $`
-                // Is${typename} returns true to identify ${.@item.s} is instance of ${typename}
-                func (i ${.@item.s}) Is${typename}() bool {
-                    return true
+                // is${typename} identifies ${.@item.s} is instance of ${typename}
+                func (i ${.@item.s}) is${typename}() {
                 }  
                 `::\i}
         `::\i}
