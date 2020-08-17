@@ -150,8 +150,7 @@ func describeCustomConfig(w io.Writer, customConfig interface{}) {
 		reflect.TypeOf(common.SensitiveString{}):      yamlEgComment(`"*****"`, "sensitive string"),
 	}
 
-	fmt.Fprint(w, "\033[1mConfiguration file YAML schema\033[0m\n")
-	describeYAMLForType(w, reflect.TypeOf(customConfig), commonTypes, 0)
+	fmt.Fprint(w, "\033[1mConfiguration file YAML schema\033[0m")
 
 	commonTypeNames := make([]string, 0, len(commonTypes))
 	commonTypesByName := make(map[string]reflect.Type, len(commonTypes))
@@ -171,6 +170,9 @@ func describeCustomConfig(w io.Writer, customConfig interface{}) {
 			commonTypes[ct] = ""
 		}
 	}
+
+	fmt.Fprintf(w, "\n\n\033[1mApplication Configuration\033[0m")
+	describeYAMLForType(w, reflect.TypeOf(customConfig), commonTypes, 0)
 }
 
 func describeYAMLForType(w io.Writer, t reflect.Type, commonTypes map[reflect.Type]string, indent int) {
