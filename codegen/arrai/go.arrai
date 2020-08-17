@@ -65,8 +65,8 @@ let package = \app
         _: app,
     };
 
-let pbPackage = \basepath \app
-    {(alias: `pb`, package: $`${basepath}/${app('attrs')('go_pb_package')('s').s}`)};
+let pbPackage = \app
+    {(alias: `pb`, package: $`${app('attrs')('go_pb_package')('s').s}`)};
 
 let typeWithPackage = \type \module
     cond type {
