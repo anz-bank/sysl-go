@@ -6,12 +6,15 @@ import (
 	"time"
 )
 
+var MetadataStore = Metadata{}
+
 // Request captures request metadata.
 type Request struct {
 	Method  string      `json:"method,omitempty"`
 	Route   string      `json:"route,omitempty"`
 	Headers http.Header `json:"request,omitempty"`
 	Body    string      `json:"reqBody,omitempty"`
+	URL     string      `json:"url,omitempty"`
 }
 
 // Response captures response metadata.
@@ -24,13 +27,22 @@ type Response struct {
 
 // Entry records metadata for a single interaction.
 type Entry struct {
-	Request  Request  `json:"request,omitempty"`
-	Response Response `json:"response,omitempty"`
+	ServiceName string   `json:"serviceName,omitempty"`
+	Request     Request  `json:"request,omitempty"`
+	Response    Response `json:"response,omitempty"`
 }
 
 // Metadata records all interaction entries.
 type Metadata struct {
 	Entries []Entry
+}
+
+func (m *Metadata) RecordEntry(e Entry) {
+	if e.TraceId() != "" {
+		m.Entries = append(m.Entries, e)
+	} else {
+		logrus.Infof("missing trace ID")
+	}
 }
 
 // Record adds the metadata for a call to the Metadata store.
@@ -47,22 +59,19 @@ func (m *Metadata) Record(req *http.Request, method string, route string, reqBod
 			Latency: latency,
 		},
 	}
-	if entry.TraceId() != "" {
-		m.Entries = append(m.Entries, entry)
-	} else {
-		logrus.Infof("missing trace ID")
-	}
+	m.RecordEntry(entry)
 }
 
-// GetEntryByTrace returns the metadata entry with the given trace ID, or an empty entry if there's
-// no match.
-func (m *Metadata) GetEntryByTrace(traceId string) Entry {
-	for _, entry := range m.Entries {
-		if entry.TraceId() == traceId {
-			return entry
+// GetEntriesByTrace returns an array of metadata entries with the given trace ID.
+// Each entry represents a single request/response pair, upstream or downstream.
+func (m *Metadata) GetEntriesByTrace(traceId string) []Entry {
+	es := []Entry{}
+	for _, e := range m.Entries {
+		if e.TraceId() == traceId {
+			es = append(es, e)
 		}
 	}
-	return Entry{}
+	return es
 }
 
 // TraceId returns the trace ID from the request header.

@@ -35,21 +35,41 @@ func (w *CapturingResponseWriter) WriteHeader(statusCode int) {
 }
 
 // NewDebugMiddleware returns a new middleware to record debug metadata for requests and responses.
-func NewDebugMiddleware(metadata *Metadata) func(next http.Handler) http.Handler {
+func NewDebugMiddleware(serviceName string, metadata *Metadata) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
 			cw := NewCapturingResponseWriter(&w)
-			bodyBytes, _ := ioutil.ReadAll(r.Body)
-			r.Body.Close() //  must close
-			r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+
+			reqBody := ""
+			if r.Body != nil {
+				bodyBytes, _ := ioutil.ReadAll(r.Body)
+				_ = r.Body.Close() //  must close
+				r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+				reqBody = string(bodyBytes)
+			}
 
 			next.ServeHTTP(&cw, r)
 			elapsed := time.Since(start)
 
 			method := chi.RouteContext(r.Context()).RouteMethod
 			route := chi.RouteContext(r.Context()).RoutePattern()
-			metadata.Record(r, method, route, string(bodyBytes), cw.body, cw.statusCode, cw.Header(), elapsed)
+			metadata.RecordEntry(Entry{
+				ServiceName: serviceName,
+				Request: Request{
+					Method:  method,
+					Route:   route,
+					Headers: r.Header,
+					Body:    reqBody,
+					URL:     "/",
+				},
+				Response: Response{
+					Status:  cw.statusCode,
+					Latency: elapsed,
+					Headers: cw.Header(),
+					Body:    cw.body,
+				},
+			})
 		})
 	}
 }

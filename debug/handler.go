@@ -18,10 +18,10 @@ func NewDebugIndexHandler(metadata *Metadata) func(w http.ResponseWriter, r *htt
 func NewDebugHandler(metadata *Metadata) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		traceId := chi.URLParam(r, "traceId")
-		e := metadata.GetEntryByTrace(traceId)
+		es := metadata.GetEntriesByTrace(traceId)
 
 		w.Header().Add("Content-Type", "text/html")
-		err := writeTrace(w, &e)
+		err := writeTrace(w, es)
 		if err != nil {
 			logrus.WithError(err).Error("server error")
 		}

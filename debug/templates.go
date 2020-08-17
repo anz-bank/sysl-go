@@ -10,15 +10,17 @@ import (
 	"time"
 )
 
-//var t = template.Must(template.ParseFiles("templates/index.html", "templates/trace.html"))
-var t = template.Must(template.Must(template.
-	New("indexPage").Parse(index)).
-	New("tracePage").Funcs(template.FuncMap{
+var funcs = template.FuncMap{
 	"unescape":   unescape,
 	"json":       toJson,
 	"toMs":       durationToMs,
 	"StatusText": http.StatusText,
-}).Parse(trace))
+}
+
+//var t = template.Must(template.ParseFiles("templates/index.html", "templates/trace.html"))
+var t = template.Must(template.Must(template.
+	New("indexPage").Funcs(funcs).Parse(index)).
+	New("tracePage").Funcs(funcs).Parse(trace))
 
 // durationToMs returns a string representation of the duration in ms to one decimal place.
 func durationToMs(d time.Duration) string {
@@ -40,10 +42,10 @@ func writeIndex(w http.ResponseWriter, m *Metadata) error {
 }
 
 // writeTrace writes the trace details page template to the ResponseWriter.
-func writeTrace(w http.ResponseWriter, e *Entry) error {
+func writeTrace(w http.ResponseWriter, es []Entry) error {
 	textsArg := "{'POST /pay'}"
 	var colorArg string
-	if e.Response.Status < 400 {
+	if es.Response.Status < 400 {
 		colorArg = "green"
 	} else {
 		colorArg = "red"
@@ -70,7 +72,7 @@ func writeTrace(w http.ResponseWriter, e *Entry) error {
 		Entry *Entry
 		Svg   string
 	}
-	err = t.ExecuteTemplate(w, "tracePage", trace{e, string(out)})
+	err = t.ExecuteTemplate(w, "tracePage", trace{es, string(out)})
 	if err != nil {
 		return err
 	}
@@ -100,6 +102,7 @@ const index = `
 <li><a href="/-/trace/{{.TraceId}}">{{.TraceId}}</a></li>
 {{end}}
 </ul>
+<pre>{{ json . }}</pre>
 </body>
 </html>`
 
