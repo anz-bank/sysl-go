@@ -86,10 +86,12 @@ let sysl = //{./sysl};
 
                     genCallbacks := common.DefaultCallback()
 
-                    clients, err := BuildDownstreamClients(cfg)
-                    if err != nil {
-                        return nil, err
-                    }
+                    ${cond {clientDeps: $`
+                        clients, err := BuildDownstreamClients(cfg)
+                        if err != nil {
+                            return nil, err
+                        }
+                    `}}
                     serviceHandler, err := NewServiceHandler(
                         genCallbacks,
                         serviceInterface,
