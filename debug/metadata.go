@@ -1,8 +1,11 @@
 package debug
 
 import (
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"sort"
+	"strings"
 	"time"
 )
 
@@ -45,21 +48,19 @@ func (m *Metadata) RecordEntry(e Entry) {
 	}
 }
 
-// Record adds the metadata for a call to the Metadata store.
-func (m *Metadata) Record(req *http.Request, method string, route string, reqBody string, res string, status int, responseHeader http.Header, latency time.Duration) {
-	entry := Entry{
-		Request{
-			Headers: req.Header,
-			Method:  method, Route: route,
-			Body: reqBody,
-		}, Response{
-			Headers: responseHeader,
-			Body:    res,
-			Status:  status,
-			Latency: latency,
-		},
+// TraceIds returns an array of all distinct trace IDs.
+func (m *Metadata) TraceIds() []string {
+	ids := map[string]bool{}
+	out := []string{}
+	for _, e := range m.Entries {
+		id := e.TraceId()
+		if _, ok := ids[id]; !ok {
+			ids[id] = true
+			out = append(out, id)
+		}
 	}
-	m.RecordEntry(entry)
+	sort.Strings(out)
+	return out
 }
 
 // GetEntriesByTrace returns an array of metadata entries with the given trace ID.
@@ -74,7 +75,23 @@ func (m *Metadata) GetEntriesByTrace(traceId string) []Entry {
 	return es
 }
 
+// GetEntriesByTrace returns an array of metadata entries with the given trace ID.
+// Each entry represents a single request/response pair, upstream or downstream.
+func (m *Metadata) GetBaseEntryByTrace(traceId string) Entry {
+	for _, e := range m.Entries {
+		if e.TraceId() == traceId && e.ServiceName == "PaymentServer" {
+			return e
+		}
+	}
+	return Entry{}
+}
+
 // TraceId returns the trace ID from the request header.
 func (e Entry) TraceId() string {
 	return e.Request.Headers.Get("traceId")
+}
+
+// Id returns the ID from the entry header.
+func (e Entry) Id() string {
+	return strings.ReplaceAll(strings.ToLower(fmt.Sprintf("%s_%s_%s", e.ServiceName, e.Request.Method, e.Request.Route)), "/", "_")
 }
