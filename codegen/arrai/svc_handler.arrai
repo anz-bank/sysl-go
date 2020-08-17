@@ -81,7 +81,7 @@ let sysl = //{./sysl};
                     var req ${method}Request
                     ${cond ep('restParams')('method').s {('POST', 'PUT'): $`
                         decoder := json.NewDecoder(r.Body)
-                        decodeErr := decoder.Decode(&req)
+                        decodeErr := decoder.Decode(&req.Request)
                         if decodeErr != nil {
                                 common.HandleError(ctx, w, common.BadRequestError, "Error reading request body", decodeErr, s.genCallback.MapError)
                                 return
