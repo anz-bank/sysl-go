@@ -1,10 +1,8 @@
 package common
 
 import (
-	"bytes"
 	"context"
 	"github.com/anz-bank/sysl-go/debug"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -178,50 +176,13 @@ type tempRoundtripper struct {
 }
 
 func (t *tempRoundtripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	start := time.Now()
 	ctx := log.With("Downsteam", t.name).Onto(r.Context())
 
-	// TODO: Replace with some kind of tee-like caching passthrough mechanism.
-	reqBody := ""
-	if r.Body != nil {
-		bodyBytes, _ := ioutil.ReadAll(r.Body)
-		_ = r.Body.Close() //  must close
-		r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-		reqBody = string(bodyBytes)
-	}
-
+	start := time.Now()
 	res, err := internal.NewLoggingRoundTripper(ctx, t.base).RoundTrip(r)
+	latency := time.Since(start)
 
-	eres := debug.Response{}
-	if res != nil {
-		eres = debug.Response{
-			Status:  res.StatusCode,
-			Headers: res.Header,
-		}
-		if res.Body != nil {
-			// TODO: Replace with some kind of tee-like caching passthrough mechanism.
-			bodyBytes, _ := ioutil.ReadAll(res.Body)
-			_ = res.Body.Close() //  must close
-			res.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-			eres.Body = string(bodyBytes)
-		}
-	} else {
-		eres.Status = 500
-	}
-
-	eres.Latency = time.Since(start)
-	e := debug.Entry{
-		ServiceName: t.name,
-		Request: debug.Request{
-			Method:  r.Method,
-			Route:   r.URL.Path,
-			URL:     r.URL.String(),
-			Headers: r.Header,
-			Body:    reqBody,
-		},
-		Response: eres,
-	}
-	debug.MetadataStore.RecordEntry(e)
+	debug.MetadataStore.RecordEntry(debug.NewEntry(r, res, t.name, latency))
 	return res, err
 }
 

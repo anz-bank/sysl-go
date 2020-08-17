@@ -59,7 +59,7 @@ func apply(svg string, e Entry, be Entry) (string, string, error) {
 		}
 		currentSvg, err = updateSvg(currentSvg, textsArg, colorArg)
 		if err != nil {
-			logrus.Error(err)
+			logrus.WithError(err).Error("upstream inbound svg update failed")
 		}
 
 		textsArg = fmt.Sprintf(`{'<-- %s %s %s'}`, e.ServiceName, e.Request.Method, e.Request.Route)
@@ -70,7 +70,7 @@ func apply(svg string, e Entry, be Entry) (string, string, error) {
 		}
 		currentSvg, err = updateSvg(currentSvg, textsArg, colorArg)
 		if err != nil {
-			logrus.Error(err)
+			logrus.WithError(err).Error("upstream outbound svg update failed")
 		}
 	} else {
 		textsArg = fmt.Sprintf(`{'%s %s %s -> %s %s %s'}`, be.ServiceName, be.Request.Method, be.Request.Route, e.ServiceName, e.Request.Method, e.Request.Route)
@@ -82,7 +82,7 @@ func apply(svg string, e Entry, be Entry) (string, string, error) {
 		}
 		currentSvg, err = updateSvg(currentSvg, textsArg, colorArg)
 		if err != nil {
-			logrus.Error(err)
+			logrus.WithError(err).Error("downstream outbound svg update failed")
 		}
 
 		textsArg = fmt.Sprintf(`{'%s %s %s <-- %s %s %s'}`, be.ServiceName, be.Request.Method, be.Request.Route, e.ServiceName, e.Request.Method, e.Request.Route)
@@ -93,7 +93,7 @@ func apply(svg string, e Entry, be Entry) (string, string, error) {
 		}
 		currentSvg, err = updateSvg(currentSvg, textsArg, colorArg)
 		if err != nil {
-			logrus.Error(err)
+			logrus.WithError(err).Error("downstream inbound svg update failed")
 		}
 	}
 
@@ -104,7 +104,7 @@ func apply(svg string, e Entry, be Entry) (string, string, error) {
 	var sub bytes.Buffer
 	err = t.ExecuteTemplate(&sub, "subtrace", e)
 	if err != nil {
-		logrus.Error(err)
+		logrus.WithError(err).Error("subtemplate render failed")
 	}
 	result := sub.String()
 
@@ -112,6 +112,7 @@ func apply(svg string, e Entry, be Entry) (string, string, error) {
 	return currentSvg, result, err
 }
 
+// updateSvg invokes the arr.ai script to update svg with color.
 func updateSvg(svg, text, color string) (string, error) {
 	cmd := exec.Command("arrai", "run", "svg_demo.arrai", text, color)
 	cmd.Dir = "/Users/ladeo/dev/sysl/pkg/arrai"
@@ -125,8 +126,12 @@ func updateSvg(svg, text, color string) (string, error) {
 		io.WriteString(stdin, svg)
 	}()
 
+	var errb bytes.Buffer
+	cmd.Stderr = &errb
+
 	out, err := cmd.Output()
 	if err != nil {
+		logrus.WithError(err).Error(errb.String())
 		return svg, err
 	}
 	return string(out), nil
