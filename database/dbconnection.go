@@ -16,6 +16,7 @@ import (
 
 func GetDBHandle() (*sql.DB, error) {
 	batch := []string{
+		`DROP TABLE IF EXISTS Account;`,
 		`CREATE TABLE Account (accountID INTEGER PRIMARY KEY, balance NUMBER);`,
 	}
 	db, err := sql.Open("sqlite3", "default.db")
