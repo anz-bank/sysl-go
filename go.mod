@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/anz-bank/pkg v0.0.12
 	github.com/anz-bank/sysl-catalog v1.4.185
+	github.com/arr-ai/arrai v0.131.0
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/golang/protobuf v1.4.2
 	github.com/google/uuid v1.1.1

@@ -6,16 +6,13 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"html/template"
-	"io"
 	"net/http"
-	"os/exec"
-	"time"
 )
 
+// funcs is a map of functions to make available to templates.
 var funcs = template.FuncMap{
-	"unescape":   unescape,
+	"unescape":   func(s string) template.HTML { return template.HTML(s) },
 	"json":       toJson,
-	"toMs":       durationToMs,
 	"StatusText": http.StatusText,
 }
 
@@ -24,11 +21,6 @@ var t = template.Must(template.Must(template.Must(template.
 	New("indexPage").Funcs(funcs).Parse(index)).
 	New("tracePage").Funcs(funcs).Parse(trace)).
 	New("subtrace").Funcs(funcs).Parse(subtrace))
-
-// durationToMs returns a string representation of the duration in ms to one decimal place.
-func durationToMs(d time.Duration) string {
-	return fmt.Sprintf("%.1f", float64(d.Nanoseconds())/1000000.0)
-}
 
 func toJson(arg interface{}) string {
 	b, _ := json.MarshalIndent(arg, "", "  ")
@@ -44,99 +36,6 @@ func writeIndex(w http.ResponseWriter, m *Metadata) error {
 	return nil
 }
 
-func apply(svg string, e Entry, be Entry) (string, string, error) {
-	currentSvg := svg
-	var textsArg string
-	var err error
-
-	if e.ServiceName == be.ServiceName {
-		textsArg = fmt.Sprintf(`{'-> %s %s %s'}`, e.ServiceName, e.Request.Method, e.Request.Route)
-		var colorArg string
-		if e.Response.Status < 400 || e.Response.Status >= 500 {
-			colorArg = "green"
-		} else {
-			colorArg = "red"
-		}
-		currentSvg, err = updateSvg(currentSvg, textsArg, colorArg)
-		if err != nil {
-			logrus.WithError(err).Error("upstream inbound svg update failed")
-		}
-
-		textsArg = fmt.Sprintf(`{'<-- %s %s %s'}`, e.ServiceName, e.Request.Method, e.Request.Route)
-		if e.Response.Status < 400 {
-			colorArg = "green"
-		} else {
-			colorArg = "red"
-		}
-		currentSvg, err = updateSvg(currentSvg, textsArg, colorArg)
-		if err != nil {
-			logrus.WithError(err).Error("upstream outbound svg update failed")
-		}
-	} else {
-		textsArg = fmt.Sprintf(`{'%s %s %s -> %s %s %s'}`, be.ServiceName, be.Request.Method, be.Request.Route, e.ServiceName, e.Request.Method, e.Request.Route)
-		var colorArg string
-		if e.Response.Status < 400 || e.Response.Status >= 500 {
-			colorArg = "green"
-		} else {
-			colorArg = "red"
-		}
-		currentSvg, err = updateSvg(currentSvg, textsArg, colorArg)
-		if err != nil {
-			logrus.WithError(err).Error("downstream outbound svg update failed")
-		}
-
-		textsArg = fmt.Sprintf(`{'%s %s %s <-- %s %s %s'}`, be.ServiceName, be.Request.Method, be.Request.Route, e.ServiceName, e.Request.Method, e.Request.Route)
-		if e.Response.Status < 400 {
-			colorArg = "green"
-		} else {
-			colorArg = "red"
-		}
-		currentSvg, err = updateSvg(currentSvg, textsArg, colorArg)
-		if err != nil {
-			logrus.WithError(err).Error("downstream inbound svg update failed")
-		}
-	}
-
-	// Check entry to determine success/failure
-	// Update svg based on response
-
-	// Render subtemplate with entry data
-	var sub bytes.Buffer
-	err = t.ExecuteTemplate(&sub, "subtrace", e)
-	if err != nil {
-		logrus.WithError(err).Error("subtemplate render failed")
-	}
-	result := sub.String()
-
-	// Return updated svg and subtemplate
-	return currentSvg, result, err
-}
-
-// updateSvg invokes the arr.ai script to update svg with color.
-func updateSvg(svg, text, color string) (string, error) {
-	cmd := exec.Command("arrai", "run", "svg_demo.arrai", text, color)
-	cmd.Dir = "/Users/ladeo/dev/sysl/pkg/arrai"
-
-	stdin, err := cmd.StdinPipe()
-	if err != nil {
-		return svg, err
-	}
-	go func() {
-		defer stdin.Close()
-		io.WriteString(stdin, svg)
-	}()
-
-	var errb bytes.Buffer
-	cmd.Stderr = &errb
-
-	out, err := cmd.Output()
-	if err != nil {
-		logrus.WithError(err).Error(errb.String())
-		return svg, err
-	}
-	return string(out), nil
-}
-
 // writeTrace writes the trace details page template to the ResponseWriter.
 func writeTrace(w http.ResponseWriter, traceId string, metadata *Metadata) error {
 	be := metadata.GetBaseEntryByTrace(traceId)
@@ -145,7 +44,7 @@ func writeTrace(w http.ResponseWriter, traceId string, metadata *Metadata) error
 	subs := []string{}
 	currentSvg := svg
 	for _, e := range es {
-		newSvg, sub, err := apply(currentSvg, e, be)
+		newSvg, sub, err := renderSubtrace(currentSvg, e, be)
 		currentSvg = newSvg
 		subs = append(subs, sub)
 		if err != nil {
@@ -164,6 +63,66 @@ func writeTrace(w http.ResponseWriter, traceId string, metadata *Metadata) error
 		return err
 	}
 	return nil
+}
+
+// renderSubtrace processes a metadata entry by updating the appropriate elements of the SVG and
+// rendering the subtrace template with the entry details.
+func renderSubtrace(svg string, e Entry, be Entry) (string, string, error) {
+	currentSvg := svg
+	var textsArg string
+	var err error
+
+	// reqColor returns the appropriate color for a request based on the response status code.
+	reqColor := func(status int) string {
+		if status < 400 || status >= 500 {
+			return "green"
+		} else {
+			return "red"
+		}
+	}
+	// resColor returns the appropriate color for a response based on the response status code.
+	resColor := func(status int) string {
+		if status < 400 {
+			return "green"
+		} else {
+			return "red"
+		}
+	}
+
+	if e.ServiceName == be.ServiceName {
+		textsArg = fmt.Sprintf(`{'-> %s %s %s'}`, e.ServiceName, e.Request.Method, e.Request.Route)
+		currentSvg, err = UpdateSvg(currentSvg, textsArg, reqColor(e.Response.Status))
+		if err != nil {
+			logrus.WithError(err).Error("upstream inbound svg update failed")
+		}
+
+		textsArg = fmt.Sprintf(`{'<-- %s %s %s'}`, e.ServiceName, e.Request.Method, e.Request.Route)
+		currentSvg, err = UpdateSvg(currentSvg, textsArg, resColor(e.Response.Status))
+		if err != nil {
+			logrus.WithError(err).Error("upstream outbound svg update failed")
+		}
+	} else {
+		textsArg = fmt.Sprintf(`{'%s %s %s -> %s %s %s'}`, be.ServiceName, be.Request.Method, be.Request.Route, e.ServiceName, e.Request.Method, e.Request.Route)
+		currentSvg, err = UpdateSvg(currentSvg, textsArg, reqColor(e.Response.Status))
+		if err != nil {
+			logrus.WithError(err).Error("downstream outbound svg update failed")
+		}
+
+		textsArg = fmt.Sprintf(`{'%s %s %s <-- %s %s %s'}`, be.ServiceName, be.Request.Method, be.Request.Route, e.ServiceName, e.Request.Method, e.Request.Route)
+		currentSvg, err = UpdateSvg(currentSvg, textsArg, resColor(e.Response.Status))
+		if err != nil {
+			logrus.WithError(err).Error("downstream inbound svg update failed")
+		}
+	}
+
+	var sub bytes.Buffer
+	err = t.ExecuteTemplate(&sub, "subtrace", e)
+	if err != nil {
+		logrus.WithError(err).Error("subtemplate render failed")
+	}
+	result := sub.String()
+
+	return currentSvg, result, err
 }
 
 // Unescape returns unescaped HTML for use in a template.
@@ -189,12 +148,21 @@ const index = `
 <li><a href="/-/trace/{{.}}">{{.}}</a></li>
 {{end}}
 </ul>
+<!--{{ json . }}-->
 </body>
 </html>`
 
 const subtrace = `
 <div class="subtrace {{ .Id }}" style="display: none">
 <p>{{ .ServiceName }}: {{ .Request.Method }} {{ .Request.Route }} ({{ .Request.URL }})</p>
+
+<p>
+	Status:
+	<span class="status {{ StatusText .Response.Status }}">
+		{{ .Response.Status }} {{ StatusText .Response.Status }}
+	</span>
+	({{ .Response.Latency.Milliseconds }}ms)
+</p>
 
 <h2>Request</h2>
 <h3>Headers</h3>
@@ -204,14 +172,6 @@ const subtrace = `
 <pre>{{ .Request.Body }}</pre>
 
 <h2>Response</h2>
-<p>
-	Status:
-	<span class="status {{ StatusText .Response.Status }}">
-		{{ .Response.Status }} {{ StatusText .Response.Status }}
-	</span>
-	({{ toMs .Response.Latency }}ms)
-</p>
-
 <h3>Headers</h3>
 <pre>{{ json .Response.Headers }}</pre>
 
