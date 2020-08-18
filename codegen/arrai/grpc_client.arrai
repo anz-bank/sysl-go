@@ -13,7 +13,7 @@ let go = //{./go};
     # TODO: sysl automapping between sysl types and protobuf types
     # TODO: use protobuf from sysl to use instead of precompiled from the api repository
     $`
-        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(basepath, app))}
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(app))}
 
         // Client implements a client for ${appname}.
         type Client struct {

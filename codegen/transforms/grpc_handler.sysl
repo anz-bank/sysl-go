@@ -567,7 +567,7 @@ CodeGenTransform:
         let grpcDefs = grpcPkgName -> <ImportSpec>(:
           NamedImport = grpcPkgName -> <NamedImport>(:
             Name = grpcPkgName
-            Import = '"' + depPath + "/" + goPbPackage + '"'
+            Import = '"' + goPbPackage + '"'
           )
         )
 
