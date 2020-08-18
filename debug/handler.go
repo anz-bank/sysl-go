@@ -10,7 +10,11 @@ import (
 func NewDebugIndexHandler(metadata *Metadata) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "text/html")
-		_ = writeIndex(w, metadata)
+		err := writeIndex(w, *metadata)
+		if err != nil {
+			logrus.WithError(err).Error("render index failed")
+			w.WriteHeader(500)
+		}
 	}
 }
 
@@ -20,9 +24,10 @@ func NewDebugHandler(metadata *Metadata) func(w http.ResponseWriter, r *http.Req
 		traceId := chi.URLParam(r, "traceId")
 
 		w.Header().Add("Content-Type", "text/html")
-		err := writeTrace(w, traceId, metadata)
+		err := writeTrace(w, traceId, *metadata)
 		if err != nil {
-			logrus.WithError(err).Error("server error")
+			logrus.WithError(err).Error("render trace failed")
+			w.WriteHeader(500)
 		}
 	}
 }

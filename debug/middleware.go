@@ -64,7 +64,8 @@ func NewDebugMiddleware(serviceName string, metadata *Metadata) func(next http.H
 					URL:     "/",
 				},
 				Response: Response{
-					Status:  cw.statusCode,
+					StatusCode:  cw.statusCode,
+					Status:  http.StatusText(cw.statusCode),
 					Latency: elapsed,
 					Headers: cw.Header(),
 					Body:    cw.body,

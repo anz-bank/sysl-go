@@ -24,10 +24,11 @@ type Request struct {
 
 // Response captures response metadata.
 type Response struct {
-	Status  int           `json:"status,omitempty"`
-	Latency time.Duration `json:"latency,omitempty"`
-	Headers http.Header   `json:"headers,omitempty"`
-	Body    string        `json:"body,omitempty"`
+	StatusCode int           `json:"statusCode,omitempty"`
+	Status     string        `json:"status,omitempty"`
+	Latency    time.Duration `json:"latency,omitempty"`
+	Headers    http.Header   `json:"headers,omitempty"`
+	Body       string        `json:"body,omitempty"`
 }
 
 // Entry records metadata for a single interaction.
@@ -39,7 +40,7 @@ type Entry struct {
 
 // Metadata records all interaction entries.
 type Metadata struct {
-	Entries []Entry
+	Entries []Entry `json:"entries,omitempty"`
 }
 
 // NewEntry returns a new Entry constructed from a request, response, name and latency.
@@ -55,15 +56,17 @@ func NewEntry(req *http.Request, res *http.Response, serviceName string, latency
 	var response Response
 	if res != nil {
 		response = Response{
-			Status:  res.StatusCode,
-			Headers: res.Header,
-			Body:    readBody(res),
-			Latency: latency,
+			StatusCode: res.StatusCode,
+			Status:     http.StatusText(res.StatusCode),
+			Headers:    res.Header,
+			Body:       readBody(res),
+			Latency:    latency,
 		}
 	} else {
 		response = Response{
-			Status:  500,
-			Latency: latency,
+			StatusCode: 500,
+			Status:     http.StatusText(500),
+			Latency:    latency,
 		}
 	}
 
