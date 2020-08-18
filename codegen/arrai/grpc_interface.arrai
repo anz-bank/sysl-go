@@ -7,7 +7,7 @@ let sysl = //{./sysl};
     $`
         ${go.prelude(app,
             (clientDeps => $`${basepath}/${.import}`)
-            | {(alias: `pb`, package: $`${basepath}/${app('attrs')('go_pb_package')('s').s}`)},
+            | {(alias: `pb`, package: $`${app('attrs')('go_pb_package')('s').s}`)},
         )}
 
         ${nonRestEndpoints >> \(@:_, @value: ep) client.client_struct(ep)::\i}

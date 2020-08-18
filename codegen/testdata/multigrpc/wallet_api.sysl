@@ -1,6 +1,6 @@
 Wallet "Wallet Server" [package="cards"]:
     @go_package = "wallet"
-    @go_pb_package = "cardspb"
+    @go_pb_package = "github.com/anz-bank/sysl-go/codegen/tests/cardspb"
     @pb_package = "cards.v1"
 
     Apple(fp <: Fpan):
