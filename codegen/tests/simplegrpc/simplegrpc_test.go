@@ -154,3 +154,11 @@ func TestBuildDownstreamClients(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, handlers.simpleClient)
 }
+
+func TestClientIsService(t *testing.T) {
+	t.Parallel()
+	client := simple.NewClient(nil, "")
+	var i interface{} = client
+	_, ok := i.(simple.Service)
+	require.True(t, ok)
+}
