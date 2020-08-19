@@ -67,7 +67,7 @@ td, pre {
 .status {
     color: red;
 }
-.status.2 {
+.status._2 {
     color: green;
 }
 </style>
@@ -161,7 +161,7 @@ let render = \. $`+"`"+`
     <h2>Response</h2>
     <p>
         Status:
-        <span class="status ${.response.statusCode // 100} ${.response.statusCode}">
+        <span class="status _${.response.statusCode // 100} ${.response.statusCode}">
             ${.response.statusCode} ${.response.status}
         </span>
         (${.response.latency/1000000:.1f}ms)
@@ -253,7 +253,7 @@ let rec simplify = \j
         (): {},
         _: cond {
             j < 99999999999999999999: j,
-            _: //log.print(j) >> simplify(.),
+            _: j >> simplify(.),
         },
     }
 ;let json_arrai = 
