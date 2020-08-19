@@ -8,6 +8,8 @@ import (
 	"io"
 )
 
+//go:generate ./generate.render.arrai.go.sh
+
 // renderIndex returns the rendered trace index page.
 func renderIndex(w io.Writer, m Metadata) error {
 	j, err := json.Marshal(m)

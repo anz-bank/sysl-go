@@ -2,17 +2,92 @@ package debug
 
 const renderScript = `
 ### ------------------------------------------------------------------------ ###
+###  debug_style.arrai                                                       ###
+### ------------------------------------------------------------------------ ###
+
+let debug_style = $`+"`"+`
+<link href="https://fonts.googleapis.com/css2?family=B612+Mono:wght@400&family=Roboto+Mono&display=swap" rel="stylesheet">
+<style>
+body {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 10px 40px;
+
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+    background-color: #fdfdfd;
+    border: 1px solid #e1e4e8;
+    border-radius: 2px;
+}
+
+h1, h2, h3 {
+    border-bottom: 1px solid #eaecef;
+}
+
+.traceid {
+    float: right;
+    color: grey;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+td, th {
+    padding: 4px 8px;
+    border: thin solid grey;
+}
+
+td, pre {
+    font-family: 'B612 Mono', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+.method {
+    line-height: 20px;
+    background-color: rgb(36, 143, 178);
+    color: white;
+    text-transform: uppercase;
+    font-family: Montserrat, sans-serif;
+    padding: 3px 10px;
+}
+
+.route {
+    font-family: 'B612 Mono', 'Courier New', monospace;
+}
+
+.url {
+    float: right;
+    font-size: small;
+    text-decoration: underline;
+    color: grey;
+    line-height: 0;
+}
+
+.status {
+    color: red;
+}
+.status.2 {
+    color: green;
+}
+</style>
+`+"`"+`;let debug_style_arrai = 
+debug_style
+;
+
+### ------------------------------------------------------------------------ ###
 ###  debug_index.arrai                                                       ###
 ### ------------------------------------------------------------------------ ###
 
 let render = \metadata
-    let traceIds = metadata.entries => .@item.request.headers('Traceid')(0)?:{};
+    let traceIds = metadata.entries => .@item.request.headers('Traceid')?:{};
     $`+"`"+`
         <!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
             <title>Debug Traces</title>
+            ${debug_style_arrai}
         </head>
         <body>
         <h1>Debug Traces</h1>
@@ -32,6 +107,36 @@ let render = \metadata
 ;
 
 ### ------------------------------------------------------------------------ ###
+###  table.arrai                                                             ###
+### ------------------------------------------------------------------------ ###
+
+# Formats data as tables.
+
+# Returns data formatted as an HTML table.
+let htmlTable = \data $`+"`"+`
+    <table>
+        <tr><th>Key</th><th>Value</th></tr>
+        ${(data => \(:@, :@value)
+            $`+"`"+`<tr><td>${@}</td><td>${@value}</td></tr>`+"`"+`
+        ) orderby .::\i}
+    </table>
+`+"`"+`;
+
+# Returns data formatted as a Markdown table.
+let markdownTable = \data $`+"`"+`
+    |Key|Value|
+    ${(data => \(:@, :@value)
+        $`+"`"+`|${@}|${@value}|`+"`"+`
+    ) orderby .::\i}
+`+"`"+`;let table_arrai = 
+
+(
+    html: htmlTable,
+    markdown: markdownTable,
+)
+;
+
+### ------------------------------------------------------------------------ ###
 ###  debug_subtrace.arrai                                                    ###
 ### ------------------------------------------------------------------------ ###
 
@@ -40,11 +145,15 @@ let id = \. //seq.sub("/", "_", //str.lower($`+"`"+`
 
 let render = \. $`+"`"+`
     <div class="subtrace ${id(.)}" style="display: none">
-    <p>${.serviceName}: ${.request.method} ${.request.route} (${.request.url})</p>
+    <p class="url">${.request.url}</p>
+    <p>${.serviceName}:
+        <span class="method">${.request.method}</span>
+        <span class="route">${.request.route}</span>
+    </p>
 
     <h2>Request</h2>
     <h3>Headers</h3>
-    <pre>${.request.headers?:{}}</pre>
+    ${cond .request.headers?:{} {{}: {}, h: table_arrai.html(h)}}
 
     <h3>Body</h3>
     <pre>${.request.body?:{}}</pre>
@@ -59,7 +168,7 @@ let render = \. $`+"`"+`
     </p>
 
     <h3>Headers</h3>
-    <pre>${.response.headers?:{}}</pre>
+    ${cond .response.headers?:{} {{}: {}, h: table_arrai.html(h)}}
 
     <h3>Body</h3>
     <pre>${cond .response.body?:{} {x: x, _: "(none)"}}</pre>
@@ -81,25 +190,17 @@ let render = \metadata \traceId \sd $`+"`"+`
     <head>
     <meta charset="UTF-8">
     <title>Trace Details</title>
-    <style>
-        .status {
-        color: red;
-        }
-        .status.2 {
-        color: green;
-        }
-    </style>
+    ${debug_style_arrai}
     </head>
     <body>
     <p><a href="/-/trace">Back</a></p>
 
+    <p class="traceid">ID: ${traceId}</p>
     <h1>Trace Details</h1>
-
-    <p>Trace ID: ${traceId}</p>
 
     ${sd}
 
-    ${metadata.entries where .@item.request.headers('Traceid')(0)?:{} = traceId >>
+    ${metadata.entries where .@item.request.headers('Traceid')?:{} = traceId >>
          debug_subtrace_arrai.render(.)
     ::\i}
 
@@ -149,9 +250,10 @@ let rec simplify = \j
         [...]: j >> simplify(.),
         (:a): simplify(a),
         (:s): simplify(s),
+        (): {},
         _: cond {
             j < 99999999999999999999: j,
-            _: j >> simplify(.),
+            _: //log.print(j) >> simplify(.),
         },
     }
 ;let json_arrai = 
@@ -162,276 +264,26 @@ let rec simplify = \j
 ;
 
 ### ------------------------------------------------------------------------ ###
-###  svg_grammar.arrai                                                       ###
-### ------------------------------------------------------------------------ ###
-
-# A grammar to parse SVG documents.
-
-let g = {://grammar.lang.wbnf:
-doc         -> header? node;
-header      -> "<?xml" [^?]* "?>";
-node        -> "<" tag=name attr* ("/>" | (">" (node | comment | text)* "</" name ">"));
-name        -> [-:\w]+;
-attr        -> name "=" '"' value=[^""]* '"';
-comment     -> "<!--" comment_rest;
-comment_rest -> "-->" | ([^-]+ | [-]) comment_rest;
-text        -> [^<]+;
-
-thisisntusedanywhere -> "<";
-.wrapRE     -> /{\s*()\s*};
-:};let svg_grammar_arrai = 
-
-g
-;
-
-### ------------------------------------------------------------------------ ###
-###  util.arrai                                                              ###
-### ------------------------------------------------------------------------ ###
-
-# A collection of helper functions for arr.ai.
-#
-# If generally useful, these should gradually migrate to a more standard library.
-
-# Invokes a macro on a string as if it were source code at parsing time.
-let invokeMacro = \macro \s
-    macro -> (//dict(.@transform) >>> \rule \fn 
-        fn(//grammar.parse(.@grammar, rule, s))).@value
-;
-
-# Transforms an AST into a simple tuple of its values.
-# Useful for the @transform of a flat grammar.
-let simpleTransform = \ast
-    let d = //dict(ast) >> \term cond term {('':value, ...): value, _: {}};
-    //tuple(d where .@value)
-;
-
-# Filters the nodes of a hierarchical data structure based on a (key, value) predicate.
-# Key-value pairs for which the predicate returns false will be removed from the result.
-let rec filterTree = \pred \ast
-    cond ast {
-        {(@:..., @value:...), ...}: ast where pred(.@, .@value) >> filterTree(pred, .),
-        [...]: ast >> filterTree(pred, .),
-        {...}: ast => filterTree(pred, .),
-        (...): safetuple(//dict(ast) where pred(.@, .@value) >> filterTree(pred, .)),
-        _: ast,
-    }
-;
-
-# Sequentially applies `+"`"+`fn(accumulator, i)`+"`"+` for each `+"`"+`i`+"`"+` in `+"`"+`arr`+"`"+`. The `+"`"+`accumulator`+"`"+` is initialised
-# to `+"`"+`val`+"`"+`, and updated to the result of `+"`"+`fn`+"`"+` after each invocation.
-# Returns the final accumulated value.
-let rec reduce = \arr \fn \val
-    cond arr {
-        [head, ...]:
-            let tail = -1\(arr without (@:0, @item:head));
-            reduce(tail, fn, fn(val, head)),
-        _: val,
-    }
-;
-
-# Performs `+"`"+`reduce`+"`"+` once on `+"`"+`arr`+"`"+`, and once for each array output of `+"`"+`fn`+"`"+`. Accumulates to the same
-# value across all invocations.
-let reduceFlat = \arr \fn \val
-    reduce(arr, \z \i reduce(i, fn, z), val)
-;
-
-# Returns a sequence with any offset and holes removed.
-let ranked = \s s rank (:.@);
-
-# Workaround for https://github.com/arr-ai/arrai/issues/571
-let safetuple = \d
-    let rest = //tuple(d where .@ != '');
-    cond d where .@ = '' {
-        {(@:'', @value: value)}: rest +> (@: value),
-        _: rest,
-    };
-# Explore constructs a dependency graph by starting at source and calling step
-# to find adjacent nodes. Deps is the graph constructed so far.
-# Self-edges are ignored.
-let rec _explore = \source \step \deps
-    cond {
-        {source} & (deps => .@): deps,
-        _:
-            let next = step(source) where . != source;
-            let deps = deps | {(@:source, @value: next)};
-            reduce(next orderby ., \v \i _explore(i, step, v), deps)
-    };
-let explore = \source \step _explore(source, step, {});
-
-# Unimported returns the set of nodes with no in-edges.
-let unimported = \g (g => .@) where !({.} & //rel.union(g => .@value));
-
-# Topsort returns an array of nodes in graph in dependency order.
-let rec _topsort = \graph \sorted \sources
-    cond sources orderby . {
-            []: sorted,
-            [..., tail]: 
-                let adjs = graph(tail);
-                let graph = graph where .@ != tail;
-                let sources = (sources &~ {tail}) | (adjs & unimported(graph));
-                _topsort(graph, sorted ++ [tail], sources)
-        };
-let topsort = \graph _topsort(graph, [], unimported(graph));let util_arrai = 
-
-(
-    :explore,
-    :filterTree,
-    :invokeMacro,
-    :ranked,
-    :reduce,
-    :reduceFlat,
-    :safetuple,
-    :simpleTransform,
-    :topsort,
-    :unimported,
-)
-;
-
-### ------------------------------------------------------------------------ ###
-###  svg.arrai                                                               ###
-### ------------------------------------------------------------------------ ###
-
-# Functions for working with SVG documents.
-
-let (:ranked, ...) = util_arrai;
-
-let comment = \k \v k = "comment";
-let at = \k \v //seq.has_prefix("@", k);
-# Filters out nodes of an AST that are keyed by "comment" or "@*".
-let pred = \k \v !comment(k, v) && !at(k, v);
-
-# SVG attributes that have numeric values.
-let nums = {'x', 'y', 'x1', 'x2', 'y1', 'y2', 'cx', 'cy', 'rx', 'ry',
-    'textLength', 'font-size'};
-
-# Transforms an SVG AST into a more natural arr.ai structure.
-let transformDoc = \ast
-    let rec transformNode = \node (
-        @tag: node.tag.name.'',
-        attrs: node.attr?:{} => \(@item:a, ...)
-            let @ = ranked(a.name.'');
-            let v = a.value.'';
-            (:@, @value: cond {{@} & nums: //eval.value(v), _: v}),
-        text: //seq.join("", node.text?:{} >> .''),
-        children: node.node?:{} >> transformNode(.),
-    );
-    (header: //seq.join(' ', ast.header?.'':{}), root: transformNode(ast.node))
-;
-
-# Serializes an SVG model to SVG XML.
-let toSvg = \m
-    let attrToString = \as $`+"`"+`${as => $`+"`"+`${.@}="${.@value}"`+"`"+` orderby .:: }`+"`"+`;
-    let rec toString = \n
-        cond {
-            n.children?:{}: $`+"`"+`
-                <${n.@tag} ${attrToString(n.attrs)}>
-                    ${n.children >> toString(.)::\i}${n.text}
-                </${n.@tag}>
-            `+"`"+`,
-            _: $`+"`"+`<${n.@tag} ${attrToString(n.attrs)}>${n.text}</${n.@tag}>`+"`"+`,
-        }
-    ;
-
-    $`+"`"+`
-        ${m.header?:''}
-        ${toString(m.root)}
-    `+"`"+`
-;
-
-# Manipulation functions
-
-# Returns the ranked tag of the node.
-let tag = \node ranked(node.@tag);
-# Returns the first g node.
-let g = \svg ranked(svg.root.children where tag(.@item) = 'g')(0);
-# Returns all nodes with the given tag.
-let byTag = \svg \t (g(svg).children where tag(.@item) = t) => .@item;
-
-# Returns the uppermost y coordinate of the node.
-let getY = \n 
-    let py = \poly //eval.value(//seq.split(',', poly.attrs('points'))(1));
-    n.attrs('y')?:{} || n.attrs('y1')?:{} || py(n)
-;
-
-# Performs rough decoding of URL-encoded strings.
-let urldecode = \in //seq.sub('&gt;', '>', //seq.sub('&lt;', '<', //seq.sub('%20', ' ', in)));
-
-# Returns the LHS, RHS and arrow of an endpoint expression (e.g. x -> y).
-let parts = \in
-    let ing = //re.compile('#?\\s*([^-<>]*)\\s*([-<>]+)\\s*(.+)');
-    let [[_, lhs, arrow, rhs]] = ing.match(//str.lower(urldecode(in)));
-    (
-        lhs: ranked(//seq.trim_suffix(' ', lhs)),
-        arrow: ranked(arrow), 
-        rhs: (//seq.trim_suffix(' ', rhs))
-    )
-;
-
-let kids = \ns ns => .children => .@item;
-
-# Returns text nodes that contain the given text. May be nested in a nodes.
-let texts = \svg \text
-    let raw = byTag(svg, 'text') where ranked(.text) = ranked(text);
-    let as = kids(byTag(svg, 'a') where parts(.attrs('href')) = parts(text));
-    let ats = kids(byTag(svg, 'a')) where ranked(.text) = ranked(text);
-    raw | as | ats
-;
-
-# Returns the nodes most closely associated with the given text.
-let byText = \svg \text
-    let texts = texts(svg, text);
-    //rel.union({'line', 'polygon'} => \t
-        let elts = byTag(svg, t) orderby getY(.);
-        texts => getY(.) => \y ranked(elts where getY(.@item) > y)(0)?:{}
-    ) | texts where .
-;
-
-# Returns the SVG with the text colored.
-let colored = \svg \color \nodes
-    let tags = nodes => .@tag;
-    let strokeRe = //re.compile('stroke: [^;]+');
-    let strokeWidthRe = //re.compile('stroke-width: [^;]+');
-    svg +> (root: svg.root +> (children: svg.root.children >>
-        cond tag(.) {'g': . +> (children: .children >>
-            cond {{.@tag} & tags: . +> (attrs: .attrs >>> \k \v
-                cond k {
-                    'style': strokeWidthRe.sub('stroke-width: 2.0', strokeRe.sub($`+"`"+`stroke: ${color}; cursor: pointer`+"`"+`, v)),
-                    'fill': color,
-                    _: v,
-                }),
-                _: .,
-            }),
-        _: .,
-    }))
-;let svg_arrai = 
-
-(
-    macro: (
-        @grammar: svg_grammar_arrai,
-        @transform: (doc: transformDoc),
-    ),
-    :toSvg,
-    :byText,
-    :colored,
-)
-;
-
-### ------------------------------------------------------------------------ ###
 ###  debug.arrai                                                             ###
 ### ------------------------------------------------------------------------ ###
 
 # Renders the sysl-go debug trace details screen.
 
-let cleanEntry = \ej (
-    serviceName: ej('serviceName'),
-    request: //tuple(ej('request')),
-    response: //tuple(ej('response')),
-);
+let cleanHeaders = \hs //log.print(hs) >> cond . {[x]: x, _: .};
+let cleanEntry = \ej 
+    let clean = (
+        serviceName: ej('serviceName'),
+        request: //tuple(ej('request')),
+        response: //tuple(ej('response')),
+    );
+    //log.print(clean) -> . +> (
+        request: .request +> (headers: cleanHeaders(.request.headers)),
+        response: .response +> (headers: cleanHeaders(.response.headers)),
+    )
+;
 let cleanMetadata = \mj //tuple(json_arrai.simplify(mj)) -> \m
     m +> (entries: m.entries?:[] >> cleanEntry(.));
 let parseMetadata = \mj cleanMetadata(//encoding.json.decode(mj));
-
-let parseSvg = \svg util_arrai.invokeMacro(svg_arrai.macro, svg);
 
 (
     index: \m

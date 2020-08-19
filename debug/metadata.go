@@ -15,32 +15,32 @@ var MetadataStore = Metadata{}
 
 // Request captures request metadata.
 type Request struct {
-	Method  string      `json:"method,omitempty"`
-	Route   string      `json:"route,omitempty"`
-	Headers http.Header `json:"headers,omitempty"`
-	Body    string      `json:"body,omitempty"`
-	URL     string      `json:"url,omitempty"`
+	Method  string      `json:"method"`
+	Route   string      `json:"route"`
+	Headers http.Header `json:"headers"`
+	Body    string      `json:"body"`
+	URL     string      `json:"url"`
 }
 
 // Response captures response metadata.
 type Response struct {
-	StatusCode int           `json:"statusCode,omitempty"`
-	Status     string        `json:"status,omitempty"`
-	Latency    time.Duration `json:"latency,omitempty"`
-	Headers    http.Header   `json:"headers,omitempty"`
-	Body       string        `json:"body,omitempty"`
+	StatusCode int           `json:"statusCode"`
+	Status     string        `json:"status"`
+	Latency    time.Duration `json:"latency"`
+	Headers    http.Header   `json:"headers"`
+	Body       string        `json:"body"`
 }
 
 // Entry records metadata for a single interaction.
 type Entry struct {
-	ServiceName string   `json:"serviceName,omitempty"`
-	Request     Request  `json:"request,omitempty"`
-	Response    Response `json:"response,omitempty"`
+	ServiceName string   `json:"serviceName"`
+	Request     Request  `json:"request"`
+	Response    Response `json:"response"`
 }
 
 // Metadata records all interaction entries.
 type Metadata struct {
-	Entries []Entry `json:"entries,omitempty"`
+	Entries []Entry `json:"entries"`
 }
 
 // NewEntry returns a new Entry constructed from a request, response, name and latency.
@@ -138,11 +138,18 @@ func (e Entry) Id() string {
 func readBody(r interface{}) string {
 	switch t := r.(type) {
 	case *http.Request:
+		if t.Body != nil {
+			// TODO: Replace with some kind of tee-like caching passthrough mechanism.
+			bodyBytes, _ := ioutil.ReadAll(t.Body)
+			_ = t.Body.Close() // must close
+			t.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+			return string(bodyBytes)
+		}
 	case *http.Response:
 		if t.Body != nil {
 			// TODO: Replace with some kind of tee-like caching passthrough mechanism.
 			bodyBytes, _ := ioutil.ReadAll(t.Body)
-			_ = t.Body.Close() //  must close
+			_ = t.Body.Close() // must close
 			t.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
 			return string(bodyBytes)
 		}

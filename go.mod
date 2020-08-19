@@ -21,8 +21,7 @@ require (
 	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/sys v0.0.0-20200814200057-3d37ad5750ed // indirect
-	google.golang.org/genproto v0.0.0-20200330113809-af700f360a68 // indirect
-	google.golang.org/grpc v1.29.0
+	google.golang.org/grpc v1.29.1
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gopkg.in/yaml.v2 v2.3.0
 )
