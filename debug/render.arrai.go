@@ -2,6 +2,75 @@ package debug
 
 const renderScript = `
 ### ------------------------------------------------------------------------ ###
+###  debug_style.arrai                                                       ###
+### ------------------------------------------------------------------------ ###
+
+let debug_style = $`+"`"+`
+<link href="https://fonts.googleapis.com/css2?family=B612+Mono:wght@400&family=Roboto+Mono&display=swap" rel="stylesheet">
+<style>
+body {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 10px 40px;
+
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+    background-color: #fdfdfd;
+    border: 1px solid #e1e4e8;
+    border-radius: 2px;
+}
+
+h1, h2, h3 {
+    border-bottom: 1px solid #eaecef;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+td, th {
+    padding: 4px 8px;
+    border: thin solid grey;
+}
+
+td, pre {
+    font-family: 'B612 Mono', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+.method {
+    line-height: 20px;
+    background-color: rgb(36, 143, 178);
+    color: white;
+    text-transform: uppercase;
+    font-family: Montserrat, sans-serif;
+    padding: 3px 10px;
+}
+
+.route {
+    font-family: 'B612 Mono', 'Courier New', monospace;
+}
+
+.url {
+    float: right;
+    font-size: small;
+    text-decoration: underline;
+    color: grey;
+    line-height: 0;
+}
+
+.status {
+    color: red;
+}
+.status.2 {
+    color: green;
+}
+</style>
+`+"`"+`;let debug_style_arrai = 
+debug_style
+;
+
+### ------------------------------------------------------------------------ ###
 ###  debug_index.arrai                                                       ###
 ### ------------------------------------------------------------------------ ###
 
@@ -13,6 +82,7 @@ let render = \metadata
         <head>
             <meta charset="UTF-8">
             <title>Debug Traces</title>
+            ${debug_style_arrai}
         </head>
         <body>
         <h1>Debug Traces</h1>
@@ -32,6 +102,36 @@ let render = \metadata
 ;
 
 ### ------------------------------------------------------------------------ ###
+###  table.arrai                                                             ###
+### ------------------------------------------------------------------------ ###
+
+# Formats data as tables.
+
+# Returns data formatted as an HTML table.
+let htmlTable = \data $`+"`"+`
+    <table>
+        <tr><th>Key</th><th>Value</th></tr>
+        ${(data => \(:@, :@value)
+            $`+"`"+`<tr><td>${@}</td><td>${@value}</td></tr>`+"`"+`
+        ) orderby .::\i}
+    </table>
+`+"`"+`;
+
+# Returns data formatted as a Markdown table.
+let markdownTable = \data $`+"`"+`
+    |Key|Value|
+    ${(data => \(:@, :@value)
+        $`+"`"+`|${@}|${@value}|`+"`"+`
+    ) orderby .::\i}
+`+"`"+`;let table_arrai = 
+
+(
+    html: htmlTable,
+    markdown: markdownTable,
+)
+;
+
+### ------------------------------------------------------------------------ ###
 ###  debug_subtrace.arrai                                                    ###
 ### ------------------------------------------------------------------------ ###
 
@@ -40,11 +140,15 @@ let id = \. //seq.sub("/", "_", //str.lower($`+"`"+`
 
 let render = \. $`+"`"+`
     <div class="subtrace ${id(.)}" style="display: none">
-    <p>${.serviceName}: ${.request.method} ${.request.route} (${.request.url})</p>
+    <p class="url">${.request.url}</p>
+    <p>${.serviceName}:
+        <span class="method">${.request.method}</span>
+        <span class="route">${.request.route}</span>
+    </p>
 
     <h2>Request</h2>
     <h3>Headers</h3>
-    <pre>${.request.headers?:{}}</pre>
+    ${cond .request.headers?:{} {{}: {}, h: table_arrai.html(h)}}
 
     <h3>Body</h3>
     <pre>${.request.body?:{}}</pre>
@@ -59,7 +163,7 @@ let render = \. $`+"`"+`
     </p>
 
     <h3>Headers</h3>
-    <pre>${.response.headers?:{}}</pre>
+    ${cond .response.headers?:{} {{}: {}, h: table_arrai.html(h)}}
 
     <h3>Body</h3>
     <pre>${cond .response.body?:{} {x: x, _: "(none)"}}</pre>
@@ -81,14 +185,7 @@ let render = \metadata \traceId \sd $`+"`"+`
     <head>
     <meta charset="UTF-8">
     <title>Trace Details</title>
-    <style>
-        .status {
-        color: red;
-        }
-        .status.2 {
-        color: green;
-        }
-    </style>
+    ${debug_style_arrai}
     </head>
     <body>
     <p><a href="/-/trace">Back</a></p>
@@ -99,7 +196,7 @@ let render = \metadata \traceId \sd $`+"`"+`
 
     ${sd}
 
-    ${metadata.entries where .@item.request.headers('Traceid')(0)?:{} = traceId >>
+    ${metadata.entries where .@item.request.headers('Traceid')?:{} = traceId >>
          debug_subtrace_arrai.render(.)
     ::\i}
 
@@ -149,9 +246,10 @@ let rec simplify = \j
         [...]: j >> simplify(.),
         (:a): simplify(a),
         (:s): simplify(s),
+        (): {},
         _: cond {
             j < 99999999999999999999: j,
-            _: j >> simplify(.),
+            _: //log.print(j) >> simplify(.),
         },
     }
 ;let json_arrai = 
@@ -167,11 +265,18 @@ let rec simplify = \j
 
 # Renders the sysl-go debug trace details screen.
 
-let cleanEntry = \ej (
-    serviceName: ej('serviceName'),
-    request: //tuple(ej('request')),
-    response: //tuple(ej('response')),
-);
+let cleanHeaders = \hs //log.print(hs) >> cond . {[x]: x, _: .};
+let cleanEntry = \ej 
+    let clean = (
+        serviceName: ej('serviceName'),
+        request: //tuple(ej('request')),
+        response: //tuple(ej('response')),
+    );
+    //log.print(clean) -> . +> (
+        request: .request +> (headers: cleanHeaders(.request.headers)),
+        response: .response +> (headers: cleanHeaders(.response.headers)),
+    )
+;
 let cleanMetadata = \mj //tuple(json_arrai.simplify(mj)) -> \m
     m +> (entries: m.entries?:[] >> cleanEntry(.));
 let parseMetadata = \mj cleanMetadata(//encoding.json.decode(mj));
