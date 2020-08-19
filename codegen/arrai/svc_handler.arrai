@@ -180,10 +180,26 @@ let sysl = //{./sysl};
                     `}}
                     client := ${client.new(ep)}
 
+                    defer func() {
+                        if rec := recover(); rec != nil {
+                            ${cond {hasDB: $`
+                                tx.Rollback()
+
+                            `}}
+                            var err error
+                            switch rec := rec.(type) {
+                            case error:
+                                err = rec
+                            default:
+                                err = fmt.Errorf("Unknown error: %v", rec)
+                            }
+                            common.HandleError(ctx, w, common.InternalError, "Unexpected panic", err, s.genCallback.MapError)
+                        }
+                    }()
                     ${returns >> $`${//str.lower(.type(.type count - 1))}, `::}err := s.serviceInterface.${method}(ctx, &req, client)
                     if err != nil {
                         ${cond {hasDB: $`tx.Rollback()`}}
-                        common.HandleError(ctx, w, common.DownstreamUnexpectedResponseError, "Downstream failure", err, s.genCallback.MapError)
+                        common.HandleError(ctx, w, common.InternalError, "Handler error", err, s.genCallback.MapError)
                         return
                     }
 

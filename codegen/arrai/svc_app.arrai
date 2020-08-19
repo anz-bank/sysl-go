@@ -46,9 +46,13 @@ let sysl = //{./sysl};
 
         // BuildDownstreamClients ...
         func BuildDownstreamClients(cfg *config.DefaultConfig) (*DownstreamClients, error) {
+            downstream := cfg.GenCode.Downstream.(*DownstreamConfig)
+            if downstream == nil {
+                downstream = &DownstreamConfig{}
+            }
             var err error = nil
             ${clientDeps orderby . >>
-                $`${.import}${prefix(.)}Client, ${.import}Err := core.BuildDownstream${prefix(.)}Client("${.import}", &cfg.GenCode.Downstream.(*DownstreamConfig).${go.name(.import)})`
+                $`${.import}${prefix(.)}Client, ${.import}Err := core.BuildDownstream${prefix(.)}Client("${.import}", &downstream.${go.name(.import)})`
             ::\i}
             ${clientDeps orderby . >> $`
                 if ${.import}Err != nil {
@@ -59,7 +63,7 @@ let sysl = //{./sysl};
                 goModule.depField(.).grpc:
                     $`${.import}Client := ${.import}.New${.target('part').a >> .s::}Client(${.import}${prefix(.)}Client)`,
                 _:
-                    $`${.import}Client := ${.import}.NewClient(${.import}${prefix(.)}Client, cfg.GenCode.Downstream.(*DownstreamConfig).${go.name(.import)}.ServiceURL)`,
+                    $`${.import}Client := ${.import}.NewClient(${.import}${prefix(.)}Client, downstream.${go.name(.import)}.ServiceURL)`,
             }::\i}
 
             return &DownstreamClients{${clientDeps orderby . >> $`${.import}Client: ${.import}Client,`::\i}
@@ -78,7 +82,7 @@ let sysl = //{./sysl};
             ctx context.Context,
             createService interface{},
         ) error {
-            return core.Serve(
+            err := core.Serve(
                 ctx,
                 &DownstreamConfig{}, createService, &ServiceInterface{},
                 func(cfg *config.DefaultConfig, serviceIntf interface{}) (chi.Router, error) {
@@ -110,5 +114,9 @@ let sysl = //{./sysl};
                     return router, nil
                 },
             )
+            if err != nil {
+                log.Print(err)
+            }
+            return err
         }
     `

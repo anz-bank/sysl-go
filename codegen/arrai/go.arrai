@@ -92,6 +92,7 @@ let prelude = \app \imports $`
         "encoding/json"
         "flag"
         "fmt"
+        "log"
         "net/http"
         "net/url"
 
