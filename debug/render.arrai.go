@@ -24,6 +24,11 @@ h1, h2, h3 {
     border-bottom: 1px solid #eaecef;
 }
 
+.traceid {
+    float: right;
+    color: grey;
+}
+
 table {
     border-collapse: collapse;
 }
@@ -75,7 +80,7 @@ debug_style
 ### ------------------------------------------------------------------------ ###
 
 let render = \metadata
-    let traceIds = metadata.entries => .@item.request.headers('Traceid')(0)?:{};
+    let traceIds = metadata.entries => .@item.request.headers('Traceid')?:{};
     $`+"`"+`
         <!DOCTYPE html>
         <html lang="en">
@@ -190,9 +195,8 @@ let render = \metadata \traceId \sd $`+"`"+`
     <body>
     <p><a href="/-/trace">Back</a></p>
 
+    <p class="traceid">ID: ${traceId}</p>
     <h1>Trace Details</h1>
-
-    <p>Trace ID: ${traceId}</p>
 
     ${sd}
 
