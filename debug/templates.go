@@ -8,7 +8,7 @@ import (
 
 // writeIndex writes the trace index page template to the ResponseWriter.
 func writeIndex(w http.ResponseWriter, m Metadata) error {
-	return RenderIndex(w, m)
+	return renderIndex(w, m)
 }
 
 // writeTrace writes the trace details page template to the ResponseWriter.
@@ -23,7 +23,7 @@ func writeTrace(w http.ResponseWriter, traceId string, m Metadata) error {
 			logrus.Error(err)
 		}
 	}
-	err = RenderTrace(w, m, traceId, currentSvg)
+	err = renderTrace(w, m, traceId, currentSvg)
 	if err != nil {
 		return err
 	}
