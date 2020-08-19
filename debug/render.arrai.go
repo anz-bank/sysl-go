@@ -44,10 +44,10 @@ let render = \. $`+"`"+`
 
     <h2>Request</h2>
     <h3>Headers</h3>
-    <pre>${.request.headers}</pre>
+    <pre>${.request.headers?:{}}</pre>
 
     <h3>Body</h3>
-    <pre>${.request.body}</pre>
+    <pre>${.request.body?:{}}</pre>
 
     <h2>Response</h2>
     <p>
@@ -59,10 +59,10 @@ let render = \. $`+"`"+`
     </p>
 
     <h3>Headers</h3>
-    <pre>${.response.headers}</pre>
+    <pre>${.response.headers?:{}}</pre>
 
     <h3>Body</h3>
-    <pre>${cond .response.body {x: x, _: "(none)"}}</pre>
+    <pre>${cond .response.body?:{} {x: x, _: "(none)"}}</pre>
     </div>
 `+"`"+`;let debug_subtrace_arrai = 
 
