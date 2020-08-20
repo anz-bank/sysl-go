@@ -15,6 +15,17 @@ let go = //{./go};
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(app))}
 
+        // Service interface for ${appname}.
+        type Service interface {
+            ${(endpoints => \(@:_, @item: (@:_, @value: ep))
+                let {'name': (s: name), 'param': (a: [{'name': (s: pname), ...}]), ...} = ep;
+                $`
+                    // ${name} ...
+                    ${methodSig(ep)}
+                `
+            ) orderby .:::}
+        }
+
         // Client implements a client for ${appname}.
         type Client struct {
             client pb.${appname}Client
