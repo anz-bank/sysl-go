@@ -67,11 +67,11 @@ let package = \app
         _: app,
     };
 
-let pbPackage = \basepath \app
+let pbPackage = \app
     {(
         alias: `pb`,
-        package: $`${basepath}${cond app('attrs') {
-            {'go_pb_package': p, ...}: $`/${p('s').s}`,
+        package: $`${cond app('attrs') {
+            {'go_pb_package': p, ...}: $`${p('s').s}`,
             _: '',
         }}`,
     )};
@@ -174,7 +174,7 @@ let module = \module
         let method = methodName(ep);
         let grpc = cond {'gRPC' <: sysl.patterns(dep): `, opts ...grpc.CallOption`};
         $`${name(package)}${method} func(ctx context.Context, req *${package}.${method}Request${grpc}) (${
-            let typed = sysl.endpoint.normalReturns(ep) >> $`*${cond{.seq: `[]`}}${package}.${.type >> name(.)::}`;
+            let typed = sysl.endpoint.normalReturns(ep) >> $`*${cond{.seq: `[]`}}${//seq.join(".", .type)}`;
             let untyped = sysl.endpoint.untypedReturns(ep) >> `*http.Header`;
             typed ++ untyped ++ ["error"]
         ::, })`;
@@ -184,6 +184,7 @@ let module = \module
             sysl.endpoint.calls(ep) => \(@:_, @item: {'target': target, ...}) (
                 :target,
                 import: package(targetApp(target)),
+                pbImport: pbPackage(targetApp(target)),
             ));
 
     let depField = \(:import, :target, ...)
@@ -192,7 +193,8 @@ let module = \module
             :grpc,
             name: $`${import}${name(import)}Service`,
             type: $`${import}.${cond {
-                grpc: $`${target('part').a(0).s}Client`,
+                #grpc: $`${//str.title(target('part').a(0).s)}Client`,
+                grpc: `Service`,
                 _: `Service`,
             }}`,
         );

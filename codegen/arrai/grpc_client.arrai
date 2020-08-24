@@ -10,12 +10,12 @@ let go = //{./go};
         ::}`;
         $`${name}(ctx context.Context, ${pname} *pb.${go.leafType(ptype)}) (*pb.${rparam}, error)`;
 
-    let pbPath = fixPBPath(//log.print(app('attrs')('source_path').@value.s));
+    let appname = //str.title(appname);
 
     # TODO: sysl automapping between sysl types and protobuf types
     # TODO: use protobuf from sysl to use instead of precompiled from the api repository
     $`
-        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | {(alias: 'pb', package: pbPath)})}
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(app))}
 
         // Service interface for ${appname}.
         type Service interface {

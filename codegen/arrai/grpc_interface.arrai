@@ -5,10 +5,7 @@ let sysl = //{./sysl};
     let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
     let structName = $`Default${go.name(appname)}Impl`;
     $`
-        ${go.prelude(app,
-            (clientDeps => $`${basepath}/${.import}`)
-            | {(alias: `pb`, package: $`${app('attrs')('go_pb_package')('s').s}`)},
-        )}
+        ${go.prelude(app, (clientDeps => $`${.pbImport.package}`) | go.pbPackage(app))}
 
         ${nonRestEndpoints >> \(@:_, @value: ep) client.client_struct(ep)::\i}
 
