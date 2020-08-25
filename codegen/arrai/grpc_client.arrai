@@ -11,7 +11,6 @@ let go = //{./go};
         $`${name}(ctx context.Context, ${pname} *pb.${go.type(ptype)}) (*pb.${rparam}, error)`;
 
     # TODO: sysl automapping between sysl types and protobuf types
-    # TODO: use protobuf from sysl to use instead of precompiled from the api repository
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(app))}
 
@@ -20,7 +19,6 @@ let go = //{./go};
             ${(endpoints => \(@:_, @item: (@:_, @value: ep))
                 let {'name': (s: name), 'param': (a: [{'name': (s: pname), ...}]), ...} = ep;
                 $`
-                    // ${name} ...
                     ${methodSig(ep)}
                 `
             ) orderby .:::}
@@ -33,11 +31,16 @@ let go = //{./go};
         }
 
         // NewClient creates a new Client.
-        func NewClient(addr string, connTimeout time.Duration) (*Client, error) {
+        func NewClient(addr string, connTimeout time.Duration, insecure bool) (*Client, error) {
             ctxWithTimeout, cancel := context.WithTimeout(context.Background(), connTimeout)
             defer cancel()
 
-            conn, err := grpc.DialContext(ctxWithTimeout, addr, grpc.WithBlock())
+            options := []grpc.DialOption{grpc.WithBlock()}
+            if insecure {
+                options = append(options, grpc.WithInsecure())
+            }
+
+            conn, err := grpc.DialContext(ctxWithTimeout, addr, options...)
             if err != nil {
                 return nil, err
             }
