@@ -20,6 +20,7 @@ require (
 	github.com/stretchr/testify v1.6.1
 	google.golang.org/genproto v0.0.0-20200330113809-af700f360a68 // indirect
 	google.golang.org/grpc v1.29.0
+	google.golang.org/protobuf v1.23.0
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gopkg.in/yaml.v2 v2.3.0
 )

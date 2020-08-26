@@ -8,7 +8,12 @@ let go = //{./go};
             filter .@item {{'ret': _, ...}: .}
             >> //seq.split(" ", .("ret")("payload").s)(2)
         ::}`;
-        $`${name}(ctx context.Context, ${pname} *pb.${go.type(ptype)}) (*pb.${rparam}, error)`;
+        (
+            :name,
+            :pname,
+            ptype: go.type(ptype),
+            :rparam
+        );
 
     # TODO: sysl automapping between sysl types and protobuf types
     $`
@@ -18,10 +23,9 @@ let go = //{./go};
         type Service interface {
             ${(endpoints => \(@:_, @item: (@:_, @value: ep))
                 let {'name': (s: name), 'param': (a: [{'name': (s: pname), ...}]), ...} = ep;
-                $`
-                    ${methodSig(ep)}
-                `
-            ) orderby .:::}
+                let sig = methodSig(ep);
+                $`${sig.name}(ctx context.Context, ${sig.pname} *pb.${sig.ptype}) (*pb.${sig.rparam}, error)`
+            ) orderby .::\n}
         }
 
         // Client implements a client for ${appname}.
@@ -49,11 +53,11 @@ let go = //{./go};
         }
 
         ${(endpoints => \(@:_, @item: (@:_, @value: ep))
-            let {'name': (s: name), 'param': (a: [{'name': (s: pname), ...}]), ...} = ep;
+            let sig = methodSig(ep);
             $`
-                // ${name} ...
-                func (s *Client) ${methodSig(ep)} {
-                    return s.client.${name}(ctx, ${pname})
+                // ${sig.name} ...
+                func (s *Client) ${sig.name}(ctx context.Context, ${sig.pname} *pb.${sig.ptype}) (*pb.${sig.rparam}, error) {
+                    return s.client.${sig.name}(ctx, ${sig.pname})
                 }
             `
         ) orderby .:::}

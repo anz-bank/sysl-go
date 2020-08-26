@@ -3,6 +3,20 @@ let sysl = //{./sysl};
 
 \(:app, :appname,, :clientDeps, :endpoints, :goModule, :hasDB, :basepath, :module, :nonRestEndpoints, ...)
     let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
+    let methodSig = \ep
+        let {'name': (s: name), 'param': (a: [param]), 'stmt': (a: stmts), ...} = ep;
+        let {'name': (s: pname), 'type': ptype, ...} = param;
+        let rparam = $`${stmts
+            filter .@item {{'ret': _, ...}: .}
+            >> //seq.split(" ", .("ret")("payload").s)(2)
+        ::}`;
+        (
+            :name,
+            :pname,
+            ptype: go.type(ptype),
+            :rparam
+        );
+
     let structName = $`Default${go.name(appname)}Impl`;
     $`
         ${go.prelude(app,
@@ -15,8 +29,8 @@ let sysl = //{./sysl};
         // GrpcServiceInterface for ${appname}
         type GrpcServiceInterface struct {
             ${nonRestEndpoints >> \(@value: ep, ...)
-                let name = go.methodName(ep);
-                $`${name} func(ctx context.Context, req *pb.${name}Request, client ${name}Client) (*pb.${name}Response, error)`
+                let sig = methodSig(ep);
+                $`${sig.name} func(ctx context.Context, ${sig.pname} *pb.${sig.ptype}, client ${sig.name}Client) (*pb.${sig.rparam}, error)`
             ::\i}
         }
 
