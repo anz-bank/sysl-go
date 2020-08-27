@@ -1,0 +1,34 @@
+syntax  = "proto3";
+
+package advancedpb;
+
+message GetStuffRequest {
+    string innerStuff = 1;
+    string sensitiveStuff = 2;
+    string timeStuff = 3;
+}
+
+message GetStuffResponse {
+    repeated Item Data = 1;
+}
+
+message GetStuffTooRequest {
+    string innerStuff = 1;
+    string sensitiveStuff = 2;
+    string timeStuff = 3;
+}
+
+message GetStuffTooResponse {
+    repeated Item Data = 1;
+}
+
+message Item {
+    string Name = 1;
+    string A1 = 2;
+    string A2 = 3;
+}
+
+service AdvancedGrpc {
+    rpc GetStuff (GetStuffRequest) returns (GetStuffResponse);
+    rpc GetStuffToo (GetStuffRequest) returns (GetStuffResponse);
+}

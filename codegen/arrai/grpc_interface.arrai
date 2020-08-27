@@ -1,8 +1,10 @@
 let go = //{./go};
+let grpc = //{./grpc};
 let sysl = //{./sysl};
 
 \(:app, :appname,, :clientDeps, :endpoints, :goModule, :hasDB, :basepath, :module, :nonRestEndpoints, ...)
     let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
+
     let structName = $`Default${go.name(appname)}Impl`;
     $`
         ${go.prelude(app,
@@ -15,8 +17,7 @@ let sysl = //{./sysl};
         // GrpcServiceInterface for ${appname}
         type GrpcServiceInterface struct {
             ${nonRestEndpoints >> \(@value: ep, ...)
-                let name = go.methodName(ep);
-                $`${name} func(ctx context.Context, req *pb.${name}Request, client ${name}Client) (*pb.${name}Response, error)`
+                grpc.methodSig(ep) -> $`${.name} func${.paramsWithClient}`
             ::\i}
         }
 
