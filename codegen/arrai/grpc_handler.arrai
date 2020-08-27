@@ -1,4 +1,5 @@
 let go = //{./go};
+let grpc = //{./grpc};
 let sysl = //{./sysl};
 
 \(
@@ -14,19 +15,6 @@ let sysl = //{./sysl};
     ...
 )
     let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
-    let methodSig = \ep
-        let {'name': (s: name), 'param': (a: [param]), 'stmt': (a: stmts), ...} = ep;
-        let {'name': (s: pname), 'type': ptype, ...} = param;
-        let rparam = $`${stmts
-            filter .@item {{'ret': _, ...}: .}
-            >> //seq.split(" ", .("ret")("payload").s)(2)
-        ::}`;
-        (
-            :name,
-            :pname,
-            ptype: go.type(ptype),
-            :rparam
-        );
 
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(app))}
@@ -54,19 +42,18 @@ let sysl = //{./sysl};
         }
 
         ${nonRestEndpoints >> \(@value: ep, ...)
-            let sig = methodSig(ep);
-            $`
-                // ${sig.name} ...
-                func (s *GrpcServiceHandler) ${sig.name}(ctx context.Context, ${sig.pname} *pb.${sig.ptype}) (*pb.${sig.rparam}, error) {
-                    if s.serviceInterface.${sig.name} == nil {
-                        return s.unimpl.${sig.name}(ctx, ${sig.pname})
+            grpc.methodSig(ep) -> $`
+                // ${.name} ...
+                func (s *GrpcServiceHandler) ${.name}${.params} {
+                    if s.serviceInterface.${.name} == nil {
+                        return s.unimpl.${.name}(ctx, ${.pname})
                     }
 
                     ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
                     defer cancel()
                     client := ${client.new(ep)}
 
-                    return s.serviceInterface.${sig.name}(ctx, ${sig.pname}, client)
+                    return s.serviceInterface.${.name}(ctx, ${.pname}, client)
                 }
             `
         ::}

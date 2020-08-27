@@ -1,0 +1,23 @@
+let go = //{./go};
+
+let methodSig = \ep
+    let {'name': (s: name), 'param': (a: [param]), 'stmt': (a: stmts), ...} = ep;
+    let {'name': (s: pname), 'type': ptype, ...} = param;
+    let rparam = $`${stmts
+        filter .@item {{'ret': _, ...}: .}
+        >> //seq.split(" ", .("ret")("payload").s)(2)
+    ::}`;
+    let ptype = go.type(ptype);
+    let params = \withClient $`(ctx context.Context, ${pname} *pb.${ptype}${withClient && $`, client ${name}Client`}) (*pb.${rparam}, error)`;
+    (
+        :name,
+        :pname,
+        :ptype,
+        :rparam,
+        params: params(false),
+        paramsWithClient: params(true),
+    );
+
+(
+    :methodSig
+)
