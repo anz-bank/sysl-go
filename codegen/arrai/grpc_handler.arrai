@@ -1,4 +1,5 @@
 let go = //{./go};
+let grpc = //{./grpc};
 let sysl = //{./sysl};
 
 \(
@@ -14,6 +15,7 @@ let sysl = //{./sysl};
     ...
 )
     let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
+
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(app))}
 
@@ -40,19 +42,18 @@ let sysl = //{./sysl};
         }
 
         ${nonRestEndpoints >> \(@value: ep, ...)
-            let method = go.name(ep('name').s);
-            $`
-                // ${method} ...
-                func (s *GrpcServiceHandler) ${method}(ctx context.Context, req *pb.${method}Request) (*pb.${method}Response, error) {
-                    if s.serviceInterface.${method} == nil {
-                        return s.unimpl.${method}(ctx, req)
+            grpc.methodSig(ep) -> $`
+                // ${.name} ...
+                func (s *GrpcServiceHandler) ${.name}${.params} {
+                    if s.serviceInterface.${.name} == nil {
+                        return s.unimpl.${.name}(ctx, ${.pname})
                     }
 
                     ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
                     defer cancel()
                     client := ${client.new(ep)}
 
-                    return s.serviceInterface.${method}(ctx, req, client)
+                    return s.serviceInterface.${.name}(ctx, ${.pname}, client)
                 }
             `
         ::}
