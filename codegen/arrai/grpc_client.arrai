@@ -1,14 +1,7 @@
 let go = //{./go};
+let grpc = //{./grpc};
 
 \(:app, :appname, :basepath, :clientDeps, :endpoints, ...)
-    let methodSig = \ep
-        let {'name': (s: name), 'param': (a: [param]), 'stmt': (a: stmts), ...} = ep;
-        let {'name': (s: pname), 'type': ptype, ...} = param;
-        let rparam = $`${stmts
-            filter .@item {{'ret': _, ...}: .}
-            >> //seq.split(" ", .("ret")("payload").s)(2)
-        ::}`;
-        $`${name}(ctx context.Context, ${pname} *pb.${go.type(ptype)}) (*pb.${rparam}, error)`;
 
     # TODO: sysl automapping between sysl types and protobuf types
     $`
@@ -18,10 +11,9 @@ let go = //{./go};
         type Service interface {
             ${(endpoints => \(@:_, @item: (@:_, @value: ep))
                 let {'name': (s: name), 'param': (a: [{'name': (s: pname), ...}]), ...} = ep;
-                $`
-                    ${methodSig(ep)}
-                `
-            ) orderby .:::}
+                let sig = grpc.methodSig(ep);
+                $`${sig.name}${sig.params}`
+            ) orderby .::\n}
         }
 
         // Client implements a client for ${appname}.
@@ -49,11 +41,10 @@ let go = //{./go};
         }
 
         ${(endpoints => \(@:_, @item: (@:_, @value: ep))
-            let {'name': (s: name), 'param': (a: [{'name': (s: pname), ...}]), ...} = ep;
-            $`
-                // ${name} ...
-                func (s *Client) ${methodSig(ep)} {
-                    return s.client.${name}(ctx, ${pname})
+            grpc.methodSig(ep) -> $`
+                // ${.name} ...
+                func (s *Client) ${.name}${.params} {
+                    return s.client.${.name}(ctx, ${.pname})
                 }
             `
         ) orderby .:::}

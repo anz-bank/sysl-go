@@ -112,7 +112,8 @@ targets = \
 	deps \
 	downstream \
 	simple \
-	simplegrpc
+	simplegrpc \
+	advancedgrpc
 
 deps.app = Deps
 deps.groups = rest-service
@@ -128,6 +129,9 @@ simple.groups = rest-app
 
 simplegrpc.app = SimpleGrpc
 simplegrpc.groups = grpc-app
+
+advancedgrpc.app = AdvancedGrpc
+advancedgrpc.groups = grpc-app
 
 codegen/testdata/%/sysl.json: codegen/testdata/%/*.sysl
 	sysl pb --mode=json --root $(TEST_IN_DIR) $*/$*.sysl > $@ || rm -f $@
