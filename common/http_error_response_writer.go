@@ -28,6 +28,7 @@ type KV struct {
 	K string
 	V interface{}
 }
+
 type wrappedError struct {
 	e      error
 	fields []KV
