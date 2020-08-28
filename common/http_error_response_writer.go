@@ -28,6 +28,7 @@ type KV struct {
 	K string
 	V interface{}
 }
+
 type wrappedError struct {
 	e      error
 	fields []KV
@@ -53,8 +54,12 @@ func (httpError *HTTPError) WriteError(ctx context.Context, w http.ResponseWrite
 
 	marshalTarget = httpError
 	if len(httpError.extraFields) > 0 {
-		httpError.extraFields["code"] = httpError.Code
-		httpError.extraFields["description"] = httpError.Description
+		if httpError.Code != "" {
+			httpError.extraFields["code"] = httpError.Code
+		}
+		if httpError.Description != "" {
+			httpError.extraFields["description"] = httpError.Description
+		}
 		marshalTarget = httpError.extraFields
 	}
 
