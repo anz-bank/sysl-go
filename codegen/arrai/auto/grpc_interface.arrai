@@ -1,0 +1,21 @@
+let go = //{./go};
+let sysl = //{./sysl};
+
+\(:app, :appname,, :clientDeps, :endpoints, :goModule, :hasDB, :basepath, :module, :nonRestEndpoints, ...)
+    let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
+    let structName = $`Default${go.name(appname)}Impl`;
+    $`
+        ${go.prelude(app, (clientDeps => $`${.pbImport.package}`) | go.pbPackage(app))}
+
+        ${nonRestEndpoints >> \(@:_, @value: ep) client.client_struct(ep)::\i}
+
+        // GrpcServiceInterface for ${appname}
+        type GrpcServiceInterface struct {
+            ${nonRestEndpoints >> \(@value: ep, ...)
+                let name = go.methodName(ep);
+                $`${name} func(ctx context.Context, req *pb.${name}Request, client ${name}Client) (*pb.${name}Response, error)`
+            ::\i}
+        }
+
+        ${client.config}
+    `

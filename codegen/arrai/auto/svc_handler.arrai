@@ -1,0 +1,230 @@
+let go = //{./go};
+let sysl = //{./sysl};
+
+\(:app, :appname, :basepath, :clientDeps, :goModule, :hasDB, :module, :restEndpoints, ...)
+    let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
+    let dbimport = cond {hasDB: {(alias: "_", package: "github.com/mattn/go-sqlite3")}};
+    $`
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | dbimport)}
+
+        ${
+            (app('types')?:{} where "error" <: sysl.patterns(.@value) orderby .@) >>> \i \.
+                let typename = go.name(.@);
+                $`
+                    // *${typename} error
+                    var ${typename} common.CustomError = map[string]string{"name": "${typename}"${
+                        .@value('tuple')('attrDefs') orderby .@ >> $`, "${.@}": "${.@value('attrs')('value')('s').s}"`
+                    ::}}
+                `
+        :::\n}
+        // Handler interface for ${appname}
+        type Handler interface {
+            ${restEndpoints >> $`${go.methodName(.@value)}Handler(w http.ResponseWriter, r *http.Request)`::\i}
+        }
+
+        // ServiceHandler for ${appname} API
+        type ServiceHandler struct {
+            genCallback      core.RestGenCallback
+            serviceInterface *ServiceInterface
+            ${cond {hasDB: $`DB *sql.DB`}}
+            ${clientDeps orderby . >> (goModule.depField(.) -> $`${.name} ${.type}`)::\i}
+        }
+
+        // NewServiceHandler for ${appname}
+        func NewServiceHandler(
+            genCallback core.RestGenCallback,
+            serviceInterface *ServiceInterface,
+            ${clientDeps orderby . >> $`${.import}${go.name(.import)}Service ${.import}.Service,`::\i}
+        ) (*ServiceHandler, error) {
+            ${cond {hasDB: $`
+                db, dberr := database.GetDBHandle()
+                if dberr != nil {
+                        return nil, dberr
+                }
+            `}}
+            return &ServiceHandler{
+                genCallback,
+                serviceInterface,
+                ${cond {hasDB: $`db,`}}
+                ${clientDeps orderby . >> $`${.import}${go.name(.import)}Service,`::\i}
+            }, nil
+        }
+
+        ${restEndpoints >> \(@value: ep, ...)
+            let method = go.methodName(ep);
+            let returns = sysl.endpoint.normalReturns(ep);
+            let urlParams = ep('restParams')('urlParam')?.a:[];
+            let queryParams = ep('restParams')('queryParam')?.a:[];
+            let headerParams = ep('param')?.a:{} where {'header', 'required'} (<=) sysl.patterns(.@item('type'));
+            let reqQueryParams =
+                queryParams where !.@item('type')('opt')?.b:false
+                >> (. | {'goType': go.type(.('type'))});
+            let optQueryParams =
+                queryParams where .@item('type')('opt')?.b:false
+                    orderby sysl.source(.@item('type'))
+                    >> \(@item: {'name': (s: name), 'type': type, ...}, ...)
+                        (
+                            :name,
+                            :type,
+                            var: $`${go.name(name)}Param`,
+                        );
+            $`
+                // ${method}Handler ...
+                func (s *ServiceHandler) ${method}Handler(w http.ResponseWriter, r *http.Request) {
+                    if s.serviceInterface.${method} == nil {
+                        common.HandleError(r.Context(), w, common.InternalError, "not implemented", nil, s.genCallback.MapError)
+                        return
+                    }
+
+                    ctx := common.RequestHeaderToContext(r.Context(), r.Header)
+                    ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
+                    var req ${method}Request
+                    ${cond ep('restParams')('method').s {('POST', 'PUT'): $`
+                        decoder := json.NewDecoder(r.Body)
+                        decodeErr := decoder.Decode(&req.Request)
+                        if decodeErr != nil {
+                                common.HandleError(ctx, w, common.BadRequestError, "Error reading request body", decodeErr, s.genCallback.MapError)
+                                return
+                        }
+                    `}}
+                    ${urlParams where .@item('type')('primitive')?.s:"" = "INT" >> \{'name': (s: name), ...}
+                        $`req.${go.name(name)} = restlib.GetURLParamForInt(r, "${name}")`
+                    ::\i:\n}
+                    ${urlParams where .@item('type')('primitive')?.s:"" != "INT" >> \{'name': (s: name), ...}
+                        $`req.${go.name(name)} = restlib.GetURLParam(r, "${name}")`
+                    ::\i:\n}
+
+                    ${reqQueryParams where .@item('type')('primitive')?.s:"" = "STRING" >> \{'name': (s: name), ...}
+                        $`req.${go.name(name)} = restlib.GetQueryParam(r, "${name}")`
+                    ::\i:\n}
+                    ${
+                        let params = \type \params cond {params: $`
+                            var conv${type}Err error
+                            ${params >> \{'name': (s: name), ...}
+                                $`
+                                    req.${go.name(name)}, conv${type}Err = restlib.GetQueryParamFor${type}(r, "${name}")
+                                    if conv${type}Err != nil {
+                                            common.HandleError(ctx, w, common.BadRequestError, "Invalid request", conv${type}Err, s.genCallback.MapError)
+                                            return
+                                    }
+                                `
+                            ::\i}
+
+                        `};
+                        $`
+                            ${params('Int', reqQueryParams where .@item('goType') = "int64")}
+                            ${params('Bool', reqQueryParams where .@item('goType') = "bool")}
+                            ${params('Time', reqQueryParams where .@item('goType') = "convert.JSONTime")}
+                        `
+                    }
+                    ${optQueryParams >> $`var ${.var} string`::\i\n:\n}
+                    ${cond {optQueryParams: 'var convErr error'}}
+                    ${optQueryParams >> $`${.var} = restlib.GetQueryParam(r, "${.name}")`::\i}
+                    ${optQueryParams >>
+                        let type = cond go.type(.type) {
+                            "*bool": "BoolPtr",
+                            "*int64": "IntPtr",
+                            "*convert.JSONTime": "TimePtr",
+                            _: "StringPtr",
+                        };
+                        $`
+                            req.${go.name(.name)}, convErr = convert.StringTo${type}(ctx, ${.var})
+                            if convErr != nil {
+                                    common.HandleError(ctx, w, common.BadRequestError, "Invalid request", convErr, s.genCallback.MapError)
+                                    return
+                            }
+                        `
+                    ::\i}
+                    ${headerParams >> \{'name': (s: name), 'type': type, ...}
+                        let name = type('attrs')?('name')('s').s:name;
+                        $`${go.name(name)} := restlib.GetHeaderParam(r, "${name}")`
+                    ::\i:\n}
+                    ${headerParams >> \{'name': (s: name), 'type': type, ...}
+                        let name = type('attrs')?('name')('s').s:name;
+                        cond {'required' <: sysl.patterns(type): $`
+                            if ${go.name(name)} == "" {
+                                common.HandleError(ctx, w, common.BadRequestError, "${name} header length is zero", nil, s.genCallback.MapError)
+                                return
+                            }
+                        `}
+                    ::\i:\n}
+                    ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
+                    defer cancel()
+                    valErr := validator.Validate(&req)
+                    if valErr != nil {
+                        common.HandleError(ctx, w, common.BadRequestError, "Invalid request", valErr, s.genCallback.MapError)
+                        return
+                    }
+
+                    ${cond {hasDB: $`
+                        conn, dberr := s.DB.Conn(ctx)
+                        if dberr != nil {
+                            common.HandleError(ctx, w, common.InternalError, "Database connection could not be retrieved", dberr, s.genCallback.MapError)
+                            return
+                        }
+
+                        defer conn.Close()
+                        ${sysl.endpoint.sqlStatements(ep) => $`
+                            ${.@}Stmt, dberr := conn.PrepareContext(ctx, ``${//seq.sub('\n', '\n\t\t', '\n'++.@value)}``)
+                            if dberr != nil {
+                                common.HandleError(ctx, w, common.InternalError, "could not parse the sql query with the name ${.@}", dberr, s.genCallback.MapError)
+                                return
+                            }
+                        ` orderby .::\i}
+
+                        tx, dberr := conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
+                        if dberr != nil {
+                            common.HandleError(ctx, w, common.DownstreamUnavailableError, "DB Transaction could not be created", dberr, s.genCallback.MapError)
+                            return
+                        }
+                    `}}
+                    client := ${client.new(ep)}
+
+                    defer func() {
+                        if rec := recover(); rec != nil {
+                            ${cond {hasDB: $`
+                                tx.Rollback()
+
+                            `}}
+                            var err error
+                            switch rec := rec.(type) {
+                            case error:
+                                err = rec
+                            default:
+                                err = fmt.Errorf("Unknown error: %v", rec)
+                            }
+                            common.HandleError(ctx, w, common.InternalError, "Unexpected panic", err, s.genCallback.MapError)
+                        }
+                    }()
+                    ${returns >> $`${//str.lower(.type(.type count - 1))}, `::}err := s.serviceInterface.${method}(ctx, &req, client)
+                    if err != nil {
+                        ${cond {hasDB: $`tx.Rollback()`}}
+                        common.HandleError(ctx, w, common.InternalError, "Handler error", err, s.genCallback.MapError)
+                        return
+                    }
+
+                    ${cond {hasDB: $`
+                        commitErr := tx.Commit()
+                        if commitErr != nil {
+                            common.HandleError(ctx, w, common.InternalError, "Failed to commit the transaction", commitErr, s.genCallback.MapError)
+                            return
+                        }
+                    `}}
+
+                    headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
+                    if headermap.Get("Content-Type") == "" {
+                        headermap.Set("Content-Type", "application/json")
+                    }
+                    restlib.SetHeaders(w, headermap)
+                    restlib.SendHTTPResponse(w, httpstatus${(returns >> $`, ${
+                        let type = .type(.type count - 1);
+                        let var = //str.lower(type);
+                        cond app('types')?(type)?:() {
+                            {'primitive': (s: 'BYTES'), ...}: $"(*[]byte)(${var})",
+                            _: var,
+                        }
+                    }`) || [', nil']:::})
+                }
+            `
+        ::\i}
+    `

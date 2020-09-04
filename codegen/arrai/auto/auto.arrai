@@ -1,0 +1,33 @@
+let sysl = //{./sysl};
+let generate = //{./generate};
+
+#!/usr/bin/env arrai
+
+let go   = //{./go};
+let sysl = //{./sysl};
+
+# main
+
+let [_, basepath, json, appname, pbbase] = //os.args;
+
+let json = cond json {"-": //os.stdin, _: //os.file(json)};
+let module = //encoding.json.decode(json);
+let app = module("apps")(appname);
+
+let config = generate.config((:basepath, :json, :module, :app));
+let (:app, :appname, :basepath, :endpoints, :json, :module, ...) = config;
+
+let type = cond {'gRPC' <: sysl.patterns(app): 'grpc-app', _: 'rest-app'};
+let targets = //rel.union(endpoints >> (sysl.endpoint.calls(.@value) => .@item) => (.@item => .('target')));
+let apps = module('apps') where .@value('name') <: targets;
+
+let fixPBPath =
+    let [from, to] = //seq.split("=", pbbase);
+    //re.compile($`^${from}(.*)/[^/]+${'$'}`).sub(to++`$1`);
+
+generate.generate(config, generate.groups(type))
++> (apps => \(@: appname, @value: app)
+    let config = generate.config((:basepath, :module, :app, :fixPBPath));
+    let type = cond {'gRPC' <: sysl.patterns(app): 'grpc-client', _: 'rest-client'};
+    (@: //str.lower(appname), @value: generate.generate(config, generate.groups(type)))
+)

@@ -1,0 +1,55 @@
+let go = //{./go};
+let sysl = //{./sysl};
+
+let generators = {
+    "app.go":              //{./svc_app},
+    "app_spec.go":         //{./app_spec},
+    "error_types.go":      //{./svc_error_types},
+    "grpc_client.go":      //{./grpc_client},
+    "grpc_handler.go":     //{./grpc_handler},
+    "grpc_interface.go":   //{./grpc_interface},
+    "requestrouter.go":    //{./svc_router},
+    "service.go":          //{./svc_service},
+    "servicehandler.go":   //{./svc_handler},
+    "serviceinterface.go": //{./svc_interface},
+    "types.go":            //{./svc_types},
+};
+
+(
+    groups:
+        let auto = "auto";
+        let restClient = {"error_types", "service", "types"};
+        let restService = restClient | {"requestrouter", "servicehandler", "serviceinterface"};
+        let grpcClient = {"grpc_client"};
+        let grpcService = {"grpc_handler", "grpc_interface"};
+        ({
+            "rest-service": restService,
+            "rest-app":     restService | {"app", "app_spec"},
+            "rest-client":  restClient,
+            "grpc-service": grpcService,
+            "grpc-app":     grpcService | {"app", "app_spec"},
+            "grpc-client":  grpcClient,
+        } >> => $"${.}.go") +> {"auto": {"auto"}},
+
+    config: \(:app, :basepath, :module, ...extra)
+        let goModule = go.module(module);
+        let endpoints = app("endpoints") orderby .@;
+        let restEndpoints = endpoints where .@item.@value('restParams')?:();
+        let nonRestEndpoints = endpoints where !.@item.@value('restParams')?:();
+        extra +> (
+            :app,
+            :basepath,
+            :module,
+
+            :endpoints,
+            :restEndpoints,
+            :nonRestEndpoints,
+            :goModule,
+            appname:       sysl.app.name(app),
+            clientDeps:    goModule.clientDeps(endpoints),
+            hasDB:         app('types')?:{} >> .('relation')?:{},
+        ),
+
+    generate: \config \include
+        generators where .@ <: include >> .(config) where .@value,
+)

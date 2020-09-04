@@ -1,0 +1,144 @@
+let go = //{./go};
+let sysl = //{./sysl};
+
+let orderedTypes = \types
+    (types orderby .@) >> . + (typename: go.name(.@));
+
+let fieldJsonTag = \type \key
+    cond type {
+        {'attrs': {'json_tag': tag, ...}, ...}: [tag('s').s],
+            _: [key],
+    };
+
+\(:app, :endpoints, :module, ...)
+    let entities = orderedTypes(app('types')?:{} where !({"error"} & sysl.patterns(.@value)) && {"tuple", "relation"} & (.@value => .@));
+    let aliases = orderedTypes(app('types')?:{} where !({'oneof', 'tuple', 'relation'} & (.@value => .@)));
+    $`
+        ${go.prelude(app, {})}
+
+        // Reference imports to suppress unused errors
+        var _ = time.Parse
+
+        // Reference imports to suppress unused errors
+        var _ = date.Parse
+
+        ${entities >> \(@: key, @value: value, :typename)
+            let entity = value('tuple')?:(value('relation'));
+            let patterns = sysl.patterns(value);
+            $`
+                // ${typename} ${cond value {{'attrs': {'description': {'s': (s: descr)}, ...}, ...}: descr, _: "..."}}
+                type ${typename} struct {
+                    ${entity('attrDefs') orderby .@ >> \(@: key, @value: attrDef)
+                        let fieldName = go.name(key);
+                        let jsonTag =
+                            cond {
+                                {"no_json", "pk"} & sysl.patterns(attrDef): ["-"],
+                                _: fieldJsonTag(attrDef, key),
+                            }
+                            ++
+                            (cond attrDef {
+                                {'opt': (b: true), ...}: ['omitempty'],
+                                _: [],
+                            });
+                        let validateTag =
+                            cond attrDef {
+                                {'attrs': {'validate': {'s': (s: tag)}, ...}, ...}: [$` validate:"${tag}"`],
+                                _: [""],
+                            };
+                        $'
+                        ${fieldName} ${go.type(attrDef)} `json:"${jsonTag::,}"${validateTag::}`'
+                    ::\i}
+                }
+                ${
+                    let optParams = entity('attrDefs') where sysl.isPtr(.@value) orderby .@ >> .@value;
+                    cond {{"validate"} & patterns && optParams: $`func (t *${typename}) UnmarshalJSON(data []byte) error {
+                        inner := struct {
+                            ${entity('attrDefs') orderby .@ >> \(@: key, @value: attrDef)
+                                $'${go.name(key)} ${cond { !sysl.isPtr(attrDef) : '*', _ : ''}}${go.type(attrDef)} `json:"${fieldJsonTag(attrDef, key)::,},omitempty"`'
+                            ::\i}
+                        }{}
+                        err := json.Unmarshal(data, &inner)
+                        if err != nil {
+                            return err
+                        }
+                        ${entity('attrDefs') where !sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
+                            $`
+                                if inner.${go.name(key)} == nil {
+                                    return errors.New("${fieldJsonTag(attrDef, key)::,} cannot be nil")
+                                }
+                            `
+                        ::\i}
+                        *t = ${typename}{
+                            ${entity('attrDefs') orderby .@ >> \(@: key, @value: attrDef)
+                                let fieldName = go.name(key);
+                                $`${fieldName}: ${cond { !sysl.isPtr(attrDef) : '*', _ : ''}}inner.${fieldName},`
+                            ::\i}
+                        }
+                        return nil
+                    }`}
+                }
+            `
+        ::\i}
+        ${entities where "json_map_key" <: (.@item.@value('attrs')?:{} => .@) >> \(@: key, ...) $`
+            // Generate wrapper set type
+            type ${key}Set struct {
+                M map[string]${key}
+            }
+
+        `::\i}
+        ${endpoints >> \(@value: ep, ...)
+            let typename = $`${go.methodName(ep)}Request`;
+            $`
+                // ${typename} ...
+                type ${typename} struct {
+                    ${
+                        (ep('param')?.a:{}) where "body" <: sysl.patterns(.@item('type')) >>
+                            $`Request ${go.type(.('type'))}`
+                    ::\i}
+                    ${ep('restParams')?:{}
+                        -> (.('queryParam')?.a:{}) ++ (.('urlParam')?.a:{})
+                        orderby sysl.source(.@item('type'))
+                        >> $`${go.name(.@item('name').s)} ${go.type(.@item('type'))}`
+                    ::\i}
+                }
+            `
+        ::\i}
+        ${entities >> \(:typename, ...) $`
+            // *${typename} validator
+            func (s *${typename}) Validate() error {
+                return validator.Validate(s)
+            }
+        `::\i}
+        ${
+            let json_mapped_entities =
+                entities
+                >> (. + (
+                        param: //str.lower(.typename),
+                        json_map_key: .@value('attrs')?('json_map_key')?('s').s:"",
+                    ))
+                where .@item.json_map_key;
+            $`
+                ${json_mapped_entities >> $`
+                    // *${.typename} add
+                    func (s *${.typename}Set) Add(${.param} ${.typename}) {
+                        s.M[${.param}.${.json_map_key}] = ${.param}
+                    }
+                `::\i}
+                ${json_mapped_entities >> $`
+                    // *${.typename} lookup
+                    func (s *${.typename}Set) Lookup(${.json_map_key} string) ${.typename} {
+                        return s.M[${.json_map_key}]
+                    }
+                `::\i}
+            `
+        }
+        ${aliases where .@item.@ != "Empty" && !//seq.has_prefix("EXTERNAL_", .@item.@) >> $`
+            // ${.typename} ...
+            type ${.typename} ${go.type(.@value)}
+        `::\i}
+        ${aliases where .@item.@ = "Empty" >> $`
+            // ${.typename} ...
+            type ${.typename} struct {
+            }
+        `::\i}
+    `

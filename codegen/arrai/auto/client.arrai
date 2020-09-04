@@ -1,0 +1,55 @@
+let go = //{./go};
+let sysl = //{./sysl};
+
+\(:appname, :clientDeps, :hasDB, :module)
+    let goModule = go.module(module);
+    (
+        new: \ep
+            let method = go.methodName(ep);
+            let calls = sysl.endpoint.calls(ep);
+            cond {
+                calls || hasDB: $`
+                    ${method}Client{
+                        ${calls >>
+                            let dep = goModule.targetApp(.('target'));
+                            let package = go.package(dep);
+                            let ep = sysl.app.endpoint(dep, .('endpoint').s);
+                            let method = go.methodName(ep);
+                            $`${go.name(package)}${method}: s.${package}${go.name(package)}Service.${method},`
+                        ::\i:\n}
+                        ${cond {hasDB: $`
+                            Conn: conn,
+                            ${sysl.endpoint.sqlStatements(ep) => $`${//str.title(.@)}: ${.@}Stmt,` orderby .::\i}
+                        `}}
+                    }
+                `,
+                _: $`${method}Client{}`,
+            },
+
+        client_struct: \ep
+            let method = go.methodName(ep);
+            $`
+                // ${method} Client
+                type ${method}Client struct {
+                    ${cond {hasDB: $`
+                        Conn *sql.Conn
+                        ${sysl.endpoint.sqlStatements(ep) => $`${//str.title(.@)} *sql.Stmt` orderby .::\i}
+                    `}}
+                    ${sysl.endpoint.calls(ep) >> goModule.callSignature(.)::\i}
+                }
+            `,
+
+        config: $`
+            // DownstreamConfig for ${appname}
+            type DownstreamConfig struct {
+                ContextTimeout time.Duration ``yaml:"contextTimeout"``
+                ${clientDeps orderby . >>
+                    let config = cond {
+                        goModule.depField(.).grpc: `config.CommonGRPCDownstreamData`,
+                        _: `config.CommonDownstreamData`,
+                    };
+                    $`${go.name(.import)} ${config} ``yaml:"${.import}"```
+                ::\i}
+            }
+        `,
+    )

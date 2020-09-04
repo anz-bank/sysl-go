@@ -1,0 +1,63 @@
+let go = //{./go};
+
+\(:app, :appname, :basepath, :clientDeps, :endpoints, :fixPBPath, ...)
+    let methodSig = \ep
+        let {'name': (s: name), 'param': (a: [param]), 'stmt': (a: stmts), ...} = ep;
+        let {'name': (s: pname), 'type': ptype, ...} = param;
+        let rparam = $`${stmts
+            filter .@item {{'ret': _, ...}: .}
+            >> //seq.split(".", //seq.split(" ", .("ret")("payload").s)(2))(1)
+        ::}`;
+        $`${name}(ctx context.Context, ${pname} *pb.${go.leafType(ptype)}) (*pb.${rparam}, error)`;
+
+    let appname = //str.title(appname);
+
+    # TODO: sysl automapping between sysl types and protobuf types
+    $`
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(app))}
+
+        // Service interface for ${appname}.
+        type Service interface {
+            ${(endpoints => \(@:_, @item: (@:_, @value: ep))
+                let {'name': (s: name), 'param': (a: [{'name': (s: pname), ...}]), ...} = ep;
+                $`
+                    // ${name} ...
+                    ${methodSig(ep)}
+                `
+            ) orderby .:::}
+        }
+
+        // Client implements a client for ${appname}.
+        type Client struct {
+            client pb.${appname}Client
+            addr   string
+        }
+
+        // NewClient creates a new Client.
+        func NewClient(addr string, connTimeout time.Duration, insecure bool) (*Client, error) {
+            ctxWithTimeout, cancel := context.WithTimeout(context.Background(), connTimeout)
+            defer cancel()
+
+            options := []grpc.DialOption{grpc.WithBlock()}
+            if insecure {
+                options = append(options, grpc.WithInsecure())
+            }
+
+            conn, err := grpc.DialContext(ctxWithTimeout, addr, options...)
+            if err != nil {
+                return nil, err
+            }
+
+            return &Client{pb.New${appname}Client(conn), addr}, nil
+        }
+
+        ${(endpoints => \(@:_, @item: (@:_, @value: ep))
+            let {'name': (s: name), 'param': (a: [{'name': (s: pname), ...}]), ...} = ep;
+            $`
+                // ${name} ...
+                func (s *Client) ${methodSig(ep)} {
+                    return s.client.${name}(ctx, ${pname})
+                }
+            `
+        ) orderby .:::}
+    `

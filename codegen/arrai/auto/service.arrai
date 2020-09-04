@@ -1,0 +1,28 @@
+#!/usr/bin/env arrai
+
+let go   = //{./go};
+let sysl = //{./sysl};
+
+# main
+
+let [_, basepath, json, appname, groups, ?notar:false] = //os.args;
+
+let groups = //seq.split(",", groups) => .@item;
+let include = //rel.union(groups => cond {
+    //seq.has_suffix(".go", .): {.},
+    _: //{./generate}.groups(.),
+});
+
+let json = cond json {"-": //os.stdin, _: //os.file(json)};
+let module = //encoding.json.decode(json);
+let app = module("apps")(appname);
+let config = (:json, :basepath, :module, :app);
+
+let dir = cond {
+    "auto" <: include:
+        let _ = cond {include != {"auto"}: $"auto must be specified alone".fail};
+        //{./auto}(config),
+    _:
+        //{./generate}.generate(//{./generate}.config(config), include),
+};
+cond {notar: dir, _: //archive.tar.tar(dir)}
