@@ -1,0 +1,64 @@
+let go = //{./go};
+let sysl = //{./sysl};
+
+\(
+    :app,
+    :appname,
+    :basepath,
+    :clientDeps,
+    :endpoints,
+    :goModule,
+    :hasDB,
+    :module,
+    :nonRestEndpoints,
+    ...
+)
+    let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
+    let goAppname = go.name(appname);
+    $`
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(app))}
+
+        // GrpcServiceHandler for ${appname} API
+        type GrpcServiceHandler struct {
+            pb.Unimplemented${goAppname}Server
+            genCallback         core.GrpcGenCallback
+            serviceInterface    *GrpcServiceInterface
+            ${clientDeps orderby . >> (goModule.depField(.) -> $`${.name} ${.type}`)::\i}
+        }
+
+        // NewGrpcServiceHandler for ${appname}
+        func NewGrpcServiceHandler(
+            genCallback core.GrpcGenCallback,
+            serviceInterface *GrpcServiceInterface,
+            ${clientDeps orderby . >> (goModule.depField(.) -> $`${.name} ${.type},`)::\i}
+        ) *GrpcServiceHandler {
+            return &GrpcServiceHandler{
+                genCallback: genCallback,
+                serviceInterface: serviceInterface,
+                ${clientDeps orderby . >> (goModule.depField(.) -> $`${.name}: ${.name},`)::\i}
+            }
+        }
+
+        // RegisterServer registers the ${appname} gRPC service
+        func (s *GrpcServiceHandler) RegisterServer(ctx context.Context, server *grpc.Server) {
+            pb.Register${goAppname}Server(server, s)
+        }
+
+        ${nonRestEndpoints >> \(@value: ep, ...)
+            let method = go.name(ep('name').s);
+            $`
+                // ${method} ...
+                func (s *GrpcServiceHandler) ${method}(ctx context.Context, req *pb.${method}Request) (*pb.${method}Response, error) {
+                    if s.serviceInterface.${method} == nil {
+                        return nil, status.Errorf(codes.Unimplemented, "method ${method} not implemented")
+                    }
+
+                    ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
+                    defer cancel()
+                    client := ${client.new(ep)}
+
+                    return s.serviceInterface.${method}(ctx, req, client)
+                }
+            `
+        ::}
+    `

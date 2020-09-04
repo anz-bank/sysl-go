@@ -1,0 +1,32 @@
+let go = //{./go};
+let sysl = //{./sysl};
+
+\(:app, :appname, :clientDeps, :endpoints, :goModule, :hasDB, :basepath, :module, :restEndpoints, ...)
+    let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
+    let structName = $`Default${go.name(appname)}Impl`;
+    $`
+        ${go.prelude(app, clientDeps => $`${basepath}/${.import}`)}
+
+        // ${structName} ...
+        type ${structName} struct {
+        }
+
+        // New${structName} for ${appname}
+        func New${structName}() *${structName} {
+            return &${structName}{}
+        }
+
+        ${restEndpoints >> \(@:_, @value: ep) client.client_struct(ep)::\i}
+
+        // ServiceInterface for ${appname}
+        type ServiceInterface struct {
+            ${endpoints >> \(@:_, @value: ep)
+                let method = go.methodName(ep);
+                $`${method} func(ctx context.Context, req *${method}Request, client ${method}Client) (${
+                    (sysl.endpoint.normalReturns(ep) >> $`*${cond{.seq: `[]`}}${go.typeWithPackage(.type, module)}`) ++ ["error"]
+                ::, })`
+            ::\i}
+        }
+
+        ${client.config}
+    `

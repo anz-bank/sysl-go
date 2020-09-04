@@ -1,0 +1,6 @@
+let go = //{./go};
+
+//test.suite({
+    //test.assert.equal("Foo"     )(go.name("foo")),
+    //test.assert.equal("Api_name")(go.name("api_name")),
+})

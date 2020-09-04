@@ -1,0 +1,93 @@
+let grammar = {://grammar.lang.wbnf:
+    sql    -> stmt ";"?;
+
+    stmt   -> select
+            | insert
+            | update
+            | delete
+            ;
+
+    select ->
+        SELECT (DISTINCT | ALL)? result_column:","
+        FROM table=IDENT
+        where?
+        ;
+
+    insert ->
+        INSERT INTO table=IDENT
+        "(" column=IDENT:"," ")"
+        VALUES "(" value=expr:"," ")"
+        ;
+    
+    update ->
+        UPDATE table=IDENT
+        SET assign:","
+        where?
+        ;
+
+    delete ->
+        DELETE FROM table=IDENT
+        where?
+        ;
+
+    result_column -> "*" | IDENT "." "*" | expr (AS IDENT)?;
+
+    assign -> IDENT "=" expr;
+
+    where -> WHERE expr;
+
+    expr -> @ (comp @)?
+          > (table=IDENT ".")? column=IDENT ("::" type=IDENT)?
+          | literal;
+
+    comp -> "=" | "<" | ">" | "<=" | ">=";
+
+    literal -> n=/{[0-9]+} | s=/{'[^']'};
+    //' Unconfuse the wbnf syntax highlighter.
+
+    ALL         -> /{(?i)ALL};
+    AS          -> /{(?i)AS};
+    DELETE      -> /{(?i)DELETE};
+    DISTINCT    -> /{(?i)DISTINCT};
+    FROM        -> /{(?i)FROM};
+    INSERT      -> /{(?i)INSERT};
+    INTO        -> /{(?i)INTO};
+    SELECT      -> /{(?i)SELECT};
+    SET         -> /{(?i)SET};
+    UPDATE      -> /{(?i)UPDATE};
+    VALUES      -> /{(?i)VALUES};
+    WHERE       -> /{(?i)WHERE};
+
+    IDENT -> /{(?i)[a-z_][a-z_0-9]*};
+
+    .wrapRE -> /{\s*()\s*};
+:};
+
+let type = \model \app \stmt
+    let table = app('types')(stmt.table);
+    let rec type = \expr
+        cond expr {
+            (literal: (:n, ...), ...): 'number',
+            (literal: (:s, ...), ...): 'string',
+            (comp: _, ...): 'bool',
+            (column: ('': ident, ...), ...): 
+        };
+    type;
+
+# (
+#     :grammar,
+# )
+
+//fmt.pretty([
+    {:grammar: SELECT x, y AS z FROM foo; :},
+    {:grammar: SELECT * FROM foo; :},
+    {:grammar: SELECT x, foo.y FROM foo; :},
+    {:grammar: SELECT foo.* FROM foo; :},
+
+    {:grammar: INSERT INTO foo (x, y) VALUES (1, 2); :},
+    
+    {:grammar: UPDATE foo SET x = 1, y = 2 WHERE z < 10; :},
+
+    {:grammar: DELETE FROM foo; :},
+    {:grammar: DELETE FROM foo WHERE x < 10; :},
+])

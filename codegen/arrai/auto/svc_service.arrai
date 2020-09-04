@@ -1,0 +1,169 @@
+let go = //{./go};
+let sysl = //{./sysl};
+
+\(:app, :appname, :endpoints, :module, ...)
+    let (:methodSignature, :typeWithClientPackage, ...) = go.module(module);
+
+    let HttpMethodStatements = \appname \ep
+        let patterns = sysl.patterns(ep);
+        let returns = sysl.endpoint.returns(ep);
+        let nils = returns where .@item.var != "error" rank (:.@) >> `nil`;
+
+        let declareResp = \var
+            returns where .@item.var = var && typeWithClientPackage(.@item) >>
+                $`var ${var}Response ${typeWithClientPackage(.)}`;
+
+        let returnDownstreamError = \type \var \err
+            $`return ${nils ++ [
+                $`common.CreateDownstreamError(ctx, common.Downstream${type}Error, ${var}.HTTPResponse, ${var}.Body, ${err})`
+            ]::, }`;
+
+        $`
+            required := []string{${
+                (ep("param")?.a:{} where {"header", "required"} (<=) sysl.patterns(.@item('type'))) >>
+                    $`"${.('type')?('attrs')?('name')?('s').s:(.('name').s)}"`
+            ::, }}
+            ${declareResp("ok")::\i}
+            ${declareResp("error")::\i}
+            ${#`
+                let pathvars = ep('restParams')('urlParam')?.a:{};
+                let terms = pathvars => $`{${.@item('name').s}}`;
+                let formatArgs = $`"%s${//seq.split("/")(ep('restParams')('path').s) >> cond {. <: terms: "%v", _: .}::/}"`; #`
+                let params = pathvars >> $`req.${go.name(.('name').s)}`;
+                $`u, err := url.Parse(fmt.Sprintf(${formatArgs}, ${["s.url"] ++ params::, }))`
+            }
+            if err != nil {
+                return ${nils ++ [`common.CreateError(ctx, common.InternalError, "failed to parse url", err)`]::, }
+            }
+
+            ${let queryParams = ep('restParams')('queryParam')?.a:{}; cond {queryParams: $`
+                q := u.Query()
+                ${
+                    let reqQueryParams = queryParams where !.@item('type')('opt')?.b:false;
+                    let optQueryParams = queryParams where .@item('type')('opt')?.b:false;
+                    let queryParamName = \qparam cond {
+                        'queryParamNames' <: qparam('attrs')?:{}:
+                            $"${//seq.concat(qparam('attrs')('queryParamNames') where (qparam.name <: .) >> (. &~ {qparam.name}))::}",
+                        _: qparam('name').s,
+                    };
+                    let var = \. $`req.${go.name(.('name').s)}`;
+                    let valueExpr = \. \star cond go.type(.('type')) {
+                        ($`${star}string`): $`${star}${var(.)}`,
+                        _:                  $`fmt.Sprintf("%v", ${star}${var(.)})`,
+                    };
+                    $`
+                        ${reqQueryParams => .@item orderby sysl.source(.('type')) >> $`
+                            q.Add("${queryParamName(.)}", ${valueExpr(., '')})
+                        `::\i}
+                        ${optQueryParams => .@item orderby sysl.source(.('type')) >> $`
+                            if ${var(.)} != nil {
+                                q.Add("${queryParamName(.)}", ${valueExpr(., '*')})
+                            }
+                        `::\i}
+                    `
+                }
+                u.RawQuery = q.Encode()
+            `}}${
+                let body = (ep('param')?.a:{} where "body" <: sysl.patterns(.@item('type'))) >> "req.Request";
+                let retvars = returns where .@item.type != [""] => .@item.var;
+                let method = ep('restParams')('method').s;
+                $`result, err := restlib.DoHTTPRequest(ctx, s.client, "${method}", u.String(), ${body || ["nil"]::}, required, ${
+                    cond {"ok" <: retvars: "&okResponse", _: "nil"}}, ${
+                    cond {"error" <: retvars: "&errorResponse", _: "nil"}})`
+            }
+            restlib.OnRestResultHTTPResult(ctx, result, err)
+            if err != nil {
+                ${
+                    let downstreamUnavailable = $`
+                        return ${nils ++ [$`
+                            common.CreateError(ctx, common.DownstreamUnavailableError, "call failed: ${appname} <- ${ep('restParams')('method').s} " + u.String(), err)`
+                        ]::, }`;
+                    cond {
+                        "error" <: (returns where .@item.type != [""] => .@item.var): $`
+                            response, ok := err.(*restlib.HTTPResult)
+                            if !ok {
+                                ${downstreamUnavailable}
+                            }
+                            ${returnDownstreamError("Response", "response", "&errorResponse")}
+                        `,
+                        _: downstreamUnavailable
+                    }
+                }
+            }
+
+            if result.HTTPResponse.StatusCode == http.StatusUnauthorized {
+                ${returnDownstreamError("Unauthorized", "result", "nil")}
+            }
+            ${
+                let makeType = \input
+                    cond {
+                        input = "error": input,
+                        _: go.name(input),
+                    };
+
+                returns where (.@item -> .var != "error" && .type != [""]) >>
+                    let responseVar = $`${makeType(.var)}${go.name(//seq.concat(.type))}Response`;
+                    $`
+                        ${responseVar}, ok := result.Response.(*${typeWithClientPackage(.)})
+                        if ok {
+                            valErr := validator.Validate(${responseVar})
+                            if valErr != nil {
+                                ${returnDownstreamError(`UnexpectedResponse`, `result`, `valErr`)}
+                            }
+
+                            return ${responseVar}, nil
+                        }
+                    `
+            ::\i}
+            ${cond {
+                returns where .@item.type != [""] && .@item.var = "ok": returnDownstreamError("UnexpectedResponse", "result", "nil"),
+                returns where .@item.type = [""] && .@item.var = "ok": "return &result.HTTPResponse.Header, nil",
+                _: "return nil",
+            }}
+        `;
+
+    $`
+        ${go.prelude(app, {"github.com/anz-bank/sysl-go/codegen/tests/deps"})}
+        ${"app.union" where false >>
+            let method = $`Is${.key}`; $`
+                // ${.key} ...
+                type ${go.name(.key)} interface {
+                    ${method}()
+                }
+
+                ${.value.fields >> $`
+                    func (*${.}) ${method} {}
+                `}
+            `
+        :::\n}
+
+        // Service interface for ${appname}
+        type Service interface {
+            ${endpoints >>> \epname \ep
+                let ep = ep.@value;
+                $`${go.methodName(ep)}${methodSignature(ep)}`
+            ::\i}
+        }
+
+        // Client for ${appname} API
+        type Client struct {
+            client *http.Client
+            url    string
+        }
+
+        // NewClient for ${appname}
+        func NewClient(client *http.Client, serviceURL string) *Client {
+            return &Client{client, serviceURL}
+        }
+
+        ${endpoints where cond .@item.@value {{'restParams': _, ...}: true} >> \ep
+            let ep = ep.@value;
+            let funcName = go.methodName(ep);
+            $`
+                // ${funcName} ...
+                func (s *Client) ${funcName}${methodSignature(ep)} {
+                    ${HttpMethodStatements(appname, ep)}
+                }
+            `
+        ::\i}
+    `

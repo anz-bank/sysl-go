@@ -1,0 +1,61 @@
+let app = (
+    name: \app
+        $`${app('name')('part').a >> .s::}`,
+    endpoint: \app \epname
+        ((app('endpoints') where .@value('name').s = epname) single).@value,
+);
+
+let isPtr = \t t('opt')?:false;
+
+let endpoint =
+    let calls = \ep
+        ep('stmt').a where cond .@item {{"call":_}: true} >> .('call');
+
+    # `returns(ep) -> array((var: string, type: array(string)))`
+    #
+    # `returns` returns an array of returns from endpoint `ep`. Each return is a
+    # tuple with attribute `var` holding the  variable name and attribute `type`
+    # holding the type name as an array of the `.`-separate parts.
+    let returns =
+        let splitRet = //re.compile(`(.*?)\s*<:\s*((?:sequence\s+of\s+)?)(.*)`).match;
+        \ep
+            ep('stmt').a where "ret" <: (.@item => .@) >>
+                let payload = .("ret")("payload").s;
+                let [_, var, seq, type] = splitRet(payload)(0)?:["", payload, "", ""];
+                (:var, seq: seq != "", type: //seq.split(".", type));
+
+    # `normalReturns(ep)`
+    #
+    # `normalReturns` returns an array of non-error returns with a type from
+    # endpoint `ep`.
+    let normalReturns = \ep
+        returns(ep) where (.@item -> .var != "error" && .type != [""]) rank (:.@);
+
+    let untypedReturns = \ep
+        returns(ep) where (.@item -> .var = "ok" && .type = [""]) rank (:.@);
+
+    let sqlStatements = \ep
+        ep('attrs')?:{} where (//seq.has_prefix("sql_", .@)) => (
+            @: //seq.trim_prefix("sql_", .@),
+            @value: .@value('s').s,
+        );
+
+    (
+        :calls,
+        :returns,
+        :normalReturns,
+        :sqlStatements,
+        :untypedReturns,
+    );
+
+let patterns = \node node('attrs')?('patterns')?('a')('elt').a:{} >> .('s').s => .@item;
+
+let source = \node node('sourceContext')('start') -> [.('line'), .('col')];
+
+(
+    :app,
+    :endpoint,
+    :patterns,
+    :source,
+    :isPtr,
+)
