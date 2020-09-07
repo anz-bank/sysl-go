@@ -3,70 +3,85 @@ let sysl = //{./sysl};
 
 \(:app, :appname, :basepath, :clientDeps, :clientDeps, :module, :goModule, :restEndpoints, ...)
     let prefix = \dep cond {goModule.depField(dep).grpc: `GRPC`, _: `HTTP`};
+    let grpc = cond {"gRPC" <: sysl.patterns(app): `Grpc`};
+    let serviceInterface = $`${grpc}ServiceInterface`;
+    let newServiceHandler = $`New${grpc}ServiceHandler`;
     $`
-        ${go.prelude(app, clientDeps => $`${basepath}/${.import}`)}
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(app))}
 
         // DownstreamClients for ${appname}
         type DownstreamClients struct {
             ${clientDeps orderby . >> cond {
                 goModule.depField(.).grpc:
-                    $`${.import}Client ${.import}.${.target('part').a >> .s::}Client`,
+                    $`${.import}Client *${.import}.Client`,
                 _:
                     $`${.import}Client *${.import}.Client`,
             }::\i}
         }
 
         ${cond {
-            "gRPC" <: sysl.patterns(app): $`
+            grpc: $`
                 // BuildGrpcHandlerInitialiser ...
-                func BuildGrpcHandlerInitialiser(serviceInterface GrpcServiceInterface, callback core.GrpcGenCallback, downstream *DownstreamClients) handlerinitialiser.GrpcHandlerInitialiser {
-                    serviceHandler := NewGrpcServiceHandler(callback, &serviceInterface${
-                        clientDeps orderby . >> $`, downstream.${.import}Client`
-                    ::})
-                    return serviceHandler
+                func BuildGrpcHandlerInitialiser(
+                    serviceInterface GrpcServiceInterface,
+                    callback core.GrpcGenCallback,
+                    downstream *DownstreamClients,
+                ) (handlerinitialiser.GrpcHandlerInitialiser, error) {
+                    return NewGrpcServiceHandler(
+                        callback,
+                        &serviceInterface,
+                        ${clientDeps orderby . >> $`downstream.${.import}Client,`::\i}
+                    )
                 }
             `,
             _: $`
                 // BuildRestHandlerInitialiser ...
                 func BuildRestHandlerInitialiser(
-                    serviceInterface ServiceInterface,
+                    serviceInterface ${serviceInterface},
                     callback core.RestGenCallback,
                     downstream *DownstreamClients,
                 ) (handlerinitialiser.HandlerInitialiser, error) {
-                    serviceHandler, err := NewServiceHandler(callback, &serviceInterface${
-                        clientDeps orderby . >> $`, downstream.${.import}Client`
-                    ::})
+                    serviceHandler, err := NewServiceHandler(
+                        callback,
+                        &serviceInterface,
+                        ${clientDeps orderby . >> $`downstream.${.import}Client,`::\i},
+                    )
                     if err != nil {
                         return nil, err
                     }
                     return NewServiceRouter(callback, serviceHandler), nil
                 }
-            `
+            `,
         }}
 
         // BuildDownstreamClients ...
         func BuildDownstreamClients(cfg *config.DefaultConfig) (*DownstreamClients, error) {
-            downstream := cfg.GenCode.Downstream.(*DownstreamConfig)
-            if downstream == nil {
-                downstream = &DownstreamConfig{}
+            downstreamConfig := cfg.GenCode.Downstream.(*DownstreamConfig)
+            if downstreamConfig == nil {
+                downstreamConfig = &DownstreamConfig{}
             }
-            var err error = nil
-            ${clientDeps orderby . >>
-                $`${.import}${prefix(.)}Client, ${.import}Err := core.BuildDownstream${prefix(.)}Client("${.import}", &downstream.${go.name(.import)})`
-            ::\i}
             ${clientDeps orderby . >> $`
-                if ${.import}Err != nil {
-                    return nil, ${.import}Err
+                ${.import}${prefix(.)}Client, err := core.BuildDownstream${prefix(.)}Client(
+                    ${.import:q},
+                    &downstreamConfig.${go.name(.import)},
+                )
+                if err != nil {
+                    return nil, err
                 }
-            `::\i}
-            ${clientDeps orderby . >> cond {
-                goModule.depField(.).grpc:
-                    $`${.import}Client := ${.import}.New${.target('part').a >> .s::}Client(${.import}${prefix(.)}Client)`,
-                _:
-                    $`${.import}Client := ${.import}.NewClient(${.import}${prefix(.)}Client, downstream.${go.name(.import)}.ServiceURL)`,
-            }::\i}
-
-            return &DownstreamClients{${clientDeps orderby . >> $`${.import}Client: ${.import}Client,`::\i}
+                ${cond {
+                    goModule.depField(.).grpc:
+                        $`${.import}Client := ${.import}.NewClient(
+                            ${.import}${prefix(.)}Client,
+                        )`,
+                    _:
+                        $`${.import}Client := ${.import}.NewClient(
+                            ${.import}${prefix(.)}Client,
+                            downstreamConfig.${go.name(.import)}.ServiceURL,
+                        )`,
+                }}
+            `::\i\n:\n}
+            return &DownstreamClients{
+                ${clientDeps orderby . >> $`${.import}Client: ${.import}Client,`::\i}
             }, err
         }
 
@@ -74,7 +89,7 @@ let sysl = //{./sysl};
         //
         // createService must be a function with the following signature:
         //
-        //   func(ctx context.Context, config AppConfig) (*${go.package(app)}.ServiceInterface, error)
+        //   func(ctx context.Context, config AppConfig) (*${go.package(app)}.${serviceInterface}, error)
         //
         // where AppConfig is a type defined by the application programmer to
         // hold application-level configuration.
@@ -84,9 +99,9 @@ let sysl = //{./sysl};
         ) error {
             err := core.Serve(
                 ctx,
-                &DownstreamConfig{}, createService, &ServiceInterface{},
-                func(cfg *config.DefaultConfig, serviceIntf interface{}) (chi.Router, error) {
-                    serviceInterface := serviceIntf.(*ServiceInterface)
+                &DownstreamConfig{}, createService, &${serviceInterface}{},
+                func(cfg *config.DefaultConfig, serviceIntf interface{}) (interface{}, error) {
+                    serviceInterface := serviceIntf.(*${serviceInterface})
 
                     genCallbacks := common.DefaultCallback()
 
@@ -96,7 +111,7 @@ let sysl = //{./sysl};
                             return nil, err
                         }
                     `}}
-                    serviceHandler, err := NewServiceHandler(
+                    serviceHandler, err := ${newServiceHandler}(
                         genCallbacks,
                         serviceInterface,
                         ${clientDeps orderby . >> $`clients.${.import}Client,`::\i}
@@ -105,13 +120,23 @@ let sysl = //{./sysl};
                         return nil, err
                     }
 
-                    // Service Router
-                    router := chi.NewRouter()
-                    debug.Enable("${appname}", router)
-                    serviceRouter := NewServiceRouter(genCallbacks, serviceHandler)
-                    serviceRouter.WireRoutes(ctx, router)
-                    catalogservice.Enable(serviceRouter, router, AppSpec)
-                    return router, nil
+                    ${cond {
+                        grpc: $`
+                            grpcServer := grpc.NewServer()
+                            serviceHandler.RegisterServer(ctx, grpcServer)
+                            return grpcServer, nil
+                        `,
+                        _: $`
+                            // Service Router
+                            router := chi.NewRouter()
+                            // TODO: Figure out where this comes from.
+                            // debug.Enable(${appname:q}, router)
+                            serviceRouter := New${grpc}ServiceRouter(genCallbacks, serviceHandler)
+                            serviceRouter.WireRoutes(ctx, router)
+                            catalogservice.Enable(serviceRouter, router, AppSpec)
+                            return router, nil
+                        `,
+                    }}
                 },
             )
             if err != nil {

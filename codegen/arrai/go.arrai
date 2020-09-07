@@ -148,7 +148,7 @@ let module = \module
                     {}: "error",
                     _: $`(${(tn orderby .) ++ ["error"]::, })`,
                 }
-                
+
             }`;
 
     let callSignature = \{'target': target, 'endpoint': ep, ...}

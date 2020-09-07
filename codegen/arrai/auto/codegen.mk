@@ -23,8 +23,9 @@ AUTO = arrai --out=dir:$(1) $(SYSL_GO_ROOT)/codegen/arrai/auto/auto.arrai
 
 ifdef NO_DOCKER
 
-PROTOC  = protoc
-SYSL    = sysl
+PROTOC    = protoc
+SYSL      = sysl
+GOIMPORTS = goimports
 AUTOGEN = $(AUTO)
 ifndef SYSL_GO_ROOT
 $(error Set SYSL_GO_ROOT is required for NO_DOCKER. Set it to the local path of the sysl-go repo.)
@@ -49,7 +50,7 @@ model.json: $(SYSLFILE)
 
 $(SERVERS_ROOT)/%: model.json
 	$(call AUTOGEN,$@) $(PKGPATH)/$@ $< $* =
-	find $@ -type d | xargs goimports -w
+	find $@ -type d | xargs $(GOIMPORTS) -w
 	touch $@
 
 .PHONY: docker.%

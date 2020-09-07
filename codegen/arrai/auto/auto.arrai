@@ -26,8 +26,8 @@ let fixPBPath =
     //re.compile($`^${from}(.*)/[^/]+${'$'}`).sub(to++`$1`);
 
 generate.generate(config, generate.groups(type))
-+> (apps => \(@: appname, @value: app)
++> (apps => \(@: _, @value: app)
     let config = generate.config((:basepath, :module, :app, :fixPBPath));
     let type = cond {'gRPC' <: sysl.patterns(app): 'grpc-client', _: 'rest-client'};
-    (@: //str.lower(appname), @value: generate.generate(config, generate.groups(type)))
+    (@: go.package(app), @value: generate.generate(config, generate.groups(type)))
 )

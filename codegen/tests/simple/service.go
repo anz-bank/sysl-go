@@ -71,7 +71,6 @@ func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest)
 
 		return OkDepsApiDocResponse, nil
 	}
-
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
 }
 
@@ -102,7 +101,6 @@ func (s *Client) GetGetSomeBytesList(ctx context.Context, req *GetGetSomeBytesLi
 
 		return OkPdfResponse, nil
 	}
-
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
 }
 
@@ -193,7 +191,6 @@ func (s *Client) GetOkTypeAndJustErrorList(ctx context.Context, req *GetOkTypeAn
 
 		return OkResponseResponse, nil
 	}
-
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
 }
 
@@ -229,7 +226,6 @@ func (s *Client) GetOopsList(ctx context.Context, req *GetOopsListRequest) (*Res
 
 		return OkResponseResponse, nil
 	}
-
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
 }
 
@@ -264,7 +260,6 @@ func (s *Client) GetPetaList(ctx context.Context, req *GetPetaListRequest) (*Pet
 
 		return OkPetAResponse, nil
 	}
-
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
 }
 
@@ -299,7 +294,6 @@ func (s *Client) GetRawList(ctx context.Context, req *GetRawListRequest) (*Str, 
 
 		return OkStrResponse, nil
 	}
-
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
 }
 
@@ -330,7 +324,6 @@ func (s *Client) GetRawIntList(ctx context.Context, req *GetRawIntListRequest) (
 
 		return OkIntegerResponse, nil
 	}
-
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
 }
 
@@ -361,7 +354,6 @@ func (s *Client) GetRawStatesList(ctx context.Context, req *GetRawStatesListRequ
 
 		return OkStatusResponse, nil
 	}
-
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
 }
 
@@ -392,7 +384,6 @@ func (s *Client) GetRawIdStatesList(ctx context.Context, req *GetRawIdStatesList
 
 		return OkStrResponse, nil
 	}
-
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
 }
 
@@ -423,7 +414,6 @@ func (s *Client) GetRawStates2List(ctx context.Context, req *GetRawStates2ListRe
 
 		return OkStrResponse, nil
 	}
-
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
 }
 
@@ -454,7 +444,6 @@ func (s *Client) GetSimpleAPIDocsList(ctx context.Context, req *GetSimpleAPIDocs
 
 		return OkDepsApiDocResponse, nil
 	}
-
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
 }
 
@@ -469,19 +458,15 @@ func (s *Client) GetStuffList(ctx context.Context, req *GetStuffListRequest) (*S
 
 	q := u.Query()
 	q.Add("it", fmt.Sprintf("%v", req.It))
-
 	if req.Dt != nil {
 		q.Add("dt", fmt.Sprintf("%v", *req.Dt))
 	}
-
 	if req.St != nil {
 		q.Add("st", *req.St)
 	}
-
 	if req.Bt != nil {
 		q.Add("bt", fmt.Sprintf("%v", *req.Bt))
 	}
-
 	u.RawQuery = q.Encode()
 	result, err := restlib.DoHTTPRequest(ctx, s.client, "GET", u.String(), nil, required, &okResponse, nil)
 	restlib.OnRestResultHTTPResult(ctx, result, err)
@@ -501,7 +486,6 @@ func (s *Client) GetStuffList(ctx context.Context, req *GetStuffListRequest) (*S
 
 		return OkStuffResponse, nil
 	}
-
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
 }
 
@@ -532,6 +516,5 @@ func (s *Client) PostStuff(ctx context.Context, req *PostStuffRequest) (*Str, er
 
 		return OkStrResponse, nil
 	}
-
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
 }

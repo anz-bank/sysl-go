@@ -29,13 +29,14 @@ let sysl = //{./sysl};
         client_struct: \ep
             let method = go.methodName(ep);
             $`
-                // ${method} Client
+                // ${method}Client provides access to all
+                // the clients used by the ${method} method.
                 type ${method}Client struct {
                     ${cond {hasDB: $`
                         Conn *sql.Conn
                         ${sysl.endpoint.sqlStatements(ep) => $`${//str.title(.@)} *sql.Stmt` orderby .::\i}
                     `}}
-                    ${sysl.endpoint.calls(ep) >> goModule.callSignature(.)::\i}
+                    ${sysl.endpoint.calls(ep) >> goModule.callSignature(.)::\i\n}
                 }
             `,
 

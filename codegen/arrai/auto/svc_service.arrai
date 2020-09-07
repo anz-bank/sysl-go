@@ -63,7 +63,8 @@ let sysl = //{./sysl};
                     `
                 }
                 u.RawQuery = q.Encode()
-            `}}${
+            `}}
+            ${
                 let body = (ep('param')?.a:{} where "body" <: sysl.patterns(.@item('type'))) >> "req.Request";
                 let retvars = returns where .@item.type != [""] => .@item.var;
                 let method = ep('restParams')('method').s;

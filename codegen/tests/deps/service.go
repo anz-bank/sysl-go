@@ -61,7 +61,6 @@ func (s *Client) GetApiDocsList(ctx context.Context, req *GetApiDocsListRequest)
 
 		return OkApiDocResponse, nil
 	}
-
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
 }
 

@@ -36,14 +36,14 @@ type CommonDownstreamData struct {
 
 // Transport is used to initialise DefaultHTTPTransport.
 type Transport struct {
-	Dialer                Dialer `yaml:"dialer"`
-	MaxIdleConns          int
-	IdleConnTimeout       time.Duration
-	TLSHandshakeTimeout   time.Duration
-	ExpectContinueTimeout time.Duration
-	ClientTLS             *TLSConfig `yaml:"tls"`
-	ProxyURL              string     `yaml:"proxyURL"`
-	UseProxy              bool       `yaml:"useProxy"`
+	Dialer                Dialer        `yaml:"dialer"`
+	MaxIdleConns          int           `yaml:"maxIdleConns"`
+	IdleConnTimeout       time.Duration `yaml:"idleConnTimeout"`
+	TLSHandshakeTimeout   time.Duration `yaml:"tLSHandshakeTimeout"`
+	ExpectContinueTimeout time.Duration `yaml:"expectContinueTimeout"`
+	ClientTLS             *TLSConfig    `yaml:"tls"`
+	ProxyURL              string        `yaml:"proxyURL"`
+	UseProxy              bool          `yaml:"useProxy"`
 }
 
 // Dialer is part of the Transport struct.
