@@ -30,11 +30,9 @@ func BuildDownstreamClients(cfg *config.DefaultConfig) (*DownstreamClients, erro
 	if depsErr != nil {
 		return nil, depsErr
 	}
-
 	if downstreamErr != nil {
 		return nil, downstreamErr
 	}
-
 	depsClient := deps.NewClient(depsHTTPClient, cfg.GenCode.Downstream.(*DownstreamConfig).Deps.ServiceURL)
 	downstreamClient := downstream.NewClient(downstreamHTTPClient, cfg.GenCode.Downstream.(*DownstreamConfig).Downstream.ServiceURL)
 

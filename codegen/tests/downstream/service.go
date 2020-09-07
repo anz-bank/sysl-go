@@ -60,6 +60,5 @@ func (s *Client) GetServiceDocsList(ctx context.Context, req *GetServiceDocsList
 
 		return OkServiceDocResponse, nil
 	}
-
 	return nil, common.CreateDownstreamError(ctx, common.DownstreamUnexpectedResponseError, result.HTTPResponse, result.Body, nil)
 }

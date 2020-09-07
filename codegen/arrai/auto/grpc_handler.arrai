@@ -31,12 +31,18 @@ let sysl = //{./sysl};
             genCallback core.GrpcGenCallback,
             serviceInterface *GrpcServiceInterface,
             ${clientDeps orderby . >> (goModule.depField(.) -> $`${.name} ${.type},`)::\i}
-        ) *GrpcServiceHandler {
+        ) (*GrpcServiceHandler, error) {
+            ${cond {hasDB: $`
+                db, dberr := database.GetDBHandle()
+                if dberr != nil {
+                        return nil, dberr
+                }
+            `}}
             return &GrpcServiceHandler{
                 genCallback: genCallback,
                 serviceInterface: serviceInterface,
                 ${clientDeps orderby . >> (goModule.depField(.) -> $`${.name}: ${.name},`)::\i}
-            }
+            }, nil
         }
 
         // RegisterServer registers the ${appname} gRPC service

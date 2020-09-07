@@ -76,6 +76,31 @@ let pbPackage = \app
         }}`,
     )};
 
+let pbMethodInfo = \ep
+    let {'name': (s: methodName), 'param': (a: [param]), 'stmt': (a: stmts), ...} = ep;
+    let {'name': (s: pname), 'type': ptype, ...} = param;
+    let methodName = name(methodName);
+    let responseType = $`${stmts
+        filter .@item {{'ret': _, ...}: .}
+        >> //seq.split(".", //seq.split(" ", .("ret")("payload").s)(2))(1)
+    ::}`;
+    let requestType = leafType(ptype);
+    (
+        name: methodName,
+        :pname,
+        :requestType,
+        :responseType,
+        sig: \package \opts
+            let opts = cond {opts: `opts ...grpc.CallOption,`};
+            $`
+                (
+                    ctx context.Context,
+                    ${pname} *${package}.${requestType},
+                    ${opts}
+                ) (*${package}.${responseType}, error)
+            `,
+    );
+
 let typeWithPackage = \type \module
     cond type {
         [t]: name(t),
@@ -102,12 +127,16 @@ let prelude = \app \imports $`
         "github.com/anz-bank/sysl-go/config"
         "github.com/anz-bank/sysl-go/convert"
         "github.com/anz-bank/sysl-go/database"
-        "github.com/anz-bank/sysl-go/debug"
         "github.com/anz-bank/sysl-go/handlerinitialiser"
         "github.com/anz-bank/sysl-go/restlib"
         "github.com/anz-bank/sysl-go/validator"
-        ${imports => cond . {(:alias, package: pkg): $`${alias} ${pkg:q}`, _: $`${.:q}`} orderby .::\i}
 
+        ${
+            imports => cond . {
+                (:alias, package: pkg): $`${alias} ${pkg:q}`,
+                _: $`${.:q}`,
+            } orderby .
+        ::\i:\n}
         "github.com/go-chi/chi"
         "github.com/rickb777/date"
         "google.golang.org/grpc"
@@ -172,12 +201,22 @@ let module = \module
         let package = package(dep);
         let ep = sysl.app.endpoint(dep, ep.s);
         let method = methodName(ep);
-        let grpc = cond {'gRPC' <: sysl.patterns(dep): `, opts ...grpc.CallOption`};
-        $`${name(package)}${method} func(ctx context.Context, req *${package}.${method}Request${grpc}) (${
-            let typed = sysl.endpoint.normalReturns(ep) >> $`*${cond{.seq: `[]`}}${//seq.join(".", .type)}`;
-            let untyped = sysl.endpoint.untypedReturns(ep) >> `*http.Header`;
-            typed ++ untyped ++ ["error"]
-        ::, })`;
+        cond {
+            'gRPC' <: sysl.patterns(dep):
+                pbMethodInfo(ep) -> $`${name(package)}${.name} func${.sig(package, true)}`,
+            _:
+                $`
+                    ${name(package)}${method} func(
+                        ctx context.Context,
+                        req *${package}.${method}Request,
+                    ) (${
+                        let typed = sysl.endpoint.normalReturns(ep)
+                            >> $`*${cond{.seq: `[]`}}${package}.${//seq.join(".", .type)}`;
+                        let untyped = sysl.endpoint.untypedReturns(ep) >> `*http.Header`;
+                        typed ++ untyped ++ ["error"]
+                    ::, })
+                `,
+        };
 
     let clientDeps = \eps
         //rel.union(eps => \(@item: (@value: ep, ...), ...)
@@ -214,6 +253,7 @@ let module = \module
     :name,
     :package,
     :pbPackage,
+    :pbMethodInfo,
     :prelude,
     :type,
     :leafType,

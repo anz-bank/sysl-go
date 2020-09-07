@@ -59,11 +59,9 @@ func (t *PostRequest) UnmarshalJSON(data []byte) error {
 	if inner.Dt == nil {
 		return errors.New("dt cannot be nil")
 	}
-
 	if inner.St == nil {
 		return errors.New("St cannot be nil")
 	}
-
 	*t = PostRequest{
 		Bt: inner.Bt,
 		Dt: *inner.Dt,
@@ -83,6 +81,7 @@ type Status struct {
 }
 
 // Stuff just some stuff
+
 type Stuff struct {
 	EmptyStuff     Empty                  `json:"emptyStuff"`
 	InnerStuff     string                 `json:"innerStuff"`
