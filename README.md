@@ -24,7 +24,7 @@ See [sysl-template](https://github.com/anz-bank/sysl-template) for more examples
 Ensure your environment provides:
 
 - [go 1.14](https://golang.org/doc/install)
-- [golangci-lint 1.23](https://github.com/golangci/golangci-lint)
+- [golangci-lint 1.29.0](https://github.com/golangci/golangci-lint/releases/tag/v1.29.0)
 - [protobuf 3.11.4](https://github.com/protocolbuffers/protobuf/)
 - `make`
 - `jq`
@@ -32,6 +32,9 @@ Ensure your environment provides:
   - https://github.com/protocolbuffers/protobuf/releases
   - https://github.com/golang/protobuf
   - https://github.com/grpc/grpc
+- [`sysl`](https://sysl.io/docs/installation) tool available on PATH
+- [`arrai`](https://github.com/arr-ai/arrai) tool available on PATH
+
 
 On OSX, after installing [go 1.12.9](https://golang.org/doc/install) run
 
