@@ -1,5 +1,12 @@
 # Requires protoc, protoc-gen-go and goimports.
 
+
+# Hack: globally force any shell commands to run inside
+# a bash shell with saner defaults set. If this is not done
+# then multi-statement shell recipes such as run-arrai can
+# fail in a way that is not noticed by make.
+SHELL=/bin/bash -o pipefail -o errexit
+
 all: gen test check-coverage lint tidy ## Tests, lints and checks coverage
 
 .PHONY: all clean
