@@ -1,0 +1,5 @@
+name: 'builder'
+description: ''
+runs:
+  using: 'docker'
+  image: '../../../builder.Dockerfile'
