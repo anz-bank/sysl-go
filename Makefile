@@ -19,6 +19,7 @@ tidy: ## Run go mod tidy
 	go mod tidy
 
 check-tidy: ## Check go.mod and go.sum is tidy
+	# FIXME if git exits with nonzero this is regarded as successful
 	go mod tidy && test -z "$$(git status --porcelain)"
 
 .PHONY: lint tidy check-tidy
