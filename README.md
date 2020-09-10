@@ -27,7 +27,6 @@ Ensure your environment provides:
 - [golangci-lint 1.29.0](https://github.com/golangci/golangci-lint/releases/tag/v1.29.0)
 - [protobuf 3.11.4](https://github.com/protocolbuffers/protobuf/)
 - `make`
-- `jq`
 - proto3 and gRPC
   - https://github.com/protocolbuffers/protobuf/releases
   - https://github.com/golang/protobuf
@@ -38,7 +37,7 @@ Ensure your environment provides:
 
 On OSX, after installing [go 1.12.9](https://golang.org/doc/install) run
 
-    brew install golangci/tap/golangci-lint make jq curl protoc-gen-go grpc
+    brew install golangci/tap/golangci-lint make curl protoc-gen-go grpc
 
 ### 1.1.3 Development
 
