@@ -89,9 +89,9 @@ define run-arrai
 $(eval NAME := $(shell echo $< | tr '[:upper:]' '[:lower:]'))
 sysl pb --mode=json $(TEST_IN_DIR)/$(NAME)/$(NAME).sysl > $(TEST_IN_DIR)/$(NAME)/sysl.json
 $(ARRAI_SERVICE_ROOT)/service.arrai \
-	$(SYSL_GO_ROOT)/$(TEST_OUT_DIR) $(TEST_IN_DIR)/$</sysl.json \
-	$< $($(NAME).groups) | tar xf - -C $(TEST_OUT_DIR)/$<
-goimports -w $(TEST_OUT_DIR)/$<
+        $(SYSL_GO_ROOT)/$(TEST_OUT_DIR) $(TEST_IN_DIR)/$(NAME)/sysl.json \
+        $< $($(NAME).groups) | tar xf - -C $(TEST_OUT_DIR)/$(NAME)
+goimports -w $(TEST_OUT_DIR)/$(NAME)
 endef
 
 # PROTO_IN and PROTO_OUT are defined in Make modules
