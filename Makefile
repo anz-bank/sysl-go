@@ -24,7 +24,7 @@ check-tidy: ## Check go.mod and go.sum is tidy
 COVERFILE=coverage.out
 COVERAGE = 50
 
-test: ## Run all tests
+test: ## Run all tests, apart from auto-test
 	go test -coverprofile=$(COVERFILE) -tags codeanalysis ./...
 
 check-coverage: test  ## Check that test coverage meets the required level
@@ -33,6 +33,9 @@ check-coverage: test  ## Check that test coverage meets the required level
 coverage: test  ## Show test coverage in your browser
 	go tool cover -html=$(COVERFILE)
 
+auto-test: # auto-test. experimental and likely unreliable.
+	$(MAKE) -C codegen/arrai/auto/tests/simple_rest/
+
 clean:
 	rm -f $(COVERFILE)
 	rm -f $(patsubst %,codegen/testdata/%/sysl.json,$(targets))
@@ -40,7 +43,7 @@ clean:
 CHECK_COVERAGE = awk -F '[ \t%]+' '/^total:/ && $$3 < $(COVERAGE) {exit 1}'
 FAIL_COVERAGE = { echo '$(COLOUR_RED)FAIL - Coverage below $(COVERAGE)%$(COLOUR_NORMAL)'; exit 1; }
 
-.PHONY: check-coverage coverage test
+.PHONY: check-coverage coverage test auto-test
 
 # --- Utilities ---------------------------------------------------------------
 COLOUR_NORMAL = $(shell tput sgr0 2>/dev/null)
