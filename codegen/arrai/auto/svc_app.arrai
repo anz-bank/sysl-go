@@ -61,6 +61,7 @@ let sysl = //{./sysl};
             if downstreamConfig == nil {
                 downstreamConfig = &DownstreamConfig{}
             }
+            var err error
             ${clientDeps orderby . >> $`
                 ${.import}${prefix(.)}Client, err := core.BuildDownstream${prefix(.)}Client(
                     ${.import:q},
