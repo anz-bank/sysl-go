@@ -30,3 +30,7 @@ type RestGenCallback interface {
 type GrpcGenCallback interface {
 	DownstreamTimeoutContext(ctx context.Context) (context.Context, context.CancelFunc)
 }
+
+type RestCallback struct {
+	MapError func(ctx context.Context, err error) *common.HTTPError
+}

@@ -1,9 +1,12 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
+	"time"
 
+	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/validator"
 
 	"github.com/mitchellh/mapstructure"
@@ -59,4 +62,19 @@ func LoadConfig(file string, defaultConfig *DefaultConfig, customConfig interfac
 	}
 
 	return err
+}
+
+func NewCallback(
+	config *GenCodeConfig,
+	downstreamTimeOut time.Duration,
+	mapError func(ctx context.Context, err error) *common.HTTPError,
+) common.Callback {
+	// construct the rest configuration (aka. gen callback)
+	return common.Callback{
+		UpstreamTimeout:   config.Upstream.ContextTimeout,
+		DownstreamTimeout: downstreamTimeOut,
+		RouterBasePath:    config.Upstream.HTTP.BasePath,
+		UpstreamConfig:    &config.Upstream,
+		MapErrorFunc:      mapError,
+	}
 }

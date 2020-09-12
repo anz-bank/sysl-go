@@ -6,6 +6,7 @@ let sysl = //{./sysl};
     let grpc = cond {"gRPC" <: sysl.patterns(app): `Grpc`};
     let serviceInterface = $`${grpc}ServiceInterface`;
     let newServiceHandler = $`New${grpc}ServiceHandler`;
+    let package = go.package(app);
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(app))}
 
@@ -44,7 +45,7 @@ let sysl = //{./sysl};
                     serviceHandler, err := NewServiceHandler(
                         callback,
                         &serviceInterface,
-                        ${clientDeps orderby . >> $`downstream.${.import}Client,`::\i},
+                        ${clientDeps orderby . >> $`downstream.${.import}Client,`::\i}
                     )
                     if err != nil {
                         return nil, err
@@ -92,10 +93,13 @@ let sysl = //{./sysl};
         //
         // createService must be a function with the following signature:
         //
-        //   func(ctx context.Context, config AppConfig) (*${go.package(app)}.${serviceInterface}, error)
+        //    func(ctx context.Context, config AppConfig) (*${package}.ServiceInterface, error)
         //
         // where AppConfig is a type defined by the application programmer to
         // hold application-level configuration.
+        //
+        // For a quick start, copy main.go.sample from the same directory as this
+        // file into its own package directory, rename it to main.go, and run it.
         func Serve(
             ctx context.Context,
             createService interface{},
@@ -103,10 +107,18 @@ let sysl = //{./sysl};
             err := core.Serve(
                 ctx,
                 &DownstreamConfig{}, createService, &${serviceInterface}{},
-                func(cfg *config.DefaultConfig, serviceIntf interface{}) (interface{}, error) {
+                func(
+                    cfg *config.DefaultConfig,
+                    serviceIntf interface{},
+                    callback *core.RestCallback,
+                ) (interface{}, error) {
                     serviceInterface := serviceIntf.(*${serviceInterface})
 
-                    genCallbacks := common.DefaultCallback()
+                    genCallbacks := config.NewCallback(
+                        &cfg.GenCode,
+                        cfg.GenCode.Downstream.(*DownstreamConfig).ContextTimeout,
+                        callback.MapError,
+                    )
 
                     ${cond {clientDeps: $`
                         clients, err := BuildDownstreamClients(cfg)
@@ -136,7 +148,7 @@ let sysl = //{./sysl};
                             // debug.Enable(${appname:q}, router)
                             serviceRouter := New${grpc}ServiceRouter(genCallbacks, serviceHandler)
                             serviceRouter.WireRoutes(ctx, router)
-                            catalogservice.Enable(serviceRouter, router, AppSpec)
+                            // catalogservice.Enable(serviceRouter, router, AppSpec)
                             return router, nil
                         `,
                     }}

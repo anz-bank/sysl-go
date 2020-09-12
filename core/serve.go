@@ -36,7 +36,7 @@ func ConfigFileSystemOnto(ctx context.Context, fs afero.Fs) context.Context {
 func Serve(
 	ctx context.Context,
 	downstreamConfig, createService, serviceInterface interface{},
-	newServer func(cfg *config.DefaultConfig, serviceIntf interface{}) (interface{}, error),
+	newServer func(cfg *config.DefaultConfig, serviceIntf interface{}, callback *RestCallback) (interface{}, error),
 ) error {
 	if len(os.Args) != 2 {
 		return fmt.Errorf("Wrong number of arguments (usage: %s (config | -h | --help))", os.Args[0])
@@ -85,16 +85,17 @@ func Serve(
 	createServiceResult := reflect.ValueOf(createService).Call(
 		[]reflect.Value{reflect.ValueOf(ctx), appConfig},
 	)
-	errIntf := createServiceResult[1].Interface()
+	errIntf := createServiceResult[2].Interface()
 	if errIntf != nil {
 		return err.(error)
 	}
 	serviceIntf := createServiceResult[0].Interface()
+	restCallbackIntf := createServiceResult[1].Interface()
 
 	addrConfig := defaultConfig.GenCode.Upstream.HTTP.Common
 	serverAddress := fmt.Sprintf("%s:%d", addrConfig.HostName, addrConfig.Port)
 
-	server, err := newServer(defaultConfig, serviceIntf)
+	server, err := newServer(defaultConfig, serviceIntf, restCallbackIntf.(*RestCallback))
 	if err != nil {
 		return err
 	}
@@ -151,7 +152,7 @@ func GetCreateServiceConfigType(createService, serviceInterface interface{}) ref
 	if cs.NumIn() != 2 {
 		panic("createService: wrong number of in params")
 	}
-	if cs.NumOut() != 2 {
+	if cs.NumOut() != 3 {
 		panic("createService: wrong number of out params")
 	}
 
@@ -165,9 +166,14 @@ func GetCreateServiceConfigType(createService, serviceInterface interface{}) ref
 		panic(fmt.Errorf("createService: second out param must be of type %v, not %v", serviceInterfaceType, cs.Out(0)))
 	}
 
+	var callback RestCallback
+	if reflect.TypeOf(&callback) != cs.Out(1) {
+		panic(fmt.Errorf("createService: second out param must be of type *RestCallback, not %v", cs.Out(1)))
+	}
+
 	var err error
-	if reflect.TypeOf(&err).Elem() != cs.Out(1) {
-		panic(fmt.Errorf("createService: second out param must be of type error, not %v", cs.Out(1)))
+	if reflect.TypeOf(&err).Elem() != cs.Out(2) {
+		panic(fmt.Errorf("createService: third out param must be of type error, not %v", cs.Out(1)))
 	}
 
 	return cs.In(1)

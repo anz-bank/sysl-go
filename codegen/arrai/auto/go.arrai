@@ -16,6 +16,8 @@ let name =
             cond {upper <: initialisms: upper, _: //str.title(v)};
         //seq.concat(uppers);
 
+let goModule = //re.compile(`(?m)^module\s+(.*)$`).match($"${//os.file("go.mod")}")(0)(1) rank (:.@);
+
 # Compute the Go type for a Sysl type. If leafOnly, then
 let typeImpl = \leafOnly //fn.fix(\typeImpl \t
     let ptr = cond {t('opt')?:false && !({"sequence", "set"} & (t => .@)): "*"};
@@ -68,13 +70,12 @@ let package = \app
     };
 
 let pbPackage = \app
-    {(
-        alias: `pb`,
-        package: $`${cond app('attrs') {
-            {'go_pb_package': p, ...}: $`${p('s').s}`,
-            _: '',
-        }}`,
-    )};
+    cond app {
+        {'attrs': {'go_pb_package': {'s': (s: pkg)}, ...}, ...}: {(
+            alias: `pb`,
+            package: pkg,
+        )}
+    };
 
 let pbMethodInfo = \ep
     let {'name': (s: methodName), 'param': (a: [param]), 'stmt': (a: stmts), ...} = ep;
@@ -248,6 +249,7 @@ let module = \module
     );
 
 (
+    :goModule,
     :methodName,
     :module,
     :name,

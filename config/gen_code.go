@@ -16,3 +16,8 @@ type UpstreamConfig struct {
 	HTTP           CommonHTTPServerConfig `yaml:"http"`
 	GRPC           CommonServerConfig     `yaml:"grpc"`
 }
+
+func (c *UpstreamConfig) Validate() error {
+	// TODO: Actually validate
+	return nil
+}

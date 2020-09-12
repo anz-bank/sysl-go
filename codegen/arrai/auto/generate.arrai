@@ -8,6 +8,7 @@ let generators = {
     "grpc_client.go":      //{./grpc_client},
     "grpc_handler.go":     //{./grpc_handler},
     "grpc_interface.go":   //{./grpc_interface},
+    "main.go.sample":      //{./main_go_sample},
     "requestrouter.go":    //{./svc_router},
     "service.go":          //{./svc_service},
     "servicehandler.go":   //{./svc_handler},
@@ -18,18 +19,19 @@ let generators = {
 (
     groups:
         let auto = "auto";
-        let restClient = {"error_types", "service", "types"};
-        let restService = restClient | {"requestrouter", "servicehandler", "serviceinterface"};
-        let grpcClient = {"grpc_client"};
-        let grpcService = {"grpc_handler", "grpc_interface"};
-        ({
+        let restClient = {"error_types.go", "service.go", "types.go"};
+        let restService = restClient | {"requestrouter.go", "servicehandler.go", "serviceinterface.go"};
+        let grpcClient = {"grpc_client.go"};
+        let grpcService = {"grpc_handler.go", "grpc_interface.go"};
+        let app = {"app.go", "app_spec.go", "main.go.sample"};
+        {
             "rest-service": restService,
-            "rest-app":     restService | {"app", "app_spec"},
+            "rest-app":     restService | app,
             "rest-client":  restClient,
             "grpc-service": grpcService,
-            "grpc-app":     grpcService | {"app", "app_spec"},
+            "grpc-app":     grpcService | app,
             "grpc-client":  grpcClient,
-        } >> => $"${.}.go") +> {"auto": {"auto"}},
+        },
 
     config: \(:app, :basepath, :module, ...extra)
         let goModule = go.module(module);
