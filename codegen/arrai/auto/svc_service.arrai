@@ -30,7 +30,7 @@ let sysl = //{./sysl};
                 let terms = pathvars => $`{${.@item('name').s}}`;
                 let formatArgs = $`"%s${//seq.split("/")(ep('restParams')('path').s) >> cond {. <: terms: "%v", _: .}::/}"`; #`
                 let params = pathvars >> $`req.${go.name(.('name').s)}`;
-                $`u, err := url.Parse(fmt.Sprintf(${formatArgs}, ${["s.url"] ++ params::, }))`
+                $`u, err := url.Parse(fmt.Sprintf(${formatArgs}, ${["s.URL"] ++ params::, }))`
             }
             if err != nil {
                 return ${nils ++ [`common.CreateError(ctx, common.InternalError, "failed to parse url", err)`]::, }
@@ -68,9 +68,18 @@ let sysl = //{./sysl};
                 let body = (ep('param')?.a:{} where "body" <: sysl.patterns(.@item('type'))) >> "req.Request";
                 let retvars = returns where .@item.type != [""] => .@item.var;
                 let method = ep('restParams')('method').s;
-                $`result, err := restlib.DoHTTPRequest(ctx, s.client, "${method}", u.String(), ${body || ["nil"]::}, required, ${
-                    cond {"ok" <: retvars: "&okResponse", _: "nil"}}, ${
-                    cond {"error" <: retvars: "&errorResponse", _: "nil"}})`
+                $`
+                    result, err := restlib.DoHTTPRequest2(ctx, &restlib.HTTPRequest{
+                        Client:        s.Client,
+                        Method:        "${method}",
+                        URLString:     u.String(),
+                        Body:          ${body || ["nil"]::},
+                        Required:      required,
+                        OKResponse:    ${cond {"ok" <: retvars: "&okResponse", _: "nil"}},
+                        ErrorResponse: ${cond {"error" <: retvars: "&errorResponse", _: "nil"}},
+                        ExtraHeaders:  nil,
+                    })
+                `
             }
             restlib.OnRestResultHTTPResult(ctx, result, err)
             if err != nil {
@@ -148,13 +157,14 @@ let sysl = //{./sysl};
 
         // Client for ${appname} API
         type Client struct {
-            client *http.Client
-            url    string
+            Client  *http.Client
+            URL     string
+            Headers map[string][]string
         }
 
         // NewClient for ${appname}
         func NewClient(client *http.Client, serviceURL string) *Client {
-            return &Client{client, serviceURL}
+            return &Client{client, serviceURL, nil}
         }
 
         ${endpoints where cond .@item.@value {{'restParams': _, ...}: true} >> \ep

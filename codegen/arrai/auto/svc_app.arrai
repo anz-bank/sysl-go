@@ -74,10 +74,13 @@ let sysl = //{./sysl};
                             ${.import}${prefix(.)}Client,
                         )`,
                     _:
-                        $`${.import}Client := ${.import}.NewClient(
-                            ${.import}${prefix(.)}Client,
-                            downstreamConfig.${go.name(.import)}.ServiceURL,
-                        )`,
+                        $`
+                            ${.import}Client := &${.import}.Client{
+                                Client:  ${.import}${prefix(.)}Client,
+                                URL:     downstreamConfig.${go.name(.import)}.ServiceURL,
+                                Headers: downstreamConfig.${go.name(.import)}.Headers,
+                            }
+                        `,
                 }}
             `::\i\n:\n}
             return &DownstreamClients{

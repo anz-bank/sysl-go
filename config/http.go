@@ -24,14 +24,16 @@ func DefaultCommonDownstreamData() *CommonDownstreamData {
 			ExpectContinueTimeout: 1 * time.Second,
 		},
 		ClientTimeout: 60 * time.Second,
+		Headers:       make(map[string][]string),
 	}
 }
 
 // CommonDownstreamData collects all the client http configuration.
 type CommonDownstreamData struct {
-	ServiceURL      string        `yaml:"serviceURL"`
-	ClientTransport Transport     `yaml:"clientTransport"`
-	ClientTimeout   time.Duration `yaml:"clientTimeout" validate:"timeout=1ms:60s"`
+	ServiceURL      string              `yaml:"serviceURL"`
+	ClientTransport Transport           `yaml:"clientTransport"`
+	ClientTimeout   time.Duration       `yaml:"clientTimeout" validate:"timeout=1ms:60s"`
+	Headers         map[string][]string `yaml:"headers"`
 }
 
 // Transport is used to initialise DefaultHTTPTransport.
