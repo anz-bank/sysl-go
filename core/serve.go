@@ -236,7 +236,9 @@ func describeYAMLForType(w io.Writer, t reflect.Type, commonTypes map[reflect.Ty
 		describeYAMLForType(w, t.Elem(), commonTypes, indent+4)
 	case reflect.Interface:
 		outf(" " + yamlEgComment("{}", "any value"))
-	// case reflect.Map:
+	case reflect.Map:
+		outf("\n key: ")
+		describeYAMLForType(w, t.Elem(), commonTypes, indent+4)
 	case reflect.Ptr:
 		describeYAMLForType(w, t.Elem(), commonTypes, indent)
 	case reflect.String:
