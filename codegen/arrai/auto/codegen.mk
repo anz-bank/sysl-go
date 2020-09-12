@@ -1,15 +1,49 @@
 # Master: github.com/anz-bank/sysl-go/codegen/arrai/auto/codegen.mk
 #
-# 1. copy this file to your repo and include it in your Makefile
-# 2. To use local tools, set environment variable NO_DOCKER=1 when running make.
-# 3. If NO_DOCKER=1, set SYSL_GO_ROOT to the local path of the sysl-go repo.
+# 1. Copy this file to your repo and include it in your Makefile.
+# 2. Set SYSLGO_SYSL to the .sysl file you want to codegen for.
+# 3. Set SYSLGO_PACKAGES to a space-separated list of the Go packages you want
+#    to codegen.
+# 4. For each app you want to codegen, set SYSLGO_APP.<pkg> to the app name.
+#    E.g.: SYSLGO_APP.myapp = MyApp.
+# 5. To use local tools, set environment variable NO_DOCKER=1 when running make.
+# 6. If NO_DOCKER=1, set SYSL_GO_ROOT to the local path of the sysl-go repo.
+#
+# A complete example:
+#
+#     # Makefile
+#     SYSLGO_SYSL = specs/frontend/bff.sysl
+#
+#     SYSLGO_PACKAGES = myapp
+#     SYSLGO_APP.myapp = MyApp
+#
+#     -include local.mk
+#     include codegen.mk
+#
+#     # local.mk (optional)
+#     NO_DOCKER = 1
+#     SYSL_GO_ROOT = ../sysl-go
+#
+# 6. Run make
+# 7. (optional) copy gen/pkg/servers/<pkg>/main.go.sample to its own package and
+#    run it with the -h flag.
 
-ifndef SYSLFILE
-$(error Set SYSLFILE to the path of the Sysl file you want to codegen for.)
+ifdef SYSLFILE
+$(warning WARNING: Using deprecated SYSLFILE. Use SYSLGO_SYSL instead.)
+SYSLGO_SYSL = $(SYSLFILE)
 endif
 
-ifndef APPS
-$(error Set APPS to a list of the apps you want to codegen. e.g.: )
+ifdef APPS
+$(warning WARNING: Using deprecated APPS. Change to SYSLGO_PACKAGES and SYSLGO_APP.<pkg>.)
+SYSLGO_PACKAGES = $(APPS)
+endif
+
+ifndef SYSLGO_SYSL
+$(error Set SYSLGO_SYSL to the path of the Sysl file you want to codegen for.)
+endif
+
+ifndef SYSLGO_PACKAGES
+$(error Set SYSLGO_PACKAGES to a list of the Go packages you want to codegen. e.g.: )
 endif
 
 ifndef PKGPATH
@@ -42,14 +76,14 @@ AUTOGEN = $(DOCKER_RUN) sysl-go $(AUTO)
 endif
 
 .PHONY: all
-all: $(foreach app,$(APPS),$(SERVERS_ROOT)/$(app))
+all: $(foreach app,$(SYSLGO_PACKAGES),$(SERVERS_ROOT)/$(app))
 
 .INTERMEDIATE: model.json
-model.json: $(SYSLFILE)
+model.json: $(SYSLGO_SYSL)
 	$(SYSL) pb --mode json $< > $@ || (rm $@ && false)
 
 $(SERVERS_ROOT)/%: model.json
-	$(call AUTOGEN,$@) $(PKGPATH)/$@ $< $* =
+	$(call AUTOGEN,$@) $(PKGPATH)/$@ $< $(or $(SYSLGO_APP.$*),$*) =
 	find $@ -type d | xargs $(GOIMPORTS) -w
 	touch $@
 

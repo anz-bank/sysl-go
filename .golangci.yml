@@ -21,7 +21,6 @@ linters:
     - gocritic
     - gocyclo
     - godot
-    - godox
     - gofmt
     - goimports
     - golint
@@ -49,6 +48,7 @@ linters:
   # disable: # as at 1.27.0
   #   - dupl
   #   - gochecknoglobals
+  #   - godox
   #   - goerr113
   #   - gomnd
   #   - gosec
@@ -56,8 +56,8 @@ linters:
   #   - nestif
   #   - stylecheck
   #   - testpackage
-  #   - wsl
   #   - unused
+  #   - wsl
 
 issues:
   exclude-rules:
@@ -78,11 +78,11 @@ issues:
       text: ".*should be.*"
       linters:
         - golint
-    
+
     - path: _test\.go
       linters:
         - govet # Ignore err shadowing in test files
-        - gomnd 
+        - gomnd
         - funlen # Ignore function length for tests
 
 run:

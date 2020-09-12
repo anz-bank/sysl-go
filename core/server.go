@@ -38,28 +38,25 @@ func NewServerParams(ctx context.Context, name string, opts ...ServerOption) *Se
 	return params
 }
 
-//nolint:gocognit,funlen // Long method are okay because only generated code will call this, not humans.
-func (params *ServerParams) Start() error {
-	ctx := params.Ctx
-
-	// initialise the logger
-	// sysl-go always uses a pkg logger internally. if custom code passes in a logrus logger, a
-	// mechanism which is deprecated, then a hook is added to the internal pkg logger that forwards
-	// logged events to the provided logrus logger.
-	// sysl-go can be requested to log in a verbose manner. logger in a verbose manner logs additional
-	// details within log events where appropriate. the mechanism to set this verbose manner is to
-	// either have a sufficiently high logrus log level or the verbose mode set against the pkg logger.
-	configs := params.pkgLoggerConfigs
+// initialise the logger
+// sysl-go always uses a pkg logger internally. if custom code passes in a logrus logger, a
+// mechanism which is deprecated, then a hook is added to the internal pkg logger that forwards
+// logged events to the provided logrus logger.
+// sysl-go can be requested to log in a verbose manner. logger in a verbose manner logs additional
+// details within log events where appropriate. the mechanism to set this verbose manner is to
+// either have a sufficiently high logrus log level or the verbose mode set against the pkg logger.
+func InitialiseLogging(ctx context.Context, configs []log.Config, logrusLogger *logrus.Logger) context.Context {
 	verboseLogging := false
-	if params.logrusLogger != nil {
+	if logrusLogger != nil {
 		// set an empty io writter against pkg logger
 		// pkg logger just becomes a proxy that forwards all logs to logrus
 		configs = append(configs, log.SetOutput(&emptyWriter{}))
-		configs = append(configs, log.AddHooks(&logrusHook{params.logrusLogger}))
-		configs = append(configs, log.SetLogCaller(params.logrusLogger.ReportCaller))
-		ctx = common.LoggerToContext(ctx, params.logrusLogger, nil)
-		verboseLogging = params.logrusLogger.Level >= logrus.DebugLevel
+		configs = append(configs, log.AddHooks(&logrusHook{logrusLogger}))
+		configs = append(configs, log.SetLogCaller(logrusLogger.ReportCaller))
+		ctx = common.LoggerToContext(ctx, logrusLogger, nil)
+		verboseLogging = logrusLogger.Level >= logrus.DebugLevel
 	}
+
 	ctx = log.WithConfigs(configs...).Onto(ctx)
 	verboseMode := log.SetVerboseMode(true)
 	for _, config := range configs {
@@ -70,7 +67,17 @@ func (params *ServerParams) Start() error {
 	}
 
 	// prepare the middleware
-	ctx = logconfig.SetVerboseLogging(ctx, verboseLogging)
+	return logconfig.SetVerboseLogging(ctx, verboseLogging)
+}
+
+//nolint:gocognit,funlen // Long method are okay because only generated code will call this, not humans.
+func (params *ServerParams) Start() error {
+	ctx := params.Ctx
+
+	// initialise the logger
+	ctx = InitialiseLogging(ctx, params.pkgLoggerConfigs, params.logrusLogger)
+
+	// prepare the middleware
 	mWare := prepareMiddleware(ctx, params.Name, params.prometheusRegistry)
 
 	var restIsRunning, grpcIsRunning bool

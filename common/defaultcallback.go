@@ -23,6 +23,7 @@ type Callback struct {
 	DownstreamTimeout time.Duration
 	RouterBasePath    string
 	UpstreamConfig    validator.Validator
+	MapErrorFunc      func(ctx context.Context, err error) *HTTPError
 }
 
 type Config struct{}
@@ -52,6 +53,5 @@ func (g Callback) DownstreamTimeoutContext(ctx context.Context) (context.Context
 }
 
 func (g Callback) MapError(ctx context.Context, err error) *HTTPError {
-	httpErr := MapError(ctx, err)
-	return &httpErr
+	return g.MapErrorFunc(ctx, err)
 }
