@@ -15,6 +15,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.5.1
 	github.com/rickb777/date v1.12.4
+	github.com/sethvargo/go-retry v0.1.0
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/afero v1.3.4
 	github.com/stretchr/testify v1.6.1
