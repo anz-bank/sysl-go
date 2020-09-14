@@ -7,7 +7,7 @@
 # fail in a way that is not noticed by make.
 SHELL=/bin/bash -o pipefail -o errexit
 
-all: gen test check-coverage lint tidy ## Tests, lints and checks coverage
+all: gen test check-coverage lint check-tidy ## Tests, lints and checks coverage
 
 .PHONY: all clean
 
@@ -15,14 +15,10 @@ all: gen test check-coverage lint tidy ## Tests, lints and checks coverage
 lint: ## Lint Go Source Code
 	golangci-lint run
 
-tidy: ## Run go mod tidy
-	go mod tidy
-
 check-tidy: ## Check go.mod and go.sum is tidy
-	# FIXME if git exits with nonzero this is regarded as successful
-	go mod tidy && test -z "$$(git status --porcelain)"
+	go mod tidy && go mod tidy && git diff --exit-code HEAD -- ":(top)go.mod" ":(top)go.sum"
 
-.PHONY: lint tidy check-tidy
+.PHONY: lint check-tidy
 
 # -- Test ----------------------------------------------------------------------
 COVERFILE=coverage.out
