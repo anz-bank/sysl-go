@@ -13,6 +13,7 @@ import (
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
+	"github.com/sethvargo/go-retry"
 	tlog "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -69,16 +70,6 @@ func GetStuffStub(ctx context.Context, req *pb.GetStuffRequest, client GetStuffC
 	return &resp, nil
 }
 
-func connectAndCheckReturn(t *testing.T, securityOption grpc.DialOption) {
-	conn, err := grpc.Dial("localhost:8888", securityOption, grpc.WithBlock())
-	require.NoError(t, err)
-	defer conn.Close()
-	client := pb.NewSimpleGrpcClient(conn)
-	resp, err := client.GetStuff(context.Background(), &pb.GetStuffRequest{InnerStuff: "test"})
-	require.NoError(t, err)
-	require.Equal(t, "test", resp.GetData()[0].GetName())
-}
-
 func TestValidRequestResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`{}`))
@@ -112,7 +103,35 @@ func TestValidRequestResponse(t *testing.T) {
 		serverError <- err
 	}()
 
-	connectAndCheckReturn(t, grpc.WithInsecure())
+	getStuff := func(ctx context.Context, req *pb.GetStuffRequest) (*pb.GetStuffResponse, error) {
+		conn, err := grpc.DialContext(ctx, "localhost:8888", grpc.WithInsecure(), grpc.WithBlock())
+		if err != nil {
+			return nil, err
+		}
+		defer conn.Close()
+		client := pb.NewSimpleGrpcClient(conn)
+		return client.GetStuff(ctx, req)
+	}
+
+	// Setup: wait for the service to come up
+	ctx := context.Background()
+	backoff, err := retry.NewFibonacci(10 * time.Millisecond)
+	require.Nil(t, err)
+	backoff = retry.WithMaxDuration(10*time.Second, backoff)
+	err = retry.Do(ctx, backoff, func(ctx context.Context) error {
+		_, err := getStuff(ctx, &pb.GetStuffRequest{InnerStuff: "test"})
+		if err != nil {
+			return retry.RetryableError(err)
+		}
+		return nil
+	})
+	require.Nil(t, err)
+
+	// Test the service
+	response, err := getStuff(ctx, &pb.GetStuffRequest{InnerStuff: "test"})
+	require.Nil(t, err)
+	require.Equal(t, "test", response.GetData()[0].GetName())
+
 	serverHolder.svr.GracefulStop()
 	require.NoError(t, <-serverError)
 }
