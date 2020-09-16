@@ -94,7 +94,7 @@ let sysl = //{./sysl};
         //
         // createService must be a function with the following signature:
         //
-        //    func(ctx context.Context, config AppConfig) (*${package}.ServiceInterface, error)
+        //    func(ctx context.Context, config AppConfig) (*${package}.ServiceInterface, *core.RestCallback, error)
         //
         // where AppConfig is a type defined by the application programmer to
         // hold application-level configuration.
