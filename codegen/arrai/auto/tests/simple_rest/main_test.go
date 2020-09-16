@@ -21,6 +21,7 @@ const applicationConfig = `---
 genCode:
   upstream:
     http:
+      basePath: "/"
       common:
         hostName: "localhost"
         port: 9021 # FIXME no guarantee this port is free
