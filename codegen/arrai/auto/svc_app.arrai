@@ -138,19 +138,20 @@ let sysl = //{./sysl};
 
                     ${cond {
                         grpc: $`
-                            grpcServer := grpc.NewServer()
-                            serviceHandler.RegisterServer(ctx, grpcServer)
-                            return grpcServer, nil
+                            // TODO: return somthing that implements GrpcManager
+                            return nil, nil
                         `,
                         _: $`
-                            // Service Router
-                            router := chi.NewRouter()
-                            // TODO: Figure out where this comes from.
-                            // debug.Enable(${appname:q}, router)
-                            serviceRouter := New${grpc}ServiceRouter(genCallbacks, serviceHandler)
-                            serviceRouter.WireRoutes(ctx, router)
-                            // catalogservice.Enable(serviceRouter, router, AppSpec)
-                            return router, nil
+                            // Construct a HTTPManager to wrap our HandlerInitialiser AKA ServiceRouter
+                            // TODO standardise terminology / generally refactor
+                            handlerInitialiser := NewServiceRouter(genCallbacks, serviceHandler)
+
+                            libraryConfig := &(cfg.Library)
+                            var adminServerConfig *config.CommonHTTPServerConfig = nil // TODO source optional admin server config from somewhere
+                            var publicServerConfig *config.CommonHTTPServerConfig = &(cfg.GenCode.Upstream.HTTP)
+                            enabledHandlers := []handlerinitialiser.HandlerInitialiser{handlerInitialiser, } // TODO what if we want > 1 of these?
+                            manager := core.NewHTTPManager(libraryConfig, adminServerConfig, publicServerConfig, enabledHandlers)
+                            return manager, nil
                         `,
                     }}
                 },

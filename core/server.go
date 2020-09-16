@@ -85,6 +85,7 @@ func (params *ServerParams) Start() error {
 	// Run the REST server
 	var listenAdmin func() error
 	if params.restManager != nil && params.restManager.AdminServerConfig() != nil {
+		log.Info(ctx, "found AdminServerConfig for REST")
 		var err error
 		listenAdmin, err = configureAdminServerListener(ctx, params.restManager, params.prometheusRegistry, mWare.admin)
 		if err != nil {
@@ -92,11 +93,13 @@ func (params *ServerParams) Start() error {
 		}
 	} else {
 		// set up a dummy listener which will never exit if admin disabled
+		log.Info(ctx, "no AdminServerConfig for REST was found")
 		listenAdmin = func() error { select {} }
 	}
 
 	var listenPublic func() error
 	if params.restManager != nil && params.restManager.PublicServerConfig() != nil {
+		log.Info(ctx, "found PublicServerConfig for REST")
 		var err error
 		listenPublic, err = configurePublicServerListener(ctx, params.restManager, mWare.public)
 		if err != nil {
@@ -104,12 +107,14 @@ func (params *ServerParams) Start() error {
 		}
 		restIsRunning = true
 	} else {
+		log.Info(ctx, "no PublicServerConfig for REST was found")
 		listenPublic = func() error { select {} }
 	}
 
 	// Run the gRPC server
 	var listenPublicGrpc func() error
 	if params.grpcManager != nil && params.grpcManager.GrpcPublicServerConfig() != nil {
+		log.Info(ctx, "found GrpcPublicServerConfig for gRPC")
 		var err error
 		listenPublicGrpc, err = configurePublicGrpcServerListener(ctx, params.grpcManager)
 		if err != nil {
@@ -118,6 +123,7 @@ func (params *ServerParams) Start() error {
 
 		grpcIsRunning = true
 	} else {
+		log.Info(ctx, "no GrpcPublicServerConfig for gRPC was found")
 		listenPublicGrpc = func() error { select {} }
 	}
 
