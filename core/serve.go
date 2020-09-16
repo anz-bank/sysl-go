@@ -38,32 +38,13 @@ func Serve(
 	downstreamConfig, createService, serviceInterface interface{},
 	newServer func(cfg *config.DefaultConfig, serviceIntf interface{}, callback *RestCallback) (interface{}, error),
 ) error {
-	if len(os.Args) != 2 {
-		return fmt.Errorf("Wrong number of arguments (usage: %s (config | -h | --help))", os.Args[0])
-	}
 
-	customConfig := CreateConfig(downstreamConfig, createService, serviceInterface)
-	if os.Args[1] == "--help" || os.Args[1] == "-h" {
-		fmt.Printf("Usage: %s config\n\n", os.Args[0])
-		describeCustomConfig(os.Stdout, customConfig)
-		fmt.Print("\n\n")
-		return nil
-	}
+	MustTypeCheckCreateService(createService, serviceInterface)
 
-	var fs afero.Fs
-	if v := ctx.Value(serveConfigFileSystemKey); v != nil {
-		fs = v.(afero.Fs)
-	} else {
-		fs = afero.NewOsFs()
-	}
+	customConfig := NewZeroCustomConfig(reflect.TypeOf(downstreamConfig), GetAppConfigType(createService))
 
-	configPath := os.Args[1]
-	configData, err := afero.Afero{Fs: fs}.ReadFile(configPath)
+	customConfig, err := LoadCustomConfig(ctx, customConfig)
 	if err != nil {
-		return err
-	}
-
-	if err = yaml.UnmarshalStrict(configData, customConfig); err != nil {
 		return err
 	}
 
@@ -116,10 +97,43 @@ func Serve(
 	}
 }
 
-// CreateConfig uses reflection to create a new type derived from DefaultConfig,
+// LoadCustomConfig populates the given zero customConfig value with configuration data.
+func LoadCustomConfig(ctx context.Context, customConfig interface{}) (interface{}, error) {
+	// TODO make this more flexible. It should be possible to resolve a config value
+	// without needing to access os.Args or hit any kind of filesystem.
+	if len(os.Args) != 2 {
+		return nil, fmt.Errorf("Wrong number of arguments (usage: %s (config | -h | --help))", os.Args[0])
+	}
+
+	if os.Args[1] == "--help" || os.Args[1] == "-h" {
+		fmt.Printf("Usage: %s config\n\n", os.Args[0])
+		describeCustomConfig(os.Stdout, customConfig)
+		fmt.Print("\n\n")
+		return nil, nil
+	}
+
+	var fs afero.Fs
+	if v := ctx.Value(serveConfigFileSystemKey); v != nil {
+		fs = v.(afero.Fs)
+	} else {
+		fs = afero.NewOsFs()
+	}
+
+	configPath := os.Args[1]
+	configData, err := afero.Afero{Fs: fs}.ReadFile(configPath)
+	if err != nil {
+		return nil, err
+	}
+
+	err = yaml.UnmarshalStrict(configData, customConfig)
+	return customConfig, err
+}
+
+// NewZeroCustomConfig uses reflection to create a new type derived from DefaultConfig,
 // but with new GenCode.Downstream and App fields holding the same types as
-// downstreaConfig and appConfig.
-func CreateConfig(downstreamConfig, createService, serviceInterface interface{}) interface{} {
+// downstreamConfig and appConfig. It returns a pointer to a zero value of that
+// new type
+func NewZeroCustomConfig(downstreamConfigType, appConfigType reflect.Type) interface{} {
 	defaultConfigType := reflect.TypeOf(config.DefaultConfig{})
 
 	libraryField, has := defaultConfigType.FieldByName("Library")
@@ -134,9 +148,6 @@ func CreateConfig(downstreamConfig, createService, serviceInterface interface{})
 		panic("config.DefaultType missing Upstream field")
 	}
 
-	downstreamConfigType := reflect.TypeOf(downstreamConfig)
-	appConfigType := GetCreateServiceConfigType(createService, serviceInterface)
-
 	return reflect.New(reflect.StructOf([]reflect.StructField{
 		libraryField,
 		{Name: "GenCode", Type: reflect.StructOf([]reflect.StructField{
@@ -147,7 +158,8 @@ func CreateConfig(downstreamConfig, createService, serviceInterface interface{})
 	})).Interface()
 }
 
-func GetCreateServiceConfigType(createService, serviceInterface interface{}) reflect.Type {
+// MustTypeCheckCreateService checks that the given createService has an acceptable type, and panics otherwise.
+func MustTypeCheckCreateService(createService, serviceInterface interface{}) {
 	cs := reflect.TypeOf(createService)
 	if cs.NumIn() != 2 {
 		panic("createService: wrong number of in params")
@@ -175,7 +187,12 @@ func GetCreateServiceConfigType(createService, serviceInterface interface{}) ref
 	if reflect.TypeOf(&err).Elem() != cs.Out(2) {
 		panic(fmt.Errorf("createService: third out param must be of type error, not %v", cs.Out(1)))
 	}
+}
 
+// GetAppConfigType extracts the app's config type from createService.
+// Precondition: MustTypeCheckCreateService(createService, serviceInterface) succeeded.
+func GetAppConfigType(createService interface{}) reflect.Type {
+	cs := reflect.TypeOf(createService)
 	return cs.In(1)
 }
 
