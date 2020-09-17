@@ -1,0 +1,13 @@
+EncoderBackend [package="encoder_backend", ~gRPC]:
+    @go_package = "encoder_backend"
+    @go_pb_package = "simple_grpc_with_downstream/gen/pb/encoder_backend"
+    @pb_package = "encoder_backend.v1"
+
+    Rot13(EncodingRequestRequest <: EncodingRequest):
+        return ok <: EncodingResponse
+
+    !type EncodingRequest:
+        content <: string
+    
+    !type EncodingResponse:
+        content <: string

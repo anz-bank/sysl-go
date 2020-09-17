@@ -1,0 +1,17 @@
+import encoder_backend
+
+Gateway [package="gateway", ~gRPC]:
+    @go_package = "gateway"
+    @go_pb_package = "simple_grpc_with_downstream/gen/pb/gateway"
+    @pb_package = "gateway.v1"
+
+    Encode(GatewayRequest <: EncodeRequest):
+        EncoderBackend <- Rot13
+        return ok <: EncodeResponse
+
+    !type EncodeRequest: # codegen doesnt work if this isn't named MethodName + "Request"
+        encoder_id <: string
+        content <: string
+    
+    !type EncodeResponse: # codegen doesnt work if this isn't named MethodName + "Response"
+        content <: string

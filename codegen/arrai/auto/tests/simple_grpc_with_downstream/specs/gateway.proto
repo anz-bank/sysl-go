@@ -1,0 +1,16 @@
+syntax  = "proto3";
+
+package gateway;
+
+message EncodeResponse {
+    string content = 1;
+}
+
+message EncodeRequest {
+    string encoder_id = 1;
+    string content = 2;
+}
+
+service Gateway {
+    rpc Encode (EncodeRequest) returns (EncodeResponse);
+}
