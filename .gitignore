@@ -2,3 +2,4 @@ coverage*.out
 /codegen/testdata/*/sysl.json
 .blueprint
 /codegen/arrai/auto/tests/simple_rest/gen/pkg/servers/PingPong/
+/codegen/arrai/auto/tests/simple_rest_with_downstream/gen/pkg/servers/Gateway/
