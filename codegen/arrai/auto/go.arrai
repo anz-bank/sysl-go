@@ -76,11 +76,12 @@ let pbMethodInfo = \ep
     let {'name': (s: methodName), 'param': (a: [param]), 'stmt': (a: stmts), ...} = ep;
     let {'name': (s: pname), 'type': ptype, ...} = param;
     let methodName = name(methodName);
+    let last = \xs xs(xs count - 1);
     let responseType = $`${stmts
         filter .@item {{'ret': _, ...}: .}
-        >> //seq.split(".", //seq.split(" ", .("ret")("payload").s)(2))(1)
+        >> last(//seq.split(".", //seq.split(" ", .("ret")("payload").s)(2)))
     ::}`;
-    let requestType = leafType(ptype);
+    let requestType = leafType(ptype) || type(ptype); # FIXME unsure if this is correct, this failed until the fallback using type(ptype) was added.
     (
         name: methodName,
         :pname,
