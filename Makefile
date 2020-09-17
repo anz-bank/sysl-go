@@ -35,6 +35,7 @@ coverage: test  ## Show test coverage in your browser
 
 auto-test: # auto-test. experimental and likely unreliable.
 	$(MAKE) -C codegen/arrai/auto/tests/simple_rest/
+	$(MAKE) -C codegen/arrai/auto/tests/simple_rest_with_downstream/
 
 clean:
 	rm -f $(COVERFILE)
