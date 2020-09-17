@@ -16,6 +16,8 @@ let name =
             cond {upper <: initialisms: upper, _: //str.title(v)};
         //seq.concat(uppers);
 
+# FIXME: automagically unconditionally opening a file in the filesystem when
+# imported makes it difficult to unit test any code that imports this file.
 let goModule = //re.compile(`(?m)^module\s+(.*)$`).match($"${//os.file("go.mod")}")(0)(1) rank (:.@);
 
 # Compute the Go type for a Sysl type. If leafOnly, then
