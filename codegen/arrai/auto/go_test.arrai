@@ -1,6 +1,14 @@
 let go = //{./go};
 
-//test.suite({
-    //test.assert.equal("Foo"     )(go.name("foo")),
-    //test.assert.equal("Api_name")(go.name("api_name")),
-})
+(
+    goName: //test.assert.equal("Foo"     )(go.name("foo")),
+    goNameWithUnderscore: //test.assert.equal("Api_name")(go.name("api_name")),
+    pbMethodInfoCanDeduceRequestType: //test.assert.equal("EncodingRequest")(
+        go.pbMethodInfo(
+            {
+                'name': (s: 'Rot13'),
+                'param': (a: [{'name': (s: 'EncodingRequestRequest'), 'type': {'typeRef': {'ref': {'appname': {'part': (a: [(s: 'EncodingRequest')])}}}}}]),
+                'stmt': (a: [{'ret': {'payload': (s: 'ok <: EncodingResponse')}}]),
+            }).'requestType'
+    ),
+)

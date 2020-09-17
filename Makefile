@@ -7,7 +7,7 @@
 # fail in a way that is not noticed by make.
 SHELL=/bin/bash -o pipefail -o errexit
 
-all: gen test check-coverage lint check-tidy ## Tests, lints and checks coverage
+all: gen test-arrai test check-coverage lint check-tidy ## Tests, lints and checks coverage
 
 .PHONY: all clean
 
@@ -20,7 +20,13 @@ check-tidy: ## Check go.mod and go.sum is tidy
 
 .PHONY: lint check-tidy
 
-# -- Test ----------------------------------------------------------------------
+# -- Test (arrai) --------------------------------------------------------------
+test-arrai:
+	arrai test
+
+.PHONY: test-arrai
+
+# -- Test (go) --------------------------------------------------------------------
 COVERFILE=coverage.out
 COVERAGE = 50
 
