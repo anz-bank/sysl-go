@@ -16,7 +16,17 @@ let generators = {
     "types.go":            //{./svc_types},
 };
 
+let hasTypesWithRelation = \app
+    let candidates = app('types')?:{} >> .('relation')?:{};
+    candidates where .@value;
+
+let _inferHasDB = \app hasTypesWithRelation(app);
+
 (
+    # _inferHasDB is an implementation detail, but we need to export it
+    # in order to unit test it.
+    _inferHasDB: _inferHasDB,
+
     groups:
         let auto = "auto";
         let restClient = {"error_types.go", "service.go", "types.go"};
@@ -49,7 +59,7 @@ let generators = {
             :goModule,
             appname:       sysl.app.name(app),
             clientDeps:    goModule.clientDeps(endpoints),
-            hasDB:         app('types')?:{} >> .('relation')?:{},
+            hasDB:         _inferHasDB(app),
         ),
 
     generate: \config \include

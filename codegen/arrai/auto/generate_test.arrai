@@ -1,0 +1,16 @@
+let generate = //{./generate};
+
+(
+    appWithNoTypesDoesntNeedDB:
+      //test.assert.equal({})(generate._inferHasDB({})),
+
+    appWithRelationlessTypeDoesntNeedDB:
+      //test.assert.equal({})(generate._inferHasDB({'types': {'Foo':{'blah': 123}} })),
+
+    appWithFalseRelationTypeDoesntNeedDB:
+      //test.assert.equal({})(generate._inferHasDB({'types': {'Foo':{'relation': {}}} })),
+
+    appWithRelationTypeNeedsDB:
+      //test.assert.equal({'Foo': {{}}})(generate._inferHasDB({'types': {'Foo':{'relation': {{}}}} })),
+
+)
