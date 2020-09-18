@@ -136,19 +136,29 @@ let sysl = //{./sysl};
 
                     ${cond {
                         grpc: $`
-                            // TODO: return somthing that implements GrpcManager
-                            return nil, nil
+                            // Construct a GRPCManager to wrap our handlerInitialiser AKA serviceHandler.
+                            // TODO standardise terminology / generally refactor.
+                            handlerInitialiser := serviceHandler
+
+                            interceptors := make([]grpc.UnaryServerInterceptor, 0) // TODO make configurable
+                            var adminServerConfig *config.CommonServerConfig = nil // TODO make configurable
+                            var publicServerConfig *config.CommonServerConfig = &(cfg.GenCode.Upstream.GRPC)
+                            // TODO make it possible to disable handlers through configuration.
+                            enabledHandlers := []handlerinitialiser.GrpcHandlerInitialiser{handlerInitialiser, }
+                            manager := core.NewGRPCManagerShim(interceptors, adminServerConfig, publicServerConfig, enabledHandlers)
+                            return manager, nil
                         `,
                         _: $`
-                            // Construct a HTTPManager to wrap our HandlerInitialiser AKA ServiceRouter
-                            // TODO standardise terminology / generally refactor
+                            // Construct a HTTPManager to wrap our HandlerInitialiser AKA ServiceRouter.
+                            // TODO standardise terminology / generally refactor.
                             handlerInitialiser := NewServiceRouter(genCallbacks, serviceHandler)
 
                             libraryConfig := &(cfg.Library)
-                            var adminServerConfig *config.CommonHTTPServerConfig = nil // TODO source optional admin server config from somewhere
+                            var adminServerConfig *config.CommonHTTPServerConfig = nil // TODO make configurable
                             var publicServerConfig *config.CommonHTTPServerConfig = &(cfg.GenCode.Upstream.HTTP)
-                            enabledHandlers := []handlerinitialiser.HandlerInitialiser{handlerInitialiser, } // TODO what if we want > 1 of these?
-                            manager := core.NewHTTPManager(libraryConfig, adminServerConfig, publicServerConfig, enabledHandlers)
+                            // TODO make it possible to disable handlers through configuration.
+                            enabledHandlers := []handlerinitialiser.HandlerInitialiser{handlerInitialiser, }
+                            manager := core.NewHTTPManagerShim(libraryConfig, adminServerConfig, publicServerConfig, enabledHandlers)
                             return manager, nil
                         `,
                     }}

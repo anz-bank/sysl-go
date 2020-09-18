@@ -5,15 +5,15 @@ import (
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
 )
 
-type HTTPManager struct {
+type HTTPManagerShim struct {
 	libraryConfig      *config.LibraryConfig
 	adminServerConfig  *config.CommonHTTPServerConfig
 	publicServerConfig *config.CommonHTTPServerConfig
 	enabledHandlers    []handlerinitialiser.HandlerInitialiser
 }
 
-func NewHTTPManager(libraryConfig *config.LibraryConfig, adminServerConfig *config.CommonHTTPServerConfig, publicServerConfig *config.CommonHTTPServerConfig, enabledHandlers []handlerinitialiser.HandlerInitialiser) *HTTPManager {
-	return &HTTPManager{
+func NewHTTPManagerShim(libraryConfig *config.LibraryConfig, adminServerConfig *config.CommonHTTPServerConfig, publicServerConfig *config.CommonHTTPServerConfig, enabledHandlers []handlerinitialiser.HandlerInitialiser) *HTTPManagerShim {
+	return &HTTPManagerShim{
 		libraryConfig:      libraryConfig,
 		adminServerConfig:  adminServerConfig,
 		publicServerConfig: publicServerConfig,
@@ -21,18 +21,18 @@ func NewHTTPManager(libraryConfig *config.LibraryConfig, adminServerConfig *conf
 	}
 }
 
-func (h *HTTPManager) EnabledHandlers() []handlerinitialiser.HandlerInitialiser {
-	return h.enabledHandlers
+func (m *HTTPManagerShim) EnabledHandlers() []handlerinitialiser.HandlerInitialiser {
+	return m.enabledHandlers
 }
 
-func (h *HTTPManager) LibraryConfig() *config.LibraryConfig {
-	return h.libraryConfig
+func (m *HTTPManagerShim) LibraryConfig() *config.LibraryConfig {
+	return m.libraryConfig
 }
 
-func (h *HTTPManager) AdminServerConfig() *config.CommonHTTPServerConfig {
-	return h.adminServerConfig
+func (m *HTTPManagerShim) AdminServerConfig() *config.CommonHTTPServerConfig {
+	return m.adminServerConfig
 }
 
-func (h *HTTPManager) PublicServerConfig() *config.CommonHTTPServerConfig {
-	return h.publicServerConfig
+func (m *HTTPManagerShim) PublicServerConfig() *config.CommonHTTPServerConfig {
+	return m.publicServerConfig
 }
