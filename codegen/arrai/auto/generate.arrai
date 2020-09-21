@@ -16,11 +16,11 @@ let generators = {
     "types.go":            //{./svc_types},
 };
 
-let hasTypesWithRelation = \app
+let hasRelationTypes = \app
     let candidates = app('types')?:{} >> .('relation')?:{};
     candidates where .@value;
 
-let _inferHasDB = \app hasTypesWithRelation(app);
+let _inferHasDB = \app hasRelationTypes(app);
 
 (
     # _inferHasDB is an implementation detail, but we need to export it

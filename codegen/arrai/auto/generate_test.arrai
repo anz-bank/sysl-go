@@ -11,6 +11,8 @@ let generate = //{./generate};
       //test.assert.equal({})(generate._inferHasDB({'types': {'Foo':{'relation': {}}} })),
 
     appWithRelationTypeNeedsDB:
-      //test.assert.equal({'Foo': {{}}})(generate._inferHasDB({'types': {'Foo':{'relation': {{}}}} })),
+      //test.assert.equal
+          ({'Foo': {{}}})
+          (generate._inferHasDB({'types': {'Foo':{'relation': {{}}}} })),
 
 )
