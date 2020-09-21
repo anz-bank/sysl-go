@@ -70,7 +70,7 @@ func InitialiseLogging(ctx context.Context, configs []log.Config, logrusLogger *
 	return logconfig.SetVerboseLogging(ctx, verboseLogging)
 }
 
-//nolint:gocognit,funlen // Long method are okay because only generated code will call this, not humans.
+//nolint:funlen // Long method are okay because only generated code will call this, not humans.
 func (params *ServerParams) Start() error {
 	ctx := params.Ctx
 
@@ -82,69 +82,61 @@ func (params *ServerParams) Start() error {
 
 	var restIsRunning, grpcIsRunning bool
 
-	// Run the REST server
-	var listenAdmin func() error
+	listeners := make([]func() error, 0)
+
+	// Make the listener function for the REST Admin server
 	if params.restManager != nil && params.restManager.AdminServerConfig() != nil {
 		log.Info(ctx, "found AdminServerConfig for REST")
-		var err error
-		listenAdmin, err = configureAdminServerListener(ctx, params.restManager, params.prometheusRegistry, mWare.admin)
+		listenAdmin, err := configureAdminServerListener(ctx, params.restManager, params.prometheusRegistry, mWare.admin)
 		if err != nil {
 			return err
 		}
+		listeners = append(listeners, listenAdmin)
 	} else {
-		// set up a dummy listener which will never exit if admin disabled
 		log.Info(ctx, "no AdminServerConfig for REST was found")
-		listenAdmin = func() error { select {} }
 	}
 
-	var listenPublic func() error
+	// Make the listener function for the REST Public server
 	if params.restManager != nil && params.restManager.PublicServerConfig() != nil {
 		log.Info(ctx, "found PublicServerConfig for REST")
-		var err error
-		listenPublic, err = configurePublicServerListener(ctx, params.restManager, mWare.public)
+		listenPublic, err := configurePublicServerListener(ctx, params.restManager, mWare.public)
 		if err != nil {
 			return err
 		}
+		listeners = append(listeners, listenPublic)
 		restIsRunning = true
 	} else {
 		log.Info(ctx, "no PublicServerConfig for REST was found")
-		listenPublic = func() error { select {} }
 	}
 
-	// Run the gRPC server
-	var listenPublicGrpc func() error
+	// Make the listener function for the gRPC Public server.
 	if params.grpcManager != nil && params.grpcManager.GrpcPublicServerConfig() != nil {
 		log.Info(ctx, "found GrpcPublicServerConfig for gRPC")
-		var err error
-		listenPublicGrpc, err = configurePublicGrpcServerListener(ctx, params.grpcManager)
+		listenPublicGrpc, err := configurePublicGrpcServerListener(ctx, params.grpcManager)
 		if err != nil {
 			return err
 		}
-
+		listeners = append(listeners, listenPublicGrpc)
 		grpcIsRunning = true
 	} else {
 		log.Info(ctx, "no GrpcPublicServerConfig for gRPC was found")
-		listenPublicGrpc = func() error { select {} }
 	}
 
-	// Panic if REST&gRPC are not running
+	// Refuse to start and panic if neither of the public servers are enabled.
 	if !restIsRunning && !grpcIsRunning {
 		err := errors.New("REST and gRPC servers cannot both be nil")
 		log.Error(ctx, err)
 		panic(err)
 	}
 
+	// Run all listeners for all configured servers and block until the first one terminates.
 	errChan := make(chan error, 1)
-	go func() {
-		errChan <- listenPublic()
-	}()
-	go func() {
-		errChan <- listenAdmin()
-	}()
-	go func() {
-		errChan <- listenPublicGrpc()
-	}()
-
+	for i := range listeners {
+		listener := listeners[i]
+		go func() {
+			errChan <- listener()
+		}()
+	}
 	return <-errChan
 }
 
