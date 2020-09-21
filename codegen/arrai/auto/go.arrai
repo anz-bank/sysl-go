@@ -10,11 +10,15 @@ let name =
         "SLA", "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "UID",
         "UUID", "URI", "URL", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS",
     };
+    let restricted = {
+        "Error",
+    };
     \word
         let uppers = (wordRE.match(word) >> .(0)) >>> \i \v
             let upper = //str.upper(trimRE(v));
             cond {upper <: initialisms: upper, _: //str.title(v)};
-        //seq.concat(uppers);
+        let result = //seq.concat(uppers);
+        cond {result <: restricted: result++"_", _: result};
 
 # FIXME: automagically unconditionally opening a file in the filesystem when
 # imported makes it difficult to unit test any code that imports this file.
@@ -172,7 +176,7 @@ let module = \module
         cond {
             packages: $`${cond {seq: "[]"}}${package((packages single).@value)}.${name(type(1))}`,
             type = ["ok"]: "",
-            _: $`${cond{seq: `[]`}}` ++ //str.title(//seq.concat(type)),
+            _: $`${cond{seq: `[]`}}` ++ name(//seq.concat(type)),
         };
 
     let targetApp = \target
