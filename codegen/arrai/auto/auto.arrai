@@ -1,10 +1,8 @@
-let sysl = //{./sysl};
-let generate = //{./generate};
-
 #!/usr/bin/env arrai
 
-let go   = //{./go};
-let sysl = //{./sysl};
+let generate = //{./generate};
+let go       = //{./go};
+let sysl     = //{./sysl};
 
 # main
 

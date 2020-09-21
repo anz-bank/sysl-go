@@ -48,7 +48,6 @@ endif
 
 ifndef PKGPATH
 PKGPATH = $(shell awk '/^module/{print$$2}' go.mod)
-$(warning PKGPATH not set. Inferred from go.mod as $(PKGPATH))
 endif
 
 SERVERS_ROOT = gen/pkg/servers

@@ -1,8 +1,16 @@
 let go = //{./go};
 
 \(:app, :appname, :basepath, :clientDeps, :endpoints, :fixPBPath, ...)
-    let methodInfos = endpoints => \(@:_, @item: (@:_, @value: ep)) go.pbMethodInfo(ep);
-    let appname = //str.title(appname);
+    let methodSig = \ep
+        let {'name': (s: name), 'param': (a: [param]), 'stmt': (a: stmts), ...} = ep;
+        let {'name': (s: pname), 'type': ptype, ...} = param;
+        let rparam = $`${stmts
+            filter .@item {{'ret': _, ...}: .}
+            >> //seq.split(".", //seq.split(" ", .("ret")("payload").s)(2))(1)
+        ::}`;
+        $`${name}(ctx context.Context, ${pname} *pb.${go.leafType(ptype)}) (*pb.${rparam}, error)`;
+
+    let pbPath = fixPBPath(app('attrs')('source_path').@value.s);
 
     # TODO: sysl automapping between sysl types and protobuf types
     $`

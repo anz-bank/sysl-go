@@ -12,9 +12,10 @@ let sysl = //{./sysl};
                 let typename = go.name(.@);
                 $`
                     // *${typename} error
-                    var ${typename} common.CustomError = map[string]string{"name": "${typename}"${
-                        .@value('tuple')('attrDefs') orderby .@ >> $`, "${.@}": "${.@value('attrs')('value')('s').s}"`
-                    ::}}
+                    var ${typename} common.CustomError = map[string]string{
+                        "name": "${typename}",
+                        ${.@value('tuple')('attrDefs') orderby .@ >> $`"${.@}": "${.@value('attrs')('value')('s').s}",`::\i}
+                    }
                 `
         :::\n}
         // Handler interface for ${appname}

@@ -56,26 +56,21 @@ let leafType = typeImpl(true);
 let varName = //re.compile(`_`).sub("");
 
 let package = \app
-    cond {
-        'attrs' <: (app => .@):
-            let attrs = app('attrs');
-            cond attrs {
-                {'go_package': {'s': (s: go_package)}, ...}: go_package,
-                {'package': {'s': (s: package)}, ...}: //str.lower(package),
-            },
-    } || cond {
-        'name' <: (app => .@):
-            //str.lower($`${app('name')('part').a >> .s::}`),
+    cond app {
+        {'attrs': {'go_package': {'s': (s: go_package)}, ...}, ...}: go_package,
+        {'attrs': {'package': {'s': (s: package)}, ...}, ...}: //str.lower(package),
+        {'name': {'part': (:a)}, ...}: //str.lower($`${a >> .s::}`),
         _: app,
     };
 
-let pbPackage = \app
-    cond app {
-        {'attrs': {'go_pb_package': {'s': (s: pkg)}, ...}, ...}: {(
-            alias: `pb`,
-            package: pkg,
-        )}
-    };
+let pbPackage = \basepath \app
+    {(
+        alias: `pb`,
+        package: cond app('attrs') {
+            {'go_pb_package': {'s': (:s)}, ...}: s,
+            _: '${basepath}/???',  # TODO: what's the right package name?
+        },
+    )};
 
 let pbMethodInfo = \ep
     let {'name': (s: methodName), 'param': (a: [param]), 'stmt': (a: stmts), ...} = ep;
@@ -225,18 +220,15 @@ let module = \module
                 :target,
                 import: package(targetApp(target)),
                 pbImport: pbPackage(targetApp(target)),
+                app: (name: targetApp(target, 'name')),
             ));
 
     let depField = \(:import, :target, ...)
         let grpc = 'gRPC' <: sysl.patterns(targetApp(target));
         (
             :grpc,
-            name: $`${import}${name(import)}Service`,
-            type: $`${import}.${cond {
-                #grpc: $`${//str.title(target('part').a(0).s)}Client`,
-                grpc: `Service`,
-                _: `Service`,
-            }}`,
+            name: $`${import}Service`,
+            type: $`${import}.Service`,
         );
 
     (

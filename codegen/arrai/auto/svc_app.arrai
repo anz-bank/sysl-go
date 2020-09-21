@@ -8,16 +8,11 @@ let sysl = //{./sysl};
     let newServiceHandler = $`New${grpc}ServiceHandler`;
     let package = go.package(app);
     $`
-        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(app))}
+        ${go.prelude(app, clientDeps => $`${basepath}/${.import}`)}
 
         // DownstreamClients for ${appname}
         type DownstreamClients struct {
-            ${clientDeps orderby . >> cond {
-                goModule.depField(.).grpc:
-                    $`${.import}Client *${.import}.Client`,
-                _:
-                    $`${.import}Client *${.import}.Client`,
-            }::\i}
+            ${clientDeps orderby . >> $`${.import}Client *${.import}.Client`::\i}
         }
 
         ${cond {
@@ -72,9 +67,12 @@ let sysl = //{./sysl};
                 }
                 ${cond {
                     goModule.depField(.).grpc:
-                        $`${.import}Client := ${.import}.NewClient(
-                            ${.import}${prefix(.)}Client,
-                        )`,
+                        $`
+                            ${.import}Client, err := ${.import}.NewClient(${.import}${prefix(.)}Client)
+                            if err != nil {
+                                return nil, err
+                            }
+                        `,
                     _:
                         $`
                             ${.import}Client := &${.import}.Client{
