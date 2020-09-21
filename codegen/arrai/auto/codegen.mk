@@ -68,10 +68,12 @@ endif
 else
 
 SYSL_GO_ROOT = /sysl-go
+SYSL_GO_IMAGE = anzbank/sysl-go:v0.86.0
 DOCKER_RUN = $(DOCKER) run --rm -v $$(pwd):/work -w /work
-PROTOC  = $(DOCKER_RUN) anzbank/protoc-gen-sysl:v0.0.24
-SYSL    = $(DOCKER_RUN) anzbank/sysl:v0.185.0
-AUTOGEN = $(DOCKER_RUN) sysl-go $(AUTO)
+PROTOC    = $(DOCKER_RUN) anzbank/protoc-gen-sysl:v0.0.24
+SYSL      = $(DOCKER_RUN) --entrypoint sysl $(SYSL_GO_IMAGE)
+AUTOGEN   = $(DOCKER_RUN) --entrypoint "" $(SYSL_GO_IMAGE) $(AUTO)
+GOIMPORTS = $(DOCKER_RUN) --entrypoint goimports $(SYSL_GO_IMAGE)
 
 endif
 
