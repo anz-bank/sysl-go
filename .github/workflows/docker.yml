@@ -21,6 +21,7 @@ jobs:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASS }}
           repository: docker.io/anzbank/sysl-go
+          push: ${{ github.repository == 'anz-bank/sysl-go' }}  # only attempt to push if we are in the repo that has credentials.
           tag_with_ref: true
           add_git_labels: true
           tags: latest
