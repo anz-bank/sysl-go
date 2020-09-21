@@ -141,10 +141,10 @@ let sysl = //{./sysl};
                             handlerInitialiser := serviceHandler
 
                             interceptors := make([]grpc.UnaryServerInterceptor, 0) // TODO make configurable
-                            var adminServerConfig *config.CommonServerConfig = nil // TODO make configurable
-                            var publicServerConfig *config.CommonServerConfig = &(cfg.GenCode.Upstream.GRPC)
+                            var adminServerConfig *config.CommonServerConfig // TODO make configurable
+                            var publicServerConfig *config.CommonServerConfig = &cfg.GenCode.Upstream.GRPC
                             // TODO make it possible to disable handlers through configuration.
-                            enabledHandlers := []handlerinitialiser.GrpcHandlerInitialiser{handlerInitialiser, }
+                            enabledHandlers := []handlerinitialiser.GrpcHandlerInitialiser{handlerInitialiser}
                             manager := core.NewGRPCManagerShim(interceptors, adminServerConfig, publicServerConfig, enabledHandlers)
                             return manager, nil
                         `,
@@ -154,10 +154,10 @@ let sysl = //{./sysl};
                             handlerInitialiser := NewServiceRouter(genCallbacks, serviceHandler)
 
                             libraryConfig := &(cfg.Library)
-                            var adminServerConfig *config.CommonHTTPServerConfig = nil // TODO make configurable
+                            var adminServerConfig *config.CommonHTTPServerConfig // TODO make configurable
                             var publicServerConfig *config.CommonHTTPServerConfig = &(cfg.GenCode.Upstream.HTTP)
                             // TODO make it possible to disable handlers through configuration.
-                            enabledHandlers := []handlerinitialiser.HandlerInitialiser{handlerInitialiser, }
+                            enabledHandlers := []handlerinitialiser.HandlerInitialiser{handlerInitialiser}
                             manager := core.NewHTTPManagerShim(libraryConfig, adminServerConfig, publicServerConfig, enabledHandlers)
                             return manager, nil
                         `,
