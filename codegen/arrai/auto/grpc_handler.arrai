@@ -16,7 +16,7 @@ let sysl = //{./sysl};
     let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
     let goAppname = go.name(appname);
     $`
-        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(app))}
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(basepath, app))}
 
         // GrpcServiceHandler for ${appname} API
         type GrpcServiceHandler struct {
