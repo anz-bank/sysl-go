@@ -43,6 +43,7 @@ auto-test: # auto-test. experimental and likely unreliable.
 	$(MAKE) -C codegen/arrai/auto/tests/simple_rest/
 	$(MAKE) -C codegen/arrai/auto/tests/simple_rest_with_downstream/
 	$(MAKE) -C codegen/arrai/auto/tests/simple_grpc_with_downstream/
+	$(MAKE) -C codegen/arrai/auto/tests/rest_with_conditional_downstream/
 
 clean:
 	rm -f $(COVERFILE)
