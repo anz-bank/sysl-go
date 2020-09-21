@@ -4,3 +4,4 @@ coverage*.out
 /codegen/arrai/auto/tests/simple_rest/gen/pkg/servers/PingPong/
 /codegen/arrai/auto/tests/simple_rest_with_downstream/gen/pkg/servers/Gateway/
 /codegen/arrai/auto/tests/simple_grpc_with_downstream/gen/pkg/servers/Gateway/
+/codegen/arrai/auto/tests/rest_with_conditional_downstream/gen/pkg/servers/Gateway/

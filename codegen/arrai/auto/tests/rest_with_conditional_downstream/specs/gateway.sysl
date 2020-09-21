@@ -1,0 +1,21 @@
+import backend
+
+Gateway [package="gateway"]:
+    @go_package = "gateway"
+    @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_with_conditional_downstream"
+    @pb_package = "gateway.v1"
+
+    /fizzbuzz:
+        /{n <: int}:
+            GET:
+                For each integer n from one to one hundred:
+                    If n is a multiple of three but not a multiple of five:
+                        Backend <- POST /Fizz/{n}
+                    If n is a multiple of five but not a multiple of three:
+                        Backend <- POST /Buzz/{n}
+                    If n is a multiple of both three and five:
+                        Backend <- POST /FizzBuzz/{n}
+                return ok <: GatewayResponse
+
+    !type GatewayResponse:
+        content <: string

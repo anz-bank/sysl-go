@@ -1,0 +1,22 @@
+Backend [package="backend"]:
+    @go_package = "backend"
+    @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_with_conditional_downstream"
+    @pb_package = "backend.v1"
+
+    /Fizz/{n <: int}:
+        POST:
+            return ok <: Response
+
+    /Buzz/{n <: int}:
+        POST:
+            return ok <: Response
+
+    /FizzBuzz/{n <: int}:
+        POST:
+            return ok <: Response
+
+    !type Request:
+        n <: int
+    
+    !type Response:
+        content <: string
