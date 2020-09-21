@@ -7,9 +7,40 @@ let app = (
 
 let isPtr = \t t('opt')?:false;
 
+# flatten_statements(s : Statement) -> [Statement]
+# flatten_statements performs a deep traversal of all trees of Statement discoverable
+# inside the given Statement s, and returns a flattened array containing all of those
+# Statement values. The resulting array contains the given Statement s itself.
+# Here a Statement value is assumed to be encoded by running //encoding.json.decode
+# over a JSON encoded Statement pb message. Refer to sysl.proto for how a Statement messsage is defined.
+# Ref: https://github.com/anzx/sysl/blob/8bf5f024e2bcb0136cdc7cc9e9b8d8ddc79f4cd9/pkg/sysl/sysl.proto#L121-L136
+let rec flatten_statements = \s
+
+    # expand(s : Statement, tag : string) -> [Statement]
+    # expand performs a deep traversal of all trees of Statements discoverable under the key
+    # tag in the given Statement s and flattens them all into a single array of Statement.
+    let expand = \s \tag //seq.concat((s(tag)('stmt')?.a:[]) >> flatten_statements(.));
+
+    [s] +
+        # descend into any kind of Statement that might contain more Statements
+        cond s {
+            {'cond':_, ...} : expand(s, 'cond'),
+            {'loop':_, ...} : expand(s, 'loop'),
+            {'loop_n':_, ...} : expand(s, 'loop_n'),
+            {'foreach':_, ...} : expand(s, 'foreach'),
+            # alt is a special case as it does not directly contain child Statements but it contains grandchild Statements
+            {'alt':_, ...} : //seq.concat( (s('alt')?('choice')?.a:[]) >> //seq.concat( .('stmt')?.a:[] >> flatten_statements(.) ) ),
+            {'group':_, ...} : expand(s, 'group'),
+            _: [],
+        };
+
 let endpoint =
+    # calls(ep) evaluates to a sparse array of all call Statement values found inside that endpoint.
+    # This performs a deep traversal of statement trees, if any. Conditions are completely ignored,
+    # e.g. a call shielded behind a conditional statement of the form "IF false: " is still included.
+    # The result can be regarded as representing all calls that might conceivably occur.
     let calls = \ep
-        ep('stmt').a where cond .@item {{"call":_}: true} >> .('call');
+        //seq.concat(ep("stmt").a >> flatten_statements(.)) where cond .@item {{"call":_}: true} >> .('call');
 
     # `returns(ep) -> array((var: string, type: array(string)))`
     #
