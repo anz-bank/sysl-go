@@ -1,0 +1,18 @@
+import encoder_backend
+
+Gateway [package="gateway"]:
+    @go_package = "gateway"
+    @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_with_downstream_headers"
+    @pb_package = "gateway.v1"
+
+    /encode:
+        /{encoder_id<:string}:
+            POST (GatewayRequestRequest <: GatewayRequest [mediatype="application/json", ~body], x <: string [~header, ~optional, name="x"], y <: string [~header, ~required, name="y"]):
+                EncoderBackend <- POST /rot13
+                return ok <: GatewayResponse
+
+    !type GatewayRequest:
+        content <: string
+    
+    !type GatewayResponse:
+        content <: string
