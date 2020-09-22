@@ -68,10 +68,7 @@ let sysl = //{./sysl};
                 ${cond {
                     goModule.depField(.).grpc:
                         $`
-                            ${.import}Client, err := ${.import}.NewClient(${.import}${prefix(.)}Client)
-                            if err != nil {
-                                return nil, err
-                            }
+                            ${.import}Client := ${.import}.NewClient(${.import}${prefix(.)}Client)
                         `,
                     _:
                         $`
