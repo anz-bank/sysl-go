@@ -1,16 +1,23 @@
 let go = //{./go};
 
 \(:app, :appname, :basepath, :clientDeps, :endpoints, :fixPBPath, ...)
-    let methodSig = \ep
-        let {'name': (s: name), 'param': (a: [param]), 'stmt': (a: stmts), ...} = ep;
-        let {'name': (s: pname), 'type': ptype, ...} = param;
-        let rparam = $`${stmts
-            filter .@item {{'ret': _, ...}: .}
-            >> //seq.split(".", //seq.split(" ", .("ret")("payload").s)(2))(1)
-        ::}`;
-        $`${name}(ctx context.Context, ${pname} *pb.${go.leafType(ptype)}) (*pb.${rparam}, error)`;
 
-    let pbPath = fixPBPath(app('attrs')('source_path').@value.s);
+    # These are old definitions used prior to deb7738294f04d6628c07db08d5ba92367186c38
+    let methodInfos = endpoints => \(@:_, @item: (@:_, @value: ep)) go.pbMethodInfo(ep);
+    let appname = //str.title(appname);
+
+    # FIXME this methodSig definition added in deb7738294f04d6628c07db08d5ba92367186c38 is unused
+    # let methodSig = \ep
+    #     let {'name': (s: name), 'param': (a: [param]), 'stmt': (a: stmts), ...} = ep;
+    #     let {'name': (s: pname), 'type': ptype, ...} = param;
+    #     let rparam = $`${stmts
+    #         filter .@item {{'ret': _, ...}: .}
+    #         >> //seq.split(".", //seq.split(" ", .("ret")("payload").s)(2))(1)
+    #     ::}`;
+    #     $`${name}(ctx context.Context, ${pname} *pb.${go.leafType(ptype)}) (*pb.${rparam}, error)`;
+
+    # FIXME this pbPath definition added in deb7738294f04d6628c07db08d5ba92367186c38 breaks the gRPC smoke test and is unused
+    # let pbPath = fixPBPath(app('attrs')('source_path').@value.s);
 
     # TODO: sysl automapping between sysl types and protobuf types
     $`

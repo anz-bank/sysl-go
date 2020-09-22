@@ -65,12 +65,12 @@ let package = \app
         _: app,
     };
 
-let pbPackage = \basepath \app
+let pbPackage = \app
     {(
         alias: `pb`,
         package: cond app('attrs') {
             {'go_pb_package': {'s': (:s)}, ...}: s,
-            _: '${basepath}/???',  # TODO: what's the right package name?
+            _: '??basepath??/???',  # TODO: what's the right package name?
         },
     )};
 
