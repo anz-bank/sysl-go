@@ -1,0 +1,11 @@
+Backend [package="backend"]:
+    @go_package = "backend"
+    @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_error_downstream"
+    @pb_package = "backend.v1"
+
+    /doop:
+        POST:
+            return error <: ErrorResponse
+
+    !type ErrorResponse:
+        Error <: string
