@@ -3,6 +3,9 @@ let go = //{./go};
 (
     goName: //test.assert.equal("Foo")(go.name("foo")),
     goNameWithUnderscore: //test.assert.equal("Api_name")(go.name("api_name")),
+    goNameErrorGetsMangledToAvoidCollidingWithError: //test.assert.equal("Error_")(go.name("Error")),
+    goNameErrorrIsntMangled: //test.assert.equal("Errorr")(go.name("Errorr")),
+
     pbMethodInfoCanDeduceRequestType: //test.assert.equal("EncodingRequest")(
         go.pbMethodInfo(
             {
