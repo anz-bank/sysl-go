@@ -123,14 +123,13 @@ func Test_encryptionConfigUsed(t *testing.T) {
 
 	cfg := localSecureServer()
 
-	grpcServer, err := newGrpcServer(&cfg, nil)
-	require.NoError(t, err)
+	grpcServer := grpc.NewServer()
 	defer grpcServer.GracefulStop()
 	test.RegisterTestServiceServer(grpcServer, &TestServer{})
 
 	listener := makeGrpcListenFunc(ctx, grpcServer, cfg)
 	go func() {
-		err = listener()
+		err := listener()
 		require.NoError(t, err)
 	}()
 
@@ -176,7 +175,7 @@ func Test_serverUsesGivenLogger(t *testing.T) {
 func Test_libMakesCorrectHandlerCalls(t *testing.T) {
 	ctx, _ := testutil.NewTestContextWithLoggerHook()
 
-	handler := GrpcHandler{
+	manager := &GrpcHandler{
 		cfg: localServer(),
 		reg: ServerReg{
 			svr:           TestServer{},
@@ -185,8 +184,11 @@ func Test_libMakesCorrectHandlerCalls(t *testing.T) {
 		methodsCalled: make(map[string]bool),
 	}
 
-	listener, err := configurePublicGrpcServerListener(ctx, &handler)
+	// Adapt deprecated GrpcManager type as GrpcServerManager struct
+	grpcServerManager, err := newGrpcServerManagerFromGrpcManager(manager)
 	require.NoError(t, err)
+
+	listener := configurePublicGrpcServerListener(ctx, *grpcServerManager)
 	require.NotNil(t, listener)
 
 	go func() {
@@ -195,34 +197,8 @@ func Test_libMakesCorrectHandlerCalls(t *testing.T) {
 	}()
 
 	connectAndCheckReturn(t, grpc.WithInsecure())
-	require.True(t, handler.methodsCalled["Interceptors"])
-	require.True(t, handler.methodsCalled["EnabledGrpcHandlers"])
-	require.True(t, handler.methodsCalled["GrpcPublicServerConfig"])
-	require.True(t, handler.reg.methodsCalled["RegisterServer"])
-}
-
-func Test_NewGrpcServerWithValidConfig(t *testing.T) {
-	cfg := config.CommonServerConfig{
-		HostName: "host",
-		Port:     3000,
-	}
-	newServer, err := newGrpcServer(&cfg, nil)
-	require.NoError(t, err)
-	require.NotNil(t, newServer)
-}
-
-func Test_NewGrpcServerWithCustomInterceptor(t *testing.T) {
-	interceptor := func() grpc.UnaryServerInterceptor {
-		return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-			return handler(ctx, req)
-		}
-	}
-
-	cfg := config.CommonServerConfig{
-		HostName: "host",
-		Port:     3000,
-	}
-	newServer, err := newGrpcServer(&cfg, interceptor())
-	require.NoError(t, err)
-	require.NotNil(t, newServer)
+	require.True(t, manager.methodsCalled["Interceptors"])
+	require.True(t, manager.methodsCalled["EnabledGrpcHandlers"])
+	require.True(t, manager.methodsCalled["GrpcPublicServerConfig"])
+	require.True(t, manager.reg.methodsCalled["RegisterServer"])
 }

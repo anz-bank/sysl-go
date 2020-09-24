@@ -27,11 +27,11 @@ func TestServe(t *testing.T) {
 	assert.Error(t, Serve(
 		ConfigFileSystemOnto(context.Background(), memFs),
 		struct{}{},
-		func(ctx context.Context, config TestAppConfig) (*TestServiceInterface, *RestCallback, error) {
+		func(ctx context.Context, config TestAppConfig) (*TestServiceInterface, *Hooks, error) {
 			return &TestServiceInterface{}, nil, nil
 		},
 		&TestServiceInterface{},
-		func(cfg *config.DefaultConfig, serviceIntf interface{}, _ *RestCallback) (interface{}, error) {
+		func(cfg *config.DefaultConfig, serviceIntf interface{}, _ *Hooks) (interface{}, error) {
 			return nil, fmt.Errorf("not happening")
 		},
 	))

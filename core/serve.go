@@ -31,7 +31,7 @@ func ConfigFileSystemOnto(ctx context.Context, fs afero.Fs) context.Context {
 func Serve(
 	ctx context.Context,
 	downstreamConfig, createService, serviceInterface interface{},
-	newManager func(cfg *config.DefaultConfig, serviceIntf interface{}, callback *RestCallback) (interface{}, error),
+	newManager func(cfg *config.DefaultConfig, serviceIntf interface{}, hooks *Hooks) (interface{}, error),
 ) error {
 	MustTypeCheckCreateService(createService, serviceInterface)
 	customConfig := NewZeroCustomConfig(reflect.TypeOf(downstreamConfig), GetAppConfigType(createService))
@@ -63,9 +63,9 @@ func Serve(
 		return err.(error)
 	}
 	serviceIntf := createServiceResult[0].Interface()
-	restCallbackIntf := createServiceResult[1].Interface()
+	hooksIntf := createServiceResult[1].Interface()
 
-	manager, err := newManager(defaultConfig, serviceIntf, restCallbackIntf.(*RestCallback))
+	manager, err := newManager(defaultConfig, serviceIntf, hooksIntf.(*Hooks))
 	if err != nil {
 		return err
 	}
@@ -75,8 +75,8 @@ func Serve(
 	switch manager := manager.(type) {
 	case Manager: // aka RESTful service manager
 		opts = append(opts, WithRestManager(manager))
-	case GrpcManager:
-		opts = append(opts, WithGrpcManager(manager))
+	case GrpcServerManager:
+		opts = append(opts, WithGrpcServerManager(manager))
 	default:
 		panic(fmt.Errorf("Wrong type returned from newManager()"))
 	}
@@ -167,9 +167,9 @@ func MustTypeCheckCreateService(createService, serviceInterface interface{}) {
 		panic(fmt.Errorf("createService: second out param must be of type %v, not %v", serviceInterfaceType, cs.Out(0)))
 	}
 
-	var callback RestCallback
-	if reflect.TypeOf(&callback) != cs.Out(1) {
-		panic(fmt.Errorf("createService: second out param must be of type *RestCallback, not %v", cs.Out(1)))
+	var hooks Hooks
+	if reflect.TypeOf(&hooks) != cs.Out(1) {
+		panic(fmt.Errorf("createService: second out param must be of type *Hooks, not %v", cs.Out(1)))
 	}
 
 	var err error

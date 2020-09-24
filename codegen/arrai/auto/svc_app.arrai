@@ -89,7 +89,7 @@ let sysl = //{./sysl};
         //
         // createService must be a function with the following signature:
         //
-        //    func(ctx context.Context, config AppConfig) (*${package}.ServiceInterface, *core.RestCallback, error)
+        //    func(ctx context.Context, config AppConfig) (*${package}.ServiceInterface, *core.Hooks, error)
         //
         // where AppConfig is a type defined by the application programmer to
         // hold application-level configuration.
@@ -106,14 +106,14 @@ let sysl = //{./sysl};
                 func(
                     cfg *config.DefaultConfig,
                     serviceIntf interface{},
-                    callback *core.RestCallback,
+                    hooks *core.Hooks,
                 ) (interface{}, error) {
                     serviceInterface := serviceIntf.(*${serviceInterface})
 
                     genCallbacks := config.NewCallback(
                         &cfg.GenCode,
                         cfg.GenCode.Downstream.(*DownstreamConfig).ContextTimeout,
-                        callback.MapError,
+                        hooks.MapError,
                     )
 
                     ${cond {clientDeps: $`
@@ -133,16 +133,24 @@ let sysl = //{./sysl};
 
                     ${cond {
                         grpc: $`
-                            // Construct a GRPCManager to wrap our handlerInitialiser AKA serviceHandler.
-                            // TODO standardise terminology / generally refactor.
-                            handlerInitialiser := serviceHandler
+                            // Construct a GrpcServerManager to wrap our serviceHandler.
+                            var grpcPublicServerConfig *config.CommonServerConfig = &cfg.GenCode.Upstream.GRPC
 
-                            interceptors := make([]grpc.UnaryServerInterceptor, 0) // TODO make configurable
-                            var adminServerConfig *config.CommonServerConfig // TODO make configurable
-                            var publicServerConfig *config.CommonServerConfig = &cfg.GenCode.Upstream.GRPC
+                            // Here we allow the grpc.ServerOption configuration to be optionally extended or overridden.
+                            // See the documentation of core.Hooks for more information.
+                            grpcServerOptions, err := core.ResolveGrpcServerOptions(hooks, grpcPublicServerConfig)
+                            if err != nil {
+                                return nil, err
+                            }
+
                             // TODO make it possible to disable handlers through configuration.
-                            enabledHandlers := []handlerinitialiser.GrpcHandlerInitialiser{handlerInitialiser}
-                            manager := core.NewGRPCManagerShim(interceptors, adminServerConfig, publicServerConfig, enabledHandlers)
+                            enabledGrpcHandlers := []handlerinitialiser.GrpcHandlerInitialiser{serviceHandler, }
+
+                            manager := core.GrpcServerManager{
+                                GrpcServerOptions:      grpcServerOptions,
+                                EnabledGrpcHandlers:    enabledGrpcHandlers,
+                                GrpcPublicServerConfig: grpcPublicServerConfig,
+                            }
                             return manager, nil
                         `,
                         _: $`

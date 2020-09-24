@@ -38,7 +38,7 @@ func Encode(ctx context.Context, req *pb.EncodeRequest, client gateway.EncodeCli
 
 func application(ctx context.Context) error {
 	return gateway.Serve(ctx,
-		func(ctx context.Context, config AppConfig) (*gateway.GrpcServiceInterface, *core.RestCallback, error) {
+		func(ctx context.Context, config AppConfig) (*gateway.GrpcServiceInterface, *core.Hooks, error) {
 
 			// FIXME auto codegen and common.MapError don't align.
 			mapError := func(ctx context.Context, err error) *common.HTTPError {
@@ -48,7 +48,7 @@ func application(ctx context.Context) error {
 
 			return &gateway.GrpcServiceInterface{
 					Encode: Encode,
-				}, &core.RestCallback{
+				}, &core.Hooks{
 					MapError: mapError,
 				},
 				nil

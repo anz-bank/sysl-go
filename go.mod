@@ -8,7 +8,6 @@ require (
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/golang/protobuf v1.4.2
 	github.com/google/uuid v1.1.1
-	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/lib/pq v1.3.0
 	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/mitchellh/mapstructure v1.2.2
