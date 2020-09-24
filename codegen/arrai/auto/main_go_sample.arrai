@@ -19,7 +19,7 @@ let go = //{./go};
         \t\t// Define app-level config fields here.
         \t}
         \tlog.Fatal(${package}.Serve(context.Background(),
-        \t\tfunc(ctx context.Context, config AppConfig) (*${package}.ServiceInterface, *core.RestCallback, error) {
+        \t\tfunc(ctx context.Context, config AppConfig) (*${package}.ServiceInterface, *core.Hooks, error) {
         \t\t\t// Perform one-time setup based on config here.
         \t\t\treturn &${package}.ServiceInterface{
         \t\t\t\t// Add handlers here.

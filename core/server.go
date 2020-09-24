@@ -20,7 +20,8 @@ type ServerParams struct {
 	logrusLogger       *logrus.Logger
 	pkgLoggerConfigs   []log.Config
 	restManager        Manager
-	grpcManager        GrpcManager
+	grpcManager        GrpcManager // Deprecated: prefer grpcServerManager
+	grpcServerManager  *GrpcServerManager
 	prometheusRegistry *prometheus.Registry
 }
 type emptyWriter struct {
@@ -109,13 +110,25 @@ func (params *ServerParams) Start() error {
 		log.Info(ctx, "no PublicServerConfig for REST was found")
 	}
 
+	var grpcServerManager *GrpcServerManager
+	var err error
+	switch {
+	case params.grpcManager != nil && params.grpcServerManager != nil:
+		err = errors.New("WithGrpcServerManager and WithGrpcManager cannot both be set at the same time. Prefer WithGrpcServerManager")
+	case params.grpcManager != nil:
+		// backwards compatibility: adapt deprecated GrpcManager into GrpcServerManager
+		grpcServerManager, err = newGrpcServerManagerFromGrpcManager(params.grpcManager)
+	default:
+		grpcServerManager = params.grpcServerManager
+	}
+	if err != nil {
+		return err
+	}
+
 	// Make the listener function for the gRPC Public server.
-	if params.grpcManager != nil && params.grpcManager.GrpcPublicServerConfig() != nil {
+	if grpcServerManager != nil && grpcServerManager.GrpcPublicServerConfig != nil {
 		log.Info(ctx, "found GrpcPublicServerConfig for gRPC")
-		listenPublicGrpc, err := configurePublicGrpcServerListener(ctx, params.grpcManager)
-		if err != nil {
-			return err
-		}
+		listenPublicGrpc := configurePublicGrpcServerListener(ctx, *grpcServerManager)
 		listeners = append(listeners, listenPublicGrpc)
 		grpcIsRunning = true
 	} else {
@@ -203,6 +216,18 @@ func (o *grpcManagerOption) apply(params *ServerParams) {
 
 func WithGrpcManager(manager GrpcManager) ServerOption {
 	return &grpcManagerOption{manager}
+}
+
+type grpcServerManagerOption struct {
+	grpcServerManager GrpcServerManager
+}
+
+func (o *grpcServerManagerOption) apply(params *ServerParams) {
+	params.grpcServerManager = &(o.grpcServerManager)
+}
+
+func WithGrpcServerManager(manager GrpcServerManager) ServerOption {
+	return &grpcServerManagerOption{manager}
 }
 
 // Deprecated: Use ServerParams instead

@@ -47,7 +47,7 @@ func GetFizzbuzz(ctx context.Context, req *gateway.GetFizzbuzzRequest, client ga
 
 func application(ctx context.Context) error {
 	return gateway.Serve(ctx,
-		func(ctx context.Context, config AppConfig) (*gateway.ServiceInterface, *core.RestCallback, error) {
+		func(ctx context.Context, config AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
 			// FIXME auto codegen and common.MapError don't align.
 			mapError := func(ctx context.Context, err error) *common.HTTPError {
 				httpErr := common.MapError(ctx, err)
@@ -56,7 +56,7 @@ func application(ctx context.Context) error {
 
 			return &gateway.ServiceInterface{
 					GetFizzbuzz: GetFizzbuzz,
-				}, &core.RestCallback{
+				}, &core.Hooks{
 					MapError: mapError,
 				},
 				nil

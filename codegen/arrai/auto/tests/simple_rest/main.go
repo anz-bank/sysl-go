@@ -21,7 +21,7 @@ func GetPing(ctx context.Context, req *pingpong.GetPingRequest, client pingpong.
 
 func application(ctx context.Context) error {
 	return pingpong.Serve(ctx,
-		func(ctx context.Context, config AppConfig) (*pingpong.ServiceInterface, *core.RestCallback, error) {
+		func(ctx context.Context, config AppConfig) (*pingpong.ServiceInterface, *core.Hooks, error) {
 
 			// FIXME auto codegen and common.MapError don't align.
 			mapError := func(ctx context.Context, err error) *common.HTTPError {
@@ -31,7 +31,7 @@ func application(ctx context.Context) error {
 
 			return &pingpong.ServiceInterface{
 					GetPing: GetPing,
-				}, &core.RestCallback{
+				}, &core.Hooks{
 					MapError: mapError,
 				},
 				nil

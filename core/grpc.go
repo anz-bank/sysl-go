@@ -9,11 +9,11 @@ import (
 	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
-	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
 )
 
+// Deprecated: prefer GrpcServerManager.
 type GrpcManager interface {
 	Interceptors() []grpc.UnaryServerInterceptor
 	EnabledGrpcHandlers() []handlerinitialiser.GrpcHandlerInitialiser
@@ -21,23 +21,57 @@ type GrpcManager interface {
 	GrpcPublicServerConfig() *config.CommonServerConfig
 }
 
-func configurePublicGrpcServerListener(ctx context.Context, hl GrpcManager) (func() error, error) {
-	server, err := newGrpcServer(hl.GrpcPublicServerConfig(), hl.Interceptors()...)
+type GrpcServerManager struct {
+	GrpcServerOptions      []grpc.ServerOption
+	EnabledGrpcHandlers    []handlerinitialiser.GrpcHandlerInitialiser
+	GrpcPublicServerConfig *config.CommonServerConfig
+}
+
+func DefaultGrpcServerOptions(grpcPublicServerConfig *config.CommonServerConfig) ([]grpc.ServerOption, error) {
+	opts, err := config.ExtractGrpcServerOptions(grpcPublicServerConfig)
 	if err != nil {
 		return nil, err
 	}
+	opts = append(opts, grpc.ChainUnaryInterceptor(TraceidLogInterceptor))
+	return opts, nil
+}
+
+func newGrpcServerManagerFromGrpcManager(hl GrpcManager) (*GrpcServerManager, error) {
+	opts, err := extractGrpcServerOptionsFromGrpcManager(hl)
+	if err != nil {
+		return nil, err
+	}
+	return &GrpcServerManager{
+		GrpcServerOptions:      opts,
+		EnabledGrpcHandlers:    hl.EnabledGrpcHandlers(),
+		GrpcPublicServerConfig: hl.GrpcPublicServerConfig(),
+	}, nil
+}
+
+func extractGrpcServerOptionsFromGrpcManager(hl GrpcManager) ([]grpc.ServerOption, error) {
+	opts, err := config.ExtractGrpcServerOptions(hl.GrpcPublicServerConfig())
+	if err != nil {
+		return nil, err
+	}
+	opts = append(opts, grpc.ChainUnaryInterceptor(hl.Interceptors()...))
+	opts = append(opts, grpc.ChainUnaryInterceptor(TraceidLogInterceptor)) // seems wrong to have this last in chain, but that was old behaviour.
+	return opts, nil
+}
+
+func configurePublicGrpcServerListener(ctx context.Context, m GrpcServerManager) func() error {
+	server := grpc.NewServer(m.GrpcServerOptions...)
 
 	// Not sure if it is possible to register multiple servers
-	for _, h := range hl.EnabledGrpcHandlers() {
+	for _, h := range m.EnabledGrpcHandlers {
 		h.RegisterServer(ctx, server)
 	}
 
 	var listenPublic func() error
-	if len(hl.EnabledGrpcHandlers()) > 0 {
-		listenPublic = prepareGrpcServerListener(ctx, server, *hl.GrpcPublicServerConfig())
+	if len(m.EnabledGrpcHandlers) > 0 {
+		listenPublic = prepareGrpcServerListener(ctx, server, *m.GrpcPublicServerConfig)
 	}
 
-	return listenPublic, nil
+	return listenPublic
 }
 
 func makeGrpcListenFunc(ctx context.Context, server *grpc.Server, cfg config.CommonServerConfig) func() error {
@@ -86,21 +120,6 @@ func prepareGrpcServerListener(ctx context.Context, server *grpc.Server, commonC
 	return listener
 }
 
-func unaryInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func TraceidLogInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 	return handler(log.With("traceid", "traceid").Onto(ctx), req)
-}
-
-// NewGrpcServer creates a grpc.Server based on passed configuration.
-func newGrpcServer(cfg *config.CommonServerConfig, interceptors ...grpc.UnaryServerInterceptor) (*grpc.Server, error) {
-	opts, err := config.ExtractGrpcServerOptions(cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	interceptors = append(interceptors, unaryInterceptor)
-	opts = append(opts, grpcMiddleware.WithUnaryServerChain(
-		interceptors...,
-	))
-
-	return grpc.NewServer(opts...), nil
 }
