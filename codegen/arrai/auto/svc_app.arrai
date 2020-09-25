@@ -51,17 +51,30 @@ let sysl = //{./sysl};
         }}
 
         // BuildDownstreamClients ...
-        func BuildDownstreamClients(cfg *config.DefaultConfig) (*DownstreamClients, error) {
+        func BuildDownstreamClients(hooks *core.Hooks, cfg *config.DefaultConfig) (*DownstreamClients, error) {
             downstreamConfig := cfg.GenCode.Downstream.(*DownstreamConfig)
             if downstreamConfig == nil {
                 downstreamConfig = &DownstreamConfig{}
             }
             var err error
             ${clientDeps orderby . >> $`
-                ${.import}${prefix(.)}Client, err := core.BuildDownstream${prefix(.)}Client(
-                    ${.import:q},
-                    &downstreamConfig.${go.name(.import)},
-                )
+                ${cond {
+                    goModule.depField(.).grpc:
+                        $`
+                            ${.import}${prefix(.)}Client, err := core.BuildDownstream${prefix(.)}Client(
+                                ${.import:q},
+                                hooks,
+                                &downstreamConfig.${go.name(.import)},
+                            )
+                        `,
+                    _:
+                        $`
+                            ${.import}${prefix(.)}Client, err := core.BuildDownstream${prefix(.)}Client(
+                                ${.import:q},
+                                &downstreamConfig.${go.name(.import)},
+                            )
+                        `,
+                }}
                 if err != nil {
                     return nil, err
                 }
@@ -117,7 +130,7 @@ let sysl = //{./sysl};
                     )
 
                     ${cond {clientDeps: $`
-                        clients, err := BuildDownstreamClients(cfg)
+                        clients, err := BuildDownstreamClients(hooks, cfg)
                         if err != nil {
                             return nil, err
                         }

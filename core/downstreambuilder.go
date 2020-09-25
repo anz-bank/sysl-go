@@ -36,6 +36,13 @@ func buildDefaultHTTPClient(serviceName string) (*http.Client, error) {
 	return client, nil
 }
 
-func BuildDownstreamGRPCClient(_ string, cfg *config.CommonGRPCDownstreamData) (*grpc.ClientConn, error) {
-	return config.DefaultGRPCClient(cfg)
+// BuildDownstreamGRPCClient creates a grpc client connection to the target indicated by cfg.ServiceAddress.
+// The dial options can be customised by cfg or by hooks, see ResolveGrpcDialOptions for details. The
+// serviceName is the name of the target service. This function is intended to be called from generated code.
+func BuildDownstreamGRPCClient(serviceName string, hooks *Hooks, cfg *config.CommonGRPCDownstreamData) (*grpc.ClientConn, error) {
+	opts, err := ResolveGrpcDialOptions(serviceName, hooks, cfg)
+	if err != nil {
+		return nil, err
+	}
+	return grpc.Dial(cfg.ServiceAddress, opts...)
 }
