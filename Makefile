@@ -47,6 +47,7 @@ auto-test: # auto-test. experimental and likely unreliable.
 	$(MAKE) -C codegen/arrai/auto/tests/rest_with_downstream_headers/
 	$(MAKE) -C codegen/arrai/auto/tests/rest_error_downstream/
 	$(MAKE) -C codegen/arrai/auto/tests/grpc_custom_server_options/
+	$(MAKE) -C codegen/arrai/auto/tests/grpc_custom_dial_options/
 
 clean:
 	rm -f $(COVERFILE)

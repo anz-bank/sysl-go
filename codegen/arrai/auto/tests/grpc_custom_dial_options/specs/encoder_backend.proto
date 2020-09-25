@@ -1,0 +1,15 @@
+syntax  = "proto3";
+
+package encoder_backend;
+
+message EncodingResponse {
+    string content = 1;
+}
+
+message EncodingRequest {
+    string content = 1;
+}
+
+service EncoderBackend {
+    rpc Rot13 (EncodingRequest) returns (EncodingResponse);
+}
