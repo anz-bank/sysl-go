@@ -42,7 +42,7 @@ func DefaultGRPCClient(cfg *CommonGRPCDownstreamData) (*grpc.ClientConn, error) 
 
 	var opts []grpc.DialOption
 	if cfg.TLS != nil {
-		tlsConfig, err := makeSelfSignedTLSConfig(cfg.TLS)
+		tlsConfig, err := MakeTLSConfig(cfg.TLS)
 		if err != nil {
 			return nil, err
 		}
