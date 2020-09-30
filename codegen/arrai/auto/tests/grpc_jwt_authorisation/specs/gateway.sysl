@@ -1,0 +1,14 @@
+Gateway [package="gateway", ~gRPC]:
+    @go_package = "gateway"
+    @go_pb_package = "grpc_jwt_authorisation/gen/pb/gateway"
+    @pb_package = "gateway.v1"
+
+    Hello(GatewayRequest <: HelloRequest):
+        @authorisation_rule = "any(jwtHasScope(\"hello\"))"
+        return ok <: HelloResponse
+
+    !type HelloRequest: # codegen doesnt work if this isn't named MethodName + "Request"
+        content <: string
+    
+    !type HelloResponse: # codegen doesnt work if this isn't named MethodName + "Response"
+        content <: string

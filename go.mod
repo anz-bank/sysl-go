@@ -4,7 +4,6 @@ go 1.14
 
 require (
 	github.com/alecthomas/participle v0.6.0
-	github.com/alecthomas/repr v0.0.0-20200325044227-4184120f674c
 	github.com/anz-bank/pkg v0.0.11
 	github.com/anz-bank/sysl-catalog v1.4.185
 	github.com/go-chi/chi v4.1.2+incompatible
