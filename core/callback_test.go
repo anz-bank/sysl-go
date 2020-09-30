@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -12,9 +13,9 @@ import (
 func TestResolveGrpcServerOptionsDefaultCase(t *testing.T) {
 	hooks := &Hooks{}
 
-	opts, err := ResolveGrpcServerOptions(hooks, nil)
+	opts, err := ResolveGrpcServerOptions(context.Background(), hooks, nil)
 	require.NoError(t, err)
-	expectedOpts, err := DefaultGrpcServerOptions(nil)
+	expectedOpts, err := DefaultGrpcServerOptions(context.Background(), nil)
 	require.NoError(t, err)
 
 	// we want to check these things are the same, but they are things
@@ -26,12 +27,12 @@ func TestResolveGrpcServerOptionsCannotOverrideAndAddServerOptionsSimultaneously
 	// inconsistent config
 	hooks := &Hooks{
 		AdditionalGrpcServerOptions: []grpc.ServerOption{grpc.MaxRecvMsgSize(123)},
-		OverrideGrpcServerOptions: func(_ *config.CommonServerConfig) ([]grpc.ServerOption, error) {
+		OverrideGrpcServerOptions: func(_ context.Context, _ *config.CommonServerConfig) ([]grpc.ServerOption, error) {
 			return []grpc.ServerOption{grpc.MaxRecvMsgSize(123456)}, nil
 		},
 	}
 
-	_, err := ResolveGrpcServerOptions(hooks, nil)
+	_, err := ResolveGrpcServerOptions(context.Background(), hooks, nil)
 	require.Equal(t, "Hooks.AdditionalGrpcServerOptions and Hooks.OverrideGrpcServerOptions cannot both be set", err.Error())
 }
 
@@ -39,10 +40,10 @@ func TestResolveGrpcServerOptionsCanAddServerOptions(t *testing.T) {
 	hooks := &Hooks{
 		AdditionalGrpcServerOptions: []grpc.ServerOption{grpc.MaxRecvMsgSize(123)},
 	}
-	expectedOpts, _ := DefaultGrpcServerOptions(nil)
+	expectedOpts, _ := DefaultGrpcServerOptions(context.Background(), nil)
 	expectedOpts = append(expectedOpts, hooks.AdditionalGrpcServerOptions...)
 
-	opts, err := ResolveGrpcServerOptions(hooks, nil)
+	opts, err := ResolveGrpcServerOptions(context.Background(), hooks, nil)
 	require.NoError(t, err)
 
 	require.Equal(t, len(expectedOpts), len(opts))
@@ -52,13 +53,13 @@ func TestResolveGrpcServerOptionsCanAddServerOptions(t *testing.T) {
 func TestResolveGrpcServerOptionsCanOverrideServerOptions(t *testing.T) {
 	myCustomOptions := []grpc.ServerOption{grpc.MaxRecvMsgSize(123456), grpc.ReadBufferSize(1)}
 	hooks := &Hooks{
-		OverrideGrpcServerOptions: func(_ *config.CommonServerConfig) ([]grpc.ServerOption, error) {
+		OverrideGrpcServerOptions: func(_ context.Context, _ *config.CommonServerConfig) ([]grpc.ServerOption, error) {
 			return myCustomOptions, nil
 		},
 	}
 	expectedOpts := myCustomOptions
 
-	opts, err := ResolveGrpcServerOptions(hooks, nil)
+	opts, err := ResolveGrpcServerOptions(context.Background(), hooks, nil)
 	require.NoError(t, err)
 	require.Equal(t, expectedOpts, opts)
 }

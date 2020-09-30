@@ -15,41 +15,6 @@ let sysl = //{./sysl};
             ${clientDeps orderby . >> $`${.import}Client *${.import}.Client`::\i}
         }
 
-        ${cond {
-            grpc: $`
-                // BuildGrpcHandlerInitialiser ...
-                func BuildGrpcHandlerInitialiser(
-                    serviceInterface GrpcServiceInterface,
-                    callback core.GrpcGenCallback,
-                    downstream *DownstreamClients,
-                ) (handlerinitialiser.GrpcHandlerInitialiser, error) {
-                    return NewGrpcServiceHandler(
-                        callback,
-                        &serviceInterface,
-                        ${clientDeps orderby . >> $`downstream.${.import}Client,`::\i}
-                    )
-                }
-            `,
-            _: $`
-                // BuildRestHandlerInitialiser ...
-                func BuildRestHandlerInitialiser(
-                    serviceInterface ${serviceInterface},
-                    callback core.RestGenCallback,
-                    downstream *DownstreamClients,
-                ) (handlerinitialiser.HandlerInitialiser, error) {
-                    serviceHandler, err := NewServiceHandler(
-                        callback,
-                        &serviceInterface,
-                        ${clientDeps orderby . >> $`downstream.${.import}Client,`::\i}
-                    )
-                    if err != nil {
-                        return nil, err
-                    }
-                    return NewServiceRouter(callback, serviceHandler), nil
-                }
-            `,
-        }}
-
         // BuildDownstreamClients ...
         func BuildDownstreamClients(ctx context.Context, hooks *core.Hooks, cfg *config.DefaultConfig) (*DownstreamClients, error) {
             downstreamConfig := cfg.GenCode.Downstream.(*DownstreamConfig)
@@ -149,6 +114,9 @@ let sysl = //{./sysl};
                         }
                     `}}
                     serviceHandler, err := ${newServiceHandler}(
+                        ctx,
+                        cfg,
+                        hooks,
                         genCallbacks,
                         serviceInterface,
                         ${clientDeps orderby . >> $`clients.${.import}Client,`::\i}
@@ -164,7 +132,7 @@ let sysl = //{./sysl};
 
                             // Here we allow the grpc.ServerOption configuration to be optionally extended or overridden.
                             // See the documentation of core.Hooks for more information.
-                            grpcServerOptions, err := core.ResolveGrpcServerOptions(hooks, grpcPublicServerConfig)
+                            grpcServerOptions, err := core.ResolveGrpcServerOptions(ctx, hooks, grpcPublicServerConfig)
                             if err != nil {
                                 return nil, err
                             }
