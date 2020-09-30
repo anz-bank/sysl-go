@@ -9,3 +9,4 @@ coverage*.out
 /codegen/arrai/auto/tests/rest_error_downstream/gen/pkg/servers/Gateway/
 /codegen/arrai/auto/tests/grpc_custom_server_options/gen/pkg/servers/Gateway/
 /codegen/arrai/auto/tests/grpc_custom_dial_options/gen/pkg/servers/Gateway/
+/codegen/arrai/auto/tests/grpc_jwt_authorisation/gen/pkg/servers/Gateway/
