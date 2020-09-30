@@ -74,7 +74,7 @@ func application(ctx context.Context) error {
 			}
 			// example of using a hook to override gRPC server options
 			if cfg.SetOverrideGrpcServerOptions {
-				myHooks.OverrideGrpcServerOptions = func(_ *config.CommonServerConfig) ([]grpc.ServerOption, error) {
+				myHooks.OverrideGrpcServerOptions = func(_ context.Context, _ *config.CommonServerConfig) ([]grpc.ServerOption, error) {
 					return opts, nil
 				}
 			}

@@ -16,6 +16,9 @@ import (
 type DefaultConfig struct {
 	Library LibraryConfig `yaml:"library"`
 	GenCode GenCodeConfig `yaml:"genCode"`
+
+	// development config can be used to set some config options only appropriate for dev/test environments.
+	Development DevelopmentConfig `yaml:"development"`
 }
 
 // LoadConfig reads and validates a configuration loaded from file.

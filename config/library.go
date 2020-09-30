@@ -4,14 +4,16 @@ import (
 	"encoding/base64"
 
 	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/jwtauth"
 	"github.com/anz-bank/sysl-go/validator"
 	"github.com/sirupsen/logrus"
 )
 
 // LibraryConfig struct.
 type LibraryConfig struct {
-	Log       LogConfig `yaml:"log"`
-	Profiling bool      `yaml:"profiling"`
+	Log            LogConfig             `yaml:"log"`
+	Profiling      bool                  `yaml:"profiling"`
+	Authentication *AuthenticationConfig `yaml:"authentication"`
 }
 
 // LogConfig struct.
@@ -29,6 +31,11 @@ type SplunkConfig struct {
 	Target      string                 `yaml:"target" validate:"nonnil,url"`
 	Source      string                 `yaml:"source" validate:"nonnil"`
 	SourceType  string                 `yaml:"sourceType" validate:"nonnil"`
+}
+
+// AuthenticationConfig struct.
+type AuthenticationConfig struct {
+	JWTAuth *jwtauth.Config `yaml:"jwtauth"`
 }
 
 func (s *SplunkConfig) Token() string {

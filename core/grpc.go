@@ -27,11 +27,20 @@ type GrpcServerManager struct {
 	GrpcPublicServerConfig *config.CommonServerConfig
 }
 
-func DefaultGrpcServerOptions(grpcPublicServerConfig *config.CommonServerConfig) ([]grpc.ServerOption, error) {
+func DefaultGrpcServerOptions(ctx context.Context, grpcPublicServerConfig *config.CommonServerConfig) ([]grpc.ServerOption, error) {
 	opts, err := config.ExtractGrpcServerOptions(grpcPublicServerConfig)
 	if err != nil {
 		return nil, err
 	}
+
+	// Get a logger. This will EITHER return a custom logger if one was
+	// previously prepared and put in the context, OR it will magically
+	// create a new logger with default configuration that you're not
+	// able to control.
+	logger := log.From(ctx)
+	// Inject the logger into the ctx so we can log when we're serving rpc calls.
+	opts = append(opts, grpc.ChainUnaryInterceptor(makeLoggerInterceptor(logger)))
+
 	opts = append(opts, grpc.ChainUnaryInterceptor(TraceidLogInterceptor))
 	return opts, nil
 }
@@ -118,6 +127,13 @@ func prepareGrpcServerListener(ctx context.Context, server *grpc.Server, commonC
 	log.Infof(ctx, "configured gRPC listener for address: %s:%d", commonConfig.HostName, commonConfig.Port)
 
 	return listener
+}
+
+func makeLoggerInterceptor(logger log.Logger) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		ctx = log.WithLogger(logger).Onto(ctx)
+		return handler(ctx, req)
+	}
 }
 
 func TraceidLogInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
