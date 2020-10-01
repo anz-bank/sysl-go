@@ -58,8 +58,7 @@ func Serve(
 	createServiceResult := reflect.ValueOf(createService).Call(
 		[]reflect.Value{reflect.ValueOf(ctx), appConfig},
 	)
-	errIntf := createServiceResult[2].Interface()
-	if errIntf != nil {
+	if err := createServiceResult[2].Interface(); err != nil {
 		return err.(error)
 	}
 	serviceIntf := createServiceResult[0].Interface()
