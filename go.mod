@@ -22,5 +22,6 @@ require (
 	google.golang.org/grpc v1.29.0
 	google.golang.org/protobuf v1.23.0
 	gopkg.in/go-playground/validator.v9 v9.31.0
+	gopkg.in/square/go-jose.v2 v2.5.1
 	gopkg.in/yaml.v2 v2.3.0
 )
