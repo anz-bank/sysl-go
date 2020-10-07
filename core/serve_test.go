@@ -31,7 +31,7 @@ func TestServe(t *testing.T) {
 			return &TestServiceInterface{}, nil, nil
 		},
 		&TestServiceInterface{},
-		func(cfg *config.DefaultConfig, serviceIntf interface{}, _ *Hooks) (interface{}, error) {
+		func(ctx context.Context, cfg *config.DefaultConfig, serviceIntf interface{}, _ *Hooks) (interface{}, error) {
 			return nil, fmt.Errorf("not happening")
 		},
 	))
