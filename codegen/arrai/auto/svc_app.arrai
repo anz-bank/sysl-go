@@ -51,7 +51,7 @@ let sysl = //{./sysl};
         }}
 
         // BuildDownstreamClients ...
-        func BuildDownstreamClients(hooks *core.Hooks, cfg *config.DefaultConfig) (*DownstreamClients, error) {
+        func BuildDownstreamClients(ctx context.Context, hooks *core.Hooks, cfg *config.DefaultConfig) (*DownstreamClients, error) {
             downstreamConfig := cfg.GenCode.Downstream.(*DownstreamConfig)
             if downstreamConfig == nil {
                 downstreamConfig = &DownstreamConfig{}
@@ -117,6 +117,7 @@ let sysl = //{./sysl};
                 ctx,
                 &DownstreamConfig{}, createService, &${serviceInterface}{},
                 func(
+                    ctx context.Context,
                     cfg *config.DefaultConfig,
                     serviceIntf interface{},
                     hooks *core.Hooks,
@@ -130,7 +131,7 @@ let sysl = //{./sysl};
                     )
 
                     ${cond {clientDeps: $`
-                        clients, err := BuildDownstreamClients(hooks, cfg)
+                        clients, err := BuildDownstreamClients(ctx, hooks, cfg)
                         if err != nil {
                             return nil, err
                         }
