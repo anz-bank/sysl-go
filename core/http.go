@@ -164,6 +164,9 @@ func makeNewServer(router http.Handler, tlsConfig *tls.Config, serverConfig conf
 }
 
 func configureRouters(basePath string, mWare []func(handler http.Handler) http.Handler) (rootRouter, router *chi.Mux) {
+	if basePath == "" {
+		basePath = "/"
+	}
 	rootRouter = chi.NewRouter()
 	rootRouter.Use(mWare...)
 	router = rootRouter.Route(basePath, nil).(*chi.Mux)

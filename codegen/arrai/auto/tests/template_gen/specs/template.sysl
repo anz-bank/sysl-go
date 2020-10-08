@@ -1,0 +1,7 @@
+Template:
+    @docstring =:
+        | sysl file to test template generation
+
+    /endpoint:
+        GET:
+            ...

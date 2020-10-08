@@ -6,7 +6,7 @@ RUN apk add --no-cache bash git make
 # install sysl and arrai
 WORKDIR /temp
 RUN git clone --depth 1 --branch v0.207.0 https://github.com/anz-bank/sysl.git && make -C sysl install
-RUN git clone --depth 1 --branch v0.171.0 https://github.com/arr-ai/arrai.git && make -C arrai install
+RUN git clone --depth 1 --branch v0.186.0 https://github.com/arr-ai/arrai.git && make -C arrai install
 
 # install goimports
 RUN go get golang.org/x/tools/cmd/goimports

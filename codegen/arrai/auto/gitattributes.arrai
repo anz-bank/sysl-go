@@ -1,0 +1,6 @@
+$`
+docs/* linguist-documentation=true
+gen/* linguist-generated=true
+.github/workflows/* linguist-generated=true
+
+`

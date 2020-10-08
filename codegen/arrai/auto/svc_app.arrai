@@ -124,9 +124,21 @@ let sysl = //{./sysl};
                 ) (interface{}, error) {
                     serviceInterface := serviceIntf.(*${serviceInterface})
 
+                    if hooks == nil {
+                        hooks = &core.Hooks{}
+                    }
+
+                    var downstream *DownstreamConfig
+                    var is bool
+                    if downstream, is = cfg.GenCode.Downstream.(*DownstreamConfig); !is {
+                        downstream = &DownstreamConfig{
+                            ContextTimeout: 30,
+                        }
+                    }
+
                     genCallbacks := config.NewCallback(
                         &cfg.GenCode,
-                        cfg.GenCode.Downstream.(*DownstreamConfig).ContextTimeout,
+                        downstream.ContextTimeout,
                         hooks.MapError,
                     )
 
