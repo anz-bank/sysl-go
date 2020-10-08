@@ -127,7 +127,7 @@ genCode:
 var appCfgSix = []byte(`---
 app:
 development:
-  insecureDisableAllAuthorisationRules: true
+  disableAllAuthorisationRules: true
 genCode:
   upstream:
     grpc:

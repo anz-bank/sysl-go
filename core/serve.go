@@ -51,7 +51,7 @@ func Serve(
 	customConfigValue := reflect.ValueOf(customConfig).Elem()
 	library := customConfigValue.FieldByName("Library").Interface().(config.LibraryConfig)
 	genCodeValue := customConfigValue.FieldByName("GenCode")
-	development := customConfigValue.FieldByName("Development").Interface().(config.DevelopmentConfig)
+	development := customConfigValue.FieldByName("Development").Interface().(*config.DevelopmentConfig)
 	appConfig := customConfigValue.FieldByName("App")
 	upstream := genCodeValue.FieldByName("Upstream").Interface().(config.UpstreamConfig)
 	downstream := genCodeValue.FieldByName("Downstream").Interface()
