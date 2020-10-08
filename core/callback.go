@@ -128,9 +128,9 @@ func ResolveGrpcServerOptions(ctx context.Context, h *Hooks, grpcPublicServerCon
 }
 
 func ResolveGRPCAuthorisationRule(ctx context.Context, cfg *config.DefaultConfig, h *Hooks, endpointName string, authRuleExpression string) (authrules.Rule, error) {
-	if cfg.Development.InsecureDisableAllAuthorisationRules {
+	if cfg.Development != nil && cfg.Development.DisableAllAuthorisationRules {
 		// pkg logger API doesnt support warn.
-		log.Infof(ctx, "warning: development.insecureDisableAllAuthorisationRules is set, all authorisation rules are disabled, this is insecure and should not be used in production.")
+		log.Infof(ctx, "warning: development.disableAllAuthorisationRules is set, all authorisation rules are disabled, this is insecure and should not be used in production.")
 		return authrules.InsecureAlwaysGrantAccess, nil
 	}
 	var claimsBasedAuthRuleFactory func(authorisationRuleExpression string) (authrules.JWTClaimsBasedAuthorisationRule, error)
