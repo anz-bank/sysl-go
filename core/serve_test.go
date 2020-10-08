@@ -1,12 +1,15 @@
 package core
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"os"
+	"reflect"
 	"testing"
 
 	"github.com/anz-bank/sysl-go/config"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -35,4 +38,13 @@ func TestServe(t *testing.T) {
 			return nil, fmt.Errorf("not happening")
 		},
 	))
+}
+
+func TestDescribeYAMLForType(t *testing.T) {
+	t.Parallel()
+
+	// for logrus.Level
+	w := bytes.Buffer{}
+	describeYAMLForType(&w, reflect.TypeOf(logrus.Level(0)), map[reflect.Type]string{}, 0)
+	assert.Equal(t, " \x1b[1minfo\x1b[0m", w.String())
 }

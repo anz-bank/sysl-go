@@ -1,5 +1,8 @@
 SYSLGO_SYSL=specs/gateway.sysl
-SYSLGO_PACKAGES=Gateway EncoderBackend
+SYSLGO_PACKAGES=gateway encoderbackend
+SYSLGO_APP.gateway = Gateway
+SYSLGO_APP.encoderbackend = EncoderBackend
+SYMLINK=1
 PKGPATH=simple_grpc_with_downstream
 NO_DOCKER=1
 SYSL_GO_ROOT=../../../../../
@@ -9,7 +12,7 @@ SYSL_GO_ROOT=../../../../../
 # a dependency between the specs and the *.go files *inside*
 # gen/pkg/servers/Gateway. But, if we add those detailed rules,
 # it is not compatible with how codegen.mk is structured.
-test:	gen/pkg/servers/Gateway
+test:	cmd/Gateway/main.go cmd/Gateway/main_test.go gen/pkg/servers/Gateway
 	go test -v ./...
 PHONY: .test
 

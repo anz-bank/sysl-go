@@ -41,6 +41,9 @@ func Serve(
 	MustTypeCheckCreateService(createService, serviceInterface)
 	customConfig := NewZeroCustomConfig(reflect.TypeOf(downstreamConfig), GetAppConfigType(createService))
 	customConfig, err := LoadCustomConfig(ctx, customConfig)
+	if customConfig == nil {
+		return fmt.Errorf("configuration is empty")
+	}
 	if err != nil {
 		return err
 	}
@@ -232,6 +235,7 @@ func describeCustomConfig(w io.Writer, customConfig interface{}) {
 	describeYAMLForType(w, reflect.TypeOf(customConfig), commonTypes, 0)
 }
 
+//nolint:funlen
 func describeYAMLForType(w io.Writer, t reflect.Type, commonTypes map[reflect.Type]string, indent int) {
 	outf := func(format string, args ...interface{}) {
 		parts := strings.SplitAfterN(format, "\n", 2)
@@ -243,6 +247,11 @@ func describeYAMLForType(w io.Writer, t reflect.Type, commonTypes map[reflect.Ty
 		} else {
 			outf(" %s", alias)
 		}
+		return
+	}
+	switch reflect.New(t).Elem().Interface().(type) { //nolint:gocritic
+	case logrus.Level:
+		outf(" \033[1m%s\033[0m", logrus.StandardLogger().Level.String())
 		return
 	}
 	switch t.Kind() {

@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"os"
 
-	gateway "simple_rest_with_downstream/gen/pkg/servers/Gateway"
-	encoder_backend "simple_rest_with_downstream/gen/pkg/servers/Gateway/encoder_backend"
-
 	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/core"
+
+	gateway "simple_rest_with_downstream/gen/pkg/servers/Gateway"
+	encoder_backend "simple_rest_with_downstream/gen/pkg/servers/Gateway/encoder_backend"
 )
 
 type AppConfig struct{}

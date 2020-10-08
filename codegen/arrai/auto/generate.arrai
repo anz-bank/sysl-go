@@ -8,7 +8,6 @@ let generators = {
     "grpc_client.go":      //{./grpc_client},
     "grpc_handler.go":     //{./grpc_handler},
     "grpc_interface.go":   //{./grpc_interface},
-    "main.go.sample":      //{./main_go_sample},
     "requestrouter.go":    //{./svc_router},
     "service.go":          //{./svc_service},
     "servicehandler.go":   //{./svc_handler},
