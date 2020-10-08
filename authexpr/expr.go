@@ -63,9 +63,7 @@ func (e *OpExpr) Validate() error {
 			return ValidationFailed("not(...) OpExpr must be called with exactly one argument")
 		}
 		fallthrough
-	case "all":
-		fallthrough
-	case "any":
+	case "all", "any":
 	default:
 		return ValidationFailed("undefined OpExpr for name: %s", e.Name)
 	}
