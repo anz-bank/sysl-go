@@ -1,0 +1,14 @@
+let [_, x, i] = //os.args;
+let f = //seq.split('\n', //os.file(x) => (:.@, @char: .@byte));
+# TODO: handle app names with namespaces
+let re = //re.compile('^[^ \t]+[ \t]*:$');
+let trim = \. //seq.trim_suffix(' ', //seq.trim_suffix(':', .));
+let rec clean = \.
+    let cleaned = trim(.);
+    cond {
+        (//seq.has_suffix(' ', cleaned)): clean(cleaned),
+        _: cleaned,
+    }
+;
+# TODO: use convert to int when it's available
+(f where re.match(.@item) rank (:.@) >> clean(.))(//eval.value(i))?:''
