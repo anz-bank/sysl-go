@@ -1,4 +1,5 @@
-let [_, version] = //os.args;
+let [_, refs] = //os.args;
+let [_, _, version] = //seq.split('/', refs);
 $`
 # Master: github.com/anz-bank/sysl-go/codegen/arrai/auto/codegen.mk
 #
