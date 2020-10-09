@@ -25,5 +25,5 @@ jobs:
           tag_with_ref: true
           add_git_labels: true
           tags: latest
-          build_args: SYSLGO_VERSION=${GITHUB_REF#refs/*/}
+          build_args: SYSLGO_VERSION=${{ github.ref }}
           labels: org.opencontainers.image.revision=${{ github.sha }},org.opencontainers.image.url=https://sysl.io
