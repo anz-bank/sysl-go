@@ -1,5 +1,4 @@
-let [_, refs] = //os.args;
-let [_, _, version] = //seq.split('/', refs);
+let [_, version] = //os.args;
 $`
 # Master: github.com/anz-bank/sysl-go/codegen/arrai/auto/codegen.mk
 #
@@ -86,7 +85,7 @@ all: $(foreach app,$(SYSLGO_PACKAGES),$(SERVERS_ROOT)/$(app))
 model.json: $(SYSLGO_SYSL)
 	$(SYSL) pb --mode json $< > $@ || (rm $@ && false)
 
-$(SERVERS_ROOT)/%: model.json
+$(SERVERS_ROOT)/%: model.json codegen.mk
 	$(AUTOGEN) $* $(PKGPATH) $@ $< $(or $(SYSLGO_APP.$*),$*) =
 	find $@ -type d | xargs $(GOIMPORTS) -w
 	touch $@
