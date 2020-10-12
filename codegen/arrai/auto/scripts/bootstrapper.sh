@@ -52,8 +52,30 @@ if [ -z "$SYSL_APPS" ]; then
     done
 fi
 
+codegenVersion="${SYSLGO_VERSION##*/}"
+if [ -f "/work/codegen.mk" ]; then
+    versionLine=$(cat /work/codegen.mk | grep "anzbank/sysl-go:")
+    currentVersion="${versionLine##*:}"
+
+    if [ $codegenVersion != $currentVersion ]; then
+        status="Upgrade"
+        if [ "$codegenVersion" \< "$currentVersion" ]; then
+            status="Downgrade"
+        fi
+        if [ $status == "Downgrade" ]; then
+            printf "\e[1;33mWARNING\e[0m: Downgrading to an older version might cause misbehavior with codebase built using a newer version.\n"
+        fi
+        read -p "$status to version $codegenVersion of sysl-go? (y/N): " answer
+        if [ "$answer" == "N" -o "$answer" == "n" ]; then
+            codegenVersion="$currentVersion"
+        fi
+    fi
+fi
+
 cd /work
 arrai run --out=/work/Makefile /sysl-go/codegen/arrai/auto/makefile.arrai "$SYSL_FILE" $SYSL_APPS
-arrai run --out=/work/codegen.mk /sysl-go/codegen/arrai/auto/codegen.mk.arrai "$SYSLGO_VERSION"
-go mod init "$GO_MOD"
+arrai run --out=/work/codegen.mk /sysl-go/codegen/arrai/auto/codegen.mk.arrai "$codegenVersion"
+if [ ! -f "go.mod" ]; then
+    go mod init "$GO_MOD"
+fi
 printf "\e[1;32mCodegen ready!\e[0m To generate code, run make.\n"
