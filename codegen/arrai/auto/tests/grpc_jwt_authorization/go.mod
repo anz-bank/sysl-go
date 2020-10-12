@@ -1,4 +1,4 @@
-module grpc_jwt_authorisation
+module grpc_jwt_authorization
 
 go 1.14
 

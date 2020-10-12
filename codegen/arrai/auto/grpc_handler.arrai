@@ -15,8 +15,8 @@ let sysl = //{./sysl};
 )
     let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
     let goAppname = go.name(appname);
-    let authorisationRule = \ep cond ep {
-        {'attrs': {'authorisation_rule': {'s': (s: rule)}, ...}, ...} : rule,
+    let authorizationRule = \ep cond ep {
+        {'attrs': {'authorization_rule': {'s': (s: rule)}, ...}, ...} : rule,
     };
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(app))}
@@ -26,7 +26,7 @@ let sysl = //{./sysl};
             pb.Unimplemented${goAppname}Server
             genCallback         core.GrpcGenCallback
             serviceInterface    *GrpcServiceInterface
-            authorisationRules  map[string]authrules.Rule
+            authorizationRules  map[string]authrules.Rule
             ${clientDeps orderby . >> (goModule.depField(.) -> $`${.name} ${.type}`)::\i}
         }
 
@@ -46,23 +46,23 @@ let sysl = //{./sysl};
                 }
             `}}
 
-            authorisationRules := make(map[string]authrules.Rule)
+            authorizationRules := make(map[string]authrules.Rule)
             ${nonRestEndpoints >> \(@value: ep, ...)
                 let method = go.name(ep('name').s);
-                let ruleExpression = authorisationRule(ep);
-                cond {authorisationRule(ep): $`
-                    authRule${method}, authRuleErr := core.ResolveGRPCAuthorisationRule(ctx, cfg, hooks, "${method}", ${"`"+ruleExpression+"`"})
+                let ruleExpression = authorizationRule(ep);
+                cond {authorizationRule(ep): $`
+                    authRule${method}, authRuleErr := core.ResolveGRPCAuthorizationRule(ctx, cfg, hooks, "${method}", ${"`"+ruleExpression+"`"})
                     if authRuleErr != nil {
                         return nil, authRuleErr
                     }
-                    authorisationRules["${method}"] = authRule${method}
+                    authorizationRules["${method}"] = authRule${method}
                 `}
             ::}
 
             return &GrpcServiceHandler{
                 genCallback: genCallback,
                 serviceInterface: serviceInterface,
-                authorisationRules: authorisationRules,
+                authorizationRules: authorizationRules,
                 ${clientDeps orderby . >> (goModule.depField(.) -> $`${.name}: ${.name},`)::\i}
             }, nil
         }
@@ -83,11 +83,11 @@ let sysl = //{./sysl};
 
                     ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
                     defer cancel()
-                    ${cond {authorisationRule(ep): $`
-                        if _, ok := s.authorisationRules["${method}"]; !ok {
-                            return nil, status.Errorf(codes.Unimplemented, "authorisation rule for method ${method} not implemented")
+                    ${cond {authorizationRule(ep): $`
+                        if _, ok := s.authorizationRules["${method}"]; !ok {
+                            return nil, status.Errorf(codes.Unimplemented, "authorization rule for method ${method} not implemented")
                         }
-                        ctx, err := s.authorisationRules["${method}"](ctx)
+                        ctx, err := s.authorizationRules["${method}"](ctx)
                         if err != nil {
                             return nil, err
                         }

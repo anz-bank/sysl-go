@@ -89,10 +89,10 @@ type Hooks struct {
 	// It is an error to set both AdditionalGrpcServerOptions and OverrideGrpcServerOptions.
 	OverrideGrpcServerOptions func(ctx context.Context, grpcPublicServerConfig *config.CommonServerConfig) ([]grpc.ServerOption, error)
 
-	// OverrideMakeJWTClaimsBasedAuthorisationRule can be used to customise how authorisation rule
+	// OverrideMakeJWTClaimsBasedAuthorizationRule can be used to customise how authorization rule
 	// expressions are evaluated and used to decide if JWT claims are authorised. By default, if this
-	// hook is nil, then authrules.MakeDefaultJWTClaimsBasedAuthorisationRule is used.
-	OverrideMakeJWTClaimsBasedAuthorisationRule func(authorisationRuleExpression string) (authrules.JWTClaimsBasedAuthorisationRule, error)
+	// hook is nil, then authrules.MakeDefaultJWTClaimsBasedAuthorizationRule is used.
+	OverrideMakeJWTClaimsBasedAuthorizationRule func(authorizationRuleExpression string) (authrules.JWTClaimsBasedAuthorizationRule, error)
 }
 
 func ResolveGrpcDialOptions(serviceName string, h *Hooks, grpcDownstreamConfig *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {
@@ -127,18 +127,18 @@ func ResolveGrpcServerOptions(ctx context.Context, h *Hooks, grpcPublicServerCon
 	}
 }
 
-func ResolveGRPCAuthorisationRule(ctx context.Context, cfg *config.DefaultConfig, h *Hooks, endpointName string, authRuleExpression string) (authrules.Rule, error) {
-	if cfg.Development != nil && cfg.Development.DisableAllAuthorisationRules {
+func ResolveGRPCAuthorizationRule(ctx context.Context, cfg *config.DefaultConfig, h *Hooks, endpointName string, authRuleExpression string) (authrules.Rule, error) {
+	if cfg.Development != nil && cfg.Development.DisableAllAuthorizationRules {
 		// pkg logger API doesnt support warn.
-		log.Infof(ctx, "warning: development.disableAllAuthorisationRules is set, all authorisation rules are disabled, this is insecure and should not be used in production.")
+		log.Infof(ctx, "warning: development.disableAllAuthorizationRules is set, all authorization rules are disabled, this is insecure and should not be used in production.")
 		return authrules.InsecureAlwaysGrantAccess, nil
 	}
-	var claimsBasedAuthRuleFactory func(authorisationRuleExpression string) (authrules.JWTClaimsBasedAuthorisationRule, error)
+	var claimsBasedAuthRuleFactory func(authorizationRuleExpression string) (authrules.JWTClaimsBasedAuthorizationRule, error)
 	switch {
-	case h.OverrideMakeJWTClaimsBasedAuthorisationRule != nil:
-		claimsBasedAuthRuleFactory = h.OverrideMakeJWTClaimsBasedAuthorisationRule
+	case h.OverrideMakeJWTClaimsBasedAuthorizationRule != nil:
+		claimsBasedAuthRuleFactory = h.OverrideMakeJWTClaimsBasedAuthorizationRule
 	default:
-		claimsBasedAuthRuleFactory = authrules.MakeDefaultJWTClaimsBasedAuthorisationRule
+		claimsBasedAuthRuleFactory = authrules.MakeDefaultJWTClaimsBasedAuthorizationRule
 	}
 	claimsBasedAuthRule, err := claimsBasedAuthRuleFactory(authRuleExpression)
 	if err != nil {
@@ -156,11 +156,11 @@ func ResolveGRPCAuthorisationRule(ctx context.Context, cfg *config.DefaultConfig
 
 	// TODO(fletcher) this will start a new jwtauth.Authenticator with its own cache & threads running for each of our service's endpoints, we usually want a shared one.
 	if cfg == nil || cfg.Library.Authentication == nil || cfg.Library.Authentication.JWTAuth == nil {
-		return nil, fmt.Errorf("gRPC method %s requires a JWT-based authorisation rule, but there is no config for library.authentication.jwtauth", endpointName)
+		return nil, fmt.Errorf("gRPC method %s requires a JWT-based authorization rule, but there is no config for library.authentication.jwtauth", endpointName)
 	}
 	authenticator, err := jwtauth.AuthFromConfig(ctx, cfg.Library.Authentication.JWTAuth, httpClientFactory)
 	if err != nil {
 		return nil, err
 	}
-	return authrules.MakeGRPCJWTAuthorisationRule(claimsBasedAuthRule, authenticator)
+	return authrules.MakeGRPCJWTAuthorizationRule(claimsBasedAuthRule, authenticator)
 }

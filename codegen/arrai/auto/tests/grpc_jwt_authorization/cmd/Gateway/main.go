@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	pb "grpc_jwt_authorisation/gen/pb/gateway"
-	gateway "grpc_jwt_authorisation/gen/pkg/servers/Gateway"
+	pb "grpc_jwt_authorization/gen/pb/gateway"
+	gateway "grpc_jwt_authorization/gen/pkg/servers/Gateway"
 
 	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/core"

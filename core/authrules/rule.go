@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-// Rule is an authorisation rule that is is responsible for deciding
+// Rule is an authorization rule that is is responsible for deciding
 // if access to a resource should be allowed or denied.
 // If a Rule returns a nil error, this indicates access is allowed.
 // If a Rule returns a non-nil error, this indicates that either
