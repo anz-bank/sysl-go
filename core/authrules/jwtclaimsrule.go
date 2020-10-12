@@ -9,15 +9,15 @@ import (
 	"github.com/anz-bank/sysl-go/jwtauth/jwtgrpc"
 )
 
-// ClaimsBasedAuthorisationRule decides if access is approved or denied based on the given claims.
+// ClaimsBasedAuthorizationRule decides if access is approved or denied based on the given claims.
 // Returning true, nil indicates access is approved.
 // Returning false, nil indicates access is denied.
 // Returning *, err endicates an error occurred when evaluating the rule.
-type JWTClaimsBasedAuthorisationRule func(ctx context.Context, claims jwtauth.Claims) (bool, error)
+type JWTClaimsBasedAuthorizationRule func(ctx context.Context, claims jwtauth.Claims) (bool, error)
 
-func MakeDefaultJWTClaimsBasedAuthorisationRule(authorisationRuleExpression string) (JWTClaimsBasedAuthorisationRule, error) {
+func MakeDefaultJWTClaimsBasedAuthorizationRule(authorizationRuleExpression string) (JWTClaimsBasedAuthorizationRule, error) {
 	// compile the rule expression early so we can detect misconfiguration and fail early.
-	rootExpr, err := authexpr.CompileExpression(authorisationRuleExpression)
+	rootExpr, err := authexpr.CompileExpression(authorizationRuleExpression)
 	if err != nil {
 		return nil, err
 	}
@@ -29,9 +29,9 @@ func MakeDefaultJWTClaimsBasedAuthorisationRule(authorisationRuleExpression stri
 	}, nil
 }
 
-// MakeGRPCAuthorisationRule creates an authorisation Rule from a claims-based authorisation Rule
+// MakeGRPCAuthorizationRule creates an authorization Rule from a claims-based authorization Rule
 // and a jwtauth Authenticator.
-func MakeGRPCJWTAuthorisationRule(authRule JWTClaimsBasedAuthorisationRule, authenticator jwtauth.Authenticator) (Rule, error) {
+func MakeGRPCJWTAuthorizationRule(authRule JWTClaimsBasedAuthorizationRule, authenticator jwtauth.Authenticator) (Rule, error) {
 	return func(ctx context.Context) (context.Context, error) {
 		rawToken, err := jwtgrpc.GetBearerFromIncomingContext(ctx)
 		if err != nil {
@@ -45,7 +45,7 @@ func MakeGRPCJWTAuthorisationRule(authRule JWTClaimsBasedAuthorisationRule, auth
 		}
 		isAuthorised, err := authRule(ctx, claims)
 		if err != nil {
-			log.Debugf(ctx, "auth: error evaluating authorisation rule: %v", err)
+			log.Debugf(ctx, "auth: error evaluating authorization rule: %v", err)
 			return nil, err
 		}
 		if !isAuthorised {

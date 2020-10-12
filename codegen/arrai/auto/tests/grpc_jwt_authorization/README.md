@@ -1,12 +1,12 @@
-smoketest `grpc_jwt_authorisation`
+smoketest `grpc_jwt_authorization`
 =================================
 
-`grpc_jwt_authorisation` is a smoke test for the
+`grpc_jwt_authorization` is a smoke test for the
 auto generated code to test support for JWT-based
-authentication and authorisation to control access
+authentication and authorization to control access
 to generated gRPC methods.
 
-JWT authentication and authorisation dance:
+JWT authentication and authorization dance:
 
 ```
     C : client
@@ -33,8 +33,8 @@ resource server.
 During the smoke test we:
 
 * start with a sysl specification of the resource server that
-  contains an `@authorisation_rule` annotation describing
-  a JWT-based authorisation rule for one of its endpoints
+  contains an `@authorization_rule` annotation describing
+  a JWT-based authorization rule for one of its endpoints
 * use sysl-go auto to generate the code for this resource server
 * stand up a test token issuer and run the issuer as a http service
 * configure our resource server to trust the test token issuer

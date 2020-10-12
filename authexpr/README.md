@@ -1,11 +1,11 @@
 authexpr
 ========
 
-An authorisation expression parsing and evaluation library.
+An authorization expression parsing and evaluation library.
 
 ### Purpose
 
-This library allows rules to control authorisation to be defined as "authorisation expressions" in a simple language.
+This library allows rules to control authorization to be defined as "authorization expressions" in a simple language.
 
 For examples of syntax, see the unit tests in `expr_test.go`.
 

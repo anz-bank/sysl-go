@@ -2,7 +2,7 @@ SYSLGO_SYSL=specs/gateway.sysl
 SYSLGO_PACKAGES=gateway
 SYSLGO_APP.gateway = Gateway
 SYMLINK=1
-PKGPATH=grpc_jwt_authorisation
+PKGPATH=grpc_jwt_authorization
 NO_DOCKER=1
 SYSL_GO_ROOT=../../../../../
 

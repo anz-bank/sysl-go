@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	pb "grpc_jwt_authorisation/gen/pb/gateway"
+	pb "grpc_jwt_authorization/gen/pb/gateway"
 
 	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/config"
@@ -127,7 +127,7 @@ genCode:
 var appCfgSix = []byte(`---
 app:
 development:
-  disableAllAuthorisationRules: true
+  disableAllAuthorizationRules: true
 genCode:
   upstream:
     grpc:
@@ -192,7 +192,7 @@ func serveIssuerJKWS(addr string, issuer jwttest.Issuer) (stopServer func() erro
 	return stopServer
 }
 
-func TestJWTAuthorisationOfGRPCEndpoints(t *testing.T) {
+func TestJWTAuthorizationOfGRPCEndpoints(t *testing.T) {
 
 	keySize := 2048
 	trustedIssuer, err := jwttest.NewIssuer("izzy-the-sysl-go-test-issuer", keySize)
