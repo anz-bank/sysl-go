@@ -4,6 +4,9 @@ let sysl = //{./sysl};
 \(:app, :appname, :basepath, :clientDeps, :goModule, :hasDB, :module, :restEndpoints, ...)
     let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
     let dbimport = cond {hasDB: {(alias: "_", package: "github.com/mattn/go-sqlite3")}};
+    let authorizationRule = \ep cond ep {
+        {'attrs': {'authorization_rule': {'s': (s: rule)}, ...}, ...} : rule,
+    };
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | dbimport)}
 
@@ -27,6 +30,7 @@ let sysl = //{./sysl};
         type ServiceHandler struct {
             genCallback      core.RestGenCallback
             serviceInterface *ServiceInterface
+            authorizationRules  map[string]authrules.Rule
             ${cond {hasDB: $`DB *sql.DB`}}
             ${clientDeps orderby . >> (goModule.depField(.) -> $`${.name} ${.type}`)::\i}
         }
@@ -46,9 +50,24 @@ let sysl = //{./sysl};
                         return nil, dberr
                 }
             `}}
+
+            authorizationRules := make(map[string]authrules.Rule)
+            ${restEndpoints >> \(@value: ep, ...)
+                let method = go.methodName(ep);
+                let ruleExpression = authorizationRule(ep);
+                cond {authorizationRule(ep): $`
+                    authRule${method}, authRuleErr := core.ResolveRESTAuthorizationRule(ctx, cfg, hooks, "${method}", ${"`"+ruleExpression+"`"})
+                    if authRuleErr != nil {
+                        return nil, authRuleErr
+                    }
+                    authorizationRules["${method}"] = authRule${method}
+                `}
+            ::}
+
             return &ServiceHandler{
                 genCallback,
                 serviceInterface,
+                authorizationRules,
                 ${cond {hasDB: $`db,`}}
                 ${clientDeps orderby . >> $`${.import}${go.name(.import)}Service,`::\i}
             }, nil
@@ -81,6 +100,18 @@ let sysl = //{./sysl};
                     }
 
                     ctx := common.RequestHeaderToContext(r.Context(), r.Header)
+                    ${cond {authorizationRule(ep): $`
+                        if _, ok := s.authorizationRules["${method}"]; !ok {
+                            common.HandleError(r.Context(), w, common.InternalError, "authorization rule for method ${method} not implemented", nil, s.genCallback.MapError)
+                            return
+                        }
+                        ctx, authorizationErr := s.authorizationRules["${method}"](ctx)
+                        // TODO give HTTP-idiomatic 401 & 403 responses.
+                        if authorizationErr != nil {
+                            common.HandleError(ctx, w, common.UnauthorizedError, "Auth error", authorizationErr, s.genCallback.MapError)
+                            return
+                        }
+                    `}}
                     ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
                     var req ${method}Request
                     ${cond ep('restParams')('method').s {('POST', 'PUT'): $`

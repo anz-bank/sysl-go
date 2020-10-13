@@ -128,6 +128,14 @@ func ResolveGrpcServerOptions(ctx context.Context, h *Hooks, grpcPublicServerCon
 }
 
 func ResolveGRPCAuthorizationRule(ctx context.Context, cfg *config.DefaultConfig, h *Hooks, endpointName string, authRuleExpression string) (authrules.Rule, error) {
+	return resolveAuthorizationRule(ctx, cfg, h, endpointName, authRuleExpression, authrules.MakeGRPCJWTAuthorizationRule)
+}
+
+func ResolveRESTAuthorizationRule(ctx context.Context, cfg *config.DefaultConfig, h *Hooks, endpointName string, authRuleExpression string) (authrules.Rule, error) {
+	return resolveAuthorizationRule(ctx, cfg, h, endpointName, authRuleExpression, authrules.MakeRESTJWTAuthorizationRule)
+}
+
+func resolveAuthorizationRule(ctx context.Context, cfg *config.DefaultConfig, h *Hooks, endpointName string, authRuleExpression string, ruleFactory func(authRule authrules.JWTClaimsBasedAuthorizationRule, authenticator jwtauth.Authenticator) (authrules.Rule, error)) (authrules.Rule, error) {
 	if cfg.Development != nil && cfg.Development.DisableAllAuthorizationRules {
 		// pkg logger API doesnt support warn.
 		log.Infof(ctx, "warning: development.disableAllAuthorizationRules is set, all authorization rules are disabled, this is insecure and should not be used in production.")
@@ -154,13 +162,13 @@ func ResolveGRPCAuthorizationRule(ctx context.Context, cfg *config.DefaultConfig
 		return httpClient
 	}
 
-	// TODO(fletcher) this will start a new jwtauth.Authenticator with its own cache & threads running for each of our service's endpoints, we usually want a shared one.
+	// Note: this will start a new jwtauth.Authenticator with its own cache & threads running for each of our service's endpoints, we usually want a shared one.
 	if cfg == nil || cfg.Library.Authentication == nil || cfg.Library.Authentication.JWTAuth == nil {
-		return nil, fmt.Errorf("gRPC method %s requires a JWT-based authorization rule, but there is no config for library.authentication.jwtauth", endpointName)
+		return nil, fmt.Errorf("method/endpoint %s requires a JWT-based authorization rule, but there is no config for library.authentication.jwtauth", endpointName)
 	}
 	authenticator, err := jwtauth.AuthFromConfig(ctx, cfg.Library.Authentication.JWTAuth, httpClientFactory)
 	if err != nil {
 		return nil, err
 	}
-	return authrules.MakeGRPCJWTAuthorizationRule(claimsBasedAuthRule, authenticator)
+	return ruleFactory(claimsBasedAuthRule, authenticator)
 }
