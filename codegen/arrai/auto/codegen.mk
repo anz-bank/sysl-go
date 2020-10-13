@@ -81,7 +81,7 @@ all: $(foreach app,$(SYSLGO_PACKAGES),$(SERVERS_ROOT)/$(app))
 
 .INTERMEDIATE: model.json
 model.json: $(SYSLGO_SYSL)
-	$(SYSL) pb --mode json $< > $@ || (rm $@ && false)
+	$(SYSL) pb --mode json --root . $< > $@ || (rm $@ && false)
 
 $(SERVERS_ROOT)/%: model.json
 	$(AUTOGEN) $* $(PKGPATH) $@ $< $(or $(SYSLGO_APP.$*),$*) =
