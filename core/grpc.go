@@ -67,35 +67,42 @@ func extractGrpcServerOptionsFromGrpcManager(hl GrpcManager) ([]grpc.ServerOptio
 	return opts, nil
 }
 
-func configurePublicGrpcServerListener(ctx context.Context, m GrpcServerManager) func() error {
+func configurePublicGrpcServerListener(ctx context.Context, m GrpcServerManager) StoppableServer {
 	server := grpc.NewServer(m.GrpcServerOptions...)
-
 	// Not sure if it is possible to register multiple servers
 	for _, h := range m.EnabledGrpcHandlers {
 		h.RegisterServer(ctx, server)
 	}
-
-	var listenPublic func() error
-	if len(m.EnabledGrpcHandlers) > 0 {
-		listenPublic = prepareGrpcServerListener(ctx, server, *m.GrpcPublicServerConfig)
-	}
-
-	return listenPublic
+	return prepareGrpcServerListener(ctx, server, *m.GrpcPublicServerConfig)
 }
 
-func makeGrpcListenFunc(ctx context.Context, server *grpc.Server, cfg config.CommonServerConfig) func() error {
-	return func() error {
-		if cfg.TLS != nil {
-			log.Infof(ctx, "TLS configuration present. Preparing to serve gRPC/HTTPS for address: %s:%d", cfg.HostName, cfg.Port)
-		} else {
-			log.Infof(ctx, "TLS configuration NOT present. Preparing to serve gRPC/HTTP for address: %s:%d", cfg.HostName, cfg.Port)
-		}
-		lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", cfg.HostName, cfg.Port))
-		if err != nil {
-			return err
-		}
-		return server.Serve(lis)
+type grpcServer struct {
+	ctx    context.Context
+	cfg    config.CommonServerConfig
+	server *grpc.Server
+}
+
+func (s grpcServer) Start() error {
+	if s.cfg.TLS != nil {
+		log.Infof(s.ctx, "TLS configuration present. Preparing to serve gRPC/HTTPS for address: %s:%d", s.cfg.HostName, s.cfg.Port)
+	} else {
+		log.Infof(s.ctx, "TLS configuration NOT present. Preparing to serve gRPC/HTTP for address: %s:%d", s.cfg.HostName, s.cfg.Port)
 	}
+	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.cfg.HostName, s.cfg.Port))
+	if err != nil {
+		return err
+	}
+	return s.server.Serve(lis)
+}
+
+func (s grpcServer) GracefulStop() error {
+	s.server.GracefulStop()
+	return nil
+}
+
+func (s grpcServer) Stop() error {
+	s.server.Stop()
+	return nil
 }
 
 type logWriterInfo struct {
@@ -116,17 +123,15 @@ func (lw *logWriterError) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func prepareGrpcServerListener(ctx context.Context, server *grpc.Server, commonConfig config.CommonServerConfig) func() error {
+func prepareGrpcServerListener(ctx context.Context, server *grpc.Server, commonConfig config.CommonServerConfig) StoppableServer {
 	grpclog.SetLoggerV2(
 		grpclog.NewLoggerV2(
 			&logWriterInfo{logger: log.From(ctx)},
 			&logWriterInfo{logger: log.From(ctx)},
 			&logWriterError{logger: log.From(ctx)}))
 
-	listener := makeGrpcListenFunc(ctx, server, commonConfig)
 	log.Infof(ctx, "configured gRPC listener for address: %s:%d", commonConfig.HostName, commonConfig.Port)
-
-	return listener
+	return grpcServer{ctx: ctx, cfg: commonConfig, server: server}
 }
 
 func makeLoggerInterceptor(logger log.Logger) grpc.UnaryServerInterceptor {

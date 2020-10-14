@@ -19,7 +19,7 @@ type TestServiceInterface struct{}
 
 type TestAppConfig struct{}
 
-func TestServe(t *testing.T) {
+func TestNewServerReturnsErrorIfNewManagerReturnsError(t *testing.T) {
 	args := os.Args
 	defer func() { os.Args = args }()
 	os.Args = append(os.Args[:1], "config.yaml")
@@ -27,7 +27,7 @@ func TestServe(t *testing.T) {
 	memFs := afero.NewMemMapFs()
 	err := afero.Afero{Fs: memFs}.WriteFile("config.yaml", []byte(""), 0777)
 	require.NoError(t, err)
-	assert.Error(t, Serve(
+	srv, err := NewServer(
 		ConfigFileSystemOnto(context.Background(), memFs),
 		struct{}{},
 		func(ctx context.Context, config TestAppConfig) (*TestServiceInterface, *Hooks, error) {
@@ -37,7 +37,9 @@ func TestServe(t *testing.T) {
 		func(ctx context.Context, cfg *config.DefaultConfig, serviceIntf interface{}, _ *Hooks) (interface{}, error) {
 			return nil, fmt.Errorf("not happening")
 		},
-	))
+	)
+	assert.Nil(t, srv)
+	assert.Error(t, err)
 }
 
 func TestDescribeYAMLForType(t *testing.T) {

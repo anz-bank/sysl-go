@@ -78,7 +78,29 @@ let sysl = //{./sysl};
             ctx context.Context,
             createService interface{},
         ) {
-            err := core.Serve(
+            srv, err := NewServer(ctx, createService)
+            if err != nil {
+                log.Fatal(err)
+            }
+            err = srv.Start()
+            if err != nil {
+                log.Fatal(err)
+            }
+        }
+
+        // NewServer creates a new application server.
+        //
+        // createService must be a function with the following signature:
+        //
+        //    func(ctx context.Context, config AppConfig) (*${package}.ServiceInterface, *core.Hooks, error)
+        //
+        // where AppConfig is a type defined by the application programmer to
+        // hold application-level configuration.
+        func NewServer(
+            ctx context.Context,
+            createService interface{},
+        ) (core.StoppableServer, error) {
+            srv, err := core.NewServer(
                 ctx,
                 &DownstreamConfig{}, createService, &${serviceInterface}{},
                 func(
@@ -163,8 +185,6 @@ let sysl = //{./sysl};
                     }}
                 },
             )
-            if err != nil {
-                log.Fatal(err)
-            }
+            return srv, err
         }
     `

@@ -1,11 +1,16 @@
 package core
 
 import (
+	"context"
 	"crypto/tls"
+	"fmt"
 	"net/http"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/testutil"
@@ -16,6 +21,8 @@ import (
 	"github.com/anz-bank/sysl-go/config"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sethvargo/go-retry"
 )
 
 func newString(s string) *string {
@@ -174,4 +181,239 @@ func Test_SelectBasePath_DynamicEmptySelectsSpec(t *testing.T) {
 
 func Test_SelectBasePath_BothFilledSelectsDynamic(t *testing.T) {
 	assert.Equal(t, "/dynamic", SelectBasePath("/spec", "/dynamic"))
+}
+
+func TestHTTPStoppableServerCanBeHardStopped(t *testing.T) {
+	ctx := context.Background()
+	cfg := config.CommonHTTPServerConfig{
+		BasePath: "/",
+		Common: config.CommonServerConfig{
+			HostName: "localhost",
+			Port:     8081,
+			TLS:      nil,
+		},
+	}
+
+	h := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		fmt.Fprintf(w, "hello")
+	})
+
+	s := prepareServerListener(ctx, h, nil, cfg)
+
+	go func() {
+		err := s.Start()
+		require.Equal(t, http.ErrServerClosed, err)
+	}()
+
+	healthCheck := func() error {
+		resp, err := http.Get("http://localhost:8081/")
+		if err != nil {
+			return err
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("http StatusCode %d", resp.StatusCode)
+		}
+		return nil
+	}
+
+	// Wait for server to come up
+	backoff, err := retry.NewFibonacci(20 * time.Millisecond)
+	require.NoError(t, err)
+	backoff = retry.WithMaxDuration(5*time.Second, backoff)
+	err = retry.Do(ctx, backoff, func(ctx context.Context) error {
+		err := healthCheck()
+		if err != nil {
+			return retry.RetryableError(err)
+		}
+		return nil
+	})
+	require.NoError(t, err)
+
+	// Hard stop the server
+	err = s.Stop()
+	require.NoError(t, err)
+
+	// Check server has indeed stopped
+	require.Equal(t, http.ErrServerClosed, s.Start())
+}
+
+func TestHTTPStoppableServerCanBeGracefullyStopped(t *testing.T) {
+	ctx := context.Background()
+	cfg := config.CommonHTTPServerConfig{
+		BasePath: "/",
+		Common: config.CommonServerConfig{
+			HostName: "localhost",
+			Port:     8081,
+			TLS:      nil,
+		},
+	}
+
+	// use these channels as "side-channels" so we can sense when server
+	// began processing a slow request and then control how long it
+	// takes until it "completes" processing and begins to write a
+	// response
+	started := make(chan struct{})
+	complete := make(chan struct{})
+	gotResponse := make(chan struct{})
+
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slowMode := strings.HasSuffix(r.URL.String(), "slow")
+		if slowMode {
+			started <- struct{}{}
+			// wait, pretending to busily compute, until we're told to complete
+			<-complete
+		}
+		fmt.Fprintf(w, "hello")
+	})
+
+	s := prepareServerListener(ctx, h, nil, cfg)
+
+	go func() {
+		err := s.Start()
+		require.Equal(t, http.ErrServerClosed, err)
+	}()
+
+	healthCheck := func(suffix string) error {
+		resp, err := http.Get("http://localhost:8081/" + suffix)
+		if err != nil {
+			return err
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("http StatusCode %d", resp.StatusCode)
+		}
+		return nil
+	}
+
+	// Wait for server to come up
+	backoff, err := retry.NewFibonacci(20 * time.Millisecond)
+	require.NoError(t, err)
+	backoff = retry.WithMaxDuration(5*time.Second, backoff)
+	err = retry.Do(ctx, backoff, func(ctx context.Context) error {
+		err := healthCheck("")
+		if err != nil {
+			return retry.RetryableError(err)
+		}
+		return nil
+	})
+	require.NoError(t, err)
+
+	// make an unusally slow request
+	go func() {
+		defer func() {
+			gotResponse <- struct{}{}
+		}()
+		err := healthCheck("slow")
+		require.NoError(t, err)
+	}()
+
+	// wait for server to begin processing a "slow" request
+	<-started
+
+	go func() {
+		// FIXME no guarantee the graceful stop operation starts happening
+		// before we've received a response to the slow request.
+		err = s.GracefulStop()
+		require.NoError(t, err)
+	}()
+
+	// let server begin writing response to "slow" request
+	complete <- struct{}{}
+
+	// wait until we got a response
+	<-gotResponse
+
+	// Check server has indeed stopped
+	require.Equal(t, http.ErrServerClosed, s.Start())
+}
+
+func TestHTTPStoppableServerGracefulStopTimeout(t *testing.T) {
+	ctx := context.Background()
+	cfg := config.CommonHTTPServerConfig{
+		BasePath: "/",
+		Common: config.CommonServerConfig{
+			HostName: "localhost",
+			Port:     8081,
+			TLS:      nil,
+		},
+	}
+
+	// use this channel as a side-channel so we can sense when server
+	// began processing a slow request
+	started := make(chan struct{})
+
+	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		slowMode := strings.HasSuffix(r.URL.String(), "slow")
+		if slowMode {
+			started <- struct{}{}
+
+			// wait, pretending to busily compute, until the request is cancelled.
+			<-r.Context().Done()
+			return
+		}
+		fmt.Fprintf(w, "hello")
+	})
+
+	s := prepareServerListener(ctx, h, nil, cfg)
+	s.gracefulStopTimeout = 10 * time.Millisecond
+
+	go func() {
+		err := s.Start()
+		require.Equal(t, http.ErrServerClosed, err)
+	}()
+
+	healthCheck := func(suffix string) error {
+		resp, err := http.Get("http://localhost:8081/" + suffix)
+		if err != nil {
+			return err
+		}
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("http StatusCode %d", resp.StatusCode)
+		}
+		return nil
+	}
+
+	// Wait for server to come up
+	backoff, err := retry.NewFibonacci(20 * time.Millisecond)
+	require.NoError(t, err)
+	backoff = retry.WithMaxDuration(5*time.Second, backoff)
+	err = retry.Do(ctx, backoff, func(ctx context.Context) error {
+		err := healthCheck("")
+		if err != nil {
+			return retry.RetryableError(err)
+		}
+		return nil
+	})
+	require.NoError(t, err)
+
+	// make an unusally slow request that will actually never get served
+	done := make(chan struct{})
+	go func() {
+		defer func() {
+			done <- struct{}{}
+		}()
+		err := healthCheck("slow")
+		// since we're making a request to localhost we should be lucky
+		// enough to get told that the server has rudely closed the
+		// connection before sending a HTTP response.
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "EOF")
+	}()
+
+	// wait for server to begin processing the "slow" request
+	<-started
+
+	go func() {
+		// FIXME no guarantee this call happens before we let the "complete" the slow request
+		// tell server to gracefully stop
+		err = s.GracefulStop()
+		require.NoError(t, err)
+	}()
+
+	<-done
+
+	// Check server has indeed stopped
+	require.Equal(t, http.ErrServerClosed, s.Start())
 }
