@@ -95,7 +95,7 @@ let sysl = //{./sysl};
 
                     var downstream *DownstreamConfig
                     var is bool
-                    if downstream, is = cfg.GenCode.Downstream.(*DownstreamConfig); !is {
+                    if downstream, is = cfg.GenCode.Downstream.(*DownstreamConfig); !is || downstream == nil {
                         downstream = &DownstreamConfig{
                             ContextTimeout: 30,
                         }
