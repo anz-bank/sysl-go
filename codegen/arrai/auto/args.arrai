@@ -1,0 +1,11 @@
+let [_, outDir, repo, path, json, appname, pbbase] = //os.args;
+let json = cond json {"-": //os.stdin, _: //os.file(json)};
+
+(
+    :outDir,
+    :repo,
+    :path,
+    :json,
+    :appname,
+    :pbbase,
+)

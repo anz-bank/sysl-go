@@ -1,0 +1,17 @@
+\fixPBPath \config \apps
+    let (:basepath, :module, :app, ...) = config;
+    let generate                        = //{./generate};
+    let (:package, ...)                 = //{./go};
+    let (:patterns, ...)                = //{./sysl};
+    let type                            = cond {'gRPC' <: patterns(app): 'grpc-app', _: 'rest-app'};
+    
+    (
+        ifExists: 'replace',
+        dir:
+            generate.generate(config, generate.groups(type))
+            +> (apps => \(@: _, @value: app)
+                let config = generate.config((:basepath, :module, :app, :fixPBPath));
+                let type = cond {'gRPC' <: patterns(app): 'grpc-client', _: 'rest-client'};
+                (@: package(app), @value: generate.generate(config, generate.groups(type)))
+            ),
+    )
