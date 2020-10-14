@@ -83,16 +83,16 @@ func (params *ServerParams) Start() error {
 
 	var restIsRunning, grpcIsRunning bool
 
-	listeners := make([]func() error, 0)
+	servers := make([]StoppableServer, 0)
 
 	// Make the listener function for the REST Admin server
 	if params.restManager != nil && params.restManager.AdminServerConfig() != nil {
 		log.Info(ctx, "found AdminServerConfig for REST")
-		listenAdmin, err := configureAdminServerListener(ctx, params.restManager, params.prometheusRegistry, mWare.admin)
+		serverAdmin, err := configureAdminServerListener(ctx, params.restManager, params.prometheusRegistry, mWare.admin)
 		if err != nil {
 			return err
 		}
-		listeners = append(listeners, listenAdmin)
+		servers = append(servers, serverAdmin)
 	} else {
 		log.Info(ctx, "no AdminServerConfig for REST was found")
 	}
@@ -100,11 +100,11 @@ func (params *ServerParams) Start() error {
 	// Make the listener function for the REST Public server
 	if params.restManager != nil && params.restManager.PublicServerConfig() != nil {
 		log.Info(ctx, "found PublicServerConfig for REST")
-		listenPublic, err := configurePublicServerListener(ctx, params.restManager, mWare.public)
+		serverPublic, err := configurePublicServerListener(ctx, params.restManager, mWare.public)
 		if err != nil {
 			return err
 		}
-		listeners = append(listeners, listenPublic)
+		servers = append(servers, serverPublic)
 		restIsRunning = true
 	} else {
 		log.Info(ctx, "no PublicServerConfig for REST was found")
@@ -126,10 +126,10 @@ func (params *ServerParams) Start() error {
 	}
 
 	// Make the listener function for the gRPC Public server.
-	if grpcServerManager != nil && grpcServerManager.GrpcPublicServerConfig != nil {
+	if grpcServerManager != nil && grpcServerManager.GrpcPublicServerConfig != nil && len(grpcServerManager.EnabledGrpcHandlers) > 0 {
 		log.Info(ctx, "found GrpcPublicServerConfig for gRPC")
-		listenPublicGrpc := configurePublicGrpcServerListener(ctx, *grpcServerManager)
-		listeners = append(listeners, listenPublicGrpc)
+		serverPublicGrpc := configurePublicGrpcServerListener(ctx, *grpcServerManager)
+		servers = append(servers, serverPublicGrpc)
 		grpcIsRunning = true
 	} else {
 		log.Info(ctx, "no GrpcPublicServerConfig for gRPC was found")
@@ -142,12 +142,12 @@ func (params *ServerParams) Start() error {
 		panic(err)
 	}
 
-	// Run all listeners for all configured servers and block until the first one terminates.
+	// Start all configured servers and block until the first one terminates.
 	errChan := make(chan error, 1)
-	for i := range listeners {
-		listener := listeners[i]
+	for i := range servers {
+		server := servers[i]
 		go func() {
-			errChan <- listener()
+			errChan <- server.Start()
 		}()
 	}
 	return <-errChan

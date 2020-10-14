@@ -62,7 +62,7 @@ genCode:
   upstream:
     grpc:
       hostName: "localhost"
-      port: 9022 # FIXME no guarantee this port is free
+      port: 9021 # FIXME no guarantee this port is free
   downstream:
     contextTimeout: "30s"
 `)
@@ -81,7 +81,7 @@ genCode:
   upstream:
     grpc:
       hostName: "localhost"
-      port: 9023 # FIXME no guarantee this port is free
+      port: 9021 # FIXME no guarantee this port is free
   downstream:
     contextTimeout: "30s"
 `)
@@ -100,7 +100,7 @@ genCode:
   upstream:
     grpc:
       hostName: "localhost"
-      port: 9024 # FIXME no guarantee this port is free
+      port: 9021 # FIXME no guarantee this port is free
   downstream:
     contextTimeout: "30s"
 `)
@@ -119,7 +119,7 @@ genCode:
   upstream:
     grpc:
       hostName: "localhost"
-      port: 9025 # FIXME no guarantee this port is free
+      port: 9021 # FIXME no guarantee this port is free
   downstream:
     contextTimeout: "30s"
 `)
@@ -132,7 +132,7 @@ genCode:
   upstream:
     grpc:
       hostName: "localhost"
-      port: 9026 # FIXME no guarantee this port is free
+      port: 9021 # FIXME no guarantee this port is free
   downstream:
     contextTimeout: "30s"
 `)
@@ -288,8 +288,23 @@ func TestJWTAuthorizationOfGRPCEndpoints(t *testing.T) {
 			defer func() { os.Args = args }()
 			os.Args = []string{"./gateway.out", "config.yaml"}
 
-			// Start gateway application running as server
-			go application(ctx)
+
+			appServer, err := newAppServer(ctx)
+			require.NoError(t, err)
+			defer func() {
+				err := appServer.Stop()
+				if err != nil {
+					panic(err)
+				}
+			}()
+
+			// Start gateway application server
+			go func() {
+				err := appServer.Start()
+				if err != nil {
+					panic(err)
+				}
+			}()
 
 			isResponseExpected := func(response string, err error) bool {
 				if len(scenario.expectedError) > 0 {
@@ -333,7 +348,6 @@ func TestJWTAuthorizationOfGRPCEndpoints(t *testing.T) {
 					require.Contains(t, actualResponse, expectedFragment)
 				}
 			}
-			// FIXME how do we stop the application server?
 		})
 	}
 }

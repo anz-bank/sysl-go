@@ -107,13 +107,13 @@ func connectAndCheckReturn(t *testing.T, securityOption grpc.DialOption) {
 func Test_makeGrpcListenFuncListens(t *testing.T) {
 	ctx, _ := testutil.NewTestContextWithLoggerHook()
 
-	grpcServer := grpc.NewServer()
-	defer grpcServer.GracefulStop()
-	test.RegisterTestServiceServer(grpcServer, &TestServer{})
+	s := grpc.NewServer()
+	defer s.GracefulStop()
+	test.RegisterTestServiceServer(s, &TestServer{})
 
-	listener := makeGrpcListenFunc(ctx, grpcServer, localServer())
+	srv := grpcServer{ctx: ctx, cfg: localServer(), server: s}
 	go func() {
-		err := listener()
+		err := srv.Start()
 		require.NoError(t, err)
 	}()
 
@@ -126,13 +126,13 @@ func Test_encryptionConfigUsed(t *testing.T) {
 
 	cfg := localSecureServer()
 
-	grpcServer := grpc.NewServer()
-	defer grpcServer.GracefulStop()
-	test.RegisterTestServiceServer(grpcServer, &TestServer{})
+	s := grpc.NewServer()
+	defer s.GracefulStop()
+	test.RegisterTestServiceServer(s, &TestServer{})
 
-	listener := makeGrpcListenFunc(ctx, grpcServer, cfg)
+	srv := grpcServer{ctx: ctx, cfg: cfg, server: s}
 	go func() {
-		err := listener()
+		err := srv.Start()
 		require.NoError(t, err)
 	}()
 
@@ -150,13 +150,13 @@ func Test_serverUsesGivenLogger(t *testing.T) {
 
 	ctx, hook := testutil.NewTestContextWithLoggerHook()
 
-	grpcServer := grpc.NewServer()
-	defer grpcServer.GracefulStop()
-	test.RegisterTestServiceServer(grpcServer, &TestServer{})
+	s := grpc.NewServer()
+	defer s.GracefulStop()
+	test.RegisterTestServiceServer(s, &TestServer{})
 
-	listener := prepareGrpcServerListener(ctx, grpcServer, localServer())
+	srv := prepareGrpcServerListener(ctx, s, localServer())
 	go func() {
-		err := listener()
+		err := srv.Start()
 		require.NoError(t, err)
 	}()
 
@@ -191,11 +191,13 @@ func Test_libMakesCorrectHandlerCalls(t *testing.T) {
 	grpcServerManager, err := newGrpcServerManagerFromGrpcManager(manager)
 	require.NoError(t, err)
 
-	listener := configurePublicGrpcServerListener(ctx, *grpcServerManager)
-	require.NotNil(t, listener)
-
+	srv := configurePublicGrpcServerListener(ctx, *grpcServerManager)
+	require.NotNil(t, srv)
+	defer func() {
+		_ = srv.Stop()
+	}()
 	go func() {
-		err := listener()
+		err := srv.Start()
 		require.NoError(t, err)
 	}()
 

@@ -20,6 +20,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
+const (
+	defaultGracefulStopTimeout = 3 * time.Minute
+)
+
 type Manager interface {
 	EnabledHandlers() []handlerinitialiser.HandlerInitialiser
 	LibraryConfig() *config.LibraryConfig
@@ -32,7 +36,7 @@ type middlewareCollection struct {
 	public []func(handler http.Handler) http.Handler
 }
 
-func configureAdminServerListener(ctx context.Context, hl Manager, promRegistry *prometheus.Registry, mWare []func(handler http.Handler) http.Handler) (func() error, error) {
+func configureAdminServerListener(ctx context.Context, hl Manager, promRegistry *prometheus.Registry, mWare []func(handler http.Handler) http.Handler) (StoppableServer, error) {
 	rootAdminRouter, adminRouter := configureRouters(hl.AdminServerConfig().BasePath, mWare)
 
 	adminTLSConfig, err := config.MakeTLSConfig(hl.AdminServerConfig().Common.TLS)
@@ -62,7 +66,7 @@ func configureAdminServerListener(ctx context.Context, hl Manager, promRegistry 
 	return listenAdmin, nil
 }
 
-func configurePublicServerListener(ctx context.Context, hl Manager, mWare []func(handler http.Handler) http.Handler) (func() error, error) {
+func configurePublicServerListener(ctx context.Context, hl Manager, mWare []func(handler http.Handler) http.Handler) (StoppableServer, error) {
 	rootPublicRouter, publicRouter := configureRouters(hl.PublicServerConfig().BasePath, mWare)
 
 	publicTLSConfig, err := config.MakeTLSConfig(hl.PublicServerConfig().Common.TLS)
@@ -104,28 +108,60 @@ func registerProfilingHandler(ctx context.Context, cfg *config.LibraryConfig, pa
 	}
 }
 
-func makeListenFunc(ctx context.Context, server *http.Server, cfg config.CommonHTTPServerConfig) func() error {
-	return func() error {
-		if cfg.Common.TLS != nil {
-			anzlog.Infof(ctx, "TLS configuration present. Preparing to serve HTTPS for address: %s:%d%s", cfg.Common.HostName, cfg.Common.Port, cfg.BasePath)
-			return server.ListenAndServeTLS("", "")
-		}
-		anzlog.Infof(ctx, "no TLS configuration present. Preparing to serve HTTP for address: %s:%d%s", cfg.Common.HostName, cfg.Common.Port, cfg.BasePath)
-		return server.ListenAndServe()
-	}
+type httpServer struct {
+	ctx                 context.Context
+	cfg                 config.CommonHTTPServerConfig
+	server              *http.Server
+	gracefulStopTimeout time.Duration
 }
 
-func prepareServerListener(ctx context.Context, rootRouter http.Handler, tlsConfig *tls.Config, httpConfig config.CommonHTTPServerConfig) func() error {
+func (s httpServer) Start() error {
+	if s.cfg.Common.TLS != nil {
+		anzlog.Infof(s.ctx, "TLS configuration present. Preparing to serve HTTPS for address: %s:%d%s", s.cfg.Common.HostName, s.cfg.Common.Port, s.cfg.BasePath)
+		return s.server.ListenAndServeTLS("", "")
+	}
+	anzlog.Infof(s.ctx, "no TLS configuration present. Preparing to serve HTTP for address: %s:%d%s", s.cfg.Common.HostName, s.cfg.Common.Port, s.cfg.BasePath)
+	return s.server.ListenAndServe()
+}
+
+func (s httpServer) GracefulStop() error {
+	// If the underlying HTTP server does not have timeouts set to sufficiently small values,
+	// and there are still some laggardly requests being processed, we may wait for an
+	// unreasonably long time to stop gracefully. To avoid that, set a limit on the
+	// maximum amount of time we're willing to wait. If we time out, give up and just do
+	// a hard stop.
+	var timeout time.Duration
+	if s.gracefulStopTimeout != 0 {
+		timeout = s.gracefulStopTimeout
+	} else {
+		timeout = defaultGracefulStopTimeout
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	err := s.server.Shutdown(ctx)
+	if err == context.DeadlineExceeded {
+		anzlog.Infof(s.ctx, "warning: GracefulStop timed out for HTTP server, hard-stopping HTTP server")
+		return s.server.Close()
+	}
+	return err
+}
+
+func (s httpServer) Stop() error {
+	return s.server.Close()
+}
+
+func prepareServerListener(ctx context.Context, rootRouter http.Handler, tlsConfig *tls.Config, httpConfig config.CommonHTTPServerConfig) httpServer {
 	re := regexp.MustCompile(`TLS handshake error from .* EOF`) // Avoid spurious TLS errors from load balancer
 	writer := &TLSLogFilter{anzlog.From(ctx), re}
 	serverLogger := log.New(writer, "HTTPServer ", log.LstdFlags|log.Llongfile)
 
 	server := makeNewServer(rootRouter, tlsConfig, httpConfig, serverLogger)
-
-	listener := makeListenFunc(ctx, server, httpConfig)
 	anzlog.Infof(ctx, "configured listener for address: %s:%d%s", httpConfig.Common.HostName, httpConfig.Common.Port, httpConfig.BasePath)
-
-	return listener
+	return httpServer{
+		ctx:    ctx,
+		cfg:    httpConfig,
+		server: server,
+	}
 }
 
 func (m *middlewareCollection) addToBoth(h func(handler http.Handler) http.Handler) {
