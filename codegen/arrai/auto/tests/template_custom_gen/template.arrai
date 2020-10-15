@@ -1,0 +1,13 @@
+#!/usr/bin/env arrai
+let (:generate, ...) = //{/codegen/arrai/auto/autogen};
+generate(
+    //{/codegen/arrai/auto/args},
+    \(...) {
+        "custom_file.txt": "custom content\n",
+        "path": {
+            "to": {
+                "file": "hello there\n",
+            },
+        },
+    },
+)

@@ -1,8 +1,9 @@
-let [_, spec, ...apps] = //os.args;
+let [_, template, spec, ...apps] = //os.args;
 let apps = apps >> //seq.split(':', .);
 $`
     SYSLGO_SYSL=${spec}
     SYSLGO_PACKAGES=${//seq.join(' ', apps >> .(1))}
+    ${cond {(template != ''): $`TEMPLATE_PATH=${template}`}}
     ${
         apps >> \[app, pkg] $`SYSLGO_APP.${pkg} = ${app}`
     ::\i:\n}
