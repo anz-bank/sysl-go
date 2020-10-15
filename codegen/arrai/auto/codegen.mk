@@ -50,9 +50,13 @@ ifndef PKGPATH
 PKGPATH = $(shell awk '/^module/{print$$2}' go.mod)
 endif
 
+ifndef TEMPLATE_PATH
+TEMPLATE_PATH = $(SYSL_GO_ROOT)/codegen/arrai/auto/auto.arrai
+endif
+
 SERVERS_ROOT = gen/pkg/servers
 DOCKER = docker
-AUTO = --out=dir:. $(SYSL_GO_ROOT)/codegen/arrai/auto/auto.arrai
+AUTO = --out=dir:. $(TEMPLATE_PATH)
 
 ifdef NO_DOCKER
 
@@ -67,7 +71,7 @@ endif
 else
 
 SYSL_GO_ROOT = /sysl-go
-SYSL_GO_IMAGE = anzbank/sysl-go:v0.86.0
+SYSL_GO_IMAGE = anzbank/sysl-go:v0.111.0
 DOCKER_RUN = $(DOCKER) run --rm -v $$(pwd):/work -w /work
 PROTOC    = $(DOCKER_RUN) anzbank/protoc-gen-sysl:v0.0.24
 SYSL      = $(DOCKER_RUN) --entrypoint sysl $(SYSL_GO_IMAGE)
@@ -83,7 +87,7 @@ all: $(foreach app,$(SYSLGO_PACKAGES),$(SERVERS_ROOT)/$(app))
 model.json: $(SYSLGO_SYSL)
 	$(SYSL) pb --mode json --root . $< > $@ || (rm $@ && false)
 
-$(SERVERS_ROOT)/%: model.json
+$(SERVERS_ROOT)/%: model.json codegen.mk
 	$(AUTOGEN) $* $(PKGPATH) $@ $< $(or $(SYSLGO_APP.$*),$*) =
 	find $@ -type d | xargs $(GOIMPORTS) -w
 	touch $@

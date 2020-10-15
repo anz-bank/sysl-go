@@ -13,10 +13,13 @@ let generate = \(:outDir, :json, :repo, :path, :appname, :pbbase) \template
         let [from, to] = //seq.split("=", pbbase);
         //re.compile($`^${from}(.*)/[^/]+${'$'}`).sub(to++`$1`);
 
-    template((:fixPBPath, :repo, :outDir, :config, :apps))
+    # gen/pkg/servers is required in all generated code and codegen.mk, the location of server code shouldn't be editable
+    template((:repo, :outDir, :config, :apps)) +> {
+        'gen': {'pkg': {'servers': {outDir: //{./servers}(fixPBPath, config, apps)}}},
+    }
 ;
 
-let defaultTemplate = \(:fixPBPath, :repo, :outDir, :config, :apps, ...)
+let defaultTemplate = \(:repo, :outDir, :config, ...)
     {
         '.github': {'workflows': {
             'test.yml': //{./workflows/test}(repo, outDir),
@@ -29,7 +32,6 @@ let defaultTemplate = \(:fixPBPath, :repo, :outDir, :config, :apps, ...)
         )}},
         '.gitignore': (ifExists: 'ignore', file: //{./gitignore}),
         '.gitattributes': (ifExists: 'ignore', file: //{./gitattributes}),
-        'gen': {'pkg': {'servers': {outDir: //{./servers}(fixPBPath, config, apps)}}},
     }
 ;
 
