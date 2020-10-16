@@ -49,6 +49,7 @@ auto-test: # auto-test. experimental and likely unreliable.
 	$(MAKE) -C codegen/arrai/auto/tests/grpc_custom_server_options/
 	$(MAKE) -C codegen/arrai/auto/tests/grpc_custom_dial_options/
 	$(MAKE) -C codegen/arrai/auto/tests/template_gen
+	$(MAKE) -C codegen/arrai/auto/tests/template_custom_gen
 	$(MAKE) -C codegen/arrai/auto/tests/grpc_jwt_authorization/
 	$(MAKE) -C codegen/arrai/auto/tests/rest_jwt_authorization/
 
