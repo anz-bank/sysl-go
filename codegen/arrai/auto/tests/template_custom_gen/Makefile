@@ -1,7 +1,7 @@
 SYSLGO_SYSL=specs/template.sysl
 SYSLGO_PACKAGES=template
 SYSLGO_APP.template = Template
-TEMPLATE_PATH = template.arraiz
+TEMPLATE = template.arraiz custom_argument
 SYMLINK=1
 PKGPATH=simple_rest
 NO_DOCKER=1
