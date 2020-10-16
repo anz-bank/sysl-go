@@ -1,7 +1,8 @@
 #!/usr/bin/env arrai
-let (:generate, ...) = //{/codegen/arrai/auto/autogen};
+let (:generate, :tuplifiedArgs, ...) = //{/codegen/arrai/auto/autogen};
+let [_, customArg, ...args] = //os.args;
 generate(
-    //{/codegen/arrai/auto/args},
+    tuplifiedArgs(args),
     \(...) {
         "custom_file.txt": "custom content\n",
         "path": {
@@ -9,5 +10,6 @@ generate(
                 "file": "hello there\n",
             },
         },
+        "custom_arg.txt": customArg,
     },
 )

@@ -52,13 +52,13 @@ ifndef PKGPATH
 PKGPATH = $(shell awk '/^module/{print$$2}' go.mod)
 endif
 
-ifndef TEMPLATE_PATH
-TEMPLATE_PATH = $(SYSL_GO_ROOT)/codegen/arrai/auto/auto.arrai
+ifndef TEMPLATE
+TEMPLATE = $(SYSL_GO_ROOT)/codegen/arrai/auto/auto.arrai
 endif
 
 SERVERS_ROOT = gen/pkg/servers
 DOCKER = docker
-AUTO = --out=dir:. $(TEMPLATE_PATH)
+AUTO = --out=dir:. $(TEMPLATE)
 
 ifdef NO_DOCKER
 

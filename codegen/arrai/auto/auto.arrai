@@ -1,5 +1,5 @@
 #!/usr/bin/env arrai
 
-let (:generate, :defaultTemplate, ...) = //{./autogen};
-
-generate(//{./args}, defaultTemplate)
+let (:generate, :defaultTemplate, :tuplifiedArgs, ...) = //{./autogen};
+let [_, ...args] = //os.args;
+generate(tuplifiedArgs(args), defaultTemplate)

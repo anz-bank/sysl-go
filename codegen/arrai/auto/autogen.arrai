@@ -35,7 +35,20 @@ let defaultTemplate = \(:repo, :outDir, :config, ...)
     }
 ;
 
+let tuplifiedArgs = \[outDir, repo, path, json, appname, pbbase]
+    let json = cond json {"-": //os.stdin, _: //os.file(json)};
+    (
+        :outDir,
+        :repo,
+        :path,
+        :json,
+        :appname,
+        :pbbase,
+    )
+;
+
 (
+    :tuplifiedArgs,
     :generate,
-    :defaultTemplate
+    :defaultTemplate,
 )
