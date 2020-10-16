@@ -406,8 +406,10 @@ func TestHTTPStoppableServerGracefulStopTimeout(t *testing.T) {
 	<-started
 
 	go func() {
-		// FIXME no guarantee this call happens before we let the "complete" the slow request
-		// tell server to gracefully stop
+		// tell server to gracefully stop. in this scenario, since
+		// the "slow" request is rigged to never return, by itself,
+		// we expect, this graceful stop to timeout and then actually
+		// fallback to doing a non-graceful stop.
 		err = s.GracefulStop()
 		require.NoError(t, err)
 	}()
