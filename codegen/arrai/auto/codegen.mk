@@ -71,7 +71,7 @@ endif
 else
 
 SYSL_GO_ROOT = /sysl-go
-SYSL_GO_IMAGE = anzbank/sysl-go:v0.111.0
+SYSL_GO_IMAGE = anzbank/sysl-go:v0.113.0
 DOCKER_RUN = $(DOCKER) run --rm -v $$(pwd):/work -w /work
 PROTOC    = $(DOCKER_RUN) anzbank/protoc-gen-sysl:v0.0.24
 SYSL      = $(DOCKER_RUN) --entrypoint sysl $(SYSL_GO_IMAGE)

@@ -3,7 +3,7 @@ let apps = apps >> //seq.split(':', .);
 $`
     SYSLGO_SYSL=${spec}
     SYSLGO_PACKAGES=${//seq.join(' ', apps >> .(1))}
-    ${cond {(template != ''): $`TEMPLATE_PATH=${template}`}}
+    ${cond {(template != ''): $`TEMPLATE=${template}`}}
     ${
         apps >> \[app, pkg] $`SYSLGO_APP.${pkg} = ${app}`
     ::\i:\n}

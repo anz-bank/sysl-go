@@ -7,7 +7,7 @@ OPTIND=1
 while getopts ":t:" opt; do
     case "$opt" in
         t)
-            TEMPLATE_PATH=$OPTARG
+            TEMPLATE=$OPTARG
             ;;
         \?)
             echo "Invalid option: -$OPTARG"
@@ -88,7 +88,7 @@ if [ -f "/work/codegen.mk" ]; then
 fi
 
 cd /work
-arrai run --out=/work/Makefile /sysl-go/codegen/arrai/auto/makefile.arrai "$TEMPLATE_PATH" "$SYSL_FILE" $SYSL_APPS
+arrai run --out=/work/Makefile /sysl-go/codegen/arrai/auto/makefile.arrai "$TEMPLATE" "$SYSL_FILE" $SYSL_APPS
 arrai run --out=/work/codegen.mk /sysl-go/codegen/arrai/auto/codegen.mk.arrai "$codegenVersion"
 if [ ! -f "go.mod" ]; then
     go mod init "$GO_MOD"
