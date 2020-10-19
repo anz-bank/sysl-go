@@ -74,7 +74,7 @@ else
 
 SYSL_GO_ROOT = /sysl-go
 SYSL_GO_IMAGE = anzbank/sysl-go:${version}
-DOCKER_RUN = $(DOCKER) run --rm -v $$(pwd):/work -w /work
+DOCKER_RUN = $(DOCKER) run --rm -t -v $$(pwd):/work -w /work
 PROTOC    = $(DOCKER_RUN) anzbank/protoc-gen-sysl:v0.0.24
 SYSL      = $(DOCKER_RUN) --entrypoint sysl $(SYSL_GO_IMAGE)
 AUTOGEN   = $(DOCKER_RUN) --entrypoint arrai $(SYSL_GO_IMAGE) $(AUTO)
