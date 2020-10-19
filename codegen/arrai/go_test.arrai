@@ -1,6 +1,0 @@
-let go = //{./go};
-
-(
-    goName: //test.assert.equal("Foo")(go.name("foo")),
-    goNameWithUnderscore: //test.assert.equal("Api_name")(go.name("api_name")),
-)
