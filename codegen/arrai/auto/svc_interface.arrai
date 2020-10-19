@@ -16,7 +16,7 @@ let sysl = //{./sysl};
             return &${structName}{}
         }
 
-        ${restEndpoints >> \(@:_, @value: ep) client.client_struct(ep)::\i}
+        ${endpoints >> \(@:_, @value: ep) client.client_struct(ep)::\i}
 
         // ServiceInterface for ${appname}
         type ServiceInterface struct {
