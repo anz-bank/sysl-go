@@ -248,6 +248,52 @@ let demoEndpointExpectedCalls = {
     "tau",
 };
 
+let modelWithStatementlessEndpoint = <<('{
+ "apps": {
+  "A": {
+   "name": {
+    "part": [
+     "A"
+    ]
+   },
+   "attrs": {
+    "package": {
+     "s": "a"
+    }
+   },
+   "endpoints": {
+    "Buzz": {
+     "name": "Buzz",
+     "sourceContext": {
+      "file": "specs/a.sysl",
+      "start": {
+       "line": 3,
+       "col": 4
+      },
+      "end": {
+       "line": 3,
+       "col": 10
+      }
+     }
+    }
+   },
+   "sourceContext": {
+    "file": "specs/a.sysl",
+    "start": {
+     "line": 1,
+     "col": 1
+    },
+    "end": {
+     "line": 1
+    }
+   }
+  }
+ }
+}')>>;
+let statementlessEndpoint = //encoding.json.decode(modelWithStatementlessEndpoint)("apps")("A")("endpoints")("Buzz");
+let statementlessEndpointExpectedCalls = {};
+
 (
     endpointCallDiscovery: //test.assert.equal(demoEndpointExpectedCalls)(sysl.endpoint.calls(demoEndpoint) => .@item('endpoint').s),
+    endpointWithNoStatements: //test.assert.equal(statementlessEndpointExpectedCalls)(sysl.endpoint.calls(statementlessEndpoint) => .@item('endpoint').s),
 )
