@@ -52,16 +52,10 @@ let rec type = \t
 let varName = //re.compile(`_`).sub("");
 
 let package = \app
-    cond {
-        'attrs' <: (app => .@):
-            let attrs = app('attrs');
-            cond attrs {
-                {'go_package': {'s': (s: go_package)}, ...}: go_package,
-                {'package': {'s': (s: package)}, ...}: package,
-            },
-    } || cond {
-        'name' <: (app => .@):
-            //str.lower($`${app('name')('part').a >> .s::}`),
+    cond app {
+        {'attrs': {'go_package': {'s': (s: go_package)}, ...}, ...}: go_package,
+        {'attrs': {'package': {'s': (s: package)}, ...}, ...}: package,
+        {'name': name, ...}: //str.lower($`${name('part').a >> .s::}`),
         _: app,
     };
 

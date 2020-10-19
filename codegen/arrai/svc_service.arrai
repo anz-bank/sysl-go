@@ -43,7 +43,7 @@ let sysl = //{./sysl};
                     let optQueryParams = queryParams where .@item('type')('opt')?.b:false;
                     let queryParamName = \qparam cond {
                         'queryParamNames' <: qparam('attrs')?:{}:
-                            $"${//seq.concat(qparam('attrs')('queryParamNames') where (qparam.name <: .) >> (. &~ {qparam.name}))::}",
+                            $"${//seq.concat(qparam('attrs')?('queryParamNames'):{} where (qparam.name <: .) >> (. &~ {qparam.name}))::}",
                         _: qparam('name').s,
                     };
                     let var = \. $`req.${go.name(.('name').s)}`;
