@@ -1,3 +1,2 @@
 coverage*.out
-/codegen/testdata/*/sysl.json
 .blueprint
