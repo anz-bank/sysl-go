@@ -71,8 +71,8 @@ let package = \app
 let pbPackage = \app
     {(
         alias: `pb`,
-        package: cond app('attrs') {
-            {'go_pb_package': {'s': (:s)}, ...}: s,
+        package: cond app {
+            {'attrs': {'go_pb_package': {'s': (:s)}, ...}, ...}: s,
             _: '??basepath??/???',  # TODO: what's the right package name?
         },
     )};
