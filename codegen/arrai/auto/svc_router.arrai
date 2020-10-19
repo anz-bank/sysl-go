@@ -25,7 +25,7 @@ let go = //{./go};
 
     // NewServiceRouter creates a new service router for ${appname}
     func NewServiceRouter(gc core.RestGenCallback, svcHandler *ServiceHandler) handlerinitialiser.HandlerInitialiser {
-        return &ServiceRouter{gc, svcHandler, "${app('attrs')('basePath')?('s').s:""}"}
+        return &ServiceRouter{gc, svcHandler, "${app('attrs')?('basePath')?('s').s:""}"}
     }
 
     // WireRoutes ...
