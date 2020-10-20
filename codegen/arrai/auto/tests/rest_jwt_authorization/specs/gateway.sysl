@@ -1,16 +1,16 @@
 Gateway [package="gateway"]:
     @go_package = "gateway"
-    @go_pb_package = "rest_jwt_authorization/gen/pb/gateway"
+    @go_pb_package = "rest_jwt_authorization/internal/gen/pb/gateway"
     @pb_package = "gateway.v1"
 
     /hello:
         POST (HelloRequestRequest <: HelloRequest [mediatype="application/json", ~body]):
             @authorization_rule = "any(jwtHasScope(\"hello\"))"
-            
+
             return ok <: HelloResponse
 
     !type HelloRequest: # codegen doesnt work if this isn't named MethodName + "Request"
         content <: string
-    
+
     !type HelloResponse: # codegen doesnt work if this isn't named MethodName + "Response"
         content <: string

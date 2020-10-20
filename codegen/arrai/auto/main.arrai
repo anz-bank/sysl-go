@@ -10,25 +10,25 @@ let sysl = //{./sysl};
 
         import (
             "context"
-            "log"
 
             "github.com/anz-bank/sysl-go/core"
 
-            "${go.goModule}/gen/pkg/servers/${outDir}"
+            "${go.goModule}/internal/gen/pkg/servers/${outDir}"
         )
 
+        type AppConfig struct {
+            // Define app-level config fields here.
+        }
+
         func main() {
-            type AppConfig struct {
-                // Define app-level config fields here.
-            }
-            log.Fatal(${package}.Serve(context.Background(),
+            ${package}.Serve(context.Background(),
                 func(ctx context.Context, config AppConfig) (*${package}.${grpc}ServiceInterface, *core.Hooks, error) {
                     // Perform one-time setup based on config here.
                     return &${package}.${grpc}ServiceInterface{
                         // Add handlers here.
                     }, nil, nil
                 },
-            ))
+            )
         }
 
     '

@@ -43,7 +43,7 @@ func TestCoreRequestContextMiddleWare_VerboseLogging_LogRequestHeaderAndResponse
 	}))
 	w := httptest.NewRecorder()
 	defer func() {
-		//log entry include req header and resp header
+		// log entry include req header and resp header
 		require.Equal(t, 3, len(hook.Entries))
 		require.True(t, strings.Contains(hook.Entries[1].Message, "Request: header"))
 		require.True(t, strings.Contains(hook.Entries[2].Message, "Response: header"))
@@ -65,7 +65,7 @@ func TestCoreRequestContextMiddleWare_NoVerboseLogging_NotLogRequestHeaderAndRes
 	}))
 	w := httptest.NewRecorder()
 	defer func() {
-		//log entry does not include req header and resp header
+		// log entry does not include req header and resp header
 		require.Equal(t, 1, len(hook.Entries))
 	}()
 	fn.ServeHTTP(w, req)

@@ -77,7 +77,7 @@ let sysl = //{./sysl};
         func Serve(
             ctx context.Context,
             createService interface{},
-        ) error {
+        ) {
             err := core.Serve(
                 ctx,
                 &DownstreamConfig{}, createService, &${serviceInterface}{},
@@ -164,8 +164,7 @@ let sysl = //{./sysl};
                 },
             )
             if err != nil {
-                log.Print(err)
+                log.Fatal(err)
             }
-            return err
         }
     `

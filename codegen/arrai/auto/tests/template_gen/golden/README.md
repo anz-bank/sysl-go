@@ -29,5 +29,5 @@ application config file. Assuming you have an application config file
 present as `config.yml`, the containerised application can be run as:
 
 ```sh
-docker run --rm -t -p 8080:8080 --mount type=bind,source="$PWD"/config.yml,target=/app/config.yml,readonly docker_template:latest /bin/Template /app/config.yml
+docker run --rm -t -p 8080:8080 --mount type=bind,source="$PWD"/config.yml,target=/app/config.yml,readonly docker_template:latest /bin/template /app/config.yml
 ```

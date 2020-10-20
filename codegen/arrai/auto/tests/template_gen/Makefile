@@ -8,17 +8,18 @@ SYSL_GO_ROOT=../../../../../
 
 EXPECTED_OUTPUT_DIR = golden
 EXPECTED_FILES = $(shell find $(EXPECTED_OUTPUT_DIR) -type f)
-ACTUAL_FILES = $(foreach F,$(EXPECTED_FILES), $(F:$(EXPECTED_OUTPUT_DIR)/%=%))
+ACTUAL_FILES = $(patsubst $(EXPECTED_OUTPUT_DIR)/%,%,$(EXPECTED_FILES))
 
 test: $(ACTUAL_FILES) $(EXPECTED_FILES)
-	for f in $(ACTUAL_FILES); do diff $$f $(EXPECTED_OUTPUT_DIR)/$$f; done
+	goimports -w cmd/template
+	for f in $(ACTUAL_FILES); do echo $$f; diff -w $$f $(EXPECTED_OUTPUT_DIR)/$$f || FAILED=1; done; [ "$$FAILED" != 1 ]
 	$(MAKE) clean
 
-$(ACTUAL_FILES) &: gen/pkg/servers/Template
+$(ACTUAL_FILES) &: internal/gen/pkg/servers/template
 
 .PHONY: test clean
 
 include codegen.mk
 
 clean:
-	rm -rf gen/ $(ACTUAL_FILES)
+	rm -rf internal/gen/ $(ACTUAL_FILES)

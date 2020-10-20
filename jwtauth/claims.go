@@ -8,7 +8,7 @@ import (
 // Claims is weakly typed so it can hold any conceivable JSON claims value.
 type Claims = map[string]interface{}
 
-func copy(c Claims) Claims {
+func clone(c Claims) Claims {
 	// hack
 	data, err := json.Marshal(&c)
 	if err != nil {
@@ -28,7 +28,7 @@ var claimsKey = &claimsKeyStruct{}
 
 // AddClaimsToContext adds claims to the context.
 func AddClaimsToContext(ctx context.Context, c Claims) context.Context {
-	return context.WithValue(ctx, claimsKey, copy(c))
+	return context.WithValue(ctx, claimsKey, clone(c))
 }
 
 // GetClaimsFromContext retrieves claims from the context.
@@ -41,5 +41,5 @@ func GetClaimsFromContext(ctx context.Context) (Claims, bool) {
 	if !ok {
 		return Claims{}, false
 	}
-	return copy(claims), true
+	return clone(claims), true
 }
