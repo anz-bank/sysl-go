@@ -1,6 +1,6 @@
 Gateway [package="gateway", ~gRPC]:
     @go_package = "gateway"
-    @go_pb_package = "grpc_custom_server_options/gen/pb/gateway"
+    @go_pb_package = "grpc_custom_server_options/internal/gen/pb/gateway"
     @pb_package = "gateway.v1"
 
     Hello(GatewayRequest <: HelloRequest):
@@ -8,6 +8,6 @@ Gateway [package="gateway", ~gRPC]:
 
     !type HelloRequest: # codegen doesnt work if this isn't named MethodName + "Request"
         content <: string
-    
+
     !type HelloResponse: # codegen doesnt work if this isn't named MethodName + "Response"
         content <: string

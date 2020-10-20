@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"regexp"
 	"testing"
@@ -15,6 +16,8 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+const testPort = 8888
+
 type TestServer struct{}
 
 func (*TestServer) Test(ctx context.Context, req *test.TestRequest) (*test.TestReply, error) {
@@ -24,7 +27,7 @@ func (*TestServer) Test(ctx context.Context, req *test.TestRequest) (*test.TestR
 func localServer() config.CommonServerConfig {
 	return config.CommonServerConfig{
 		HostName: "localhost",
-		Port:     8888,
+		Port:     testPort,
 	}
 }
 
@@ -37,7 +40,7 @@ func localSecureServer() config.CommonServerConfig {
 	ciphers := []string{"TLS_RSA_WITH_AES_256_CBC_SHA"}
 	return config.CommonServerConfig{
 		HostName: "localhost",
-		Port:     8888,
+		Port:     testPort,
 		TLS: &config.TLSConfig{
 			MinVersion: &minVer,
 			MaxVersion: &maxVer,
@@ -92,7 +95,7 @@ func (h *GrpcHandler) GrpcPublicServerConfig() *config.CommonServerConfig {
 }
 
 func connectAndCheckReturn(t *testing.T, securityOption grpc.DialOption) {
-	conn, err := grpc.Dial("localhost:8888", securityOption, grpc.WithBlock())
+	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", testPort), securityOption, grpc.WithBlock())
 	require.NoError(t, err)
 	defer conn.Close()
 	client := test.NewTestServiceClient(conn)
@@ -157,7 +160,7 @@ func Test_serverUsesGivenLogger(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	conn, err := grpc.Dial("localhost:8888", grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", testPort), grpc.WithInsecure(), grpc.WithBlock())
 	require.NoError(t, err)
 	defer conn.Close()
 

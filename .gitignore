@@ -1,13 +1,3 @@
 coverage*.out
 /codegen/testdata/*/sysl.json
 .blueprint
-/codegen/arrai/auto/tests/simple_rest/gen/pkg/servers/PingPong/
-/codegen/arrai/auto/tests/simple_rest_with_downstream/gen/pkg/servers/Gateway/
-/codegen/arrai/auto/tests/simple_grpc_with_downstream/gen/pkg/servers/Gateway/
-/codegen/arrai/auto/tests/rest_with_conditional_downstream/gen/pkg/servers/Gateway/
-/codegen/arrai/auto/tests/rest_with_downstream_headers/gen/pkg/servers/Gateway/
-/codegen/arrai/auto/tests/rest_error_downstream/gen/pkg/servers/Gateway/
-/codegen/arrai/auto/tests/grpc_custom_server_options/gen/pkg/servers/Gateway/
-/codegen/arrai/auto/tests/grpc_custom_dial_options/gen/pkg/servers/Gateway/
-/codegen/arrai/auto/tests/grpc_jwt_authorization/gen/pkg/servers/Gateway/
-/codegen/arrai/auto/tests/rest_jwt_authorization/gen/pkg/servers/Gateway/

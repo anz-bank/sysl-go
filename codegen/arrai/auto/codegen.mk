@@ -54,7 +54,7 @@ ifndef TEMPLATE
 TEMPLATE = $(SYSL_GO_ROOT)/codegen/arrai/auto/auto.arrai
 endif
 
-SERVERS_ROOT = gen/pkg/servers
+SERVERS_ROOT = internal/gen/pkg/servers
 DOCKER = docker
 AUTO = --out=dir:. $(TEMPLATE)
 
@@ -71,7 +71,7 @@ endif
 else
 
 SYSL_GO_ROOT = /sysl-go
-SYSL_GO_IMAGE = anzbank/sysl-go:v0.113.0
+SYSL_GO_IMAGE = anzbank/sysl-go:latest
 DOCKER_RUN = $(DOCKER) run --rm -t -v $$(pwd):/work -w /work
 PROTOC    = $(DOCKER_RUN) anzbank/protoc-gen-sysl:v0.0.24
 SYSL      = $(DOCKER_RUN) --entrypoint sysl $(SYSL_GO_IMAGE)

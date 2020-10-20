@@ -11,22 +11,22 @@ var (
 	//
 	// Ref: https://golang.org/cmd/link/
 
-	// Name is set at the build time
+	// Name is set at the build time.
 	Name = ""
 
-	// Version is set at the build time
+	// Version is set at the build time.
 	Version = ""
 
-	// BuildID is set at the build time
+	// BuildID is set at the build time.
 	BuildID = ""
 
-	// CommitSha is set at the build time
+	// CommitSha is set at the build time.
 	CommitSha = ""
 
-	// BranchName is set at the build time
+	// BranchName is set at the build time.
 	BranchName = ""
 
-	// TagName is set at the build time
+	// TagName is set at the build time.
 	TagName = ""
 )
 

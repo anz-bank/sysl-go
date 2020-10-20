@@ -2,7 +2,7 @@ import encoder_backend
 
 Gateway [package="gateway", ~gRPC]:
     @go_package = "gateway"
-    @go_pb_package = "grpc_custom_dial_options/gen/pb/gateway"
+    @go_pb_package = "grpc_custom_dial_options/internal/gen/pb/gateway"
     @pb_package = "gateway.v1"
 
     Encode(GatewayRequest <: EncodeRequest):
@@ -12,6 +12,6 @@ Gateway [package="gateway", ~gRPC]:
     !type EncodeRequest: # codegen doesnt work if this isn't named MethodName + "Request"
         encoder_id <: string
         content <: string
-    
+
     !type EncodeResponse: # codegen doesnt work if this isn't named MethodName + "Response"
         content <: string

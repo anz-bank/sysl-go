@@ -41,10 +41,7 @@ func Serve(
 	MustTypeCheckCreateService(createService, serviceInterface)
 	customConfig := NewZeroCustomConfig(reflect.TypeOf(downstreamConfig), GetAppConfigType(createService))
 	customConfig, err := LoadCustomConfig(ctx, customConfig)
-	if customConfig == nil {
-		return fmt.Errorf("configuration is empty")
-	}
-	if err != nil {
+	if customConfig == nil || err != nil {
 		return err
 	}
 

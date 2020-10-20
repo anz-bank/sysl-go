@@ -56,7 +56,7 @@ ifndef TEMPLATE
 TEMPLATE = $(SYSL_GO_ROOT)/codegen/arrai/auto/auto.arrai
 endif
 
-SERVERS_ROOT = gen/pkg/servers
+SERVERS_ROOT = internal/gen/pkg/servers
 DOCKER = docker
 AUTO = --out=dir:. $(TEMPLATE)
 
