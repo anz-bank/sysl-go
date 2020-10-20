@@ -293,7 +293,89 @@ let modelWithStatementlessEndpoint = <<('{
 let statementlessEndpoint = //encoding.json.decode(modelWithStatementlessEndpoint)("apps")("A")("endpoints")("Buzz");
 let statementlessEndpointExpectedCalls = {};
 
+# The following demo model was generated from
+# Service:
+#   Foo(FooReq):
+#     SomeBackend <- POST /blah
+#
+# using sysl v0.232.0
+#
+# note that sysl v0.232.0 started adding
+# sourceContext metadata in extra places, notably
+# inside call statements.
+
+let modelWithSourceContextdEndpoint = <<('{
+ "apps": {
+  "Service": {
+   "name": {
+    "part": [
+     "Service"
+    ]
+   },
+   "endpoints": {
+    "Foo": {
+     "name": "Foo",
+     "param": [
+      {
+       "name": "FooReq",
+       "type": {
+        "noType": {}
+       }
+      }
+     ],
+     "stmt": [
+      {
+       "call": {
+        "target": {
+         "part": [
+          "SomeBackend"
+         ]
+        },
+        "endpoint": "POST /blah"
+       },
+       "sourceContext": {
+        "file": "demo.sysl",
+        "start": {
+         "line": 3,
+         "col": 4
+        },
+        "end": {
+         "line": 3,
+         "col": 19
+        }
+       }
+      }
+     ],
+     "sourceContext": {
+      "file": "demo.sysl",
+      "start": {
+       "line": 2,
+       "col": 2
+      },
+      "end": {
+       "line": 4
+      }
+     }
+    }
+   },
+   "sourceContext": {
+    "file": "demo.sysl",
+    "start": {
+     "line": 1,
+     "col": 1
+    },
+    "end": {
+     "line": 1
+    }
+   }
+  }
+ }
+}')>>;
+let sourceContextdEndpoint = //encoding.json.decode(modelWithSourceContextdEndpoint)("apps")("Service")("endpoints")("Foo");
+let sourceContextdEndpointExpectedCalls = {"POST /blah"};
+
 (
     endpointCallDiscovery: //test.assert.equal(demoEndpointExpectedCalls)(sysl.endpoint.calls(demoEndpoint) => .@item('endpoint').s),
     endpointWithNoStatements: //test.assert.equal(statementlessEndpointExpectedCalls)(sysl.endpoint.calls(statementlessEndpoint) => .@item('endpoint').s),
+    endpointWithSourcecontext: //test.assert.equal(sourceContextdEndpointExpectedCalls)(sysl.endpoint.calls(sourceContextdEndpoint) => .@item('endpoint').s),
 )

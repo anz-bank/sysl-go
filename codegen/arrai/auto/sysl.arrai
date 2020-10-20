@@ -42,7 +42,7 @@ let endpoint =
     # e.g. a call shielded behind a conditional statement of the form "IF false: " is still included.
     # The result can be regarded as representing all calls that might conceivably occur.
     let calls = \ep
-        //seq.concat( statements(ep) >> flatten_statements(.)) where cond .@item {{"call":_}: true} >> .('call');
+        //seq.concat( statements(ep) >> flatten_statements(.)) where cond .@item {{"call":_, ...}: true} >> .('call');
 
     # `returns(ep) -> array((var: string, type: array(string)))`
     #
