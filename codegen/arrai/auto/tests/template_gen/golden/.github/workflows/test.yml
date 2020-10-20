@@ -41,15 +41,3 @@ jobs:
 
     - name: Test
       run: go build -v -race ./cmd/Template
-
-  coverage:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-      - name: Run coverage tool
-        uses: ./.github/actions/coverage-action
-        with:
-          soft_target: 87
-          hard_target: 80
-          ignore: "simple_rest/gen"
