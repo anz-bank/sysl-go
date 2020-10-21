@@ -4,6 +4,10 @@ SYSLGO_APP.template = Template
 TEMPLATE = template.arraiz "custom_argument"
 PKGPATH = simple_rest
 
+# note: we don't measure anything about code generated
+# files, otherwise this test will "fail" any time the rules
+# for the codegen are slightly tweaked. instead this test
+# only checks to see if the custom expected files are present
 EXPECTED_OUTPUT_DIR = golden
 EXPECTED_FILES = $(shell find $(EXPECTED_OUTPUT_DIR) -type f)
 ACTUAL_FILES = $(patsubst $(EXPECTED_OUTPUT_DIR)/%,%,$(EXPECTED_FILES))
