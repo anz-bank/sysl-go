@@ -92,8 +92,8 @@ let sysl = //{./sysl};
                             return nil, err
                         }
                     `}}
-                    client := ${client.new(ep)}
-                    return s.serviceInterface.${method}(ctx, req, client)
+                    ${cond {client.notEmpty(ep): $`client := ${client.new(ep)}`}}
+                    return s.serviceInterface.${method}(ctx, req${cond {client.notEmpty(ep): `, client`}})
                 }
             `
         ::}

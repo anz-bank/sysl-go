@@ -14,7 +14,7 @@ import (
 type AppConfig struct {
 }
 
-func Hello(ctx context.Context, req *pb.HelloRequest, client gateway.HelloClient) (*pb.HelloResponse, error) {
+func Hello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
 	return &pb.HelloResponse{
 		Content: "why hello there",
 	}, nil

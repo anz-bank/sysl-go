@@ -45,7 +45,7 @@ func makeCustomGrpcMetadataInjector(key, value string) grpc.UnaryServerIntercept
 	return f
 }
 
-func Hello(ctx context.Context, req *pb.HelloRequest, client gateway.HelloClient) (*pb.HelloResponse, error) {
+func Hello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("expected to receive super metadata in ctx, but alas")
