@@ -213,7 +213,7 @@ let sysl = //{./sysl};
                             return
                         }
                     `}}
-                    client := ${client.new(ep)}
+                    ${cond {client.notEmpty(ep): $`client := ${client.new(ep)}`}}
 
                     defer func() {
                         if rec := recover(); rec != nil {
@@ -231,7 +231,7 @@ let sysl = //{./sysl};
                             common.HandleError(ctx, w, common.InternalError, "Unexpected panic", err, s.genCallback.MapError)
                         }
                     }()
-                    ${returns >> $`${//str.lower(.type(.type count - 1))}, `::}err := s.serviceInterface.${method}(ctx, &req, client)
+                    ${returns >> $`${//str.lower(.type(.type count - 1))}, `::}err := s.serviceInterface.${method}(ctx, &req${cond {client.notEmpty(ep): `, client`}})
                     if err != nil {
                         ${cond {hasDB: $`tx.Rollback()`}}
                         common.HandleError(ctx, w, common.InternalError, "Handler error", err, s.genCallback.MapError)

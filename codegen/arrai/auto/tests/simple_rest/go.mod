@@ -13,7 +13,9 @@ require (
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/spf13/afero v1.3.4
 	github.com/stretchr/testify v1.6.1
+	google.golang.org/grpc v1.29.0
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
+	gopkg.in/yaml.v2 v2.3.0
 )
 
 replace github.com/anz-bank/sysl-go => ../../../../..

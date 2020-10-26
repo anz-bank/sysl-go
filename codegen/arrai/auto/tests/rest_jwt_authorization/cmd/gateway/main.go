@@ -13,7 +13,7 @@ import (
 type AppConfig struct {
 }
 
-func Hello(ctx context.Context, req *gateway.PostHelloRequest, client gateway.PostHelloClient) (*gateway.HelloResponse, error) {
+func Hello(ctx context.Context, req *gateway.PostHelloRequest) (*gateway.HelloResponse, error) {
 	return &gateway.HelloResponse{
 		Content: "why hello there",
 	}, nil
@@ -22,7 +22,6 @@ func Hello(ctx context.Context, req *gateway.PostHelloRequest, client gateway.Po
 func application(ctx context.Context) {
 	gateway.Serve(ctx,
 		func(ctx context.Context, cfg AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
-
 			// FIXME auto codegen and common.MapError don't align.
 			mapError := func(ctx context.Context, err error) *common.HTTPError {
 				httpErr := common.MapError(ctx, err)

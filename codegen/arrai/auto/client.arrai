@@ -4,6 +4,9 @@ let sysl = //{./sysl};
 \(:appname, :clientDeps, :hasDB, :module)
     let goModule = go.module(module);
     (
+        notEmpty: \ep
+            hasDB || sysl.endpoint.calls(ep),
+
         new: \ep
             let method = go.methodName(ep);
             let calls = sysl.endpoint.calls(ep);
@@ -23,12 +26,12 @@ let sysl = //{./sysl};
                         `}}
                     }
                 `,
-                _: $`${method}Client{}`,
             },
 
-        client_struct: \ep
+        clientStruct: \ep
             let method = go.methodName(ep);
-            $`
+            let calls = sysl.endpoint.calls(ep);
+            cond {hasDB || calls: $`
                 // ${method}Client provides access to all
                 // the clients used by the ${method} method.
                 type ${method}Client struct {
@@ -36,9 +39,9 @@ let sysl = //{./sysl};
                         Conn *sql.Conn
                         ${sysl.endpoint.sqlStatements(ep) => $`${//str.title(.@)} *sql.Stmt` orderby .::\i}
                     `}}
-                    ${sysl.endpoint.calls(ep) >> goModule.callSignature(.)::\i\n}
+                    ${calls >> goModule.callSignature(.)::\i\n}
                 }
-            `,
+            `},
 
         config: $`
             // DownstreamConfig for ${appname}

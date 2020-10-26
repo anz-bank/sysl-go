@@ -7,13 +7,13 @@ let sysl = //{./sysl};
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(app))}
 
-        ${nonRestEndpoints >> \(@:_, @value: ep) client.client_struct(ep)::\i}
+        ${nonRestEndpoints >> \(@:_, @value: ep) client.clientStruct(ep)::\i}
 
         // GrpcServiceInterface for ${appname}
         type GrpcServiceInterface struct {
             ${nonRestEndpoints >> \(@value: ep, ...)
                 let name = go.methodName(ep);
-                $`${name} func(ctx context.Context, req *pb.${name}Request, client ${name}Client) (*pb.${name}Response, error)`
+                $`${name} func(ctx context.Context, req *pb.${name}Request${cond {client.notEmpty(ep): $`, client ${name}Client`}}) (*pb.${name}Response, error)`
             ::\i}
         }
 

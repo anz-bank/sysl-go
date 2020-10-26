@@ -12,7 +12,7 @@ import (
 
 type AppConfig struct{}
 
-func GetPing(ctx context.Context, req *pingpong.GetPingRequest, client pingpong.GetPingClient) (*pingpong.Pong, error) {
+func GetPing(ctx context.Context, req *pingpong.GetPingRequest) (*pingpong.Pong, error) {
 	return &pingpong.Pong{
 		Identifier: req.Identifier,
 	}, nil
@@ -21,7 +21,6 @@ func GetPing(ctx context.Context, req *pingpong.GetPingRequest, client pingpong.
 func application(ctx context.Context) {
 	pingpong.Serve(ctx,
 		func(ctx context.Context, config AppConfig) (*pingpong.ServiceInterface, *core.Hooks, error) {
-
 			// FIXME auto codegen and common.MapError don't align.
 			mapError := func(ctx context.Context, err error) *common.HTTPError {
 				httpErr := common.MapError(ctx, err)
