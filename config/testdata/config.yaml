@@ -14,6 +14,15 @@ server:
       common:
         hostName: ""
         port: 3333
+admin:
+  contextTimeout: 2s
+  http:
+    basePath: /admintest
+    readTimeout: 1s
+    writeTimeout: 3s
+    common:
+      hostName: ""
+      port: 3333
 genCode:
   upstream:
     contextTimeout: 120s

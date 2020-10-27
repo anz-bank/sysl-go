@@ -10,9 +10,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/handlerinitialiser"
 	"github.com/anz-bank/sysl-go/testutil"
 
 	"github.com/anz-bank/sysl-go/status"
@@ -27,6 +29,29 @@ import (
 
 func newString(s string) *string {
 	return &s
+}
+
+type restManagerImpl struct {
+	handlers func() []handlerinitialiser.HandlerInitialiser
+	library  func() *config.LibraryConfig
+	admin    func() *config.CommonHTTPServerConfig
+	public   func() *config.CommonHTTPServerConfig
+}
+
+func (r *restManagerImpl) EnabledHandlers() []handlerinitialiser.HandlerInitialiser {
+	return r.handlers()
+}
+
+func (r *restManagerImpl) LibraryConfig() *config.LibraryConfig {
+	return r.library()
+}
+
+func (r *restManagerImpl) AdminServerConfig() *config.CommonHTTPServerConfig {
+	return r.admin()
+}
+
+func (r *restManagerImpl) PublicServerConfig() *config.CommonHTTPServerConfig {
+	return r.public()
 }
 
 func Test_prepareMiddleware(t *testing.T) {
@@ -200,7 +225,7 @@ func TestHTTPStoppableServerCanBeHardStopped(t *testing.T) {
 
 	go func() {
 		err := s.Start()
-		require.Equal(t, http.ErrServerClosed, err)
+		require.NoError(t, err)
 	}()
 
 	healthCheck := func() error {
@@ -233,7 +258,7 @@ func TestHTTPStoppableServerCanBeHardStopped(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check server has indeed stopped
-	require.Equal(t, http.ErrServerClosed, s.Start())
+	require.NoError(t, s.Start())
 }
 
 func TestHTTPStoppableServerCanBeGracefullyStopped(t *testing.T) {
@@ -269,7 +294,7 @@ func TestHTTPStoppableServerCanBeGracefullyStopped(t *testing.T) {
 
 	go func() {
 		err := s.Start()
-		require.Equal(t, http.ErrServerClosed, err)
+		require.NoError(t, err)
 	}()
 
 	healthCheck := func(suffix string) error {
@@ -323,7 +348,7 @@ func TestHTTPStoppableServerCanBeGracefullyStopped(t *testing.T) {
 	<-gotResponse
 
 	// Check server has indeed stopped
-	require.Equal(t, http.ErrServerClosed, s.Start())
+	require.NoError(t, s.Start())
 }
 
 func TestHTTPStoppableServerGracefulStopTimeout(t *testing.T) {
@@ -358,7 +383,7 @@ func TestHTTPStoppableServerGracefulStopTimeout(t *testing.T) {
 
 	go func() {
 		err := s.Start()
-		require.Equal(t, http.ErrServerClosed, err)
+		require.NoError(t, err)
 	}()
 
 	healthCheck := func(suffix string) error {
@@ -415,5 +440,139 @@ func TestHTTPStoppableServerGracefulStopTimeout(t *testing.T) {
 	<-done
 
 	// Check server has indeed stopped
-	require.Equal(t, http.ErrServerClosed, s.Start())
+	require.NoError(t, s.Start())
+}
+
+func Test_configureAdminServerListener_Valid(t *testing.T) {
+	ctx := context.Background()
+
+	manager := &restManagerImpl{
+		handlers: func() []handlerinitialiser.HandlerInitialiser { return []handlerinitialiser.HandlerInitialiser{} },
+		library: func() *config.LibraryConfig {
+			return &config.LibraryConfig{
+				Log: config.LogConfig{
+					Format:       "text",
+					Splunk:       nil,
+					Level:        logrus.DebugLevel,
+					ReportCaller: false,
+				},
+				Profiling:      true,
+				Health:         true,
+				Authentication: nil,
+			}
+		},
+		admin: func() *config.CommonHTTPServerConfig {
+			return &config.CommonHTTPServerConfig{
+				Common:       config.CommonServerConfig{HostName: "localhost", Port: 9494, TLS: nil},
+				BasePath:     "/",
+				ReadTimeout:  time.Minute,
+				WriteTimeout: time.Minute,
+			}
+		},
+		public: func() *config.CommonHTTPServerConfig { return nil },
+	}
+
+	mWare := prepareMiddleware("test", nil)
+
+	srv, err := configureAdminServerListener(ctx, manager, nil, nil, mWare.admin)
+	require.NotNil(t, srv)
+	require.NoError(t, err)
+
+	defer func() {
+		err = srv.Stop()
+	}()
+
+	go func() {
+		err := srv.Start()
+		require.NoError(t, err)
+	}()
+}
+
+func Test_configureAdminServerListener_MissingLibraryConfig(t *testing.T) {
+	ctx := context.Background()
+
+	manager := &restManagerImpl{
+		handlers: func() []handlerinitialiser.HandlerInitialiser { return []handlerinitialiser.HandlerInitialiser{} },
+		library:  func() *config.LibraryConfig { return nil },
+		admin: func() *config.CommonHTTPServerConfig {
+			return &config.CommonHTTPServerConfig{
+				Common:       config.CommonServerConfig{HostName: "localhost", Port: 9595, TLS: nil},
+				BasePath:     "/",
+				ReadTimeout:  time.Minute,
+				WriteTimeout: time.Minute,
+			}
+		},
+		public: func() *config.CommonHTTPServerConfig { return nil },
+	}
+
+	mWare := prepareMiddleware("test", nil)
+
+	srv, err := configureAdminServerListener(ctx, manager, nil, nil, mWare.admin)
+	require.Nil(t, srv)
+	require.Error(t, err)
+}
+
+func Test_configureAdminServerListener_MissingAdminConfig(t *testing.T) {
+	ctx := context.Background()
+
+	manager := &restManagerImpl{
+		handlers: func() []handlerinitialiser.HandlerInitialiser { return []handlerinitialiser.HandlerInitialiser{} },
+		library: func() *config.LibraryConfig {
+			return &config.LibraryConfig{
+				Log: config.LogConfig{
+					Format:       "text",
+					Splunk:       nil,
+					Level:        logrus.DebugLevel,
+					ReportCaller: false,
+				},
+				Profiling:      true,
+				Health:         true,
+				Authentication: nil,
+			}
+		},
+		admin: func() *config.CommonHTTPServerConfig {
+			return nil
+		},
+		public: func() *config.CommonHTTPServerConfig { return nil },
+	}
+
+	mWare := prepareMiddleware("test", nil)
+
+	srv, err := configureAdminServerListener(ctx, manager, nil, nil, mWare.admin)
+	require.Nil(t, srv)
+	require.Error(t, err)
+}
+
+func Test_configureAdminServerListener_MissingMiddlewareHandler(t *testing.T) {
+	ctx := context.Background()
+
+	manager := &restManagerImpl{
+		handlers: func() []handlerinitialiser.HandlerInitialiser { return []handlerinitialiser.HandlerInitialiser{} },
+		library: func() *config.LibraryConfig {
+			return &config.LibraryConfig{
+				Log: config.LogConfig{
+					Format:       "text",
+					Splunk:       nil,
+					Level:        logrus.DebugLevel,
+					ReportCaller: false,
+				},
+				Profiling:      true,
+				Health:         true,
+				Authentication: nil,
+			}
+		},
+		admin: func() *config.CommonHTTPServerConfig {
+			return &config.CommonHTTPServerConfig{
+				Common:       config.CommonServerConfig{HostName: "localhost", Port: 9494, TLS: nil},
+				BasePath:     "/",
+				ReadTimeout:  time.Minute,
+				WriteTimeout: time.Minute,
+			}
+		},
+		public: func() *config.CommonHTTPServerConfig { return nil },
+	}
+
+	srv, err := configureAdminServerListener(ctx, manager, nil, nil, nil)
+	require.NotNil(t, srv)
+	require.NoError(t, err)
 }

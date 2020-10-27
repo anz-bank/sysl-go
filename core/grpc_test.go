@@ -193,9 +193,11 @@ func Test_libMakesCorrectHandlerCalls(t *testing.T) {
 
 	srv := configurePublicGrpcServerListener(ctx, *grpcServerManager)
 	require.NotNil(t, srv)
+
 	defer func() {
 		_ = srv.Stop()
 	}()
+
 	go func() {
 		err := srv.Start()
 		require.NoError(t, err)

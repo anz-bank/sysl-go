@@ -13,6 +13,7 @@ import (
 
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config"
+	"github.com/anz-bank/sysl-go/health"
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v2"
 
@@ -38,9 +39,9 @@ func ConfigFileSystemOnto(ctx context.Context, fs afero.Fs) context.Context {
 func Serve(
 	ctx context.Context,
 	downstreamConfig, createService, serviceInterface interface{},
-	newManager func(ctx context.Context, cfg *config.DefaultConfig, serviceIntf interface{}, hooks *Hooks) (interface{}, error),
+	newManagers func(ctx context.Context, cfg *config.DefaultConfig, serviceIntf interface{}, hooks *Hooks) (Manager, *GrpcServerManager, error),
 ) error {
-	srv, err := NewServer(ctx, downstreamConfig, createService, serviceInterface, newManager)
+	srv, err := NewServer(ctx, downstreamConfig, createService, serviceInterface, newManagers)
 	if err != nil {
 		return err
 	}
@@ -52,7 +53,7 @@ func Serve(
 func NewServer(
 	ctx context.Context,
 	downstreamConfig, createService, serviceInterface interface{},
-	newManager func(ctx context.Context, cfg *config.DefaultConfig, serviceIntf interface{}, hooks *Hooks) (interface{}, error),
+	newManagers func(ctx context.Context, cfg *config.DefaultConfig, serviceIntf interface{}, hooks *Hooks) (Manager, *GrpcServerManager, error),
 ) (StoppableServer, error) {
 	MustTypeCheckCreateService(createService, serviceInterface)
 	customConfig := NewZeroCustomConfig(reflect.TypeOf(downstreamConfig), GetAppConfigType(createService))
@@ -66,6 +67,7 @@ func NewServer(
 
 	customConfigValue := reflect.ValueOf(customConfig).Elem()
 	library := customConfigValue.FieldByName("Library").Interface().(config.LibraryConfig)
+	admin := customConfigValue.FieldByName("Admin").Interface().(*config.AdminConfig)
 	genCodeValue := customConfigValue.FieldByName("GenCode")
 	development := customConfigValue.FieldByName("Development").Interface().(*config.DevelopmentConfig)
 	appConfig := customConfigValue.FieldByName("App")
@@ -74,6 +76,7 @@ func NewServer(
 
 	defaultConfig := &config.DefaultConfig{
 		Library:     library,
+		Admin:       admin,
 		Development: development,
 		GenCode: config.GenCodeConfig{
 			Upstream:   upstream,
@@ -103,19 +106,13 @@ func NewServer(
 	ctx = InitialiseLogging(ctx, pkgLoggerConfigs, logrusLogger)
 	// OK, we have a ctx that contains a logger now!
 
-	manager, err := newManager(ctx, defaultConfig, serviceIntf, hooksIntf.(*Hooks))
+	manager, grpcManager, err := newManagers(ctx, defaultConfig, serviceIntf, hooksIntf.(*Hooks))
 	if err != nil {
 		return nil, err
 	}
 
-	switch manager := manager.(type) {
-	case Manager: // aka RESTful service manager
-		server.restManager = manager
-	case GrpcServerManager:
-		server.grpcServerManager = &manager
-	default:
-		panic(fmt.Errorf("Wrong type returned from newManager()"))
-	}
+	server.restManager = manager
+	server.grpcServerManager = grpcManager
 
 	server.ctx = ctx
 
@@ -166,6 +163,11 @@ func NewZeroCustomConfig(downstreamConfigType, appConfigType reflect.Type) inter
 		panic("config.DefaultType missing Library field")
 	}
 
+	adminField, _ := defaultConfigType.FieldByName("Admin")
+	if !has {
+		panic("config.DefaultType missing Admin field")
+	}
+
 	developmentField, has := defaultConfigType.FieldByName("Development")
 	if !has {
 		panic("config.DefaultType missing Development field")
@@ -180,6 +182,7 @@ func NewZeroCustomConfig(downstreamConfigType, appConfigType reflect.Type) inter
 
 	return reflect.New(reflect.StructOf([]reflect.StructField{
 		libraryField,
+		adminField,
 		{Name: "GenCode", Type: reflect.StructOf([]reflect.StructField{
 			upstreamField,
 			{Name: "Downstream", Type: downstreamConfigType, Tag: `yaml:"downstream"`},
@@ -334,13 +337,24 @@ type autogenServer struct {
 	servers            []StoppableServer
 }
 
-//nolint:funlen
+//nolint:funlen,gocognit
 func (s *autogenServer) Start() error {
 	// precondition: ctx must have been threaded through InitialiseLogging and hence contain a logger
 	ctx := s.ctx
 
 	// prepare the middleware
 	mWare := prepareMiddleware(s.name, s.prometheusRegistry)
+
+	// load health server
+	var healthServer *health.Server = nil
+	var err error
+	if s.restManager != nil && s.restManager.LibraryConfig() != nil && s.restManager.LibraryConfig().Health {
+		healthServer, err = health.NewServer()
+		if err != nil {
+			return err
+		}
+		s.grpcServerManager.EnabledGrpcHandlers = append(s.grpcServerManager.EnabledGrpcHandlers, healthServer)
+	}
 
 	var restIsRunning, grpcIsRunning bool
 
@@ -349,7 +363,7 @@ func (s *autogenServer) Start() error {
 	// Make the listener function for the REST Admin server
 	if s.restManager != nil && s.restManager.AdminServerConfig() != nil {
 		log.Info(ctx, "found AdminServerConfig for REST")
-		serverAdmin, err := configureAdminServerListener(ctx, s.restManager, s.prometheusRegistry, mWare.admin)
+		serverAdmin, err := configureAdminServerListener(ctx, s.restManager, s.prometheusRegistry, healthServer.HTTP, mWare.admin)
 		if err != nil {
 			return err
 		}
@@ -400,6 +414,12 @@ func (s *autogenServer) Start() error {
 			errChan <- server.Start()
 		}()
 	}
+
+	if healthServer != nil {
+		// Set health server to be ready
+		healthServer.SetReady(true)
+	}
+
 	return <-errChan
 }
 

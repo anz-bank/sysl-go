@@ -34,8 +34,8 @@ func TestNewServerReturnsErrorIfNewManagerReturnsError(t *testing.T) {
 			return &TestServiceInterface{}, nil, nil
 		},
 		&TestServiceInterface{},
-		func(ctx context.Context, cfg *config.DefaultConfig, serviceIntf interface{}, _ *Hooks) (interface{}, error) {
-			return nil, fmt.Errorf("not happening")
+		func(ctx context.Context, cfg *config.DefaultConfig, serviceIntf interface{}, _ *Hooks) (Manager, *GrpcServerManager, error) {
+			return nil, nil, fmt.Errorf("not happening")
 		},
 	)
 	assert.Nil(t, srv)

@@ -3,6 +3,7 @@ package core
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/anz-bank/pkg/health"
 	anzlog "github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
@@ -30,7 +32,15 @@ type Manager interface {
 	PublicServerConfig() *config.CommonHTTPServerConfig
 }
 
-func configureAdminServerListener(ctx context.Context, hl Manager, promRegistry *prometheus.Registry, mWare []func(handler http.Handler) http.Handler) (StoppableServer, error) {
+func configureAdminServerListener(ctx context.Context, hl Manager, promRegistry *prometheus.Registry, healthServer *health.HTTPServer, mWare []func(handler http.Handler) http.Handler) (StoppableServer, error) {
+	// validate hl manager configuration
+	if hl.AdminServerConfig() == nil {
+		return nil, errors.New("missing adminserverconfig")
+	}
+	if hl.LibraryConfig() == nil {
+		return nil, errors.New("missing libraryconfig")
+	}
+
 	rootAdminRouter, adminRouter := configureRouters(hl.AdminServerConfig().BasePath, mWare)
 
 	adminTLSConfig, err := config.MakeTLSConfig(hl.AdminServerConfig().Common.TLS)
@@ -49,10 +59,17 @@ func configureAdminServerListener(ctx context.Context, hl Manager, promRegistry 
 		r.Route("/status", func(r chi.Router) {
 			status.WireRoutes(r, &statusService)
 		})
-		r.Route("/metrics", func(r chi.Router) {
-			r.Get("/", metrics.Handler(promRegistry).(http.HandlerFunc))
-		})
+		if promRegistry != nil {
+			r.Route("/metrics", func(r chi.Router) {
+				r.Get("/", metrics.Handler(promRegistry).(http.HandlerFunc))
+			})
+		}
 		registerProfilingHandler(ctx, hl.LibraryConfig(), r)
+	})
+	adminRouter.Route("/", func(r chi.Router) {
+		if healthServer != nil {
+			healthServer.RegisterWith(r)
+		}
 	})
 
 	listenAdmin := prepareServerListener(ctx, rootAdminRouter, adminTLSConfig, *hl.AdminServerConfig())
@@ -110,12 +127,19 @@ type httpServer struct {
 }
 
 func (s httpServer) Start() error {
+	var err error
 	if s.cfg.Common.TLS != nil {
 		anzlog.Infof(s.ctx, "TLS configuration present. Preparing to serve HTTPS for address: %s:%d%s", s.cfg.Common.HostName, s.cfg.Common.Port, s.cfg.BasePath)
-		return s.server.ListenAndServeTLS("", "")
+		err = s.server.ListenAndServeTLS("", "")
+	} else {
+		anzlog.Infof(s.ctx, "no TLS configuration present. Preparing to serve HTTP for address: %s:%d%s", s.cfg.Common.HostName, s.cfg.Common.Port, s.cfg.BasePath)
+		err = s.server.ListenAndServe()
 	}
-	anzlog.Infof(s.ctx, "no TLS configuration present. Preparing to serve HTTP for address: %s:%d%s", s.cfg.Common.HostName, s.cfg.Common.Port, s.cfg.BasePath)
-	return s.server.ListenAndServe()
+
+	if err != http.ErrServerClosed {
+		return err
+	}
+	return nil
 }
 
 func (s httpServer) GracefulStop() error {

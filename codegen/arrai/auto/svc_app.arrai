@@ -108,7 +108,7 @@ let sysl = //{./sysl};
                     cfg *config.DefaultConfig,
                     serviceIntf interface{},
                     hooks *core.Hooks,
-                ) (interface{}, error) {
+                ) (core.Manager, *core.GrpcServerManager, error) {
                     serviceInterface := serviceIntf.(*${serviceInterface})
 
                     if hooks == nil {
@@ -132,7 +132,7 @@ let sysl = //{./sysl};
                     ${cond {clientDeps: $`
                         clients, err := BuildDownstreamClients(ctx, hooks, cfg)
                         if err != nil {
-                            return nil, err
+                            return nil, nil, err
                         }
                     `}}
                     serviceHandler, err := ${newServiceHandler}(
@@ -144,45 +144,57 @@ let sysl = //{./sysl};
                         ${clientDeps orderby . >> $`clients.${.import}Client,`::\i}
                     )
                     if err != nil {
-                        return nil, err
+                        return nil, nil, err
                     }
+
+                    // Construct a GrpcServerManager to wrap our serviceHandler.
+                    var grpcPublicServerConfig *config.CommonServerConfig = &cfg.GenCode.Upstream.GRPC
+
+                    // Here we allow the grpc.ServerOption configuration to be optionally extended or overridden.
+                    // See the documentation of core.Hooks for more information.
+                    grpcServerOptions, err := core.ResolveGrpcServerOptions(ctx, hooks, grpcPublicServerConfig)
+                    if err != nil {
+                        return nil, nil, err
+                    }
+
+                    // TODO make it possible to disable handlers through configuration.
+                    enabledGrpcHandlers := []handlerinitialiser.GrpcHandlerInitialiser{}
 
                     ${cond {
                         grpc: $`
-                            // Construct a GrpcServerManager to wrap our serviceHandler.
-                            var grpcPublicServerConfig *config.CommonServerConfig = &cfg.GenCode.Upstream.GRPC
+                            enabledGrpcHandlers = append(enabledGrpcHandlers, serviceHandler)
+                        `,
+                        _: $`
+                        `,
+                    }}
 
-                            // Here we allow the grpc.ServerOption configuration to be optionally extended or overridden.
-                            // See the documentation of core.Hooks for more information.
-                            grpcServerOptions, err := core.ResolveGrpcServerOptions(ctx, hooks, grpcPublicServerConfig)
-                            if err != nil {
-                                return nil, err
-                            }
+                    grpcManager := core.GrpcServerManager{
+                        GrpcServerOptions:      grpcServerOptions,
+                        EnabledGrpcHandlers:    enabledGrpcHandlers,
+                        GrpcPublicServerConfig: grpcPublicServerConfig,
+                    }
 
-                            // TODO make it possible to disable handlers through configuration.
-                            enabledGrpcHandlers := []handlerinitialiser.GrpcHandlerInitialiser{serviceHandler, }
+                    libraryConfig := &(cfg.Library)
+                    var adminServerConfig *config.CommonHTTPServerConfig = nil
+                    if cfg.Admin != nil {
+                        adminServerConfig = &cfg.Admin.HTTP
+                    }
+                    var publicServerConfig *config.CommonHTTPServerConfig = &(cfg.GenCode.Upstream.HTTP)
+                    // TODO make it possible to disable handlers through configuration.
+                    enabledHandlers := []handlerinitialiser.HandlerInitialiser{}
 
-                            manager := core.GrpcServerManager{
-                                GrpcServerOptions:      grpcServerOptions,
-                                EnabledGrpcHandlers:    enabledGrpcHandlers,
-                                GrpcPublicServerConfig: grpcPublicServerConfig,
-                            }
-                            return manager, nil
+                   ${cond {
+                        grpc: $`
                         `,
                         _: $`
                             // Construct a HTTPManager to wrap our HandlerInitialiser AKA ServiceRouter.
                             // TODO standardise terminology / generally refactor.
                             handlerInitialiser := NewServiceRouter(genCallbacks, serviceHandler)
-
-                            libraryConfig := &(cfg.Library)
-                            var adminServerConfig *config.CommonHTTPServerConfig // TODO make configurable
-                            var publicServerConfig *config.CommonHTTPServerConfig = &(cfg.GenCode.Upstream.HTTP)
-                            // TODO make it possible to disable handlers through configuration.
-                            enabledHandlers := []handlerinitialiser.HandlerInitialiser{handlerInitialiser}
-                            manager := core.NewHTTPManagerShim(libraryConfig, adminServerConfig, publicServerConfig, enabledHandlers)
-                            return manager, nil
+                            enabledHandlers = append(enabledHandlers, handlerInitialiser)
                         `,
                     }}
+                    restManager := core.NewHTTPManagerShim(libraryConfig, adminServerConfig, publicServerConfig, enabledHandlers)
+                    return restManager, &grpcManager, nil
                 },
             )
             return srv, err

@@ -90,7 +90,7 @@ func (params *ServerParams) Start() error {
 	// Make the listener function for the REST Admin server
 	if params.restManager != nil && params.restManager.AdminServerConfig() != nil {
 		log.Info(ctx, "found AdminServerConfig for REST")
-		serverAdmin, err := configureAdminServerListener(ctx, params.restManager, params.prometheusRegistry, mWare.admin)
+		serverAdmin, err := configureAdminServerListener(ctx, params.restManager, params.prometheusRegistry, nil, mWare.admin)
 		if err != nil {
 			return err
 		}
