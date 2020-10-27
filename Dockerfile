@@ -4,7 +4,7 @@ FROM golang:1.14.9-alpine3.12 AS stage
 RUN apk add --no-cache git make
 
 # install arrai
-RUN git clone --depth 1 --branch v0.254.0 https://github.com/arr-ai/arrai.git && make -C arrai install
+RUN git clone --depth 1 --branch v0.249.0 https://github.com/arr-ai/arrai.git && make -C arrai install
 
 # install goimports
 RUN go get golang.org/x/tools/cmd/goimports
