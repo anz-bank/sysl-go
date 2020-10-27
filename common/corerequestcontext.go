@@ -12,20 +12,20 @@ import (
 
 // Deprecated: Use ServerParams.WithPkgLogger instead.
 func GetLogEntryFromContext(ctx context.Context) *logrus.Entry {
-	core := getCoreContext(ctx)
+	core := ctx.Value(coreRequestContextKey{})
 	if core == nil {
 		return nil
 	}
-	return core.entry
+	return core.(coreRequestContext).entry
 }
 
 // Deprecated: Use ServerParams.WithPkgLogger instead.
 func GetLoggerFromContext(ctx context.Context) *logrus.Logger {
-	core := getCoreContext(ctx)
+	core := ctx.Value(coreRequestContextKey{})
 	if core == nil {
 		return nil
 	}
-	return core.logger
+	return core.(coreRequestContext).logger
 }
 
 func NewLoggingRoundTripper(name string, base http.RoundTripper) http.RoundTripper {
@@ -56,7 +56,7 @@ type RestResult struct {
 // LoggerToContext creates a new context containing the logger.
 // Deprecated: Use ServerParams.WithPkgLogger instead.
 func LoggerToContext(ctx context.Context, logger *logrus.Logger, entry *logrus.Entry) context.Context {
-	return context.WithValue(ctx, coreRequestContextKey{}, &coreRequestContext{logger, entry})
+	return context.WithValue(ctx, coreRequestContextKey{}, coreRequestContext{logger, entry})
 }
 
 // RequestHeaderToContext creates a new context containing the request header.
@@ -105,7 +105,6 @@ func UpdateResponseStatus(ctx context.Context, status int) error {
 func CoreRequestContextMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		ctx = LoggerToContext(ctx, GetLoggerFromContext(ctx), nil) // Force a non-nil logger context.
 		ctx = log.With(traceIDLogField, GetTraceIDFromContext(ctx)).Onto(ctx)
 
 		ctx = internal.AddResponseBodyMonitorToContext(ctx)
@@ -125,14 +124,6 @@ func CoreRequestContextMiddleware(next http.Handler) http.Handler {
 }
 
 type coreRequestContextKey struct{}
-
-func getCoreContext(ctx context.Context) *coreRequestContext {
-	coreRequestCtx := ctx.Value(coreRequestContextKey{})
-	if coreRequestCtx == nil {
-		return nil
-	}
-	return coreRequestCtx.(*coreRequestContext)
-}
 
 type reqHeaderContextKey struct{}
 type respHeaderAndStatusContextKey struct{}

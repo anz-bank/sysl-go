@@ -43,7 +43,7 @@ func NewTestCoreRequestContext() (*logrus.Logger, *test.Hook, context.Context) {
 
 func NewTestCoreRequestContextWithLogger(logger *logrus.Logger) context.Context {
 	ctx := context.WithValue(context.Background(), coreRequestContextKey{},
-		&coreRequestContext{
+		coreRequestContext{
 			logger: logger,
 			entry:  logger.WithField("traceId", uuid.New().String()),
 		})
