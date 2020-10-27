@@ -4,8 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/anz-bank/sysl-go/logconfig"
-
 	"github.com/anz-bank/sysl-go/common/internal"
 
 	"github.com/anz-bank/pkg/log"
@@ -107,13 +105,8 @@ func UpdateResponseStatus(ctx context.Context, status int) error {
 func CoreRequestContextMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		ctxlogger := GetLoggerFromContext(ctx)
-		pkgLogger := log.From(ctx)
-		verboseLogging := logconfig.IsVerboseLogging(ctx)
-		ctx = LoggerToContext(ctx, ctxlogger, nil)
-		ctx = log.WithLogger(pkgLogger).Onto(ctx)
+		ctx = LoggerToContext(ctx, GetLoggerFromContext(ctx), nil) // Force a non-nil logger context.
 		ctx = log.With(traceIDLogField, GetTraceIDFromContext(ctx)).Onto(ctx)
-		ctx = logconfig.SetVerboseLogging(ctx, verboseLogging)
 
 		ctx = internal.AddResponseBodyMonitorToContext(ctx)
 		defer internal.CheckForUnclosedResponses(ctx)
