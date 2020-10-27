@@ -340,7 +340,7 @@ func (s *autogenServer) Start() error {
 	ctx := s.ctx
 
 	// prepare the middleware
-	mWare := prepareMiddleware(ctx, s.name, s.prometheusRegistry)
+	mWare := prepareMiddleware(s.name, s.prometheusRegistry)
 
 	var restIsRunning, grpcIsRunning bool
 

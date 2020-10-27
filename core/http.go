@@ -11,7 +11,6 @@ import (
 	"time"
 
 	anzlog "github.com/anz-bank/pkg/log"
-	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
 	"github.com/anz-bank/sysl-go/metrics"
@@ -29,11 +28,6 @@ type Manager interface {
 	LibraryConfig() *config.LibraryConfig
 	AdminServerConfig() *config.CommonHTTPServerConfig
 	PublicServerConfig() *config.CommonHTTPServerConfig
-}
-
-type middlewareCollection struct {
-	admin  []func(handler http.Handler) http.Handler
-	public []func(handler http.Handler) http.Handler
 }
 
 func configureAdminServerListener(ctx context.Context, hl Manager, promRegistry *prometheus.Registry, mWare []func(handler http.Handler) http.Handler) (StoppableServer, error) {
@@ -162,26 +156,6 @@ func prepareServerListener(ctx context.Context, rootRouter http.Handler, tlsConf
 		cfg:    httpConfig,
 		server: server,
 	}
-}
-
-func (m *middlewareCollection) addToBoth(h func(handler http.Handler) http.Handler) {
-	m.admin = append(m.admin, h)
-	m.public = append(m.public, h)
-}
-
-func prepareMiddleware(ctx context.Context, name string, promRegistry *prometheus.Registry) middlewareCollection {
-	result := middlewareCollection{}
-	result.addToBoth(Recoverer(ctx))
-
-	result.public = append(result.public, common.TraceabilityMiddleware(ctx))
-	result.addToBoth(common.CoreRequestContextMiddlewareWithContext(ctx))
-
-	if promRegistry != nil {
-		metricsMiddleware := metrics.NewHTTPServerMetricsMiddleware(promRegistry, name, metrics.GetChiPathPattern)
-		result.addToBoth(metricsMiddleware)
-	}
-
-	return result
 }
 
 func makeNewServer(router http.Handler, tlsConfig *tls.Config, serverConfig config.CommonHTTPServerConfig, serverLogger *log.Logger) *http.Server {

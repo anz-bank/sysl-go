@@ -20,21 +20,20 @@ type requestID struct {
 const traceIDLogField = "traceid"
 
 // Injects a traceId UUID into the request context.
-func TraceabilityMiddleware(ctx context.Context) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			val, err := uuid.Parse(r.Header.Get("RequestID"))
-			if err != nil {
-				log.Info(internal.InitFieldsFromRequest(r).Onto(ctx), "Incoming request with invalid or missing RequestID header, filled traceid with new UUID instead")
-				r = r.WithContext(AddTraceIDToContext(r.Context(), uuid.New(), false))
-			} else {
-				r = r.WithContext(AddTraceIDToContext(r.Context(), val, true))
-			}
-
-			next.ServeHTTP(w, r)
+func TraceabilityMiddleware(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		val, err := uuid.Parse(r.Header.Get("RequestID"))
+		if err != nil {
+			log.Info(internal.InitFieldsFromRequest(r).Onto(ctx), "Incoming request with invalid or missing RequestID header, filled traceid with new UUID instead")
+			r = r.WithContext(AddTraceIDToContext(r.Context(), uuid.New(), false))
+		} else {
+			r = r.WithContext(AddTraceIDToContext(r.Context(), val, true))
 		}
-		return http.HandlerFunc(fn)
+
+		next.ServeHTTP(w, r)
 	}
+	return http.HandlerFunc(fn)
 }
 
 func GetTraceIDFromContext(ctx context.Context) uuid.UUID {
