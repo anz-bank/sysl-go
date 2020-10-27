@@ -51,9 +51,11 @@ func InitialiseLogging(ctx context.Context, configs []log.Config, logrusLogger *
 	if logrusLogger != nil {
 		// set an empty io writter against pkg logger
 		// pkg logger just becomes a proxy that forwards all logs to logrus
-		configs = append(configs, log.SetOutput(&emptyWriter{}))
-		configs = append(configs, log.AddHooks(&logrusHook{logrusLogger}))
-		configs = append(configs, log.SetLogCaller(logrusLogger.ReportCaller))
+		configs = append(configs,
+			log.SetOutput(&emptyWriter{}),
+			log.AddHooks(&logrusHook{logrusLogger}),
+			log.SetLogCaller(logrusLogger.ReportCaller),
+		)
 		ctx = common.LoggerToContext(ctx, logrusLogger, nil)
 		verboseLogging = logrusLogger.Level >= logrus.DebugLevel
 	}
@@ -79,7 +81,7 @@ func (params *ServerParams) Start() error {
 	ctx = InitialiseLogging(ctx, params.pkgLoggerConfigs, params.logrusLogger)
 
 	// prepare the middleware
-	mWare := prepareMiddleware(ctx, params.Name, params.prometheusRegistry)
+	mWare := prepareMiddleware(params.Name, params.prometheusRegistry)
 
 	var restIsRunning, grpcIsRunning bool
 

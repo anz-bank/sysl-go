@@ -30,8 +30,6 @@ func newString(s string) *string {
 }
 
 func Test_prepareMiddleware(t *testing.T) {
-	ctx, _ := testutil.NewTestContextWithLoggerHook()
-
 	type args struct {
 		cfg           *config.LibraryConfig
 		buildMetadata *status.BuildMetadata
@@ -51,9 +49,9 @@ func Test_prepareMiddleware(t *testing.T) {
 				promRegistry:  nil,
 			},
 			want: []func(http.Handler) http.Handler{
-				Recoverer(ctx),
-				common.TraceabilityMiddleware(ctx),
-				common.CoreRequestContextMiddlewareWithContext(ctx),
+				Recoverer,
+				common.TraceabilityMiddleware,
+				common.CoreRequestContextMiddleware,
 			},
 			wantErr: false,
 		},
@@ -61,7 +59,7 @@ func Test_prepareMiddleware(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			got := prepareMiddleware(ctx, "server", tt.args.promRegistry)
+			got := prepareMiddleware("server", tt.args.promRegistry)
 			assert.NotEmpty(t, got)
 		})
 	}

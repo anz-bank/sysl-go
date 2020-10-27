@@ -104,39 +104,31 @@ func UpdateResponseStatus(ctx context.Context, status int) error {
 	return nil
 }
 
-func CoreRequestContextMiddleware(logger *logrus.Logger) func(next http.Handler) http.Handler {
-	ctx := LoggerToContext(context.Background(), logger, nil)
-	return CoreRequestContextMiddlewareWithContext(ctx)
-}
+func CoreRequestContextMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		ctxlogger := GetLoggerFromContext(ctx)
+		pkgLogger := log.From(ctx)
+		verboseLogging := logconfig.IsVerboseLogging(ctx)
+		ctx = LoggerToContext(ctx, ctxlogger, nil)
+		ctx = log.WithLogger(pkgLogger).Onto(ctx)
+		ctx = log.With(traceIDLogField, GetTraceIDFromContext(ctx)).Onto(ctx)
+		ctx = logconfig.SetVerboseLogging(ctx, verboseLogging)
 
-func CoreRequestContextMiddlewareWithContext(ctx context.Context) func(next http.Handler) http.Handler {
-	ctxlogger := GetLoggerFromContext(ctx)
-	pkgLogger := log.From(ctx)
-	verboseLogging := logconfig.IsVerboseLogging(ctx)
-	return func(next http.Handler) http.Handler {
-		fn := func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			ctx = LoggerToContext(ctx, ctxlogger, nil)
-			ctx = log.WithLogger(pkgLogger).Onto(ctx)
-			ctx = log.With(traceIDLogField, GetTraceIDFromContext(ctx)).Onto(ctx)
-			ctx = logconfig.SetVerboseLogging(ctx, verboseLogging)
+		ctx = internal.AddResponseBodyMonitorToContext(ctx)
+		defer internal.CheckForUnclosedResponses(ctx)
+		reqLogger, entry := internal.NewRequestLogger(ctx, r)
+		w = reqLogger.ResponseWriter(w)
+		defer reqLogger.FlushLog()
 
-			ctx = internal.AddResponseBodyMonitorToContext(ctx)
-			defer internal.CheckForUnclosedResponses(ctx)
-			reqLogger, entry := internal.NewRequestLogger(ctx, r)
-			w = reqLogger.ResponseWriter(w)
-			defer reqLogger.FlushLog()
+		r = r.WithContext(ctx)
 
-			r = r.WithContext(ctx)
+		tl := internal.NewRequestTimer(w, r)
+		w = tl.RespWrapper
+		defer tl.Log(entry)
 
-			tl := internal.NewRequestTimer(w, r)
-			w = tl.RespWrapper
-			defer tl.Log(entry)
-
-			next.ServeHTTP(w, r)
-		}
-		return http.HandlerFunc(fn)
-	}
+		next.ServeHTTP(w, r)
+	})
 }
 
 type coreRequestContextKey struct{}

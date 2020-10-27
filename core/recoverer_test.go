@@ -11,11 +11,11 @@ import (
 )
 
 func TestRecoverer(t *testing.T) {
-	ctx, hook := testutil.NewTestContextWithLoggerHook()
+	mware, hook := testutil.LoggerHookContextMiddleware()
 
-	ts := httptest.NewServer(Recoverer(ctx)(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+	ts := httptest.NewServer(mware(Recoverer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 		panic("Test")
-	})))
+	}))))
 	defer ts.Close()
 
 	res, err := http.Get(fmt.Sprintf("%s/", ts.URL))

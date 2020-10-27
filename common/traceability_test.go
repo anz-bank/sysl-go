@@ -29,7 +29,7 @@ func TestTraceabilityMiddleware(t *testing.T) {
 		t.Run(fmt.Sprintf("TestTraceabilityMiddleware#%d", i), func(t *testing.T) {
 			ctx, loghook := testutil.NewTestContextWithLoggerHook()
 
-			mware := TraceabilityMiddleware(ctx)
+			mware := TraceabilityMiddleware
 			body := bytes.NewBufferString("test")
 			req, err := http.NewRequest("GET", "localhost/", body)
 			require.Nil(t, err)
