@@ -73,6 +73,7 @@ func configurePublicGrpcServerListener(ctx context.Context, m GrpcServerManager)
 	for _, h := range m.EnabledGrpcHandlers {
 		h.RegisterServer(ctx, server)
 	}
+
 	return prepareGrpcServerListener(ctx, server, *m.GrpcPublicServerConfig)
 }
 

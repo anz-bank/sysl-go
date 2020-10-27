@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/base64"
+	"time"
 
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/jwtauth"
@@ -13,7 +14,13 @@ import (
 type LibraryConfig struct {
 	Log            LogConfig             `yaml:"log"`
 	Profiling      bool                  `yaml:"profiling"`
+	Health         bool                  `yaml:"health"`
 	Authentication *AuthenticationConfig `yaml:"authentication"`
+}
+
+type AdminConfig struct {
+	ContextTimeout time.Duration          `yaml:"contextTimeout" validate:"nonnil"`
+	HTTP           CommonHTTPServerConfig `yaml:"http"`
 }
 
 // LogConfig struct.

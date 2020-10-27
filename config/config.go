@@ -15,6 +15,9 @@ import (
 
 type DefaultConfig struct {
 	Library LibraryConfig `yaml:"library"`
+
+	// config used for setting up the sysl-go admin server
+	Admin   *AdminConfig  `yaml:"admin"`
 	GenCode GenCodeConfig `yaml:"genCode"`
 
 	// development config can be used to set some config options only appropriate for dev/test environments.
