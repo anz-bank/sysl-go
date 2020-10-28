@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/anz-bank/pkg/log"
-	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/core"
 
 	gateway "simple_rest_with_downstream/internal/gen/pkg/servers/gateway"
@@ -40,19 +39,9 @@ func PostEncodeEncoder_id(ctx context.Context, req *gateway.PostEncodeEncoder_id
 func application(ctx context.Context) {
 	gateway.Serve(ctx,
 		func(ctx context.Context, config AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
-
-			// FIXME auto codegen and common.MapError don't align.
-			mapError := func(ctx context.Context, err error) *common.HTTPError {
-				httpErr := common.MapError(ctx, err)
-				return &httpErr
-			}
-
 			return &gateway.ServiceInterface{
-					PostEncodeEncoder_id: PostEncodeEncoder_id,
-				}, &core.Hooks{
-					MapError: mapError,
-				},
-				nil
+				PostEncodeEncoder_id: PostEncodeEncoder_id,
+			}, nil, nil
 		},
 	)
 }
