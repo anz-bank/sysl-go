@@ -118,6 +118,10 @@ func startDummyEncoderBackendServer(addr string) (stopServer func() error) {
 			complain(err)
 			return
 		}
+		if obj.Content == "notfound" {
+			http.Error(w, "Not found", http.StatusNotFound)
+			return
+		}
 		obj.Content = rot13(obj.Content)
 		responseData, err := json.Marshal(&obj)
 		if err != nil {
@@ -195,6 +199,12 @@ func TestSimpleRestWithDownstreamAppSmokeTest(t *testing.T) {
 	actual, err := doGatewayRequestResponse(ctx, "hello world")
 	require.Nil(t, err)
 	require.Equal(t, expected, actual)
+
+	// Test if the our gateway returns correct error when downstream
+	// service fails and no MapError function has been defined on Hooks
+	actual, err = doGatewayRequestResponse(ctx, "notfound")
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "503")
 
 	// FIXME how do we stop the application server?
 }
