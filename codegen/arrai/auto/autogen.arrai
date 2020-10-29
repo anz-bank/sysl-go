@@ -23,7 +23,7 @@ let generate = \(:outDir, :json, :repo, :path, :appname, :pbbase) \template
 let defaultTemplate = \(:repo, :outDir, :config, ...)
     {
         '.github': {'workflows': {
-            'test.yml': //{./workflows/test}(repo, outDir),
+            'test.yml': (ifExists: 'ignore', file: //{./workflows/test}(repo, outDir)),
         }},
         'Dockerfile': (ifExists: 'ignore', file: //{./dockerfile}(outDir)),
         'README.md': (ifExists: 'ignore', file: //{./readme}(config, outDir)),
