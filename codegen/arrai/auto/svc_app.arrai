@@ -179,7 +179,7 @@ let sysl = //{./sysl};
                     if cfg.Admin != nil {
                         adminServerConfig = &cfg.Admin.HTTP
                     }
-                    var publicServerConfig *config.CommonHTTPServerConfig = &(cfg.GenCode.Upstream.HTTP)
+                    var publicServerConfig *config.CommonHTTPServerConfig = nil
                     // TODO make it possible to disable handlers through configuration.
                     enabledHandlers := []handlerinitialiser.HandlerInitialiser{}
 
@@ -191,6 +191,7 @@ let sysl = //{./sysl};
                             // TODO standardise terminology / generally refactor.
                             handlerInitialiser := NewServiceRouter(genCallbacks, serviceHandler)
                             enabledHandlers = append(enabledHandlers, handlerInitialiser)
+                            publicServerConfig = &(cfg.GenCode.Upstream.HTTP)
                         `,
                     }}
                     restManager := core.NewHTTPManagerShim(libraryConfig, adminServerConfig, publicServerConfig, enabledHandlers)
