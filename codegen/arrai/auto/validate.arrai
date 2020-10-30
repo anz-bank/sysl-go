@@ -1,0 +1,15 @@
+let fatal = //{./fatal};
+
+let validateEndpoint = \ep
+    let validatedEndpoint = (ep('param')?.a:{}) where cond .@item { {'type': t, ...}: false, _: fatal('parameter ' + //fmt.pretty(.@item) + ' of endpoint ' + ep('name').s + ' does not have a defined type. Please check input sysl file for errors. Refer to: https://sysl.io/docs/lang-spec#parameter-types')};
+    ep;
+
+let validateApp = \app
+    let endpoints = app("endpoints");
+    let validatedEndpoints = endpoints >> validateEndpoint(.);
+    app;
+
+(
+    endpoint: validateEndpoint,
+    app: validateApp,
+)

@@ -1,0 +1,3 @@
+let fatal = \msg //test.assert.false(//log.print("FATAL: " + msg));
+
+fatal
