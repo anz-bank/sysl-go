@@ -360,8 +360,6 @@ func describeYAMLForType(w io.Writer, t reflect.Type, commonTypes map[reflect.Ty
 	}
 }
 
-// experimental fork of core.ServerParams
-
 type autogenServer struct {
 	ctx                context.Context
 	name               string
