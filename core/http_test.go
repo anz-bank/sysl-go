@@ -212,7 +212,7 @@ func TestHTTPStoppableServerCanBeHardStopped(t *testing.T) {
 		BasePath: "/",
 		Common: config.CommonServerConfig{
 			HostName: "localhost",
-			Port:     8081,
+			Port:     8082,
 			TLS:      nil,
 		},
 	}
@@ -229,7 +229,7 @@ func TestHTTPStoppableServerCanBeHardStopped(t *testing.T) {
 	}()
 
 	healthCheck := func() error {
-		resp, err := http.Get("http://localhost:8081/")
+		resp, err := http.Get("http://localhost:8082/")
 		if err != nil {
 			return err
 		}
@@ -267,7 +267,7 @@ func TestHTTPStoppableServerCanBeGracefullyStopped(t *testing.T) {
 		BasePath: "/",
 		Common: config.CommonServerConfig{
 			HostName: "localhost",
-			Port:     8081,
+			Port:     8083,
 			TLS:      nil,
 		},
 	}
@@ -298,7 +298,7 @@ func TestHTTPStoppableServerCanBeGracefullyStopped(t *testing.T) {
 	}()
 
 	healthCheck := func(suffix string) error {
-		resp, err := http.Get("http://localhost:8081/" + suffix)
+		resp, err := http.Get("http://localhost:8083/" + suffix)
 		if err != nil {
 			return err
 		}
@@ -357,7 +357,7 @@ func TestHTTPStoppableServerGracefulStopTimeout(t *testing.T) {
 		BasePath: "/",
 		Common: config.CommonServerConfig{
 			HostName: "localhost",
-			Port:     8081,
+			Port:     8084,
 			TLS:      nil,
 		},
 	}
@@ -387,7 +387,7 @@ func TestHTTPStoppableServerGracefulStopTimeout(t *testing.T) {
 	}()
 
 	healthCheck := func(suffix string) error {
-		resp, err := http.Get("http://localhost:8081/" + suffix)
+		resp, err := http.Get("http://localhost:8084/" + suffix)
 		if err != nil {
 			return err
 		}
