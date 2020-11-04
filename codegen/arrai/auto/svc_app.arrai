@@ -100,7 +100,7 @@ let sysl = //{./sysl};
             ctx context.Context,
             createService interface{},
         ) (core.StoppableServer, error) {
-            srv, err := core.NewServer(
+            return core.NewServer(
                 ctx,
                 &DownstreamConfig{}, createService, &${serviceInterface}{},
                 func(
@@ -198,6 +198,5 @@ let sysl = //{./sysl};
                     return restManager, &grpcManager, nil
                 },
             )
-            return srv, err
         }
     `

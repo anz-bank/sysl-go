@@ -4,7 +4,6 @@ let sysl = //{./sysl};
 let generators = {
     "app.go":              //{./svc_app},
     "app_spec.go":         //{./app_spec},
-    "error_types.go":      //{./svc_error_types},
     "grpc_client.go":      //{./grpc_client},
     "grpc_handler.go":     //{./grpc_handler},
     "grpc_interface.go":   //{./grpc_interface},
@@ -28,8 +27,8 @@ let _inferHasDB = \app hasRelationTypes(app);
 
     groups:
         let auto = "auto";
-        let restClient = {"error_types.go", "service.go", "types.go"};
-        let restService = restClient | {"requestrouter.go", "servicehandler.go", "serviceinterface.go"};
+        let restClient = {"service.go", "types.go"};
+        let restService = {"service.go", "types.go", "requestrouter.go", "servicehandler.go", "serviceinterface.go"};
         let grpcClient = {"grpc_client.go"};
         let grpcService = {"grpc_handler.go", "grpc_interface.go"};
         let app = {"app.go", "app_spec.go", "main.go.sample"};
