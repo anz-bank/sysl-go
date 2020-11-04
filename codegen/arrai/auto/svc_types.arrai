@@ -13,14 +13,11 @@ let fieldJsonTag = \type \key
 \(:app, :endpoints, :module, ...)
     let entities = orderedTypes(app('types')?:{} where !({"error"} & sysl.patterns(.@value)) && {"tuple", "relation"} & (.@value => .@));
     let aliases = orderedTypes(app('types')?:{} where !({'oneof', 'tuple', 'relation'} & (.@value => .@)));
+    let isErrReturnType = //rel.union(app('endpoints') => (sysl.endpoint.returns(.@value) => .@item))
+        where .var = "error" && .type != [""]
+        => //seq.join(".")(.type);
     $`
         ${go.prelude(app, {})}
-
-        // Reference imports to suppress unused errors
-        var _ = time.Parse
-
-        // Reference imports to suppress unused errors
-        var _ = date.Parse
 
         ${entities >> \(@: key, @value: value, :typename)
             let entity = value('tuple')?:(value('relation'));
@@ -49,33 +46,42 @@ let fieldJsonTag = \type \key
                         ${fieldName} ${go.type(attrDef)} `json:"${jsonTag::,}"${validateTag::}`'
                     ::\i}
                 }
+                ${cond {typename <: isErrReturnType: $`
+                    // Error fulfills the error interface.
+                    func (s ${typename}) Error() string {
+                        type plain ${typename}
+                        return fmt.Sprintf("%+v", plain(s))
+                    }
+                `}}
                 ${
                     let optParams = entity('attrDefs') where sysl.isPtr(.@value) orderby .@ >> .@value;
-                    cond {{"validate"} & patterns && optParams: $`func (t *${typename}) UnmarshalJSON(data []byte) error {
-                        inner := struct {
-                            ${entity('attrDefs') orderby .@ >> \(@: key, @value: attrDef)
-                                $'${go.name(key)} ${cond { !sysl.isPtr(attrDef) : '*', _ : ''}}${go.type(attrDef)} `json:"${fieldJsonTag(attrDef, key)::,},omitempty"`'
+                    cond {{"validate"} & patterns && optParams: $`
+                        func (t *${typename}) UnmarshalJSON(data []byte) error {
+                            inner := struct {
+                                ${entity('attrDefs') orderby .@ >> \(@: key, @value: attrDef)
+                                    $'${go.name(key)} ${cond { !sysl.isPtr(attrDef) : '*', _ : ''}}${go.type(attrDef)} `json:"${fieldJsonTag(attrDef, key)::,},omitempty"`'
+                                ::\i}
+                            }{}
+                            err := json.Unmarshal(data, &inner)
+                            if err != nil {
+                                return err
+                            }
+                            ${entity('attrDefs') where !sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
+                                $`
+                                    if inner.${go.name(key)} == nil {
+                                        return errors.New("${fieldJsonTag(attrDef, key)::,} cannot be nil")
+                                    }
+                                `
                             ::\i}
-                        }{}
-                        err := json.Unmarshal(data, &inner)
-                        if err != nil {
-                            return err
+                            *t = ${typename}{
+                                ${entity('attrDefs') orderby .@ >> \(@: key, @value: attrDef)
+                                    let fieldName = go.name(key);
+                                    $`${fieldName}: ${cond { !sysl.isPtr(attrDef) : '*', _ : ''}}inner.${fieldName},`
+                                ::\i}
+                            }
+                            return nil
                         }
-                        ${entity('attrDefs') where !sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
-                            $`
-                                if inner.${go.name(key)} == nil {
-                                    return errors.New("${fieldJsonTag(attrDef, key)::,} cannot be nil")
-                                }
-                            `
-                        ::\i}
-                        *t = ${typename}{
-                            ${entity('attrDefs') orderby .@ >> \(@: key, @value: attrDef)
-                                let fieldName = go.name(key);
-                                $`${fieldName}: ${cond { !sysl.isPtr(attrDef) : '*', _ : ''}}inner.${fieldName},`
-                            ::\i}
-                        }
-                        return nil
-                    }`}
+                    `}
                 }
             `
         ::\i}
