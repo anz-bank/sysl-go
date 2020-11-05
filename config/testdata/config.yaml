@@ -2,6 +2,12 @@ library:
   log:
     format: text
     level: 3
+    level1: fatal
+    level2: error
+    level3: panic
+    level4: info
+    level5: debug
+    level6: trace
     caller: true
   profiling: true
 server:
@@ -41,6 +47,27 @@ genCode:
     foo:
       serviceURL: https://foo.example.com
       clientTimeout: 10s
+      readTimeout: 5.1
+      creationTime: 2020-12-14T21:59:43.10-05:00
     bar:
       serviceURL: https://bar.example.com
       clientTimeout: 10s
+      readTimeout: 6.7
+# The config.envPrefix value determines the prefix to use when reading environment variables.
+# By default, sysl-go reads configuration values from a configuration file.
+# However, in certain circumstances it is desirable to override some or all of these
+# configuration values with environment variables. To support this, sysl-go allows
+# for a prefix to be set so that configuration values will first attempt to be read from
+# environment variables before falling back to the configuration file.
+# For example, given a configuration file with the following contents:
+# genCode:
+#     upstream:
+#         contextTimeout: 120s
+# If an envPrefix of "SYSLGO_APP_ENV" is specified then sysl-go will allow an environment variable of
+# the name SYSLGO_APP_ENV_GENCODE_UPSTREAM_CONTEXTTIMEOUT to override the value
+# found in the configuration file.
+# A nil prefix (the default behaviour) disables environment variable overrides.
+# An empty string prefix can be used to enable environment variable overrides without
+# requiring environment variables themselves to be prefixed.
+config:
+  envPrefix: SYSLGO_APP_ENV

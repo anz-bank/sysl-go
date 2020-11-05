@@ -16,14 +16,13 @@ import (
 
 	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/config"
+	"github.com/anz-bank/sysl-go/config/envvar"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/jwtauth/jwttest"
 
 	"github.com/sethvargo/go-retry"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
-
-	"gopkg.in/yaml.v2"
 )
 
 var appCfgOne = []byte(`---
@@ -139,7 +138,14 @@ genCode:
 
 func getServerAddr(appCfg []byte) (string, error) {
 	cfg := config.DefaultConfig{}
-	err := yaml.Unmarshal(appCfg, &cfg)
+	memFs := afero.NewMemMapFs()
+	err := afero.Afero{Fs: memFs}.WriteFile("config.yaml", appCfg, 0777)
+	if err != nil {
+		return "", err
+	}
+	b := envvar.NewConfigReaderBuilder().WithFs(memFs).WithConfigFile("config.yaml")
+
+	err = b.Build().Unmarshal(&cfg)
 	if err != nil {
 		return "", err
 	}
@@ -287,7 +293,6 @@ func TestJWTAuthorizationOfGRPCEndpoints(t *testing.T) {
 			args := os.Args
 			defer func() { os.Args = args }()
 			os.Args = []string{"./gateway.out", "config.yaml"}
-
 
 			appServer, err := newAppServer(ctx)
 			require.NoError(t, err)

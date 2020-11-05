@@ -1,0 +1,3 @@
+library:
+  log:
+    callee: true

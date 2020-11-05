@@ -58,30 +58,30 @@ var clientAuthTypes = map[string]tls.ClientAuthType{
 }
 
 type TLSConfig struct {
-	MinVersion         *string                `yaml:"min"`
-	MaxVersion         *string                `yaml:"max"`
-	ClientAuth         *string                `yaml:"clientAuth"`
-	Ciphers            []string               `yaml:"ciphers"`
-	ServerIdentity     *ServerIdentityConfig  `yaml:"serverIdentity"`
-	TrustedCertPool    *TrustedCertPoolConfig `yaml:"trustedCertPool"`
-	InsecureSkipVerify bool                   `yaml:"insecureSkipVerify"`
-	SelfSigned         bool                   `yaml:"selfSigned"`
+	MinVersion         *string                `yaml:"min" mapstructure:"min"`
+	MaxVersion         *string                `yaml:"max" mapstructure:"max"`
+	ClientAuth         *string                `yaml:"clientAuth" mapstructure:"clientAuth"`
+	Ciphers            []string               `yaml:"ciphers" mapstructure:"ciphers"`
+	ServerIdentity     *ServerIdentityConfig  `yaml:"serverIdentity" mapstructure:"serverIdentity"`
+	TrustedCertPool    *TrustedCertPoolConfig `yaml:"trustedCertPool" mapstructure:"trustedCertPool"`
+	InsecureSkipVerify bool                   `yaml:"insecureSkipVerify" mapstructure:"insecureSkipVerify"`
+	SelfSigned         bool                   `yaml:"selfSigned" mapstructure:"selfSigned"`
 }
 
 type TrustedCertPoolConfig struct {
-	Mode     *string                 `yaml:"mode"`
-	Encoding *string                 `yaml:"encoding"`
-	Path     *string                 `yaml:"path"`
-	Password *common.SensitiveString `yaml:"password"`
+	Mode     *string                 `yaml:"mode" mapstructure:"mode"`
+	Encoding *string                 `yaml:"encoding" mapstructure:"encoding"`
+	Path     *string                 `yaml:"path" mapstructure:"path"`
+	Password *common.SensitiveString `yaml:"password" mapstructure:"password"`
 }
 
 type ServerIdentityConfig struct {
-	CertKeyPair *CertKeyPair `yaml:"certKeyPair"`
+	CertKeyPair *CertKeyPair `yaml:"certKeyPair" mapstructure:"certKeyPair"`
 }
 
 type CertKeyPair struct {
-	CertPath *string `yaml:"certPath"`
-	KeyPath  *string `yaml:"keyPath"`
+	CertPath *string `yaml:"certPath" mapstructure:"certPath"`
+	KeyPath  *string `yaml:"keyPath" mapstructure:"keyPath"`
 }
 
 // Cert path modes.

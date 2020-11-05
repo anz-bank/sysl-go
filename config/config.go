@@ -2,26 +2,22 @@ package config
 
 import (
 	"context"
-	"fmt"
-	"io/ioutil"
 	"time"
 
 	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/config/envvar"
 	"github.com/anz-bank/sysl-go/validator"
-
-	"github.com/mitchellh/mapstructure"
-	"gopkg.in/yaml.v2"
 )
 
 type DefaultConfig struct {
-	Library LibraryConfig `yaml:"library"`
+	Library LibraryConfig `yaml:"library" mapstructure:"library"`
 
 	// config used for setting up the sysl-go admin server
-	Admin   *AdminConfig  `yaml:"admin"`
-	GenCode GenCodeConfig `yaml:"genCode"`
+	Admin   *AdminConfig  `yaml:"admin" mapstructure:"admin"`
+	GenCode GenCodeConfig `yaml:"genCode" mapstructure:"genCode"`
 
 	// development config can be used to set some config options only appropriate for dev/test environments.
-	Development *DevelopmentConfig `yaml:"development"`
+	Development *DevelopmentConfig `yaml:"development" mapstructure:"development"`
 }
 
 // LoadConfig reads and validates a configuration loaded from file.
@@ -29,34 +25,15 @@ type DefaultConfig struct {
 // defaultConfig: a pointer to the default config struct to populate
 // customConfig: a pointer to the custom config struct to populate.
 func LoadConfig(file string, defaultConfig *DefaultConfig, customConfig interface{}) error {
-	b, err := ioutil.ReadFile(file)
-	if err != nil {
-		return fmt.Errorf("read config file error: %s", err)
-	}
-
-	if err = yaml.Unmarshal(b, customConfig); err != nil {
-		return fmt.Errorf("unmarshal config file error: %s", err)
-	}
-
-	c := make(map[string]interface{})
-	if err = yaml.Unmarshal(b, &c); err != nil {
-		return fmt.Errorf("unmarshal config file error: %s", err)
-	}
-
-	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		Metadata:   nil,
-		DecodeHook: mapstructure.StringToTimeDurationHookFunc(),
-		Result:     defaultConfig,
-	})
+	b := envvar.NewConfigReaderBuilder().WithConfigFile(file)
+	err := b.Build().Unmarshal(defaultConfig)
 	if err != nil {
 		return err
 	}
-
-	err = decoder.Decode(c)
+	err = b.Build().Unmarshal(customConfig)
 	if err != nil {
 		return err
 	}
-
 	err = validator.Validate(defaultConfig)
 	if err != nil {
 		return err
