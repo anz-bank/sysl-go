@@ -13,9 +13,9 @@ import (
 
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config"
+	"github.com/anz-bank/sysl-go/config/envvar"
 	"github.com/anz-bank/sysl-go/health"
 	"github.com/spf13/afero"
-	"gopkg.in/yaml.v2"
 
 	"github.com/anz-bank/pkg/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -142,12 +142,20 @@ func LoadCustomConfig(ctx context.Context, customConfig interface{}) (interface{
 	}
 
 	configPath := os.Args[1]
-	configData, err := afero.Afero{Fs: fs}.ReadFile(configPath)
+	b := envvar.NewConfigReaderBuilder().WithFs(fs).WithConfigFile(configPath)
+
+	// Use the environment variable prefix from the config file if provided
+	env, err := b.Build().GetString("config.envPrefix")
+	// Disable the feature if none is provided
+	if len(env) > 0 && err == nil {
+		log.Info(ctx, "config environment variable prefix set: "+env)
+		b = b.AttachEnvPrefix(env)
+	}
+
+	err = b.Build().Unmarshal(customConfig)
 	if err != nil {
 		return nil, err
 	}
-
-	err = yaml.UnmarshalStrict(configData, customConfig)
 	return customConfig, err
 }
 
@@ -185,10 +193,10 @@ func NewZeroCustomConfig(downstreamConfigType, appConfigType reflect.Type) inter
 		adminField,
 		{Name: "GenCode", Type: reflect.StructOf([]reflect.StructField{
 			upstreamField,
-			{Name: "Downstream", Type: downstreamConfigType, Tag: `yaml:"downstream"`},
-		}), Tag: `yaml:"genCode"`},
+			{Name: "Downstream", Type: downstreamConfigType, Tag: `mapstructure:"downstream"`},
+		}), Tag: `mapstructure:"genCode"`},
 		developmentField,
-		{Name: "App", Type: appConfigType, Tag: `yaml:"app"`},
+		{Name: "App", Type: appConfigType, Tag: `mapstructure:"app"`},
 	})).Interface()
 }
 

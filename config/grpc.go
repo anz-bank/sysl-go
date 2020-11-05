@@ -22,9 +22,9 @@ func ExtractGrpcServerOptions(cfg *CommonServerConfig) ([]grpc.ServerOption, err
 
 // CommonGRPCDownstreamData collects all the client gRPC configuration.
 type CommonGRPCDownstreamData struct {
-	ServiceAddress string     `yaml:"serviceAddress"`
-	TLS            *TLSConfig `yaml:"tls"`
-	WithBlock      bool       `yaml:"withBlock"`
+	ServiceAddress string     `yaml:"serviceAddress" mapstructure:"serviceAddress"`
+	TLS            *TLSConfig `yaml:"tls" mapstructure:"tls"`
+	WithBlock      bool       `yaml:"withBlock" mapstructure:"withBlock"`
 }
 
 func NewDefaultCommonGRPCDownstreamData() *CommonGRPCDownstreamData {

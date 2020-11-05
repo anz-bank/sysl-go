@@ -6,15 +6,15 @@ import (
 
 // GenCodeConfig struct.
 type GenCodeConfig struct {
-	Upstream   UpstreamConfig `yaml:"upstream"`
-	Downstream interface{}    `yaml:"downstream"`
+	Upstream   UpstreamConfig `yaml:"upstream" mapstructure:"upstream"`
+	Downstream interface{}    `yaml:"downstream" mapstructure:"downstream"`
 }
 
 // UpstreamConfig struct.
 type UpstreamConfig struct {
-	ContextTimeout time.Duration          `yaml:"contextTimeout" validate:"nonnil"`
-	HTTP           CommonHTTPServerConfig `yaml:"http"`
-	GRPC           CommonServerConfig     `yaml:"grpc"`
+	ContextTimeout time.Duration          `yaml:"contextTimeout" mapstructure:"contextTimeout" validate:"nonnil"`
+	HTTP           CommonHTTPServerConfig `yaml:"http" mapstructure:"http"`
+	GRPC           CommonServerConfig     `yaml:"grpc" mapstructure:"grpc"`
 }
 
 func (c *UpstreamConfig) Validate() error {

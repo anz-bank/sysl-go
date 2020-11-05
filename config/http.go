@@ -30,29 +30,29 @@ func DefaultCommonDownstreamData() *CommonDownstreamData {
 
 // CommonDownstreamData collects all the client http configuration.
 type CommonDownstreamData struct {
-	ServiceURL      string              `yaml:"serviceURL"`
-	ClientTransport Transport           `yaml:"clientTransport"`
-	ClientTimeout   time.Duration       `yaml:"clientTimeout" validate:"timeout=1ms:60s"`
-	Headers         map[string][]string `yaml:"headers"`
+	ServiceURL      string              `yaml:"serviceURL" mapstructure:"serviceURL"`
+	ClientTransport Transport           `yaml:"clientTransport" mapstructure:"clientTransport"`
+	ClientTimeout   time.Duration       `yaml:"clientTimeout" mapstructure:"clientTimeout" validate:"timeout=1ms:60s"`
+	Headers         map[string][]string `yaml:"headers" mapstructure:"headers"`
 }
 
 // Transport is used to initialise DefaultHTTPTransport.
 type Transport struct {
-	Dialer                Dialer        `yaml:"dialer"`
-	MaxIdleConns          int           `yaml:"maxIdleConns"`
-	IdleConnTimeout       time.Duration `yaml:"idleConnTimeout"`
-	TLSHandshakeTimeout   time.Duration `yaml:"tLSHandshakeTimeout"`
-	ExpectContinueTimeout time.Duration `yaml:"expectContinueTimeout"`
-	ClientTLS             *TLSConfig    `yaml:"tls"`
-	ProxyURL              string        `yaml:"proxyURL"`
-	UseProxy              bool          `yaml:"useProxy"`
+	Dialer                Dialer        `yaml:"dialer" mapstructure:"dialer"`
+	MaxIdleConns          int           `yaml:"maxIdleConns" mapstructure:"maxIdleConns"`
+	IdleConnTimeout       time.Duration `yaml:"idleConnTimeout" mapstructure:"idleConnTimeout"`
+	TLSHandshakeTimeout   time.Duration `yaml:"tLSHandshakeTimeout" mapstructure:"tLSHandshakeTimeout"`
+	ExpectContinueTimeout time.Duration `yaml:"expectContinueTimeout" mapstructure:"expectContinueTimeout"`
+	ClientTLS             *TLSConfig    `yaml:"tls" mapstructure:"tls"`
+	ProxyURL              string        `yaml:"proxyURL" mapstructure:"proxyURL"`
+	UseProxy              bool          `yaml:"useProxy" mapstructure:"useProxy"`
 }
 
 // Dialer is part of the Transport struct.
 type Dialer struct {
-	Timeout   time.Duration `yaml:"timeout"`
-	KeepAlive time.Duration `yaml:"keepAlive"`
-	DualStack bool          `yaml:"dualStack"`
+	Timeout   time.Duration `yaml:"timeout" mapstructure:"timeout"`
+	KeepAlive time.Duration `yaml:"keepAlive" mapstructure:"keepAlive"`
+	DualStack bool          `yaml:"dualStack" mapstructure:"dualStack"`
 }
 
 func (g *CommonDownstreamData) Validate() error {
@@ -69,16 +69,16 @@ func (g *CommonDownstreamData) Validate() error {
 }
 
 type CommonServerConfig struct {
-	HostName string     `yaml:"hostName"`
-	Port     int        `yaml:"port" validate:"min=0,max=65534"`
-	TLS      *TLSConfig `yaml:"tls"`
+	HostName string     `yaml:"hostName" mapstructure:"hostName"`
+	Port     int        `yaml:"port" mapstructure:"port" validate:"min=0,max=65534"`
+	TLS      *TLSConfig `yaml:"tls" mapstructure:"tls"`
 }
 
 type CommonHTTPServerConfig struct {
-	Common       CommonServerConfig `yaml:"common"`
-	BasePath     string             `yaml:"basePath" validate:"startswith=/"`
-	ReadTimeout  time.Duration      `yaml:"readTimeout" validate:"nonnil"`
-	WriteTimeout time.Duration      `yaml:"writeTimeout" validate:"nonnil"`
+	Common       CommonServerConfig `yaml:"common" mapstructure:"common"`
+	BasePath     string             `yaml:"basePath" mapstructure:"basePath" validate:"startswith=/"`
+	ReadTimeout  time.Duration      `yaml:"readTimeout" mapstructure:"readTimeout" validate:"nonnil"`
+	WriteTimeout time.Duration      `yaml:"writeTimeout" mapstructure:"writeTimeout" validate:"nonnil"`
 }
 
 func (c *CommonHTTPServerConfig) Validate() error {

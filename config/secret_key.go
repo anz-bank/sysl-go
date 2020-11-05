@@ -14,11 +14,11 @@ const (
 )
 
 type SecretKeyConfig struct {
-	Encoding         *string                 `yaml:"encoding" json:"encoding"`
-	Alias            *string                 `yaml:"alias,omitempty" json:"alias,omitempty"`
-	KeyStore         *string                 `yaml:"keyStore,omitempty" json:"keyStore,omitempty"`
-	KeyStorePassword *common.SensitiveString `yaml:"keyStorePassword,omitempty" json:"keyStorePassword,omitempty"`
-	Value            *common.SensitiveString `yaml:"value,omitempty" json:"value,omitempty"`
+	Encoding         *string                 `yaml:"encoding" mapstructure:"encoding" json:"encoding"`
+	Alias            *string                 `yaml:"alias,omitempty" mapstructure:"alias,omitempty" json:"alias,omitempty"`
+	KeyStore         *string                 `yaml:"keyStore,omitempty" mapstructure:"keyStore,omitempty" json:"keyStore,omitempty"`
+	KeyStorePassword *common.SensitiveString `yaml:"keyStorePassword,omitempty" mapstructure:"keyStorePassword,omitempty" json:"keyStorePassword,omitempty"`
+	Value            *common.SensitiveString `yaml:"value,omitempty" mapstructure:"value,omitempty" json:"value,omitempty"`
 }
 
 var SecretKeyValidators = map[string]func(cfg *SecretKeyConfig) error{

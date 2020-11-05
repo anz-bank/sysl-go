@@ -15,6 +15,8 @@ require (
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/afero v1.4.0
+	github.com/spf13/cast v1.3.1
+	github.com/spf13/viper v1.6.1
 	github.com/stretchr/testify v1.6.1
 	google.golang.org/grpc v1.32.0
 	gopkg.in/go-playground/validator.v9 v9.31.0
