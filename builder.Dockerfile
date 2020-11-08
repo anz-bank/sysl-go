@@ -1,4 +1,4 @@
-FROM golang:1.14-stretch
+FROM golang:1.14.10-buster
 
 
 ENV SYSL_VERSION=0.258.0
