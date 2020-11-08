@@ -1,7 +1,7 @@
-FROM golang:1.14.9-alpine3.12 AS stage
+FROM golang:1.14.10-buster AS stage
 
-# install additional utilities
-RUN apk add --no-cache git make curl
+# requires git make curl
+# but this base image has all of those tools already
 
 ENV SYSL_VERSION=0.258.0
 ENV ARRAI_VERSION=0.194.0
@@ -10,6 +10,7 @@ ENV ARRAI_VERSION=0.194.0
 # is an obstacle to building from source, so instead install the binary
 WORKDIR /temp-deps/sysl
 RUN curl -LJO https://github.com/anz-bank/sysl/releases/download/v"$SYSL_VERSION"/sysl_"$SYSL_VERSION"_linux-amd64.tar.gz && tar -xvf sysl_"$SYSL_VERSION"_linux-amd64.tar.gz && mv sysl /bin/sysl
+RUN chown root:root /bin/sysl
 
 # install arrai
 RUN git clone --depth 1 --branch v"$ARRAI_VERSION" https://github.com/arr-ai/arrai.git && make -C arrai install
@@ -17,7 +18,7 @@ RUN git clone --depth 1 --branch v"$ARRAI_VERSION" https://github.com/arr-ai/arr
 # install goimports
 RUN go get golang.org/x/tools/cmd/goimports
 
-FROM golang:1.14.9-alpine3.12
+FROM golang:1.14.10-buster
 COPY --from=stage /go/bin/arrai /bin
 COPY --from=stage /bin/sysl /bin
 COPY --from=stage /go/bin/goimports /bin
