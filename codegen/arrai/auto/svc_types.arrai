@@ -13,9 +13,6 @@ let fieldJsonTag = \type \key
 \(:app, :endpoints, :module, ...)
     let entities = orderedTypes(app('types')?:{} where !({"error"} & sysl.patterns(.@value)) && {"tuple", "relation"} & (.@value => .@));
     let aliases = orderedTypes(app('types')?:{} where !({'oneof', 'tuple', 'relation'} & (.@value => .@)));
-    let isErrReturnType = //rel.union(app('endpoints') => (sysl.endpoint.returns(.@value) => .@item))
-        where .var = "error" && .type != [""]
-        => //seq.join(".")(.type);
     $`
         ${go.prelude(app, {})}
 
@@ -46,7 +43,7 @@ let fieldJsonTag = \type \key
                         ${fieldName} ${go.type(attrDef)} `json:"${jsonTag::,}"${validateTag::}`'
                     ::\i}
                 }
-                ${cond {typename <: isErrReturnType: $`
+                ${cond {typename <: go.errorReturnTypes(app): $`
                     // Error fulfills the error interface.
                     func (s ${typename}) Error() string {
                         type plain ${typename}
