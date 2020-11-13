@@ -69,5 +69,4 @@ genCode:
 # A nil prefix (the default behaviour) disables environment variable overrides.
 # An empty string prefix can be used to enable environment variable overrides without
 # requiring environment variables themselves to be prefixed.
-config:
-  envPrefix: SYSLGO_APP_ENV
+envPrefix: SYSLGO_APP_ENV

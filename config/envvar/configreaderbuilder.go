@@ -60,6 +60,22 @@ func (b ConfigReaderBuilder) WithFs(fs afero.Fs) ConfigReaderBuilder {
 	return b
 }
 
+// WithStrictMode controls if ConfigReader.Unmarshal handles unknown
+// keys. If strict mode is false (the default), config keys with no
+// corresponding config field are ignored. If strict mode is true,
+// any config key with no corresponding config field will be regarded
+// as a decoding error that will cause Unmarshal to return an error.
+//
+// Also, optionally, a list of keys to ignore and exclude from strict
+// mode checking can be provided. Beware, there's some subtleties
+// to how ignored keys must be named, see the comments inside
+// configreaderimpl.go for details.
+func (b ConfigReaderBuilder) WithStrictMode(strict bool, ignoredKeys ...string) ConfigReaderBuilder {
+	b.evarReader.strictMode = strict
+	b.evarReader.strictModeIgnoredKeys = ignoredKeys
+	return b
+}
+
 // Build Builds and returns the ConfigReader.
 func (b ConfigReaderBuilder) Build() ConfigReader {
 	if err := b.evarReader.envVars.ReadInConfig(); err != nil {

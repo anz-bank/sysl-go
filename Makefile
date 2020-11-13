@@ -52,6 +52,7 @@ auto-test:
 	$(MAKE) -C codegen/arrai/auto/tests/template_custom_gen
 	$(MAKE) -C codegen/arrai/auto/tests/grpc_jwt_authorization/
 	$(MAKE) -C codegen/arrai/auto/tests/rest_jwt_authorization/
+	$(MAKE) -C codegen/arrai/auto/tests/rest_env_config/
 
 clean:
 	rm -f $(COVERFILE)
