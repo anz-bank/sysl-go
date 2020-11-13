@@ -141,11 +141,21 @@ func LoadCustomConfig(ctx context.Context, customConfig interface{}) (interface{
 		fs = afero.NewOsFs()
 	}
 
+	envPrefixConfigKey := "envPrefix"
+
 	configPath := os.Args[1]
 	b := envvar.NewConfigReaderBuilder().WithFs(fs).WithConfigFile(configPath)
 
+	// Enable strict mode to raise an error if there are config keys read from
+	// input that have no corresponding place in the customConfig structure
+	// that we're going to decode into -- with the exception of the special
+	// optional envPrefix key -- that doesn't end up getting decoded into the
+	// structure but, if it is present, we do read it below to customise how
+	// environment variables are loaded.
+	b = b.WithStrictMode(true, envPrefixConfigKey)
+
 	// Use the environment variable prefix from the config file if provided
-	env, err := b.Build().GetString("config.envPrefix")
+	env, err := b.Build().GetString(envPrefixConfigKey)
 	// Disable the feature if none is provided
 	if len(env) > 0 && err == nil {
 		log.Info(ctx, "config environment variable prefix set: "+env)

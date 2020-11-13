@@ -1,6 +1,7 @@
 package envvar
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -130,4 +131,76 @@ func TestUnmarshalFromFile(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(t, "https://foo.example.com", conf.Gencode.Downstream.Foo.ServiceURL)
 	assert.Equal(t, "https://bar.example.com", conf.Gencode.Downstream.Bar.ServiceURL)
+}
+
+func TestUnmarshalFromFileWithStrictMode(t *testing.T) {
+	t.Parallel()
+
+	type DemoConfig struct {
+		Barr int `mapstructure:"barr"`
+	}
+
+	fs := afero.NewMemMapFs()
+	err := afero.WriteFile(fs, "a.yaml", []byte("foo: 123\nbarr: 456"), 0644)
+	require.NoError(t, err)
+
+	type scenario struct {
+		name           string
+		b              ConfigReaderBuilder
+		expectedConfig DemoConfig
+		expectedErr    error
+	}
+
+	scenarios := []scenario{
+		{
+			name:           "default",
+			b:              NewConfigReaderBuilder(),
+			expectedConfig: DemoConfig{Barr: 456},
+			expectedErr:    nil,
+		},
+		{
+			name:           "strict-mode-disabled",
+			b:              NewConfigReaderBuilder().WithStrictMode(false),
+			expectedConfig: DemoConfig{Barr: 456},
+			expectedErr:    nil,
+		},
+		{
+			name:           "strict-mode-enabled",
+			b:              NewConfigReaderBuilder().WithStrictMode(true),
+			expectedConfig: DemoConfig{Barr: 456},
+			expectedErr:    fmt.Errorf("Misconfiguration error: found unexpected config key(s): foo"),
+		},
+		{
+			name:           "strict-mode-enabled-with-exception-ignored",
+			b:              NewConfigReaderBuilder().WithStrictMode(true, "foo"),
+			expectedConfig: DemoConfig{Barr: 456},
+			expectedErr:    nil,
+		},
+		{
+			name:           "strict-mode-enabled-with-case-insensitive-exception-ignored",
+			b:              NewConfigReaderBuilder().WithStrictMode(true, "fOo"),
+			expectedConfig: DemoConfig{Barr: 456},
+			expectedErr:    nil,
+		},
+		{
+			name:           "strict-mode-enabled-with-some-other-exception-ignored",
+			b:              NewConfigReaderBuilder().WithStrictMode(true, "fib"),
+			expectedConfig: DemoConfig{Barr: 456},
+			expectedErr:    fmt.Errorf("Misconfiguration error: found unexpected config key(s): foo"),
+		},
+	}
+
+	for _, s := range scenarios {
+		s := s // force capture.
+		t.Run(s.name, func(t *testing.T) {
+			t.Parallel()
+
+			conf := DemoConfig{}
+			reader := s.b.WithFs(fs).WithConfigFile("a.yaml").Build()
+			err := reader.Unmarshal(&conf)
+
+			require.Equal(t, s.expectedConfig, conf)
+			require.Equal(t, s.expectedErr, err)
+		})
+	}
 }
