@@ -77,10 +77,7 @@ func (m configReaderImpl) Unmarshal(config interface{}) error {
 	}
 
 	if m.strictMode {
-		err := m.validateNoUnusedKeys(metadata)
-		if err != nil {
-			return err
-		}
+		return m.validateNoUnusedKeys(metadata)
 	}
 
 	return nil
