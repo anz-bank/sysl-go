@@ -81,8 +81,8 @@ func TestApplicationSmokeTest(t *testing.T) {
 	defer func() { os.Args = args }()
 	os.Args = []string{"./pingpong.out", "config.yaml"}
 
-  // Set environment variable to configure what port the server should listen on
-  os.Setenv("ASDF_GENCODE_UPSTREAM_HTTP_COMMON_PORT", "9021")
+	// Set environment variable to configure what port the server should listen on
+	os.Setenv("ASDF_GENCODE_UPSTREAM_HTTP_COMMON_PORT", "9021")
 
 	// Start pingpong application running as server
 	go application(ctx)
