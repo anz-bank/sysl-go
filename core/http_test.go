@@ -452,7 +452,6 @@ func Test_configureAdminServerListener_Valid(t *testing.T) {
 			return &config.LibraryConfig{
 				Log: config.LogConfig{
 					Format:       "text",
-					Splunk:       nil,
 					Level:        logrus.DebugLevel,
 					ReportCaller: false,
 				},
@@ -521,7 +520,6 @@ func Test_configureAdminServerListener_MissingAdminConfig(t *testing.T) {
 			return &config.LibraryConfig{
 				Log: config.LogConfig{
 					Format:       "text",
-					Splunk:       nil,
 					Level:        logrus.DebugLevel,
 					ReportCaller: false,
 				},
@@ -552,7 +550,6 @@ func Test_configureAdminServerListener_MissingMiddlewareHandler(t *testing.T) {
 			return &config.LibraryConfig{
 				Log: config.LogConfig{
 					Format:       "text",
-					Splunk:       nil,
 					Level:        logrus.DebugLevel,
 					ReportCaller: false,
 				},
