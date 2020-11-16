@@ -4,6 +4,7 @@ let sysl = //{./sysl};
 \(:app, ...) \outDir
     let package = go.package(app);
     let grpc = cond {"gRPC" <: sysl.patterns(app): `Grpc`};
+    let goModFileName = "go.mod"; # go.mod is assumed to exist in current working directory.
 
     $'
         package main
@@ -13,7 +14,7 @@ let sysl = //{./sysl};
 
             "github.com/anz-bank/sysl-go/core"
 
-            "${go.goModule}/internal/gen/pkg/servers/${outDir}"
+            "${go.goMainModulePath(goModFileName)}/internal/gen/pkg/servers/${outDir}"
         )
 
         type AppConfig struct {

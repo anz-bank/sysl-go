@@ -20,9 +20,10 @@ let name =
         let result = //seq.concat(uppers);
         cond {result <: restricted: result++"_", _: result};
 
-# FIXME: automagically unconditionally opening a file in the filesystem when
-# imported makes it difficult to unit test any code that imports this file.
-let goModule = //re.compile(`(?m)^module\s+(.*)$`).match($"${//os.file("go.mod")}")(0)(1) rank (:.@);
+# Return a string containing the go module's main module's path. Takes
+# one argument - a string specifying the location of the go.mod file to read.
+# Ref: https://golang.org/ref/mod#go-mod-file-module
+let goMainModulePath = \goModFilename //re.compile(`(?m)^module\s+(.*)$`).match($"${//os.file(goModFilename)}")(0)(1) rank (:.@);
 
 # Compute the Go type for a Sysl type. If leafOnly, then
 let typeImpl = \leafOnly //fn.fix(\typeImpl \t
@@ -252,7 +253,7 @@ let module = \module
     );
 
 (
-    :goModule,
+    :goMainModulePath,
     :methodName,
     :module,
     :name,
