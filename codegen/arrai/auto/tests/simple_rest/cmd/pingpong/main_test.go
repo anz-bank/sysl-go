@@ -61,8 +61,22 @@ func TestApplicationSmokeTest(t *testing.T) {
 	// Override sysl-go app command line interface to directly pass in app config
 	ctx = core.WithConfigFile(ctx, []byte(applicationConfig))
 
-	// Start pingpong application running as server
-	go application(ctx)
+	appServer, err := newAppServer(ctx)
+	require.NoError(t, err)
+	defer func() {
+		err := appServer.Stop()
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	// Start application server
+	go func() {
+		err := appServer.Start()
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	// Wait for application to come up
 	backoff, err := retry.NewFibonacci(10 * time.Millisecond)
@@ -81,7 +95,4 @@ func TestApplicationSmokeTest(t *testing.T) {
 	actual, err := doPingRequestResponse(ctx, 12345)
 	require.Nil(t, err)
 	require.Equal(t, expected, actual)
-
-	// FIXME how do we stop the application server?
-
 }
