@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"os"
 
 	pingpong "rest_env_config/internal/gen/pkg/servers/pingpong"
 
@@ -18,8 +19,8 @@ func GetPing(ctx context.Context, req *pingpong.GetPingRequest) (*pingpong.Pong,
 	}, nil
 }
 
-func application(ctx context.Context) {
-	pingpong.Serve(ctx,
+func newAppServer(ctx context.Context) (core.StoppableServer, error) {
+	return pingpong.NewServer(ctx,
 		func(ctx context.Context, config AppConfig) (*pingpong.ServiceInterface, *core.Hooks, error) {
 			// FIXME auto codegen and common.MapError don't align.
 			mapError := func(ctx context.Context, err error) *common.HTTPError {
@@ -40,7 +41,17 @@ func application(ctx context.Context) {
 func main() {
 	// initialise context with pkg logger
 	logger := log.NewStandardLogger()
-	ctx := log.WithLogger(logger).Onto(context.Background())
+	ctx := log.WithLogger(logger).WithConfigs(log.SetVerboseMode(true)).Onto(context.Background())
 
-	application(ctx)
+	handleError := func(err error) {
+		if err != nil {
+			log.Error(ctx, err)
+			os.Exit(1)
+		}
+	}
+
+	srv, err := newAppServer(ctx)
+	handleError(err)
+	err = srv.Start()
+	handleError(err)
 }
