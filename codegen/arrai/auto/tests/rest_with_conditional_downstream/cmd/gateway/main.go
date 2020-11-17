@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
 	gateway "rest_with_conditional_downstream/internal/gen/pkg/servers/gateway"
@@ -44,8 +45,8 @@ func GetFizzbuzz(ctx context.Context, req *gateway.GetFizzbuzzRequest, client ga
 	return &gateway.GatewayResponse{Content: b.String()}, nil
 }
 
-func application(ctx context.Context) {
-	gateway.Serve(ctx,
+func newAppServer(ctx context.Context) (core.StoppableServer, error) {
+	return gateway.NewServer(ctx,
 		func(ctx context.Context, config AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
 			// FIXME auto codegen and common.MapError don't align.
 			mapError := func(ctx context.Context, err error) *common.HTTPError {
@@ -66,7 +67,17 @@ func application(ctx context.Context) {
 func main() {
 	// initialise context with pkg logger
 	logger := log.NewStandardLogger()
-	ctx := log.WithLogger(logger).Onto(context.Background())
+	ctx := log.WithLogger(logger).WithConfigs(log.SetVerboseMode(true)).Onto(context.Background())
 
-	application(ctx)
+	handleError := func(err error) {
+		if err != nil {
+			log.Error(ctx, err)
+			os.Exit(1)
+		}
+	}
+
+	srv, err := newAppServer(ctx)
+	handleError(err)
+	err = srv.Start()
+	handleError(err)
 }
