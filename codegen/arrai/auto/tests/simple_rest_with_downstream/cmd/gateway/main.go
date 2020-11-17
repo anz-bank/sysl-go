@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/core"
@@ -36,8 +37,8 @@ func PostEncodeEncoder_id(ctx context.Context, req *gateway.PostEncodeEncoder_id
 	}
 }
 
-func application(ctx context.Context) {
-	gateway.Serve(ctx,
+func newAppServer(ctx context.Context) (core.StoppableServer, error) {
+	return gateway.NewServer(ctx,
 		func(ctx context.Context, config AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
 			return &gateway.ServiceInterface{
 				PostEncodeEncoder_id: PostEncodeEncoder_id,
@@ -49,7 +50,17 @@ func application(ctx context.Context) {
 func main() {
 	// initialise context with pkg logger
 	logger := log.NewStandardLogger()
-	ctx := log.WithLogger(logger).Onto(context.Background())
+	ctx := log.WithLogger(logger).WithConfigs(log.SetVerboseMode(true)).Onto(context.Background())
 
-	application(ctx)
+	handleError := func(err error) {
+		if err != nil {
+			log.Error(ctx, err)
+			os.Exit(1)
+		}
+	}
+
+	srv, err := newAppServer(ctx)
+	handleError(err)
+	err = srv.Start()
+	handleError(err)
 }
