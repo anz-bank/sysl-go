@@ -57,7 +57,7 @@ genCode:
       basePath: "/"
       common:
         hostName: "localhost"
-        port: 9022 # FIXME no guarantee this port is free
+        port: 9021 # FIXME no guarantee this port is free
   downstream:
     contextTimeout: "30s"
 `)
@@ -78,7 +78,7 @@ genCode:
       basePath: "/"
       common:
         hostName: "localhost"
-        port: 9023 # FIXME no guarantee this port is free
+        port: 9021 # FIXME no guarantee this port is free
   downstream:
     contextTimeout: "30s"
 `)
@@ -99,7 +99,7 @@ genCode:
       basePath: "/"
       common:
         hostName: "localhost"
-        port: 9024 # FIXME no guarantee this port is free
+        port: 9021 # FIXME no guarantee this port is free
   downstream:
     contextTimeout: "30s"
 `)
@@ -120,7 +120,7 @@ genCode:
       basePath: "/"
       common:
         hostName: "localhost"
-        port: 9025 # FIXME no guarantee this port is free
+        port: 9021 # FIXME no guarantee this port is free
   downstream:
     contextTimeout: "30s"
 `)
@@ -135,7 +135,7 @@ genCode:
       basePath: "/"
       common:
         hostName: "localhost"
-        port: 9026 # FIXME no guarantee this port is free
+        port: 9021 # FIXME no guarantee this port is free
   downstream:
     contextTimeout: "30s"
 `)
@@ -301,8 +301,22 @@ func TestJWTAuthorizationOfRESTEndpoints(t *testing.T) {
 			// Override sysl-go app command line interface to directly pass in app config
 			ctx = core.WithConfigFile(ctx, []byte(scenario.appCfg))
 
-			// Start gateway application running as server
-			go application(ctx)
+			appServer, err := newAppServer(ctx)
+			require.NoError(t, err)
+			defer func() {
+				err := appServer.Stop()
+				if err != nil {
+					panic(err)
+				}
+			}()
+
+			// Start application server
+			go func() {
+				err := appServer.Start()
+				if err != nil {
+					panic(err)
+				}
+			}()
 
 			isResponseExpected := func(response string, status int, err error) bool {
 				return status == scenario.expectedStatus
@@ -332,7 +346,6 @@ func TestJWTAuthorizationOfRESTEndpoints(t *testing.T) {
 			for _, expectedFragment := range scenario.expectedResponseFragments {
 				require.Contains(t, actualResponse, expectedFragment)
 			}
-			// FIXME how do we stop the application server?
 		})
 	}
 }
