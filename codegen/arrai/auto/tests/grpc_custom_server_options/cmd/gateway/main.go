@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
 	pb "grpc_custom_server_options/internal/gen/pb/gateway"
 	gateway "grpc_custom_server_options/internal/gen/pkg/servers/gateway"
@@ -55,8 +56,8 @@ func Hello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error)
 	}, nil
 }
 
-func application(ctx context.Context) {
-	gateway.Serve(ctx,
+func newAppServer(ctx context.Context) (core.StoppableServer, error) {
+	return gateway.NewServer(ctx,
 		func(ctx context.Context, cfg AppConfig) (*gateway.GrpcServiceInterface, *core.Hooks, error) {
 			// We can access the AppConfig here to help define our
 			// custom grpc.ServerOption configuration
@@ -89,7 +90,17 @@ func application(ctx context.Context) {
 func main() {
 	// initialise context with pkg logger
 	logger := log.NewStandardLogger()
-	ctx := log.WithLogger(logger).Onto(context.Background())
+	ctx := log.WithLogger(logger).WithConfigs(log.SetVerboseMode(true)).Onto(context.Background())
 
-	application(ctx)
+	handleError := func(err error) {
+		if err != nil {
+			log.Error(ctx, err)
+			os.Exit(1)
+		}
+	}
+
+	srv, err := newAppServer(ctx)
+	handleError(err)
+	err = srv.Start()
+	handleError(err)
 }
