@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
 	pb "grpc_custom_dial_options/internal/gen/pb/gateway"
 	gateway "grpc_custom_dial_options/internal/gen/pkg/servers/gateway"
@@ -45,9 +46,9 @@ func makeCustomGrpcMetadataInjector(key, value string) grpc.UnaryClientIntercept
 	return f
 }
 
-func application(ctx context.Context) {
-	gateway.Serve(ctx,
-		func(ctx context.Context, config AppConfig) (*gateway.GrpcServiceInterface, *core.Hooks, error) {
+func newAppServer(ctx context.Context) (core.StoppableServer, error) {
+	return gateway.NewServer(ctx,
+		func(ctx context.Context, cfg AppConfig) (*gateway.GrpcServiceInterface, *core.Hooks, error) {
 			// Customise how we connect to the backend_encoder service with gRPC
 			myCustomDialOpts := []grpc.DialOption{}
 			f := makeCustomGrpcMetadataInjector("rot-parameter-override", "17")
@@ -66,7 +67,17 @@ func application(ctx context.Context) {
 func main() {
 	// initialise context with pkg logger
 	logger := log.NewStandardLogger()
-	ctx := log.WithLogger(logger).Onto(context.Background())
+	ctx := log.WithLogger(logger).WithConfigs(log.SetVerboseMode(true)).Onto(context.Background())
 
-	application(ctx)
+	handleError := func(err error) {
+		if err != nil {
+			log.Error(ctx, err)
+			os.Exit(1)
+		}
+	}
+
+	srv, err := newAppServer(ctx)
+	handleError(err)
+	err = srv.Start()
+	handleError(err)
 }
