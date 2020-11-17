@@ -169,8 +169,22 @@ func TestSimpleRestWithDownstreamAppSmokeTest(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	// Start gateway application running as server
-	go application(ctx)
+	appServer, err := newAppServer(ctx)
+	require.NoError(t, err)
+	defer func() {
+		err := appServer.Stop()
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	// Start application server
+	go func() {
+		err := appServer.Start()
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	// Wait for application to come up
 	backoff, err := retry.NewFibonacci(20 * time.Millisecond)
@@ -195,6 +209,4 @@ func TestSimpleRestWithDownstreamAppSmokeTest(t *testing.T) {
 	actual, err = doGatewayRequestResponse(ctx, "notfound")
 	require.NotNil(t, err)
 	require.Contains(t, err.Error(), "503")
-
-	// FIXME how do we stop the application server?
 }
