@@ -25,12 +25,15 @@ import (
 type serveContextKey int
 
 const (
-	serveConfigFileSystemKey serveContextKey = iota
+	serveYAMLConfigFileKey serveContextKey = iota
 )
 
-// ConfigFileSystemOnto adds a config filesystem to ctx.
-func ConfigFileSystemOnto(ctx context.Context, fs afero.Fs) context.Context {
-	return context.WithValue(ctx, serveConfigFileSystemKey, fs)
+// WithConfigFile adds configuration data into the context. This will be
+// used as the source of application configuration data, instead of the
+// default behaviour of reading configuration from the config file path
+// specified by command line arguments. Data must be in YAML format.
+func WithConfigFile(ctx context.Context, yamlConfigData []byte) context.Context {
+	return context.WithValue(ctx, serveYAMLConfigFileKey, yamlConfigData)
 }
 
 // Serve is deprecated and will be removed once downstream applications cease
@@ -121,30 +124,35 @@ func NewServer(
 
 // LoadCustomConfig populates the given zero customConfig value with configuration data.
 func LoadCustomConfig(ctx context.Context, customConfig interface{}) (interface{}, error) {
-	// TODO make this more flexible. It should be possible to resolve a config value
-	// without needing to access os.Args or hit any kind of filesystem.
-	if len(os.Args) != 2 {
-		return nil, fmt.Errorf("Wrong number of arguments (usage: %s (config | -h | --help))", os.Args[0])
-	}
-
-	if os.Args[1] == "--help" || os.Args[1] == "-h" {
-		fmt.Printf("Usage: %s config\n\n", os.Args[0])
-		describeCustomConfig(os.Stdout, customConfig)
-		fmt.Print("\n\n")
-		return nil, nil
-	}
-
+	// Figure out where we can read application configuration data from.
 	var fs afero.Fs
-	if v := ctx.Value(serveConfigFileSystemKey); v != nil {
-		fs = v.(afero.Fs)
+	var configPath string
+	if v := ctx.Value(serveYAMLConfigFileKey); v != nil {
+		applicationConfig := v.([]byte)
+		fs = afero.NewMemMapFs()
+		configPath = "config.yaml"
+		err := afero.Afero{Fs: fs}.WriteFile(configPath, applicationConfig, 0777)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		fs = afero.NewOsFs()
+		if len(os.Args) != 2 {
+			return nil, fmt.Errorf("Wrong number of arguments (usage: %s (config | -h | --help))", os.Args[0])
+		}
+		if os.Args[1] == "--help" || os.Args[1] == "-h" {
+			fmt.Printf("Usage: %s config\n\n", os.Args[0])
+			describeCustomConfig(os.Stdout, customConfig)
+			fmt.Print("\n\n")
+			return nil, nil
+		}
+		configPath = os.Args[1]
 	}
 
-	envPrefixConfigKey := "envPrefix"
-
-	configPath := os.Args[1]
+	// Read application configuration data.
 	b := envvar.NewConfigReaderBuilder().WithFs(fs).WithConfigFile(configPath)
+
+	envPrefixConfigKey := "envPrefix"
 
 	// Enable strict mode to raise an error if there are config keys read from
 	// input that have no corresponding place in the customConfig structure

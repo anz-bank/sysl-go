@@ -13,7 +13,6 @@ import (
 	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
 
@@ -70,16 +69,8 @@ func TestApplicationSmokeTest(t *testing.T) {
 	logger := log.NewStandardLogger()
 	ctx := log.WithLogger(logger).Onto(context.Background())
 
-	// Add in a fake filesystem to pass in config
-	memFs := afero.NewMemMapFs()
-	err := afero.Afero{Fs: memFs}.WriteFile("config.yaml", []byte(applicationConfig), 0777)
-	require.NoError(t, err)
-	ctx = core.ConfigFileSystemOnto(ctx, memFs)
-
-	// FIXME patch core.Serve to allow it to optionally load app config path from ctx
-	args := os.Args
-	defer func() { os.Args = args }()
-	os.Args = []string{"./pingpong.out", "config.yaml"}
+	// Override sysl-go app command line interface to directly pass in app config
+	ctx = core.WithConfigFile(ctx, []byte(applicationConfig))
 
 	// Set environment variable to configure what port the server should listen on
 	os.Setenv("ASDF_GENCODE_UPSTREAM_HTTP_COMMON_PORT", "9021")

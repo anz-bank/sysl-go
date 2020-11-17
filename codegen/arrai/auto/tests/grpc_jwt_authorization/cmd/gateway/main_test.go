@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -283,16 +282,8 @@ func TestJWTAuthorizationOfGRPCEndpoints(t *testing.T) {
 			logger := log.NewStandardLogger()
 			ctx := log.WithLogger(logger).Onto(context.Background())
 
-			// Add in a fake filesystem to pass in config
-			memFs := afero.NewMemMapFs()
-			err = afero.Afero{Fs: memFs}.WriteFile("config.yaml", scenario.appCfg, 0777)
-			require.NoError(t, err)
-			ctx = core.ConfigFileSystemOnto(ctx, memFs)
-
-			// FIXME patch core.Serve to allow it to optionally load app config path from ctx
-			args := os.Args
-			defer func() { os.Args = args }()
-			os.Args = []string{"./gateway.out", "config.yaml"}
+			// Override sysl-go app command line interface to directly pass in app config
+			ctx = core.WithConfigFile(ctx, scenario.appCfg)
 
 			appServer, err := newAppServer(ctx)
 			require.NoError(t, err)
