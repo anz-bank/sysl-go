@@ -75,8 +75,22 @@ func TestApplicationSmokeTest(t *testing.T) {
 	// Set environment variable to configure what port the server should listen on
 	os.Setenv("ASDF_GENCODE_UPSTREAM_HTTP_COMMON_PORT", "9021")
 
-	// Start pingpong application running as server
-	go application(ctx)
+	appServer, err := newAppServer(ctx)
+	require.NoError(t, err)
+	defer func() {
+		err := appServer.Stop()
+		if err != nil {
+			panic(err)
+		}
+	}()
+
+	// Start application server
+	go func() {
+		err := appServer.Start()
+		if err != nil {
+			panic(err)
+		}
+	}()
 
 	// Wait for application to come up
 	backoff, err := retry.NewFibonacci(10 * time.Millisecond)
