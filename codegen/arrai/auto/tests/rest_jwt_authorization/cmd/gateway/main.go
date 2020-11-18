@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/anz-bank/pkg/log"
-	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/core"
 
 	gateway "rest_jwt_authorization/internal/gen/pkg/servers/gateway"
@@ -23,18 +22,10 @@ func Hello(ctx context.Context, req *gateway.PostHelloRequest) (*gateway.HelloRe
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
 	return gateway.NewServer(ctx,
 		func(ctx context.Context, cfg AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
-			// FIXME auto codegen and common.MapError don't align.
-			mapError := func(ctx context.Context, err error) *common.HTTPError {
-				httpErr := common.MapError(ctx, err)
-				return &httpErr
-			}
-
 			return &gateway.ServiceInterface{
 					PostHello: Hello,
 				},
-				&core.Hooks{
-					MapError: mapError,
-				},
+				&core.Hooks{},
 				nil
 		},
 	)

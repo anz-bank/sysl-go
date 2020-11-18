@@ -7,7 +7,6 @@ import (
 	pingpong "simple_rest/internal/gen/pkg/servers/pingpong"
 
 	"github.com/anz-bank/pkg/log"
-	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/core"
 )
 
@@ -22,17 +21,9 @@ func GetPing(ctx context.Context, req *pingpong.GetPingRequest) (*pingpong.Pong,
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
 	return pingpong.NewServer(ctx,
 		func(ctx context.Context, config AppConfig) (*pingpong.ServiceInterface, *core.Hooks, error) {
-			// FIXME auto codegen and common.MapError don't align.
-			mapError := func(ctx context.Context, err error) *common.HTTPError {
-				httpErr := common.MapError(ctx, err)
-				return &httpErr
-			}
-
 			return &pingpong.ServiceInterface{
 					GetPing: GetPing,
-				}, &core.Hooks{
-					MapError: mapError,
-				},
+				}, &core.Hooks{},
 				nil
 		},
 	)

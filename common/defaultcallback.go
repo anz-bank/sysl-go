@@ -23,7 +23,7 @@ type Callback struct {
 	DownstreamTimeout time.Duration
 	RouterBasePath    string
 	UpstreamConfig    validator.Validator
-	MapErrorFunc      func(ctx context.Context, err error) *HTTPError
+	MapErrorFunc      func(ctx context.Context, err error) *HTTPError // MapErrorFunc may be left nil to use default behaviour.
 }
 
 type Config struct{}
@@ -52,11 +52,13 @@ func (g Callback) DownstreamTimeoutContext(ctx context.Context) (context.Context
 	return context.WithTimeout(ctx, g.DownstreamTimeout)
 }
 
+// MapError maps an error to an HTTPError in instances where custom error mapping is required.
+// Return nil to perform default error mapping; defined as:
+// 1. CustomError.HTTPError if the original error is a CustomError, otherwise
+// 2. common.MapError.
 func (g Callback) MapError(ctx context.Context, err error) *HTTPError {
 	if g.MapErrorFunc == nil {
-		httpErr := MapError(ctx, err)
-		return &httpErr
+		return nil
 	}
-
 	return g.MapErrorFunc(ctx, err)
 }
