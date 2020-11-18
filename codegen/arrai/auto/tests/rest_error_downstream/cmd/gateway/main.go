@@ -37,18 +37,9 @@ func GetApiDoopList(ctx context.Context, req *gateway.GetApiDoopListRequest, cli
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
 	return gateway.NewServer(ctx,
 		func(ctx context.Context, config AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
-
-			// FIXME auto codegen and common.MapError don't align.
-			mapError := func(ctx context.Context, err error) *common.HTTPError {
-				httpErr := common.MapError(ctx, err)
-				return &httpErr
-			}
-
 			return &gateway.ServiceInterface{
 					GetApiDoopList: GetApiDoopList,
-				}, &core.Hooks{
-					MapError: mapError,
-				},
+				}, &core.Hooks{},
 				nil
 		},
 	)

@@ -26,8 +26,20 @@ func HandleError(ctx context.Context, w http.ResponseWriter, kind Kind, message 
 		err = CreateError(ctx, kind, message, w.e)
 	}
 
-	httpError := httpErrorMapper(ctx, err)
+	httpError := resolveErrorAsHTTPError(ctx, httpErrorMapper, err)
 
+	for _, f := range fields {
+		httpError.AddField(f.K, f.V)
+	}
+
+	httpError.WriteError(ctx, w)
+}
+
+func resolveErrorAsHTTPError(ctx context.Context, httpErrorMapper func(context.Context, error) *HTTPError, err error) *HTTPError {
+	var httpError *HTTPError
+	if httpErrorMapper != nil {
+		httpError = httpErrorMapper(ctx, err)
+	}
 	if httpError == nil {
 		switch t := err.(type) {
 		case CustomError:
@@ -37,12 +49,7 @@ func HandleError(ctx context.Context, w http.ResponseWriter, kind Kind, message 
 			httpError = &e
 		}
 	}
-
-	for _, f := range fields {
-		httpError.AddField(f.K, f.V)
-	}
-
-	httpError.WriteError(ctx, w)
+	return httpError
 }
 
 func MapError(ctx context.Context, err error) HTTPError {

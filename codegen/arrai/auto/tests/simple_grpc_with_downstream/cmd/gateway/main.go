@@ -10,7 +10,6 @@ import (
 	encoder_backend "simple_grpc_with_downstream/internal/gen/pkg/servers/gateway/encoder_backend"
 
 	"github.com/anz-bank/pkg/log"
-	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/core"
 )
 
@@ -39,17 +38,9 @@ func Encode(ctx context.Context, req *pb.EncodeRequest, client gateway.EncodeCli
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
 	return gateway.NewServer(ctx,
 		func(ctx context.Context, cfg AppConfig) (*gateway.GrpcServiceInterface, *core.Hooks, error) {
-			// FIXME auto codegen and common.MapError don't align.
-			mapError := func(ctx context.Context, err error) *common.HTTPError {
-				httpErr := common.MapError(ctx, err)
-				return &httpErr
-			}
-
 			return &gateway.GrpcServiceInterface{
 					Encode: Encode,
-				}, &core.Hooks{
-					MapError: mapError,
-				},
+				}, &core.Hooks{},
 				nil
 		},
 	)

@@ -10,7 +10,6 @@ import (
 	backend "rest_with_conditional_downstream/internal/gen/pkg/servers/gateway/backend"
 
 	"github.com/anz-bank/pkg/log"
-	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/core"
 )
 
@@ -48,17 +47,9 @@ func GetFizzbuzz(ctx context.Context, req *gateway.GetFizzbuzzRequest, client ga
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
 	return gateway.NewServer(ctx,
 		func(ctx context.Context, config AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
-			// FIXME auto codegen and common.MapError don't align.
-			mapError := func(ctx context.Context, err error) *common.HTTPError {
-				httpErr := common.MapError(ctx, err)
-				return &httpErr
-			}
-
 			return &gateway.ServiceInterface{
 					GetFizzbuzz: GetFizzbuzz,
-				}, &core.Hooks{
-					MapError: mapError,
-				},
+				}, &core.Hooks{},
 				nil
 		},
 	)
