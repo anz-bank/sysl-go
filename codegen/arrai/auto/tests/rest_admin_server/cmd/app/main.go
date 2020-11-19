@@ -13,14 +13,14 @@ import (
 type AppConfig struct{}
 
 func GetHello(ctx context.Context, req *app.GetHelloListRequest) error {
-  return nil
+	return nil
 }
 
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
 	return app.NewServer(ctx,
 		func(ctx context.Context, config AppConfig) (*app.ServiceInterface, *core.Hooks, error) {
 			return &app.ServiceInterface{
-          GetHelloList: GetHello,
+					GetHelloList: GetHello,
 				}, &core.Hooks{},
 				nil
 		},
