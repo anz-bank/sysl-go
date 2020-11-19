@@ -231,7 +231,7 @@ let sysl = //{./sysl};
                             common.HandleError(ctx, w, common.InternalError, "Unexpected panic", err, s.genCallback.MapError)
                         }
                     }()
-                    ${returns >> $`${//str.lower(.type(.type count - 1))}, `::}err := s.serviceInterface.${method}(ctx, &req${cond {client.notEmpty(ep): `, client`}})
+                    ${returns >> $`${go.asVariableName(.type(.type count - 1))}, `::}err := s.serviceInterface.${method}(ctx, &req${cond {client.notEmpty(ep): `, client`}})
                     if err != nil {
                         ${cond {hasDB: $`tx.Rollback()`}}
                         common.HandleError(ctx, w, common.InternalError, "Handler error", err, s.genCallback.MapError)
@@ -253,7 +253,7 @@ let sysl = //{./sysl};
                     restlib.SetHeaders(w, headermap)
                     restlib.SendHTTPResponse(w, httpstatus${(returns >> $`, ${
                         let type = .type(.type count - 1);
-                        let var = //str.lower(type);
+                        let var = go.asVariableName(type);
                         cond app('types')?(type)?:() {
                             {'primitive': (s: 'BYTES'), ...}: $"(*[]byte)(${var})",
                             _: var,
