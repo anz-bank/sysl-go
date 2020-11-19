@@ -37,8 +37,6 @@ genCode:
     contextTimeout: "30s"
 `
 
-// admin/-/status
-
 func doHTTPGet(ctx context.Context, endpoint string) ([]byte, error) {
 	client := &http.Client{}
 	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("http://localhost:%d/%s", adminServerPort, endpoint), nil)
@@ -61,7 +59,6 @@ func doHTTPGet(ctx context.Context, endpoint string) ([]byte, error) {
 }
 
 func TestAppAdminServerSmokeTest(t *testing.T) {
-
 	// Initialise context with pkg logger
 	logger := log.NewStandardLogger()
 	ctx := log.WithLogger(logger).Onto(context.Background())
