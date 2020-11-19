@@ -149,6 +149,9 @@ let errorTypes = {"Error_"};
     goNameErrorGetsMangledToAvoidCollidingWithError: //test.assert.equal("Error_")(go.name("Error")),
     goNameErrorrIsntMangled: //test.assert.equal("Errorr")(go.name("Errorr")),
 
+    variableNameIsLowercase: //test.assert.equal("foo")(go.asVariableName("Foo")),
+    variableNameManglesNonIdentifierCharacters: //test.assert.equal("gastropub_raw_denim_tofu_")(go.asVariableName("gastropub-raw denim tofu!")),
+
     pbMethodInfoCanDeduceRequestType: //test.assert.equal("EncodingRequest")(
         go.pbMethodInfo(
             {

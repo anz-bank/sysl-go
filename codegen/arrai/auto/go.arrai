@@ -20,6 +20,9 @@ let name =
         let result = //seq.concat(uppers);
         cond {result <: restricted: result++"_", _: result};
 
+let asVariableName =
+    \x //re.compile(`[^[:word:]]`).sub('_', //str.lower(x));
+
 # Return a string containing the go module's main module's path. Takes
 # one argument - a string specifying the location of the go.mod file to read.
 # Ref: https://golang.org/ref/mod#go-mod-file-module
@@ -266,4 +269,5 @@ let module = \module
     :typeWithPackage,
     :varName,
     :errorReturnTypes,
+    :asVariableName,
 )
