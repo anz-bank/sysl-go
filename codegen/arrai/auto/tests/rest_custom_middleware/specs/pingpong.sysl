@@ -1,0 +1,7 @@
+PingPong [package="pingpong"]:
+    /ping:
+        GET:
+            return ok <: Pong
+
+    !type Pong:
+        data <: string

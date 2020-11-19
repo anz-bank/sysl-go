@@ -123,10 +123,11 @@ let sysl = //{./sysl};
                         }
                     }
 
-                    genCallbacks := config.NewCallback(
+                    genCallbacks := config.NewCallbackV2(
                         &cfg.GenCode,
                         downstream.ContextTimeout,
                         hooks.MapError,
+                        hooks.AddHTTPMiddleware,
                     )
 
                     ${cond {clientDeps: $`

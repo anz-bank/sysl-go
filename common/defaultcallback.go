@@ -24,6 +24,7 @@ type Callback struct {
 	RouterBasePath    string
 	UpstreamConfig    validator.Validator
 	MapErrorFunc      func(ctx context.Context, err error) *HTTPError // MapErrorFunc may be left nil to use default behaviour.
+	AddMiddlewareFunc func(ctx context.Context, r chi.Router)         // AddMiddlewareFunc may be left nil to use default behaviour.
 }
 
 type Config struct{}
@@ -33,6 +34,9 @@ func (c Config) Validate() error {
 }
 
 func (g Callback) AddMiddleware(ctx context.Context, r chi.Router) {
+	if g.AddMiddlewareFunc != nil {
+		g.AddMiddlewareFunc(ctx, r)
+	}
 }
 
 func (g Callback) BasePath() string {
