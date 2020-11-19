@@ -133,7 +133,7 @@ let sysl = //{./sysl};
         `;
 
     $`
-        ${go.prelude(app, {"github.com/anz-bank/sysl-go/codegen/tests/deps"})}
+        ${go.prelude(app, {})}
         ${"app.union" where false >>
             let method = $`Is${.key}`; $`
                 // ${.key} ...
