@@ -1,0 +1,4 @@
+App [package="app"]:
+  /hello:
+    GET:
+      ...
