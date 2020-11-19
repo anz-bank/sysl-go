@@ -7,6 +7,7 @@ import (
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config/envvar"
 	"github.com/anz-bank/sysl-go/validator"
+	"github.com/go-chi/chi"
 )
 
 type DefaultConfig struct {
@@ -47,10 +48,11 @@ func LoadConfig(file string, defaultConfig *DefaultConfig, customConfig interfac
 	return err
 }
 
-func NewCallback(
+func NewCallbackV2(
 	config *GenCodeConfig,
 	downstreamTimeOut time.Duration,
 	mapError func(ctx context.Context, err error) *common.HTTPError,
+	addMiddleware func(ctx context.Context, r chi.Router),
 ) common.Callback {
 	// construct the rest configuration (aka. gen callback)
 	return common.Callback{
@@ -59,5 +61,20 @@ func NewCallback(
 		RouterBasePath:    config.Upstream.HTTP.BasePath,
 		UpstreamConfig:    &config.Upstream,
 		MapErrorFunc:      mapError,
+		AddMiddlewareFunc: addMiddleware,
 	}
+}
+
+// NewCallback is deprecated, prefer NewCallbackV2.
+func NewCallback(
+	config *GenCodeConfig,
+	downstreamTimeOut time.Duration,
+	mapError func(ctx context.Context, err error) *common.HTTPError,
+) common.Callback {
+	return NewCallbackV2(
+		config,
+		downstreamTimeOut,
+		mapError,
+		nil,
+	)
 }

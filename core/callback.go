@@ -98,6 +98,12 @@ type Hooks struct {
 	// expressions are evaluated and used to decide if JWT claims are authorised. By default, if this
 	// hook is nil, then authrules.MakeDefaultJWTClaimsBasedAuthorizationRule is used.
 	OverrideMakeJWTClaimsBasedAuthorizationRule func(authorizationRuleExpression string) (authrules.JWTClaimsBasedAuthorizationRule, error)
+
+	// AddHTTPMiddleware can be used to install additional HTTP middleware into the chi.Router
+	// used to serve all (non-admin) HTTP endpoints. By default, sysl-go installs a number of
+	// HTTP middleware -- refer to prepareMiddleware inside sysl-go/core. This hook can only
+	// be used to add middleware, not override any of the default middleware.
+	AddHTTPMiddleware func(ctx context.Context, r chi.Router)
 }
 
 func ResolveGrpcDialOptions(serviceName string, h *Hooks, grpcDownstreamConfig *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {
