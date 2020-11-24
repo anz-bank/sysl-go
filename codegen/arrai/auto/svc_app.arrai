@@ -79,10 +79,12 @@ let sysl = //{./sysl};
             createService interface{},
         ) {
             srv, err := NewServer(ctx, createService)
-            if err != nil {
-                log.Fatal(err)
+            switch err.(type) {
+                case core.ErrDisplayHelp:
+                    return
+                case nil:
+                    err = srv.Start()
             }
-            err = srv.Start()
             if err != nil {
                 log.Fatal(err)
             }
