@@ -14,7 +14,12 @@ import (
 
 type TestServiceInterface struct{}
 
-type TestAppConfig struct{}
+type TestAppConfig struct {
+	testFn func()
+	field1 int `mapstructure:"field1"`
+	field2 int `yaml:"field2"`
+	Field3 int
+}
 
 func TestNewServerReturnsErrorIfNewManagerReturnsError(t *testing.T) {
 	// Override sysl-go app command line interface to directly pass in app config
@@ -42,4 +47,17 @@ func TestDescribeYAMLForType(t *testing.T) {
 	w := bytes.Buffer{}
 	describeYAMLForType(&w, reflect.TypeOf(logrus.Level(0)), map[reflect.Type]string{}, 0)
 	assert.Equal(t, " \x1b[1minfo\x1b[0m", w.String())
+}
+
+func TestDescribeYAMLForTypeContainsFuncs(t *testing.T) {
+	t.Parallel()
+
+	w := bytes.Buffer{}
+	describeYAMLForType(&w, reflect.TypeOf(TestAppConfig{
+		testFn: func() {},
+		field1: 0,
+		field2: 1,
+	}), map[reflect.Type]string{}, 0)
+	assert.Equal(t, "\nfield1: \x1b[1m0\x1b[0m\nfield2: \x1b[1m0\x1b[0m\nField3: \x1b[1m0\x1b[0m",
+		w.String())
 }

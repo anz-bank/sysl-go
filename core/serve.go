@@ -29,6 +29,12 @@ const (
 	serveYAMLConfigFileKey serveContextKey = iota
 )
 
+type ErrDisplayHelp int
+
+func (e ErrDisplayHelp) Error() string {
+	return "Display help"
+}
+
 // WithConfigFile adds configuration data into the context. This will be
 // used as the source of application configuration data, instead of the
 // default behaviour of reading configuration from the config file path
@@ -62,6 +68,7 @@ func NewServer(
 	MustTypeCheckCreateService(createService, serviceInterface)
 	customConfig := NewZeroCustomConfig(reflect.TypeOf(downstreamConfig), GetAppConfigType(createService))
 	customConfig, err := LoadCustomConfig(ctx, customConfig)
+
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +159,7 @@ func LoadCustomConfig(ctx context.Context, customConfig interface{}) (interface{
 			fmt.Printf("Usage: %s config\n\n", os.Args[0])
 			describeCustomConfig(os.Stdout, customConfig)
 			fmt.Print("\n\n")
-			return nil, nil
+			return nil, ErrDisplayHelp(2)
 		}
 		configPath = os.Args[1]
 	}
@@ -344,17 +351,28 @@ func describeYAMLForType(w io.Writer, t reflect.Type, commonTypes map[reflect.Ty
 		n := t.NumField()
 		for i := 0; i < n; i++ {
 			f := t.Field(i)
+			var name string
 			yamlTag := f.Tag.Get("yaml")
 			yamlParts := strings.Split(yamlTag, ",")
-			var name string
-			if len(yamlParts) > 0 {
+			mapTag := f.Tag.Get("mapstructure")
+			mapParts := strings.Split(mapTag, ",")
+			switch {
+			case len(mapTag) > 0:
+				name = mapParts[0]
+			case len(yamlTag) > 0:
 				name = yamlParts[0]
-			} else {
+			case f.Type.Kind() == reflect.Func:
+				name = ""
+			default:
 				name = f.Name
 			}
-			outf("\n%s:", name)
+			if len(name) > 0 {
+				outf("\n%s:", name)
+			}
 			describeYAMLForType(w, f.Type, commonTypes, indent+4)
 		}
+	case reflect.Func:
+		break
 	default:
 		panic(fmt.Errorf("describeYAMLForType: Unhandled type: %v", t))
 	}
