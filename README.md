@@ -35,7 +35,7 @@ Ensure your environment provides:
 - [`arrai`](https://github.com/arr-ai/arrai) tool available on PATH
 
 
-On OSX, after installing [go 1.12.9](https://golang.org/doc/install) run
+On OSX, after installing [go 1.14](https://golang.org/doc/install) run
 
     brew install golangci/tap/golangci-lint make curl protoc-gen-go grpc
 
