@@ -80,8 +80,11 @@ GOIMPORTS = $(DOCKER_RUN) --entrypoint goimports $(SYSL_GO_IMAGE)
 
 endif
 
+.PHONY: gen-all-servers
+gen-all-servers: $(foreach app,$(SYSLGO_PACKAGES),$(SERVERS_ROOT)/$(app))
+
 .PHONY: all
-all: $(foreach app,$(SYSLGO_PACKAGES),$(SERVERS_ROOT)/$(app))
+all: gen-all-servers
 
 .INTERMEDIATE: model.json
 model.json: $(SYSLGO_SYSL)
