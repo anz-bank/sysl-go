@@ -1,7 +1,9 @@
 let [_, x, i] = //os.args;
 let f = //seq.split('\n', //os.file(x) => (:.@, @char: .@byte));
+# removes import lines
+let f = f where !//seq.has_prefix("import", .@item);
 # TODO: handle app names with namespaces
-let re = //re.compile('^[^ \t]+[ \t]*:$');
+let re = //re.compile('^[^: \t\"\']+');
 let trim = \. //seq.trim_suffix(' ', //seq.trim_suffix(':', .));
 let rec clean = \.
     let cleaned = trim(.);
@@ -11,4 +13,9 @@ let rec clean = \.
     }
 ;
 # TODO: use convert to int when it's available
-(f where re.match(.@item) rank (:.@) >> clean(.))(//eval.value(i))?:''
+(
+    # Find any regex matches and take out the first match. That will be the app name.
+    f filter re.match(.@item) {
+        [[firstMatch, ...], ...]: (:.@, @item: firstMatch),
+    } rank (:.@) >> clean(.)
+)(//eval.value(i))?:''
