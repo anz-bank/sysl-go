@@ -90,7 +90,10 @@ all: gen-all-servers
 
 .INTERMEDIATE: model.json
 model.json: $(SYSLGO_SYSL)
-	$(SYSL) pb --mode json --root . $< > $@ || (rm $@ && false)
+	# note: if we use > $@ here then if we are running inside a
+	# terminal, then sysl pb detects that and logs warnings
+	# to stdout which pollute our JSON output. So use --output $@.
+	$(SYSL) pb --mode json --root . $< --output $@ || (rm $@ && false)
 
 $(SERVERS_ROOT)/%: model.json codegen.mk
 	$(AUTOGEN) $* $(PKGPATH) $@ $< $(or $(SYSLGO_APP.$*),$*) =
