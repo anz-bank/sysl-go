@@ -2,8 +2,6 @@
 
 set -e
 
-OPTIND=1
-
 while getopts ":t:" opt; do
     case "$opt" in
         t)
@@ -18,8 +16,13 @@ done
 
 shift `expr $OPTIND - 1` || :
 SYSL_FILE="$1"
-GO_MOD="$2"
-shift 2 || :
+if [ ! -z "$SYSL_FILE" ]; then
+    shift
+fi
+GO_MOD="$1"
+if [ ! -z "$GO_MOD" ]; then
+    shift
+fi
 SYSL_APPS="$@"
 
 if [ -z "$SYSL_FILE" ]; then
@@ -44,7 +47,7 @@ if [ -z "$SYSL_APPS" ]; then
     index=0
     moreApps="y"
 
-    while [ "$moreApps" == "y" ]; do
+    while [ "$moreApps" = "y" ]; do
         appDefault=`arrai r /sysl-go/codegen/arrai/auto/scripts/get_apps.arrai "$SYSL_FILE" "$index"`
         if [ -z "$appDefault" ]; then
             break
