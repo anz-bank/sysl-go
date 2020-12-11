@@ -134,25 +134,18 @@ let sysl = //{./sysl};
 
     $`
         ${go.prelude(app, {})}
-        ${"app.union" where false >>
-            let method = $`Is${.key}`; $`
-                // ${.key} ...
-                type ${go.name(.key)} interface {
-                    ${method}()
-                }
+        ${"app.union" where false >> let f = $`Is${.key}`; $`
+            // ${f} ...
+            type ${go.name(.key)} interface {
+                ${f}()
+            }
 
-                ${.value.fields >> $`
-                    func (*${.}) ${method} {}
-                `}
-            `
-        :::\n}
+            ${.value.fields >> $`func (*${.}) ${f} {}`}
+        `:::\n}
 
         // Service interface for ${appname}
         type Service interface {
-            ${endpoints >>> \epname \ep
-                let ep = ep.@value;
-                $`${go.methodName(ep)}${methodSignature(ep)}`
-            ::\i}
+            ${endpoints >> methodSignature(.@value)::\i}
         }
 
         // Client for ${appname} API
@@ -167,14 +160,10 @@ let sysl = //{./sysl};
             return &Client{client, serviceURL, nil}
         }
 
-        ${endpoints where cond .@item.@value {{'restParams': _, ...}: true} >> \ep
-            let ep = ep.@value;
-            let funcName = go.methodName(ep);
-            $`
-                // ${funcName} ...
-                func (s *Client) ${funcName}${methodSignature(ep)} {
-                    ${HttpMethodStatements(appname, ep)}
-                }
-            `
-        ::\i}
+        ${endpoints where cond .@item.@value {{'restParams': _, ...}: true} >> \(@value: ep, ...) $`
+            // ${go.methodName(ep)} ...
+            func (s *Client) ${methodSignature(ep)} {
+                ${HttpMethodStatements(appname, ep)}
+            }
+        `::\i}
     `
