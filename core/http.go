@@ -72,7 +72,7 @@ func configureAdminServerListener(ctx context.Context, hl Manager, promRegistry 
 		}
 	})
 
-	listenAdmin := prepareServerListener(ctx, rootAdminRouter, adminTLSConfig, *hl.AdminServerConfig())
+	listenAdmin := prepareServerListener(ctx, rootAdminRouter, adminTLSConfig, *hl.AdminServerConfig(), "REST Admin Server")
 
 	return listenAdmin, nil
 }
@@ -93,7 +93,7 @@ func configurePublicServerListener(ctx context.Context, hl Manager, mWare []func
 		anzlog.Info(ctx, "No service handlers enabled by config.")
 	}
 
-	listenPublic := prepareServerListener(ctx, rootPublicRouter, publicTLSConfig, *hl.PublicServerConfig())
+	listenPublic := prepareServerListener(ctx, rootPublicRouter, publicTLSConfig, *hl.PublicServerConfig(), "REST Public Server")
 
 	return listenPublic, nil
 }
@@ -124,6 +124,7 @@ type httpServer struct {
 	cfg                 config.CommonHTTPServerConfig
 	server              *http.Server
 	gracefulStopTimeout time.Duration
+	name                string
 }
 
 func (s httpServer) Start() error {
@@ -168,7 +169,11 @@ func (s httpServer) Stop() error {
 	return s.server.Close()
 }
 
-func prepareServerListener(ctx context.Context, rootRouter http.Handler, tlsConfig *tls.Config, httpConfig config.CommonHTTPServerConfig) httpServer {
+func (s httpServer) GetName() string {
+	return s.name
+}
+
+func prepareServerListener(ctx context.Context, rootRouter http.Handler, tlsConfig *tls.Config, httpConfig config.CommonHTTPServerConfig, name string) httpServer {
 	re := regexp.MustCompile(`TLS handshake error from .* EOF`) // Avoid spurious TLS errors from load balancer
 	writer := &TLSLogFilter{anzlog.From(ctx), re}
 	serverLogger := log.New(writer, "HTTPServer ", log.LstdFlags|log.Llongfile)
@@ -179,6 +184,7 @@ func prepareServerListener(ctx context.Context, rootRouter http.Handler, tlsConf
 		ctx:    ctx,
 		cfg:    httpConfig,
 		server: server,
+		name:   name,
 	}
 }
 

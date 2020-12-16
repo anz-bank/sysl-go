@@ -154,7 +154,7 @@ func Test_serverUsesGivenLogger(t *testing.T) {
 	defer s.GracefulStop()
 	test.RegisterTestServiceServer(s, &TestServer{})
 
-	srv := prepareGrpcServerListener(ctx, s, localServer())
+	srv := prepareGrpcServerListener(ctx, s, localServer(), "")
 	go func() {
 		err := srv.Start()
 		require.NoError(t, err)

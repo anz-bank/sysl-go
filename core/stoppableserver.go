@@ -19,4 +19,6 @@ type StoppableServer interface {
 	// bounded period of time, even if this involves ungracefully dropping some
 	// laggard requests/calls.
 	GracefulStop() error
+
+	GetName() string
 }
