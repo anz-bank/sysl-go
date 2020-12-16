@@ -55,7 +55,7 @@ func (m configReaderImpl) Unmarshal(config interface{}) error {
 
 	metadata := &mapstructure.Metadata{}
 
-	// If "strict mode" is set them regard unused config keys
+	// If "strict mode" is set then regard unused config keys
 	// -- that is, config keys that don't correspond to any known
 	// config field -- as errors. Unless we are configured to explicitly
 	// ignore them.

@@ -5,7 +5,7 @@ let validateEndpoint = \ep
     ep;
 
 let validateApp = \app
-    let endpoints = app("endpoints");
+    let endpoints = app("endpoints") where .@ != "...";
     let validatedEndpoints = endpoints >> validateEndpoint(.);
     app;
 
