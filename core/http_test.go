@@ -185,7 +185,7 @@ func Test_prepareServerListener(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			assert.NotNil(t, prepareServerListener(ctx, tt.args.rootRouter, tt.args.tlsConfig, tt.args.commonConfig))
+			assert.NotNil(t, prepareServerListener(ctx, tt.args.rootRouter, tt.args.tlsConfig, tt.args.commonConfig, tt.name))
 		})
 	}
 }
@@ -221,7 +221,7 @@ func TestHTTPStoppableServerCanBeHardStopped(t *testing.T) {
 		fmt.Fprintf(w, "hello")
 	})
 
-	s := prepareServerListener(ctx, h, nil, cfg)
+	s := prepareServerListener(ctx, h, nil, cfg, "")
 
 	go func() {
 		err := s.Start()
@@ -290,7 +290,7 @@ func TestHTTPStoppableServerCanBeGracefullyStopped(t *testing.T) {
 		fmt.Fprintf(w, "hello")
 	})
 
-	s := prepareServerListener(ctx, h, nil, cfg)
+	s := prepareServerListener(ctx, h, nil, cfg, "")
 
 	go func() {
 		err := s.Start()
@@ -378,7 +378,7 @@ func TestHTTPStoppableServerGracefulStopTimeout(t *testing.T) {
 		fmt.Fprintf(w, "hello")
 	})
 
-	s := prepareServerListener(ctx, h, nil, cfg)
+	s := prepareServerListener(ctx, h, nil, cfg, "")
 	s.gracefulStopTimeout = 10 * time.Millisecond
 
 	go func() {

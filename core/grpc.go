@@ -74,13 +74,14 @@ func configurePublicGrpcServerListener(ctx context.Context, m GrpcServerManager)
 		h.RegisterServer(ctx, server)
 	}
 
-	return prepareGrpcServerListener(ctx, server, *m.GrpcPublicServerConfig)
+	return prepareGrpcServerListener(ctx, server, *m.GrpcPublicServerConfig, "gRPC Public server")
 }
 
 type grpcServer struct {
 	ctx    context.Context
 	cfg    config.CommonServerConfig
 	server *grpc.Server
+	name   string
 }
 
 func (s grpcServer) Start() error {
@@ -106,6 +107,10 @@ func (s grpcServer) Stop() error {
 	return nil
 }
 
+func (s grpcServer) GetName() string {
+	return s.name
+}
+
 type logWriterInfo struct {
 	logger log.Logger
 }
@@ -124,7 +129,7 @@ func (lw *logWriterError) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func prepareGrpcServerListener(ctx context.Context, server *grpc.Server, commonConfig config.CommonServerConfig) StoppableServer {
+func prepareGrpcServerListener(ctx context.Context, server *grpc.Server, commonConfig config.CommonServerConfig, name string) StoppableServer {
 	grpclog.SetLoggerV2(
 		grpclog.NewLoggerV2(
 			&logWriterInfo{logger: log.From(ctx)},
@@ -132,7 +137,7 @@ func prepareGrpcServerListener(ctx context.Context, server *grpc.Server, commonC
 			&logWriterError{logger: log.From(ctx)}))
 
 	log.Infof(ctx, "configured gRPC listener for address: %s:%d", commonConfig.HostName, commonConfig.Port)
-	return grpcServer{ctx: ctx, cfg: commonConfig, server: server}
+	return grpcServer{ctx: ctx, cfg: commonConfig, server: server, name: name}
 }
 
 func makeLoggerInterceptor(logger log.Logger) grpc.UnaryServerInterceptor {

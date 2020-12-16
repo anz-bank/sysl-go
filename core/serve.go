@@ -464,7 +464,7 @@ func (s *autogenServer) Start() error {
 		i := i                 // force capture
 		server := s.servers[i] // force capture
 		go func() {
-			log.Infof(ctx, "starting sub-server %d of %d", i, len(servers))
+			log.Infof(ctx, "starting sub-server %d of %d (%s)", i+1, len(servers), server.GetName())
 			errChan <- server.Start()
 		}()
 	}
@@ -501,9 +501,9 @@ func (s *autogenServer) Stop() error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			log.Infof(s.ctx, "stopping sub-server %d of %d...", i, len(s.servers))
+			log.Infof(s.ctx, "stopping sub-server %d of %d (%s)...", i+1, len(s.servers), server.GetName())
 			err := server.Stop()
-			log.Infof(s.ctx, "stopped sub-server %d of %d", i, len(s.servers))
+			log.Infof(s.ctx, "stopped sub-server %d of %d (%s)", i+1, len(s.servers), server.GetName())
 			if err != nil {
 				errQueue <- err
 			}
@@ -531,9 +531,9 @@ func (s *autogenServer) GracefulStop() error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			log.Infof(s.ctx, "graceful-stopping sub-server %d of %d...", i, len(s.servers))
+			log.Infof(s.ctx, "graceful-stopping sub-server %d of %d (%s)...", i+1, len(s.servers), server.GetName())
 			err := server.GracefulStop()
-			log.Infof(s.ctx, "graceful-stopped sub-server %d of %d", i, len(s.servers))
+			log.Infof(s.ctx, "graceful-stopped sub-server %d of %d (%s)", i+1, len(s.servers), server.GetName())
 			if err != nil {
 				errQueue <- err
 			}
@@ -549,4 +549,8 @@ func (s *autogenServer) GracefulStop() error {
 		return MultiError{Msg: "error during graceful stop", Errors: errors}
 	}
 	return nil
+}
+
+func (s autogenServer) GetName() string {
+	return s.name
 }
