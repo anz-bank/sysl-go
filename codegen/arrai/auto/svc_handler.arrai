@@ -76,6 +76,7 @@ let sysl = //{./sysl};
         ${restEndpoints >> \(@value: ep, ...)
             let method = go.methodName(ep);
             let returns = sysl.endpoint.normalReturns(ep);
+            let returnTypes = returns >> .type(.type count - 1);
             let urlParams = ep('restParams')('urlParam')?.a:[];
             let queryParams = ep('restParams')('queryParam')?.a:[];
             let headerParams = ep('param')?.a:{} where {'header', 'required'} (<=) sysl.patterns(.@item('type'));
@@ -231,7 +232,7 @@ let sysl = //{./sysl};
                             common.HandleError(ctx, w, common.InternalError, "Unexpected panic", err, s.genCallback.MapError)
                         }
                     }()
-                    ${returns >> $`${go.asVariableName(.type(.type count - 1))}, `::}err := s.serviceInterface.${method}(ctx, &req${cond {client.notEmpty(ep): `, client`}})
+                    ${returnTypes >> $`${go.asVariableName(.)}, `::}err := s.serviceInterface.${method}(ctx, &req${cond {client.notEmpty(ep): `, client`}})
                     if err != nil {
                         ${cond {hasDB: $`tx.Rollback()`}}
                         common.HandleError(ctx, w, common.InternalError, "Handler error", err, s.genCallback.MapError)
@@ -246,13 +247,35 @@ let sysl = //{./sysl};
                         }
                     `}}
 
+                    ${let types =
+                        (returnTypes where let t = app('types')?(.@item)?:{}; !({"error"} & sysl.patterns(t)) && {"tuple", "relation"} & (t => .@))
+                        orderby .@ => .@item;
+                    types >> \type $`
+                        valErr = validator.Validate(${go.asVariableName(type)})
+                        if valErr != nil {
+                            ${cond { 
+                                "permit_invalid_response" <: sysl.patterns(ep):
+                                    'pkglog.Info(ctx, fmt.Errorf("permitting invalid response: %v", valErr))',
+                                _: $`
+                                    // Regard an invalid response object as an internal error.
+                                    // To permit an endpoint to return invalid response objects, annotate the
+                                    // endpoint with permit_invalid_response:
+                                    //
+                                    // App:
+                                    //   ${ep('restParams')?('path')?.s?:'/foo/bar'} [~permit_invalid_response]
+                                    common.HandleError(ctx, w, common.InternalError, "Invalid response", valErr, s.genCallback.MapError)
+                                    return
+                                    `
+                            }}
+                        }
+                    `::\i}
+
                     headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
                     if headermap.Get("Content-Type") == "" {
                         headermap.Set("Content-Type", "application/json")
                     }
                     restlib.SetHeaders(w, headermap)
-                    restlib.SendHTTPResponse(w, httpstatus${(returns >> $`, ${
-                        let type = .type(.type count - 1);
+                    restlib.SendHTTPResponse(w, httpstatus${(returnTypes >> \type $`, ${
                         let var = go.asVariableName(type);
                         cond app('types')?(type)?:() {
                             {'primitive': (s: 'BYTES'), ...}: $"(*[]byte)(${var})",

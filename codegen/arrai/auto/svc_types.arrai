@@ -1,5 +1,6 @@
 let go = //{./go};
 let sysl = //{./sysl};
+let validation = //{./validation};
 
 let orderedTypes = \types
     (types orderby .@) >> . + (typename: go.name(.@));
@@ -36,11 +37,13 @@ let fieldJsonTag = \type \key
                             });
                         let validateTag =
                             cond attrDef {
-                                {'attrs': {'validate': {'s': (s: tag)}, ...}, ...}: [$` validate:"${tag}"`],
-                                _: [""],
+                                {'attrs': {'validate': {'s': (s: tag)}, ...}, ...}: tag,
+                                _: {},
                             };
+                        let structTags = [$`json:"${jsonTag::,}"`]
+                            ++ cond { validateTag: [$`validate:"${validateTag}"`] };
                         $'
-                        ${fieldName} ${go.type(attrDef)} `json:"${jsonTag::,}"${validateTag::}`'
+                        ${fieldName} ${go.type(attrDef)} `${//seq.join(' ', structTags)}`'
                     ::\i}
                 }
                 ${cond {typename <: go.errorReturnTypes(app): $`
@@ -91,6 +94,7 @@ let fieldJsonTag = \type \key
         `::\i}
         ${endpoints >> \(@value: ep, ...)
             let typename = $`${go.methodName(ep)}Request`;
+            let paramTags = validation.paramValidateTags(ep) => (:.@, @value:$'`validate:"${.@value}"`');
             $`
                 // ${typename} ...
                 type ${typename} struct {
@@ -101,7 +105,8 @@ let fieldJsonTag = \type \key
                     ${ep('restParams')?:{}
                         -> (.('queryParam')?.a:{}) ++ (.('urlParam')?.a:{})
                         orderby sysl.source(.@item('type'))
-                        >> $`${go.name(.@item('name').s)} ${go.type(.@item('type'))}`
+                        >>  let tags = paramTags(.@item('name').s)?:{};
+                            $`${go.name(.@item('name').s)} ${go.type(.@item('type'))} ${tags}`
                     ::\i}
                 }
             `
