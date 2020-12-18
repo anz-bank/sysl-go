@@ -1,0 +1,16 @@
+PingPong [package="pingpong"]:
+    @go_package = "pingpong"
+    @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_with_validate"
+    @pb_package = "pingping.v1"
+
+    /ping/{identifier <: int}/{value <: int} [validate="identifier:min=0,max=20 value:min=0"]:
+        GET:
+            return ok <: Pong
+
+    /ping-ignore/{identifier <: int}/{value <: int} [validate=["identifier:min=0,max=20", "value:oneof=0 1 20"], ~permit_invalid_response]:
+        GET:
+            return ok <: Pong
+
+    !type Pong:
+        identifier <: int [validate="max=10"]
+        value <: int [validate="max=10"]

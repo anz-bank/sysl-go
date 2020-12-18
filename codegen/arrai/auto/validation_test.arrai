@@ -1,0 +1,56 @@
+let (:paramValidateTags, ...) = //{./validation};
+
+let stringEp = \item {'attrs':{'validate': {'s': (s: item)}}};
+let arrayEp = \items {'attrs':{'validate': {'a': {'elt': (a: items >> {'s':(s:.)} )}}}};
+
+(
+    string: (
+        explicit: # an explicit, fully expanded example
+            let ep = {'attrs':{'validate': {'s': (s: 'identifier:min=0,max=20 value:min=0')}}};
+            let expected = {'identifier':'min=0,max=20', 'value':'min=0'};
+            let actual = paramValidateTags(ep);
+            //test.assert.equal(expected, actual),
+        single:
+            let ep = stringEp('identifier:min=0');
+            let expected = {'identifier':'min=0'};
+            let actual = paramValidateTags(ep);
+            //test.assert.equal(expected, actual),
+        multiple:
+            let ep = stringEp('identifier:min=0,max=20 value:min=0');
+            let expected = {'identifier':'min=0,max=20', 'value':'min=0'};
+            let actual = paramValidateTags(ep);
+            //test.assert.equal(expected, actual),
+        withColon:
+            let ep = stringEp('identifier:timeout=1ms:3m');
+            let expected = {'identifier':'timeout=1ms:3m'};
+            let actual = paramValidateTags(ep);
+            //test.assert.equal(expected, actual),
+    ),
+    array: (
+        explicit: # an explicit, fully expanded example
+            let ep = {'attrs':{'validate': {'a': {'elt': (a: [{'s': (s: 'identifier:min=0,max=20')}, {'s': (s: 'value:min=0')}])}}}};
+            let expected = {'identifier':'min=0,max=20', 'value':'min=0'};
+            let actual = paramValidateTags(ep);
+            //test.assert.equal(expected, actual),
+        single:
+            let ep = arrayEp(['identifier:min=0']);
+            let expected = {'identifier':'min=0'};
+            let actual = paramValidateTags(ep);
+            //test.assert.equal(expected, actual),
+        multiple:
+            let ep = arrayEp(['identifier:min=0,max=20', 'value:min=0']);
+            let expected = {'identifier':'min=0,max=20', 'value':'min=0'};
+            let actual = paramValidateTags(ep);
+            //test.assert.equal(expected, actual),
+        withColon:
+            let ep = arrayEp(['identifier:timeout=1ms:3m']);
+            let expected = {'identifier':'timeout=1ms:3m'};
+            let actual = paramValidateTags(ep);
+            //test.assert.equal(expected, actual),
+        withSpace:
+            let ep = arrayEp(['identifier:oneof=full prefix pattern']);
+            let expected = {'identifier':'oneof=full prefix pattern'};
+            let actual = paramValidateTags(ep);
+            //test.assert.equal(expected, actual),
+    ),
+)
