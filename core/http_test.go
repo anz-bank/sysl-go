@@ -138,7 +138,12 @@ func Test_makeNewServer(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			if got := makeNewServer(tt.args.router, tt.args.tlsConfig, tt.args.serverConfig, nil); !reflect.DeepEqual(got, tt.want) {
+			type testContextKey struct{}
+			ctx := context.WithValue(context.Background(), testContextKey{}, 5)
+			got := makeNewServer(ctx, tt.args.router, tt.args.tlsConfig, tt.args.serverConfig, nil)
+			assert.Equal(t, ctx, got.BaseContext(nil))
+			got.BaseContext = nil
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("makeNewServer() = %v, want %v", got, tt.want)
 			}
 		})
