@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/http/pprof"
 	"regexp"
@@ -178,7 +179,7 @@ func prepareServerListener(ctx context.Context, rootRouter http.Handler, tlsConf
 	writer := &TLSLogFilter{anzlog.From(ctx), re}
 	serverLogger := log.New(writer, "HTTPServer ", log.LstdFlags|log.Llongfile)
 
-	server := makeNewServer(rootRouter, tlsConfig, httpConfig, serverLogger)
+	server := makeNewServer(ctx, rootRouter, tlsConfig, httpConfig, serverLogger)
 	anzlog.Infof(ctx, "configured listener for address: %s:%d%s", httpConfig.Common.HostName, httpConfig.Common.Port, httpConfig.BasePath)
 	return httpServer{
 		ctx:    ctx,
@@ -188,7 +189,7 @@ func prepareServerListener(ctx context.Context, rootRouter http.Handler, tlsConf
 	}
 }
 
-func makeNewServer(router http.Handler, tlsConfig *tls.Config, serverConfig config.CommonHTTPServerConfig, serverLogger *log.Logger) *http.Server {
+func makeNewServer(ctx context.Context, router http.Handler, tlsConfig *tls.Config, serverConfig config.CommonHTTPServerConfig, serverLogger *log.Logger) *http.Server {
 	listenAddr := fmt.Sprintf("%s:%d", serverConfig.Common.HostName, serverConfig.Common.Port)
 	return &http.Server{
 		Addr:              listenAddr,
@@ -200,6 +201,7 @@ func makeNewServer(router http.Handler, tlsConfig *tls.Config, serverConfig conf
 		IdleTimeout:       5 * time.Second,
 		MaxHeaderBytes:    http.DefaultMaxHeaderBytes,
 		ErrorLog:          serverLogger,
+		BaseContext:       func(net.Listener) context.Context { return ctx },
 	}
 }
 
