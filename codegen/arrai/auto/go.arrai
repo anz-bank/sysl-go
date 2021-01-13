@@ -223,7 +223,7 @@ let module = \module
                         req *${package}.${method}Request,
                     ) (${
                         let typed = sysl.endpoint.normalReturns(ep)
-                            >> $`*${cond{.seq: `[]`}}${package}.${//seq.join(".", .type)}`;
+                            >> $`*${cond{.seq: `[]`}}${package}.${//str.title(//seq.join(".", .type))}`;
                         let untyped = sysl.endpoint.untypedReturns(ep) >> `*http.Header`;
                         typed ++ untyped ++ ["error"]
                     ::, })
