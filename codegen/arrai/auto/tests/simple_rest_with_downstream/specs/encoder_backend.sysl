@@ -5,10 +5,10 @@ EncoderBackend [package="encoder_backend"]:
 
     /rot13:
         POST (EncodingRequestRequest <: EncodingRequest [mediatype="application/json", ~body]):
-            return ok <: EncodingResponse
+            return ok <: encodingResponse
 
     !type EncodingRequest:
         content <: string
     
-    !type EncodingResponse:
+    !type encodingResponse:
         content <: string
