@@ -13,11 +13,12 @@ let name =
     let restricted = {
         "Error",
     };
+    let uppers = \word
+        (wordRE.match(word) >> .(0)) -> \[first, ...rest] [trimRE(first)] ++ rest >> \v
+        let upper = //str.upper(trimRE(v));
+        cond {upper <: initialisms: upper, _: //str.title(v)};
     \word
-        let uppers = (wordRE.match(word) >> .(0)) >>> \i \v
-            let upper = //str.upper(trimRE(v));
-            cond {upper <: initialisms: upper, _: //str.title(v)};
-        let result = //seq.concat(uppers);
+        let result = cond word {"": "", _: //seq.concat(uppers(word))};
         cond {result <: restricted: result++"_", _: result};
 
 let asVariableName =
