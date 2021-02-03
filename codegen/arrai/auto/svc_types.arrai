@@ -13,7 +13,8 @@ let fieldJsonTag = \type \key
 
 \(:app, :endpoints, :module, ...)
     let entities = orderedTypes(app('types')?:{} where !({"error"} & sysl.patterns(.@value)) && {"tuple", "relation"} & (.@value => .@));
-    let aliases = orderedTypes(app('types')?:{} where !({'oneof', 'tuple', 'relation'} & (.@value => .@)));
+    let aliases = orderedTypes(app('types')?:{} where !({'oneOf', 'oneof', 'tuple', 'relation'} & (.@value => .@)));
+    let unions = orderedTypes(app('types')?:{} where ({'oneOf', 'oneof'} & (.@value => .@)));
     $`
         ${go.prelude(app, {})}
 
@@ -148,5 +149,19 @@ let fieldJsonTag = \type \key
             // ${.typename} ...
             type ${.typename} struct {
             }
+        `::\i}
+        ${unions >> \(@: key, @value: value, :typename)
+            let unionTypes = value('oneOf')('type').a >> .('typeRef')('ref')('path').a >> go.name(.@item.s);
+            $`
+            // ${typename} can be one of the following types at runtime:
+            ${unionTypes >> $`// ${.}`::\i}
+            type ${typename} interface {
+                is${typename}()
+            }
+            ${unionTypes >> $`
+                // is${typename} identifies ${.} as an instance of ${typename}
+                func (i ${.}) is${typename}() {
+                }
+                `::\i}
         `::\i}
     `

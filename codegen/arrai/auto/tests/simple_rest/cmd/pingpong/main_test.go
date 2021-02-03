@@ -27,18 +27,22 @@ genCode:
     contextTimeout: "30s"
 `
 
-func doPingRequestResponse(ctx context.Context, identifier int) (int, error) {
+func doRequest(ctx context.Context, target string, identifier int) ([]byte, error) {
 	client := &http.Client{}
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("http://localhost:9021/ping/%d", identifier), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("http://localhost:9021/%s/%d", target, identifier), nil)
 	if err != nil {
-		return -1, err
+		return nil, err
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return -1, err
+		return nil, err
 	}
 	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
+	return ioutil.ReadAll(resp.Body)
+}
+
+func doPingRequestResponse(ctx context.Context, identifier int) (int, error) {
+	data, err := doRequest(ctx, "ping", identifier)
 	if err != nil {
 		return -1, err
 	}
@@ -50,6 +54,34 @@ func doPingRequestResponse(ctx context.Context, identifier int) (int, error) {
 		return -1, err
 	}
 	return obj.Identifier, nil
+}
+
+func doOneOfRequest(ctx context.Context, identifier int) (*int64, *string, error) {
+	data, err := doRequest(ctx, "getoneof", identifier)
+	if err != nil {
+		return nil, nil, err
+	}
+	var (
+		i *int64
+		s *string
+	)
+	if identifier == 1 {
+		var obj struct {
+			IdentifierInt int64 `json:"identifierInt"`
+		}
+		err = json.Unmarshal(data, &obj)
+		i = &obj.IdentifierInt
+	} else {
+		var obj struct {
+			IdentifierString string `json:"identifierString"`
+		}
+		err = json.Unmarshal(data, &obj)
+		s = &obj.IdentifierString
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+	return i, s, nil
 }
 
 func TestApplicationSmokeTest(t *testing.T) {
@@ -95,4 +127,16 @@ func TestApplicationSmokeTest(t *testing.T) {
 	actual, err := doPingRequestResponse(ctx, 12345)
 	require.Nil(t, err)
 	require.Equal(t, expected, actual)
+
+	// Test oneOf endpoint
+	i, s, err := doOneOfRequest(ctx, 1)
+	require.Nil(t, err)
+	require.NotNil(t, i)
+	require.Equal(t, int64(1), *i)
+	require.Nil(t, s)
+	i, s, err = doOneOfRequest(ctx, 2)
+	require.Nil(t, err)
+	require.Nil(t, i)
+	require.NotNil(t, s)
+	require.Equal(t, "Two", *s)
 }

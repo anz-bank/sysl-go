@@ -12,17 +12,29 @@ import (
 
 type AppConfig struct{}
 
-func GetPing(ctx context.Context, req *pingpong.GetPingRequest) (*pingpong.Pong, error) {
+func GetPing(_ context.Context, req *pingpong.GetPingRequest) (*pingpong.Pong, error) {
 	return &pingpong.Pong{
 		Identifier: req.Identifier,
 	}, nil
+}
+
+func GetPingoneof(_ context.Context, req *pingpong.GetGetoneofRequest) (*pingpong.OneOfResponse, error) {
+	var ret pingpong.OneOfResponse
+	if req.Identifier == 1 {
+		ret = pingpong.OneOfResponseOne{1}
+	} else {
+		ret = pingpong.OneOfResponseTwo{"Two"}
+	}
+
+	return &ret, nil
 }
 
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
 	return pingpong.NewServer(ctx,
 		func(ctx context.Context, config AppConfig) (*pingpong.ServiceInterface, *core.Hooks, error) {
 			return &pingpong.ServiceInterface{
-					GetPing: GetPing,
+					GetPing:     GetPing,
+					GetGetoneof: GetPingoneof,
 				}, &core.Hooks{},
 				nil
 		},

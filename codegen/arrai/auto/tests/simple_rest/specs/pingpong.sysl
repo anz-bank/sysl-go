@@ -9,3 +9,17 @@ PingPong [package="pingpong"]:
 
     !type Pong:
         identifier <: int
+
+    /getoneof/{identifier <: int}:
+        GET:
+            return ok <: oneOfResponse
+
+    !union oneOfResponse:
+        OneOfResponseOne
+        OneOfResponseTwo
+
+    !type OneOfResponseOne:
+        identifierInt <: int
+
+    !type OneOfResponseTwo:
+        identifierString <: string
