@@ -104,6 +104,14 @@ func NewServer(
 	serviceIntf := createServiceResult[0].Interface()
 	hooksIntf := createServiceResult[1].Interface()
 
+	hooks := hooksIntf.(*Hooks)
+	if hooks != nil && hooks.ValidateConfig != nil {
+		err = hooks.ValidateConfig(ctx, defaultConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Collect prometheus metrics if the admin server is enabled.
 	var promRegistry *prometheus.Registry
 	if admin != nil {
@@ -124,7 +132,7 @@ func NewServer(
 	ctx = InitialiseLogging(ctx, pkgLoggerConfigs, logrusLogger)
 	// OK, we have a ctx that contains a logger now!
 
-	manager, grpcManager, err := newManagers(ctx, defaultConfig, serviceIntf, hooksIntf.(*Hooks))
+	manager, grpcManager, err := newManagers(ctx, defaultConfig, serviceIntf, hooks)
 	if err != nil {
 		return nil, err
 	}

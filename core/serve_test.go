@@ -21,6 +21,8 @@ type TestAppConfig struct {
 	Field3 int
 }
 
+const errString = "not happening"
+
 func TestNewServerReturnsErrorIfNewManagerReturnsError(t *testing.T) {
 	// Override sysl-go app command line interface to directly pass in app config
 	ctx := WithConfigFile(context.Background(), []byte(""))
@@ -33,11 +35,36 @@ func TestNewServerReturnsErrorIfNewManagerReturnsError(t *testing.T) {
 		},
 		&TestServiceInterface{},
 		func(ctx context.Context, cfg *config.DefaultConfig, serviceIntf interface{}, _ *Hooks) (Manager, *GrpcServerManager, error) {
-			return nil, nil, fmt.Errorf("not happening")
+			return nil, nil, fmt.Errorf(errString)
 		},
 	)
 	assert.Nil(t, srv)
-	assert.Error(t, err)
+	assert.EqualError(t, err, errString)
+}
+
+func TestNewServerReturnsErrorIfValidateConfigReturnsError(t *testing.T) {
+	// Override sysl-go app command line interface to directly pass in app config
+	ctx := WithConfigFile(context.Background(), []byte(""))
+
+	hooks := &Hooks{
+		ValidateConfig: func(ctx context.Context, cfg *config.DefaultConfig) error {
+			return fmt.Errorf(errString)
+		},
+	}
+
+	srv, err := NewServer(
+		ctx,
+		struct{}{},
+		func(ctx context.Context, config TestAppConfig) (*TestServiceInterface, *Hooks, error) {
+			return &TestServiceInterface{}, hooks, nil
+		},
+		&TestServiceInterface{},
+		func(ctx context.Context, cfg *config.DefaultConfig, serviceIntf interface{}, _ *Hooks) (Manager, *GrpcServerManager, error) {
+			return nil, nil, nil
+		},
+	)
+	assert.Nil(t, srv)
+	assert.EqualError(t, err, errString)
 }
 
 func TestDescribeYAMLForType(t *testing.T) {

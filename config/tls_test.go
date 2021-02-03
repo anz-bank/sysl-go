@@ -543,7 +543,7 @@ func TestSelfSignedTLSConfig(t *testing.T) {
 		MinVersion: NewString("1.2"),
 		MaxVersion: NewString("1.3"),
 		ServerIdentity: &ServerIdentityConfig{
-			&CertKeyPair{
+			CertKeyPair: &CertKeyPair{
 				CertPath: &certFilename,
 				KeyPath:  &keyFilename,
 			},

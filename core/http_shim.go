@@ -1,23 +1,28 @@
 package core
 
 import (
+	"context"
+
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
+	"github.com/go-chi/chi"
 )
 
 type HTTPManagerShim struct {
-	libraryConfig      *config.LibraryConfig
-	adminServerConfig  *config.CommonHTTPServerConfig
-	publicServerConfig *config.CommonHTTPServerConfig
-	enabledHandlers    []handlerinitialiser.HandlerInitialiser
+	libraryConfig          *config.LibraryConfig
+	adminServerConfig      *config.CommonHTTPServerConfig
+	publicServerConfig     *config.CommonHTTPServerConfig
+	enabledHandlers        []handlerinitialiser.HandlerInitialiser
+	addAdminHTTPMiddleware func(ctx context.Context, r chi.Router)
 }
 
-func NewHTTPManagerShim(libraryConfig *config.LibraryConfig, adminServerConfig *config.CommonHTTPServerConfig, publicServerConfig *config.CommonHTTPServerConfig, enabledHandlers []handlerinitialiser.HandlerInitialiser) *HTTPManagerShim {
+func NewHTTPManagerShim(libraryConfig *config.LibraryConfig, adminServerConfig *config.CommonHTTPServerConfig, publicServerConfig *config.CommonHTTPServerConfig, enabledHandlers []handlerinitialiser.HandlerInitialiser, addAdminHTTPMiddleware func(ctx context.Context, r chi.Router)) *HTTPManagerShim {
 	return &HTTPManagerShim{
-		libraryConfig:      libraryConfig,
-		adminServerConfig:  adminServerConfig,
-		publicServerConfig: publicServerConfig,
-		enabledHandlers:    enabledHandlers,
+		libraryConfig:          libraryConfig,
+		adminServerConfig:      adminServerConfig,
+		publicServerConfig:     publicServerConfig,
+		enabledHandlers:        enabledHandlers,
+		addAdminHTTPMiddleware: addAdminHTTPMiddleware,
 	}
 }
 
@@ -35,4 +40,8 @@ func (m *HTTPManagerShim) AdminServerConfig() *config.CommonHTTPServerConfig {
 
 func (m *HTTPManagerShim) PublicServerConfig() *config.CommonHTTPServerConfig {
 	return m.publicServerConfig
+}
+
+func (m *HTTPManagerShim) AddAdminHTTPMiddleware() func(ctx context.Context, r chi.Router) {
+	return m.addAdminHTTPMiddleware
 }

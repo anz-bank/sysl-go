@@ -23,23 +23,11 @@ let sysl = //{./sysl};
             }
             var err error
             ${clientDeps orderby . >> $`
-                ${cond {
-                    goModule.depField(.).grpc:
-                        $`
-                            ${.import}${prefix(.)}Client, err := core.BuildDownstream${prefix(.)}Client(
-                                ${.import:q},
-                                hooks,
-                                &downstreamConfig.${go.name(.import)},
-                            )
-                        `,
-                    _:
-                        $`
-                            ${.import}${prefix(.)}Client, err := core.BuildDownstream${prefix(.)}Client(
-                                ${.import:q},
-                                &downstreamConfig.${go.name(.import)},
-                            )
-                        `,
-                }}
+                ${.import}${prefix(.)}Client, err := core.BuildDownstream${prefix(.)}Client(
+                    ${.import:q},
+                    hooks,
+                    &downstreamConfig.${go.name(.import)},
+                )
                 if err != nil {
                     return nil, err
                 }
@@ -197,7 +185,7 @@ let sysl = //{./sysl};
                             publicServerConfig = &(cfg.GenCode.Upstream.HTTP)
                         `,
                     }}
-                    restManager := core.NewHTTPManagerShim(libraryConfig, adminServerConfig, publicServerConfig, enabledHandlers)
+                    restManager := core.NewHTTPManagerShim(libraryConfig, adminServerConfig, publicServerConfig, enabledHandlers, hooks.AddAdminHTTPMiddleware)
                     return restManager, &grpcManager, nil
                 },
             )

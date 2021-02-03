@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-chi/chi"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
@@ -32,10 +33,11 @@ func newString(s string) *string {
 }
 
 type restManagerImpl struct {
-	handlers func() []handlerinitialiser.HandlerInitialiser
-	library  func() *config.LibraryConfig
-	admin    func() *config.CommonHTTPServerConfig
-	public   func() *config.CommonHTTPServerConfig
+	handlers               func() []handlerinitialiser.HandlerInitialiser
+	library                func() *config.LibraryConfig
+	admin                  func() *config.CommonHTTPServerConfig
+	public                 func() *config.CommonHTTPServerConfig
+	addAdminHTTPMiddleware func() func(ctx context.Context, r chi.Router)
 }
 
 func (r *restManagerImpl) EnabledHandlers() []handlerinitialiser.HandlerInitialiser {
@@ -52,6 +54,14 @@ func (r *restManagerImpl) AdminServerConfig() *config.CommonHTTPServerConfig {
 
 func (r *restManagerImpl) PublicServerConfig() *config.CommonHTTPServerConfig {
 	return r.public()
+}
+
+func (r *restManagerImpl) AddAdminHTTPMiddleware() func(ctx context.Context, r chi.Router) {
+	if r.addAdminHTTPMiddleware != nil {
+		return r.addAdminHTTPMiddleware()
+	}
+
+	return nil
 }
 
 func Test_prepareMiddleware(t *testing.T) {
