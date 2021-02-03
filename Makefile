@@ -39,24 +39,14 @@ check-coverage: test  ## Check that test coverage meets the required level
 coverage: test  ## Show test coverage in your browser
 	go tool cover -html=$(COVERFILE)
 
-auto-test:
-	$(MAKE) -C codegen/arrai/auto/tests/simple_rest/
-	$(MAKE) -C codegen/arrai/auto/tests/simple_rest_with_downstream/
-	$(MAKE) -C codegen/arrai/auto/tests/simple_grpc_with_downstream/
-	$(MAKE) -C codegen/arrai/auto/tests/rest_with_conditional_downstream/
-	$(MAKE) -C codegen/arrai/auto/tests/rest_with_downstream_headers/
-	$(MAKE) -C codegen/arrai/auto/tests/rest_error_downstream/
-	$(MAKE) -C codegen/arrai/auto/tests/grpc_custom_server_options/
-	$(MAKE) -C codegen/arrai/auto/tests/grpc_custom_dial_options/
-	$(MAKE) -C codegen/arrai/auto/tests/template_gen
-	$(MAKE) -C codegen/arrai/auto/tests/template_custom_gen
-	$(MAKE) -C codegen/arrai/auto/tests/grpc_jwt_authorization/
-	$(MAKE) -C codegen/arrai/auto/tests/rest_jwt_authorization/
-	$(MAKE) -C codegen/arrai/auto/tests/rest_env_config/
-	$(MAKE) -C codegen/arrai/auto/tests/rest_admin_server/
+ALLTESTS = $(sort $(dir $(wildcard codegen/arrai/auto/tests/*/Makefile)))
 
-clean:
+auto-test: $(ALLTESTS)
+	$(foreach dir,$^,$(MAKE) -C $(dir);)
+
+clean: $(ALLTESTS)
 	rm -f $(COVERFILE)
+	@$(foreach dir,$^,$(MAKE) -C $(dir) clean;)
 
 CHECK_COVERAGE = awk -F '[ \t%]+' '/^total:/ && $$3 < $(COVERAGE) {exit 1}'
 FAIL_COVERAGE = { echo '$(COLOUR_RED)FAIL - Coverage below $(COVERAGE)%$(COLOUR_NORMAL)'; exit 1; }
