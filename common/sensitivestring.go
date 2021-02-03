@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/anz-bank/sysl-go/validator"
+	"github.com/mitchellh/mapstructure"
 )
 
 const DefaultReplacementText = "****************"
@@ -68,6 +69,20 @@ func sensitiveStringValidator(field reflect.Value) interface{} {
 	}
 
 	return nil
+}
+
+// StringToSensitiveStringHookFunc returns a DecodeHookFunc that converts
+// strings to SensitiveString.
+func StringToSensitiveStringHookFunc() mapstructure.DecodeHookFunc {
+	return func(
+		f reflect.Type,
+		t reflect.Type,
+		data interface{}) (interface{}, error) {
+		if f.Kind() == reflect.String && t == reflect.TypeOf(SensitiveString{}) {
+			return NewSensitiveString(data.(string)), nil
+		}
+		return data, nil
+	}
 }
 
 //nolint:gochecknoinits // We must use init here to setup a custom validator

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/anz-bank/sysl-go/common"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -131,6 +132,30 @@ func TestUnmarshalFromFile(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(t, "https://foo.example.com", conf.Gencode.Downstream.Foo.ServiceURL)
 	assert.Equal(t, "https://bar.example.com", conf.Gencode.Downstream.Bar.ServiceURL)
+}
+
+func TestUnmarshalSensitiveStringFromFile(t *testing.T) {
+	t.Parallel()
+
+	conf := struct {
+		Path      *string                 `yaml:"path" mapstructure:"path"`
+		Password1 *string                 `yaml:"password" mapstructure:"password1"`
+		Password2 *common.SensitiveString `yaml:"password" mapstructure:"password2"`
+	}{}
+
+	fs := afero.NewMemMapFs()
+	err := afero.WriteFile(fs,
+		"sensitive_string_config.yaml",
+		[]byte("path: testdata\npassword1: pwd1\npassword2: pwd2"), 0644)
+	require.Nil(t, err)
+	b := NewConfigReaderBuilder()
+	reader := b.WithFs(fs).WithConfigFile("sensitive_string_config.yaml").Build()
+	err = reader.Unmarshal(&conf)
+	require.Nil(t, err)
+	assert.Equal(t, "testdata", *conf.Path)
+	assert.Equal(t, "pwd1", *conf.Password1)
+	assert.Equal(t, "****************", conf.Password2.String())
+	assert.Equal(t, "pwd2", conf.Password2.Value())
 }
 
 func TestUnmarshalFromFileWithStrictMode(t *testing.T) {
