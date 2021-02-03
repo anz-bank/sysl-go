@@ -6,12 +6,10 @@ import (
 	"net/http"
 
 	"github.com/anz-bank/pkg/log"
-
-	"github.com/anz-bank/sysl-go/jwtauth"
-
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core/authrules"
+	"github.com/anz-bank/sysl-go/jwtauth"
 	"github.com/go-chi/chi"
 	"google.golang.org/grpc"
 )
@@ -104,6 +102,16 @@ type Hooks struct {
 	// HTTP middleware -- refer to prepareMiddleware inside sysl-go/core. This hook can only
 	// be used to add middleware, not override any of the default middleware.
 	AddHTTPMiddleware func(ctx context.Context, r chi.Router)
+
+	// AddAdminHTTPMiddleware can be used to install additional HTTP middleware into the chi.Router
+	// used to serve the admin HTTP endpoints. See AddHTTPMiddleware for further details.
+	AddAdminHTTPMiddleware func(ctx context.Context, r chi.Router)
+
+	// DownstreamRoundTripper can be used to install additional HTTP RoundTrippers to the downstream clients
+	DownstreamRoundTripper func(serviceName string, serviceURL string, original http.RoundTripper) http.RoundTripper
+
+	// ValidateConfig can be used to validate (or override) values in the config.
+	ValidateConfig func(ctx context.Context, cfg *config.DefaultConfig) error
 }
 
 func ResolveGrpcDialOptions(serviceName string, h *Hooks, grpcDownstreamConfig *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {

@@ -31,6 +31,9 @@ type Manager interface {
 	LibraryConfig() *config.LibraryConfig
 	AdminServerConfig() *config.CommonHTTPServerConfig
 	PublicServerConfig() *config.CommonHTTPServerConfig
+
+	// AddAdminHTTPMiddleware can return nil if you do not have any additional middleware for the admin endpoint
+	AddAdminHTTPMiddleware() func(ctx context.Context, r chi.Router)
 }
 
 func configureAdminServerListener(ctx context.Context, hl Manager, promRegistry *prometheus.Registry, healthServer *health.HTTPServer, mWare []func(handler http.Handler) http.Handler) (StoppableServer, error) {
@@ -57,6 +60,9 @@ func configureAdminServerListener(ctx context.Context, hl Manager, promRegistry 
 	}
 
 	adminRouter.Route("/-", func(r chi.Router) {
+		if hl.AddAdminHTTPMiddleware() != nil {
+			hl.AddAdminHTTPMiddleware()(ctx, adminRouter)
+		}
 		r.Route("/status", func(r chi.Router) {
 			status.WireRoutes(r, &statusService)
 		})

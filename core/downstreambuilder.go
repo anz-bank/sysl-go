@@ -10,28 +10,24 @@ import (
 	"github.com/anz-bank/sysl-go/config"
 )
 
-func BuildDownstreamHTTPClient(serviceName string, cfg *config.CommonDownstreamData) (*http.Client, error) {
-	if cfg == nil {
-		return buildDefaultHTTPClient(serviceName)
-	}
-
+func BuildDownstreamHTTPClient(serviceName string, hooks *Hooks, cfg *config.CommonDownstreamData) (*http.Client, error) {
 	client, err := config.DefaultHTTPClient(cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	client.Transport = common.NewLoggingRoundTripper(serviceName, client.Transport)
-
-	return client, nil
-}
-
-func buildDefaultHTTPClient(serviceName string) (*http.Client, error) {
-	client, err := config.DefaultHTTPClient(nil)
-	if err != nil {
-		return nil, err
+	if cfg == nil {
+		client.Timeout = time.Minute
 	}
-	client.Timeout = time.Minute
+
 	client.Transport = common.NewLoggingRoundTripper(serviceName, client.Transport)
+	if hooks.DownstreamRoundTripper != nil {
+		serviceURL := ""
+		if cfg != nil {
+			serviceURL = cfg.ServiceURL
+		}
+		client.Transport = hooks.DownstreamRoundTripper(serviceName, serviceURL, client.Transport)
+	}
 
 	return client, nil
 }
