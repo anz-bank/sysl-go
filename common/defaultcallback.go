@@ -11,7 +11,6 @@ import (
 
 func DefaultCallback() Callback {
 	return Callback{
-		UpstreamTimeout:   120 * time.Second,
 		DownstreamTimeout: 120 * time.Second,
 		RouterBasePath:    "/",
 		UpstreamConfig:    Config{},
@@ -19,7 +18,6 @@ func DefaultCallback() Callback {
 }
 
 type Callback struct {
-	UpstreamTimeout   time.Duration
 	DownstreamTimeout time.Duration
 	RouterBasePath    string
 	UpstreamConfig    validator.Validator

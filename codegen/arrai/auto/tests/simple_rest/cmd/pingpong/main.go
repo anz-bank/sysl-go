@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"os"
+	"time"
 
 	pingpong "simple_rest/internal/gen/pkg/servers/pingpong"
 
@@ -13,6 +14,13 @@ import (
 type AppConfig struct{}
 
 func GetPing(_ context.Context, req *pingpong.GetPingRequest) (*pingpong.Pong, error) {
+	return &pingpong.Pong{
+		Identifier: req.Identifier,
+	}, nil
+}
+
+func GetPingTimeout(_ context.Context, req *pingpong.GetPingtimeoutRequest) (*pingpong.Pong, error) {
+	time.Sleep(10 * time.Second)
 	return &pingpong.Pong{
 		Identifier: req.Identifier,
 	}, nil
@@ -33,8 +41,9 @@ func newAppServer(ctx context.Context) (core.StoppableServer, error) {
 	return pingpong.NewServer(ctx,
 		func(ctx context.Context, config AppConfig) (*pingpong.ServiceInterface, *core.Hooks, error) {
 			return &pingpong.ServiceInterface{
-					GetPing:     GetPing,
-					GetGetoneof: GetPingoneof,
+					GetPing:        GetPing,
+					GetPingtimeout: GetPingTimeout,
+					GetGetoneof:    GetPingoneof,
 				}, &core.Hooks{},
 				nil
 		},

@@ -6,24 +6,51 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"path"
+	"runtime"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/anz-bank/pkg/log"
 )
 
+// relevantCaller searches the call stack for the first function outside of net/http.
+// The purpose of this function is to provide more helpful error messages.
+func relevantCaller() runtime.Frame {
+	pc := make([]uintptr, 16)
+	n := runtime.Callers(1, pc)
+	frames := runtime.CallersFrames(pc[:n])
+	var frame runtime.Frame
+	for {
+		frame, more := frames.Next()
+		if !strings.HasPrefix(frame.Function, "net/http.") {
+			return frame
+		}
+		if !more {
+			break
+		}
+	}
+	return frame
+}
+
+func logf(ctx context.Context, format string, args ...interface{}) {
+	log.Error(ctx, fmt.Errorf(format, args...))
+}
+
 // Timeout is a middleware that cancels ctx after a given timeout or call a special handler on timeout.
-func Timeout(ctx context.Context, timeout time.Duration, timeoutHandler http.Handler) func(next http.Handler) http.Handler {
+func Timeout(timeout time.Duration, timeoutHandler http.Handler) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		return TimeoutHandler(ctx, next, timeout, timeoutHandler)
+		return TimeoutHandler(next, timeout, timeoutHandler)
 	}
 }
 
 // Forked from go/src/net/http/server.go
 // Changes:
 // * Accept a http.Handler instead of a string for the error message handling
-// * Log panics to logrus instead of re-panic()-ing with a new stack trace
+// * Logs panics to logrus
+// * Logs to pkg/log instead of the ErrorLog of the *Server associated with request r via ServerContextKey
 
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
@@ -37,11 +64,10 @@ func Timeout(ctx context.Context, timeout time.Duration, timeoutHandler http.Han
 // After such a timeout, writes by h to its ResponseWriter will return
 // ErrHandlerTimeout.
 //
-// TimeoutHandler buffers all Handler writes to memory and does not
-// support the Hijacker or Flusher interfaces.
-func TimeoutHandler(ctx context.Context, h http.Handler, dt time.Duration, timeout http.Handler) http.Handler {
+// TimeoutHandler supports the Pusher interface but does not support
+// the Hijacker or Flusher interfaces.
+func TimeoutHandler(h http.Handler, dt time.Duration, timeout http.Handler) http.Handler {
 	return &timeoutHandler{
-		ctx:            ctx,
 		handler:        h,
 		timeoutHandler: timeout,
 		dt:             dt,
@@ -53,7 +79,6 @@ func TimeoutHandler(ctx context.Context, h http.Handler, dt time.Duration, timeo
 var ErrHandlerTimeout = errors.New("http: Handler timeout")
 
 type timeoutHandler struct {
-	ctx            context.Context
 	handler        http.Handler
 	timeoutHandler http.Handler
 	dt             time.Duration
@@ -73,27 +98,24 @@ func (h *timeoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r = r.WithContext(ctx)
 	done := make(chan struct{})
 	tw := &timeoutWriter{
-		w: w,
-		h: make(http.Header),
+		w:   w,
+		h:   make(http.Header),
+		req: r,
 	}
 	panicChan := make(chan interface{}, 1)
 	go func() {
 		defer func() {
 			if p := recover(); p != nil {
-				log.Error(ctx, errors.New(string(debug.Stack())))
+				logf(ctx, string(debug.Stack()))
 				panicChan <- p
 			}
 		}()
 		h.handler.ServeHTTP(tw, r)
 		close(done)
 	}()
-	timeoutFunc := func() {
-		tw.mu.Lock()
-		defer tw.mu.Unlock()
-		h.timeoutHandler.ServeHTTP(w, r)
-		tw.timedOut = true
-	}
 	select {
+	case p := <-panicChan:
+		panic(p)
 	case <-done:
 		tw.mu.Lock()
 		defer tw.mu.Unlock()
@@ -106,10 +128,11 @@ func (h *timeoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		w.WriteHeader(tw.code)
 		_, _ = w.Write(tw.wbuf.Bytes())
-	case <-panicChan:
-		timeoutFunc()
 	case <-ctx.Done():
-		timeoutFunc()
+		tw.mu.Lock()
+		defer tw.mu.Unlock()
+		h.timeoutHandler.ServeHTTP(w, r)
+		tw.timedOut = true
 	}
 }
 
@@ -117,11 +140,22 @@ type timeoutWriter struct {
 	w    http.ResponseWriter
 	h    http.Header
 	wbuf bytes.Buffer
+	req  *http.Request
 
 	mu          sync.Mutex
 	timedOut    bool
 	wroteHeader bool
 	code        int
+}
+
+var _ http.Pusher = (*timeoutWriter)(nil)
+
+// Push implements the Pusher interface.
+func (tw *timeoutWriter) Push(target string, opts *http.PushOptions) error {
+	if pusher, ok := tw.w.(http.Pusher); ok {
+		return pusher.Push(target, opts)
+	}
+	return http.ErrNotSupported
 }
 
 func (tw *timeoutWriter) Header() http.Header { return tw.h }
@@ -133,24 +167,32 @@ func (tw *timeoutWriter) Write(p []byte) (int, error) {
 		return 0, ErrHandlerTimeout
 	}
 	if !tw.wroteHeader {
-		tw.writeHeader(http.StatusOK)
+		tw.writeHeaderLocked(http.StatusOK)
 	}
 	return tw.wbuf.Write(p)
 }
 
-func (tw *timeoutWriter) WriteHeader(code int) {
+func (tw *timeoutWriter) writeHeaderLocked(code int) {
 	checkWriteHeaderCode(code)
-	tw.mu.Lock()
-	defer tw.mu.Unlock()
-	if tw.timedOut || tw.wroteHeader {
+
+	switch {
+	case tw.timedOut:
 		return
+	case tw.wroteHeader:
+		if tw.req != nil {
+			caller := relevantCaller()
+			logf(tw.req.Context(), "http: superfluous response.WriteHeader call from %s (%s:%d)", caller.Function, path.Base(caller.File), caller.Line)
+		}
+	default:
+		tw.wroteHeader = true
+		tw.code = code
 	}
-	tw.writeHeader(code)
 }
 
-func (tw *timeoutWriter) writeHeader(code int) {
-	tw.wroteHeader = true
-	tw.code = code
+func (tw *timeoutWriter) WriteHeader(code int) {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+	tw.writeHeaderLocked(code)
 }
 
 func checkWriteHeaderCode(code int) {

@@ -28,6 +28,8 @@ import (
 	"github.com/sethvargo/go-retry"
 )
 
+var contextTimeout = time.Second
+
 func newString(s string) *string {
 	return &s
 }
@@ -36,7 +38,7 @@ type restManagerImpl struct {
 	handlers               func() []handlerinitialiser.HandlerInitialiser
 	library                func() *config.LibraryConfig
 	admin                  func() *config.CommonHTTPServerConfig
-	public                 func() *config.CommonHTTPServerConfig
+	public                 func() *config.UpstreamConfig
 	addAdminHTTPMiddleware func() func(ctx context.Context, r chi.Router)
 }
 
@@ -52,7 +54,7 @@ func (r *restManagerImpl) AdminServerConfig() *config.CommonHTTPServerConfig {
 	return r.admin()
 }
 
-func (r *restManagerImpl) PublicServerConfig() *config.CommonHTTPServerConfig {
+func (r *restManagerImpl) PublicServerConfig() *config.UpstreamConfig {
 	return r.public()
 }
 
@@ -94,7 +96,7 @@ func Test_prepareMiddleware(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			got := prepareMiddleware("server", tt.args.promRegistry)
+			got := prepareMiddleware("server", tt.args.promRegistry, contextTimeout)
 			assert.NotEmpty(t, got)
 		})
 	}
@@ -483,10 +485,10 @@ func Test_configureAdminServerListener_Valid(t *testing.T) {
 				WriteTimeout: time.Minute,
 			}
 		},
-		public: func() *config.CommonHTTPServerConfig { return nil },
+		public: func() *config.UpstreamConfig { return &config.UpstreamConfig{ContextTimeout: contextTimeout} },
 	}
 
-	mWare := prepareMiddleware("test", nil)
+	mWare := prepareMiddleware("test", nil, contextTimeout)
 
 	srv, err := configureAdminServerListener(ctx, manager, nil, nil, mWare.admin)
 	require.NotNil(t, srv)
@@ -516,10 +518,10 @@ func Test_configureAdminServerListener_MissingLibraryConfig(t *testing.T) {
 				WriteTimeout: time.Minute,
 			}
 		},
-		public: func() *config.CommonHTTPServerConfig { return nil },
+		public: func() *config.UpstreamConfig { return &config.UpstreamConfig{ContextTimeout: contextTimeout} },
 	}
 
-	mWare := prepareMiddleware("test", nil)
+	mWare := prepareMiddleware("test", nil, contextTimeout)
 
 	srv, err := configureAdminServerListener(ctx, manager, nil, nil, mWare.admin)
 	require.Nil(t, srv)
@@ -546,10 +548,10 @@ func Test_configureAdminServerListener_MissingAdminConfig(t *testing.T) {
 		admin: func() *config.CommonHTTPServerConfig {
 			return nil
 		},
-		public: func() *config.CommonHTTPServerConfig { return nil },
+		public: func() *config.UpstreamConfig { return &config.UpstreamConfig{ContextTimeout: contextTimeout} },
 	}
 
-	mWare := prepareMiddleware("test", nil)
+	mWare := prepareMiddleware("test", nil, contextTimeout)
 
 	srv, err := configureAdminServerListener(ctx, manager, nil, nil, mWare.admin)
 	require.Nil(t, srv)
@@ -581,7 +583,7 @@ func Test_configureAdminServerListener_MissingMiddlewareHandler(t *testing.T) {
 				WriteTimeout: time.Minute,
 			}
 		},
-		public: func() *config.CommonHTTPServerConfig { return nil },
+		public: func() *config.UpstreamConfig { return &config.UpstreamConfig{ContextTimeout: contextTimeout} },
 	}
 
 	srv, err := configureAdminServerListener(ctx, manager, nil, nil, nil)

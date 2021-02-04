@@ -56,7 +56,6 @@ func NewCallbackV2(
 ) common.Callback {
 	// construct the rest configuration (aka. gen callback)
 	return common.Callback{
-		UpstreamTimeout:   config.Upstream.ContextTimeout,
 		DownstreamTimeout: downstreamTimeOut,
 		RouterBasePath:    config.Upstream.HTTP.BasePath,
 		UpstreamConfig:    &config.Upstream,

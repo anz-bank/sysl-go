@@ -11,12 +11,12 @@ import (
 type HTTPManagerShim struct {
 	libraryConfig          *config.LibraryConfig
 	adminServerConfig      *config.CommonHTTPServerConfig
-	publicServerConfig     *config.CommonHTTPServerConfig
+	publicServerConfig     *config.UpstreamConfig
 	enabledHandlers        []handlerinitialiser.HandlerInitialiser
 	addAdminHTTPMiddleware func(ctx context.Context, r chi.Router)
 }
 
-func NewHTTPManagerShim(libraryConfig *config.LibraryConfig, adminServerConfig *config.CommonHTTPServerConfig, publicServerConfig *config.CommonHTTPServerConfig, enabledHandlers []handlerinitialiser.HandlerInitialiser, addAdminHTTPMiddleware func(ctx context.Context, r chi.Router)) *HTTPManagerShim {
+func NewHTTPManagerShim(libraryConfig *config.LibraryConfig, adminServerConfig *config.CommonHTTPServerConfig, publicServerConfig *config.UpstreamConfig, enabledHandlers []handlerinitialiser.HandlerInitialiser, addAdminHTTPMiddleware func(ctx context.Context, r chi.Router)) *HTTPManagerShim {
 	return &HTTPManagerShim{
 		libraryConfig:          libraryConfig,
 		adminServerConfig:      adminServerConfig,
@@ -38,7 +38,7 @@ func (m *HTTPManagerShim) AdminServerConfig() *config.CommonHTTPServerConfig {
 	return m.adminServerConfig
 }
 
-func (m *HTTPManagerShim) PublicServerConfig() *config.CommonHTTPServerConfig {
+func (m *HTTPManagerShim) PublicServerConfig() *config.UpstreamConfig {
 	return m.publicServerConfig
 }
 
