@@ -1,7 +1,6 @@
 package common
 
 import (
-	"context"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -38,7 +37,7 @@ func TestTimeoutHandler_NoCallbackCalledIfNotTimeout(t *testing.T) {
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(200); _, _ = w.Write([]byte("OK")) })
 
-	timeoutmware := Timeout(context.Background(), time.Second, tester)
+	timeoutmware := Timeout(time.Second, tester)
 	ts := httptest.NewServer(timeoutmware(handler))
 	defer ts.Close()
 
@@ -62,7 +61,7 @@ func TestTimeoutHandler_CallbackCalledIfTimeout(t *testing.T) {
 		_, _ = w.Write([]byte("OK"))
 	})
 
-	timeoutmware := Timeout(context.Background(), time.Millisecond, tester)
+	timeoutmware := Timeout(time.Millisecond, tester)
 
 	ts := httptest.NewServer(timeoutmware(handler))
 	defer ts.Close()
@@ -79,7 +78,21 @@ func TestTimeoutHandler_CallbackCalledIfTimeout(t *testing.T) {
 	defer resp.Body.Close()
 }
 
-func TestTimeoutHandler_NoPanicRethrow(t *testing.T) {
+func recoverer(next http.Handler, hit *bool) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if rvr := recover(); rvr != nil {
+				*hit = true
+
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			}
+		}()
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func TestTimeoutHandler_PanicRethrow(t *testing.T) {
 	req := require.New(t)
 	tester := defaultTestHandler()
 
@@ -87,20 +100,15 @@ func TestTimeoutHandler_NoPanicRethrow(t *testing.T) {
 		panic("HElp")
 	})
 
-	timeoutmware := Timeout(context.Background(), time.Millisecond, tester)
-	ts := httptest.NewServer(timeoutmware(handler))
+	caught := false
+	timeoutmware := Timeout(time.Millisecond, tester)
+	ts := httptest.NewServer(recoverer(timeoutmware(handler), &caught))
 	defer ts.Close()
 
-	req.NotPanics(func() {
-		resp, err := http.Get(ts.URL)
-		req.NoError(err)
-		body, err := ioutil.ReadAll(resp.Body)
-		req.NoError(err)
-		req.Equal("hello", string(body))
-		req.Equal(500, resp.StatusCode)
-		req.True(tester.called)
-		defer resp.Body.Close()
-	})
+	resp, err := http.Get(ts.URL)
+	req.True(caught)
+	req.NoError(err)
+	defer resp.Body.Close()
 }
 
 func TestTimeoutHandler_ContextTimoutMoreThanWriteTimeout(t *testing.T) {
@@ -117,7 +125,7 @@ func TestTimeoutHandler_ContextTimoutMoreThanWriteTimeout(t *testing.T) {
 		}
 	})
 
-	timeoutmware := Timeout(context.Background(), 10*time.Millisecond, tester)
+	timeoutmware := Timeout(10*time.Millisecond, tester)
 	ts := httptest.NewUnstartedServer(timeoutmware(handler))
 	ts.Config.WriteTimeout = 5 * time.Millisecond
 	ts.Start()
@@ -140,7 +148,7 @@ func TestTimeoutHandler_ContextTimoutLessThanWriteTimeout(t *testing.T) {
 		}
 	})
 
-	timeoutmware := Timeout(context.Background(), 5*time.Millisecond, tester)
+	timeoutmware := Timeout(5*time.Millisecond, tester)
 	ts := httptest.NewUnstartedServer(timeoutmware(handler))
 	ts.Config.WriteTimeout = 10 * time.Millisecond
 	ts.Start()
@@ -169,7 +177,7 @@ func TestTimeoutHandler_ContextTimoutAndWriteTimeoutTooShort(t *testing.T) {
 		}
 	})
 
-	timeoutmware := Timeout(context.Background(), 10*time.Millisecond, tester)
+	timeoutmware := Timeout(10*time.Millisecond, tester)
 	ts := httptest.NewUnstartedServer(timeoutmware(handler))
 	ts.Config.WriteTimeout = 10 * time.Millisecond
 	ts.Start()

@@ -25,6 +25,7 @@ import (
 const applicationConfig = `---
 genCode:
   upstream:
+    contextTimeout: "30s"
     grpc:
       hostName: "localhost"
       port: 9021 # FIXME no guarantee this port is free

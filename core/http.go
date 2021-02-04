@@ -30,7 +30,7 @@ type Manager interface {
 	EnabledHandlers() []handlerinitialiser.HandlerInitialiser
 	LibraryConfig() *config.LibraryConfig
 	AdminServerConfig() *config.CommonHTTPServerConfig
-	PublicServerConfig() *config.CommonHTTPServerConfig
+	PublicServerConfig() *config.UpstreamConfig
 
 	// AddAdminHTTPMiddleware can return nil if you do not have any additional middleware for the admin endpoint
 	AddAdminHTTPMiddleware() func(ctx context.Context, r chi.Router)
@@ -85,9 +85,9 @@ func configureAdminServerListener(ctx context.Context, hl Manager, promRegistry 
 }
 
 func configurePublicServerListener(ctx context.Context, hl Manager, mWare []func(handler http.Handler) http.Handler) (StoppableServer, error) {
-	rootPublicRouter, publicRouter := configureRouters(hl.PublicServerConfig().BasePath, mWare)
+	rootPublicRouter, publicRouter := configureRouters(hl.PublicServerConfig().HTTP.BasePath, mWare)
 
-	publicTLSConfig, err := config.MakeTLSConfig(hl.PublicServerConfig().Common.TLS)
+	publicTLSConfig, err := config.MakeTLSConfig(hl.PublicServerConfig().HTTP.Common.TLS)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func configurePublicServerListener(ctx context.Context, hl Manager, mWare []func
 		anzlog.Info(ctx, "No service handlers enabled by config.")
 	}
 
-	listenPublic := prepareServerListener(ctx, rootPublicRouter, publicTLSConfig, *hl.PublicServerConfig(), "REST Public Server")
+	listenPublic := prepareServerListener(ctx, rootPublicRouter, publicTLSConfig, hl.PublicServerConfig().HTTP, "REST Public Server")
 
 	return listenPublic, nil
 }

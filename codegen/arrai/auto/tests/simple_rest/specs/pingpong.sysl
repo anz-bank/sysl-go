@@ -7,6 +7,10 @@ PingPong [package="pingpong"]:
         GET:
             return ok <: Pong
 
+    /pingTimeout/{identifier <: int}:
+        GET:
+            return ok <: Pong
+
     !type Pong:
         identifier <: int
 

@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config"
@@ -27,6 +28,7 @@ type serveContextKey int
 
 const (
 	serveYAMLConfigFileKey serveContextKey = iota
+	defaultContextTimeout                  = 30 * time.Second
 )
 
 type ErrDisplayHelp int
@@ -401,7 +403,14 @@ func (s *autogenServer) Start() error {
 	ctx := s.ctx
 
 	// prepare the middleware
-	mWare := prepareMiddleware(s.name, s.prometheusRegistry)
+	var contextTimeout time.Duration
+	if s.restManager != nil && s.restManager.PublicServerConfig() != nil {
+		contextTimeout = s.restManager.PublicServerConfig().ContextTimeout
+	}
+	if contextTimeout == 0 {
+		contextTimeout = defaultContextTimeout
+	}
+	mWare := prepareMiddleware(s.name, s.prometheusRegistry, contextTimeout)
 
 	// load health server
 	var healthServer *health.Server = nil
