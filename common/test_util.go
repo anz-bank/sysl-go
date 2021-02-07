@@ -4,9 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/anz-bank/sysl-go/log"
 
 	"github.com/stretchr/testify/mock"
 )
@@ -33,20 +31,8 @@ func (m *MockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	return args.Get(0).(*http.Response), args.Error(1)
 }
 
-func NewTestCoreRequestContext() (*logrus.Logger, *test.Hook, context.Context) {
-	logger, hook := test.NewNullLogger()
-
-	ctx := NewTestCoreRequestContextWithLogger(logger)
-
-	return logger, hook, ctx
-}
-
-func NewTestCoreRequestContextWithLogger(logger *logrus.Logger) context.Context {
-	ctx := context.WithValue(context.Background(), coreRequestContextKey{},
-		coreRequestContext{
-			logger: logger,
-			entry:  logger.WithField("traceId", uuid.New().String()),
-		})
-
-	return ctx
+func NewTestCoreRequestContext() (log.Logger, context.Context) {
+	logger := log.NewDefaultLogger()
+	ctx := log.PutLogger(context.Background(), logger)
+	return logger, ctx
 }

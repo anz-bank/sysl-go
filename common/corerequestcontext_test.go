@@ -8,13 +8,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/anz-bank/sysl-go/logconfig"
 	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCoreRequestContextMiddleware(t *testing.T) {
-	logger, _, ctx := NewTestCoreRequestContext()
+	logger, ctx := NewTestCoreRequestContext()
 	mware := CoreRequestContextMiddleware
 	body := bytes.NewBufferString("test")
 	req, err := http.NewRequest("GET", "localhost/", body)
@@ -47,7 +46,6 @@ func TestCoreRequestContextMiddleWare_VerboseLogging_LogRequestHeaderAndResponse
 
 func TestCoreRequestContextMiddleWare_NoVerboseLogging_NotLogRequestHeaderAndResponseHeader(t *testing.T) {
 	ctx, hook := testutil.NewTestContextWithLoggerHook()
-	ctx = logconfig.SetVerboseLogging(ctx, false)
 	mware := CoreRequestContextMiddleware
 	body := bytes.NewBufferString("test")
 	req, err := http.NewRequest("GET", "localhost/", body)
@@ -63,7 +61,7 @@ func TestCoreRequestContextMiddleWare_NoVerboseLogging_NotLogRequestHeaderAndRes
 }
 
 func TestTestCoreRequestContextMiddleware(t *testing.T) {
-	logger, _, ctx := NewTestCoreRequestContext()
+	logger, ctx := NewTestCoreRequestContext()
 
 	logger2 := GetLoggerFromContext(ctx)
 	require.Equal(t, logger, logger2)

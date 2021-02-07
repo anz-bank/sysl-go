@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/anz-bank/pkg/log"
-	"github.com/anz-bank/sysl-go/logconfig"
 )
 
 type TestHook struct {
@@ -31,7 +30,6 @@ func NewTestContextWithLoggerHook() (context.Context, *TestHook) {
 }
 
 func TestContextWithLoggerHook(ctx context.Context, hook *TestHook) context.Context {
-	ctx = logconfig.SetVerboseLogging(ctx, true)
 	ctx = log.WithConfigs(log.SetVerboseMode(true)).Onto(ctx)
 	ctx = log.WithConfigs(log.AddHooks(hook)).Onto(ctx)
 	return ctx

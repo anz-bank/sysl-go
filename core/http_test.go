@@ -10,8 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/anz-bank/sysl-go/log"
+
 	"github.com/go-chi/chi"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 
 	"github.com/anz-bank/sysl-go/common"
@@ -467,7 +468,7 @@ func Test_configureAdminServerListener_Valid(t *testing.T) {
 			return &config.LibraryConfig{
 				Log: config.LogConfig{
 					Format:       "text",
-					Level:        logrus.DebugLevel,
+					Level:        log.DebugLevel,
 					ReportCaller: false,
 				},
 				Profiling:      true,
@@ -535,7 +536,7 @@ func Test_configureAdminServerListener_MissingAdminConfig(t *testing.T) {
 			return &config.LibraryConfig{
 				Log: config.LogConfig{
 					Format:       "text",
-					Level:        logrus.DebugLevel,
+					Level:        log.DebugLevel,
 					ReportCaller: false,
 				},
 				Profiling:      true,
@@ -565,7 +566,7 @@ func Test_configureAdminServerListener_MissingMiddlewareHandler(t *testing.T) {
 			return &config.LibraryConfig{
 				Log: config.LogConfig{
 					Format:       "text",
-					Level:        logrus.DebugLevel,
+					Level:        log.DebugLevel,
 					ReportCaller: false,
 				},
 				Profiling:      true,

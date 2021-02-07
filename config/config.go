@@ -2,13 +2,12 @@ package config
 
 import (
 	"context"
-	"time"
 
-	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config/envvar"
 	"github.com/anz-bank/sysl-go/validator"
-	"github.com/go-chi/chi"
 )
+
+type defaultConfigKey struct{}
 
 type DefaultConfig struct {
 	Library LibraryConfig `yaml:"library" mapstructure:"library"`
@@ -19,6 +18,17 @@ type DefaultConfig struct {
 
 	// development config can be used to set some config options only appropriate for dev/test environments.
 	Development *DevelopmentConfig `yaml:"development" mapstructure:"development"`
+}
+
+// GetDefaultConfig retrieves the externally-provided config from the context.
+func GetDefaultConfig(ctx context.Context) *DefaultConfig {
+	m, _ := ctx.Value(defaultConfigKey{}).(*DefaultConfig)
+	return m
+}
+
+// PutDefaultConfig puts the externally-provided config into the given context, returning the new context.
+func PutDefaultConfig(ctx context.Context, config *DefaultConfig) context.Context {
+	return context.WithValue(ctx, defaultConfigKey{}, config)
 }
 
 // LoadConfig reads and validates a configuration loaded from file.
@@ -46,35 +56,4 @@ func LoadConfig(file string, defaultConfig *DefaultConfig, customConfig interfac
 	}
 
 	return err
-}
-
-func NewCallbackV2(
-	config *GenCodeConfig,
-	downstreamTimeOut time.Duration,
-	mapError func(ctx context.Context, err error) *common.HTTPError,
-	addMiddleware func(ctx context.Context, r chi.Router),
-) common.Callback {
-	// construct the rest configuration (aka. gen callback)
-	return common.Callback{
-		UpstreamTimeout:   config.Upstream.ContextTimeout,
-		DownstreamTimeout: downstreamTimeOut,
-		RouterBasePath:    config.Upstream.HTTP.BasePath,
-		UpstreamConfig:    &config.Upstream,
-		MapErrorFunc:      mapError,
-		AddMiddlewareFunc: addMiddleware,
-	}
-}
-
-// NewCallback is deprecated, prefer NewCallbackV2.
-func NewCallback(
-	config *GenCodeConfig,
-	downstreamTimeOut time.Duration,
-	mapError func(ctx context.Context, err error) *common.HTTPError,
-) common.Callback {
-	return NewCallbackV2(
-		config,
-		downstreamTimeOut,
-		mapError,
-		nil,
-	)
 }

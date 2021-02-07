@@ -5,37 +5,24 @@ import (
 	"net/http"
 
 	"github.com/anz-bank/sysl-go/common/internal"
+	"github.com/anz-bank/sysl-go/log"
 
-	"github.com/anz-bank/pkg/log"
 	"github.com/sirupsen/logrus"
 )
 
-// Deprecated: Use ServerParams.WithPkgLogger instead.
+// Deprecated: Use log.GetLogger
 func GetLogEntryFromContext(ctx context.Context) *logrus.Entry {
-	core := ctx.Value(coreRequestContextKey{})
-	if core == nil {
-		return nil
-	}
-	return core.(coreRequestContext).entry
+	return log.GetLogEntryFromContext(ctx)
 }
 
-// Deprecated: Use ServerParams.WithPkgLogger instead.
+// Deprecated: Use log.GetLogger
 func GetLoggerFromContext(ctx context.Context) *logrus.Logger {
-	core := ctx.Value(coreRequestContextKey{})
-	if core == nil {
-		return nil
-	}
-	return core.(coreRequestContext).logger
+	return log.GetLoggerFromContext(ctx)
 }
 
 func NewLoggingRoundTripper(name string, base http.RoundTripper) http.RoundTripper {
 	// temporary pass-through to get the real round tripper from the request context
 	return &tempRoundtripper{name, base}
-}
-
-type coreRequestContext struct {
-	logger *logrus.Logger
-	entry  *logrus.Entry
 }
 
 type reqHeaderContext struct {
@@ -53,10 +40,9 @@ type RestResult struct {
 	Body       []byte
 }
 
-// LoggerToContext creates a new context containing the logger.
-// Deprecated: Use ServerParams.WithPkgLogger instead.
+// Deprecated: Use log.GetLogger
 func LoggerToContext(ctx context.Context, logger *logrus.Logger, entry *logrus.Entry) context.Context {
-	return context.WithValue(ctx, coreRequestContextKey{}, coreRequestContext{logger, entry})
+	return log.LoggerToContext(ctx, logger, entry)
 }
 
 // RequestHeaderToContext creates a new context containing the request header.
@@ -105,7 +91,7 @@ func UpdateResponseStatus(ctx context.Context, status int) error {
 func CoreRequestContextMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		ctx = log.With(traceIDLogField, GetTraceIDFromContext(ctx)).Onto(ctx)
+		ctx = log.WithStr(ctx, traceIDLogField, GetTraceIDFromContext(ctx).String())
 
 		ctx = internal.AddResponseBodyMonitorToContext(ctx)
 		defer internal.CheckForUnclosedResponses(ctx)
@@ -122,8 +108,6 @@ func CoreRequestContextMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
-
-type coreRequestContextKey struct{}
 
 type reqHeaderContextKey struct{}
 type respHeaderAndStatusContextKey struct{}
@@ -150,7 +134,7 @@ type tempRoundtripper struct {
 }
 
 func (t *tempRoundtripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	ctx := log.With("Downstream", t.name).Onto(r.Context())
+	ctx := log.WithStr(r.Context(), "Downstream", t.name)
 	return internal.NewLoggingRoundTripper(ctx, t.base).RoundTrip(r)
 }
 

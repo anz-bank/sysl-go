@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/anz-bank/pkg/log"
+
 	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 
@@ -67,7 +68,6 @@ func (r *testRoundtripper) RoundTrip(req *http.Request) (*http.Response, error) 
 func TestLoggingTransport_RoundTrip400Code(t *testing.T) {
 	tr := testRoundtripper{false, 400}
 	ctx, hook := testutil.NewTestContextWithLoggerHook()
-	ctx = log.WithConfigs(log.SetVerboseMode(true)).Onto(ctx)
 	transport := NewLoggingRoundTripper(ctx, &tr)
 	body := bytes.NewBufferString("test")
 	req, err := http.NewRequest("POST", "http://localhost:1234/", body)

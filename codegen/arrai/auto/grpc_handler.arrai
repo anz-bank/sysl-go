@@ -33,7 +33,6 @@ let sysl = //{./sysl};
         // NewGrpcServiceHandler for ${appname}
         func NewGrpcServiceHandler(
             ctx context.Context,
-            cfg *config.DefaultConfig,
             hooks *core.Hooks,
             genCallback core.GrpcGenCallback,
             serviceInterface *GrpcServiceInterface,
@@ -51,7 +50,7 @@ let sysl = //{./sysl};
                 let method = go.name(ep('name').s);
                 let ruleExpression = authorizationRule(ep);
                 cond {authorizationRule(ep): $`
-                    authRule${method}, authRuleErr := core.ResolveGRPCAuthorizationRule(ctx, cfg, hooks, "${method}", ${"`"+ruleExpression+"`"})
+                    authRule${method}, authRuleErr := core.ResolveGRPCAuthorizationRule(ctx, hooks, "${method}", ${"`"+ruleExpression+"`"})
                     if authRuleErr != nil {
                         return nil, authRuleErr
                     }

@@ -4,9 +4,10 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/anz-bank/sysl-go/log"
+
 	"github.com/anz-bank/sysl-go/common/internal"
 
-	"github.com/anz-bank/pkg/log"
 	"github.com/google/uuid"
 )
 

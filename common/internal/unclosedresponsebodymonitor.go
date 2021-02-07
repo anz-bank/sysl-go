@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/anz-bank/pkg/log"
+	"github.com/anz-bank/sysl-go/log"
 )
 
 type unclosedResponseBodyMonitorContextKey struct{}
@@ -42,7 +42,7 @@ func CheckForUnclosedResponses(ctx context.Context) {
 		openBodyCount := len(openBodyErrors.errors)
 		if openBodyCount > 0 {
 			err := errors.New(openBodyErrors.Error())
-			log.Error(ctx, err)
+			log.Error(ctx, err, "unclosed response")
 			panic(err)
 		}
 	}

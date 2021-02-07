@@ -11,6 +11,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/anz-bank/sysl-go/log"
+
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/config/envvar"
@@ -18,9 +20,7 @@ import (
 	"github.com/spf13/afero"
 
 	pkgHealth "github.com/anz-bank/pkg/health"
-	"github.com/anz-bank/pkg/log"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sirupsen/logrus"
 )
 
 type serveContextKey int
@@ -49,7 +49,7 @@ func WithConfigFile(ctx context.Context, yamlConfigData []byte) context.Context 
 func Serve(
 	ctx context.Context,
 	downstreamConfig, createService, serviceInterface interface{},
-	newManagers func(ctx context.Context, cfg *config.DefaultConfig, serviceIntf interface{}, hooks *Hooks) (Manager, *GrpcServerManager, error),
+	newManagers func(ctx context.Context, serviceIntf interface{}, hooks *Hooks) (Manager, *GrpcServerManager, error),
 ) error {
 	srv, err := NewServer(ctx, downstreamConfig, createService, serviceInterface, newManagers)
 	if err != nil {
@@ -63,7 +63,7 @@ func Serve(
 func NewServer(
 	ctx context.Context,
 	downstreamConfig, createService, serviceInterface interface{},
-	newManagers func(ctx context.Context, cfg *config.DefaultConfig, serviceIntf interface{}, hooks *Hooks) (Manager, *GrpcServerManager, error),
+	newManagers func(ctx context.Context, serviceIntf interface{}, hooks *Hooks) (Manager, *GrpcServerManager, error),
 ) (StoppableServer, error) {
 	MustTypeCheckCreateService(createService, serviceInterface)
 	customConfig := NewZeroCustomConfig(reflect.TypeOf(downstreamConfig), GetAppConfigType(createService))
@@ -95,6 +95,8 @@ func NewServer(
 		},
 	}
 
+	ctx = config.PutDefaultConfig(ctx, defaultConfig)
+
 	createServiceResult := reflect.ValueOf(createService).Call(
 		[]reflect.Value{reflect.ValueOf(ctx), appConfig},
 	)
@@ -112,6 +114,8 @@ func NewServer(
 		}
 	}
 
+	ctx = log.PutLogger(ctx, BuildLogger(ctx, hooks))
+
 	// Collect prometheus metrics if the admin server is enabled.
 	var promRegistry *prometheus.Registry
 	if admin != nil {
@@ -123,16 +127,7 @@ func NewServer(
 		prometheusRegistry: promRegistry,
 	}
 
-	pkgLoggerConfigs := []log.Config{
-		log.SetVerboseMode(true),
-	} // TODO expose this so it is configurable.
-
-	var logrusLogger *logrus.Logger = nil // TODO do we need to expose this or can we delete it?
-
-	ctx = InitialiseLogging(ctx, pkgLoggerConfigs, logrusLogger)
-	// OK, we have a ctx that contains a logger now!
-
-	manager, grpcManager, err := newManagers(ctx, defaultConfig, serviceIntf, hooks)
+	manager, grpcManager, err := newManagers(ctx, serviceIntf, hooks)
 	if err != nil {
 		return nil, err
 	}
@@ -272,6 +267,21 @@ func MustTypeCheckCreateService(createService, serviceInterface interface{}) {
 	}
 }
 
+// BuildLogger returns the logger to use within the application based on the external
+// configuration provided.
+func BuildLogger(ctx context.Context, hooks *Hooks) log.Logger {
+	var logger log.Logger
+	if hooks.Logger != nil {
+		logger = hooks.Logger()
+	} else {
+		logger = log.NewDefaultLogger()
+	}
+
+	cfg := config.GetDefaultConfig(ctx)
+	level := cfg.Library.Log.Level
+	return logger.WithLevel(level)
+}
+
 // GetAppConfigType extracts the app's config type from createService.
 // Precondition: MustTypeCheckCreateService(createService, serviceInterface) succeeded.
 func GetAppConfigType(createService interface{}) reflect.Type {
@@ -331,8 +341,8 @@ func describeYAMLForType(w io.Writer, t reflect.Type, commonTypes map[reflect.Ty
 		return
 	}
 	switch reflect.New(t).Elem().Interface().(type) { //nolint:gocritic
-	case logrus.Level:
-		outf(" \033[1m%s\033[0m", logrus.StandardLogger().Level.String())
+	case log.Level:
+		outf(" \033[1m%d\033[0m", log.InfoLevel) // FIXME: incorrect
 		return
 	}
 	switch t.Kind() {
@@ -460,7 +470,7 @@ func (s *autogenServer) Start() error {
 	// Refuse to start and panic if neither of the public servers are enabled.
 	if !restIsRunning && !grpcIsRunning {
 		err := errors.New("REST and gRPC servers cannot both be nil")
-		log.Error(ctx, err)
+		log.Error(ctx, err, "error starting server")
 		panic(err)
 	}
 

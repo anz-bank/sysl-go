@@ -3,10 +3,11 @@ package config
 import (
 	"testing"
 
+	"github.com/anz-bank/sysl-go/log"
+
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/validator"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	vv9 "gopkg.in/go-playground/validator.v9"
@@ -43,7 +44,7 @@ func defaultConfig() *LibraryConfig {
 }
 
 func defaultLogConfig() LogConfig {
-	logLevel := logrus.InfoLevel
+	logLevel := log.InfoLevel
 	logFormat := "color"
 	logCaller := false
 	return LogConfig{
@@ -74,7 +75,7 @@ func TestValidateLogInvalidFormatter(t *testing.T) {
 
 func TestValidateLogDebugLevel(t *testing.T) {
 	config := defaultConfig()
-	config.Log.Level = logrus.DebugLevel
+	config.Log.Level = log.DebugLevel
 	err := config.Validate()
 	require.NoError(t, err)
 }

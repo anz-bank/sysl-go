@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/anz-bank/pkg/log"
+	"github.com/anz-bank/sysl-go/log"
 )
 
 type CustomError map[string]string

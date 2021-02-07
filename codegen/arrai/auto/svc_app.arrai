@@ -16,7 +16,8 @@ let sysl = //{./sysl};
         }
 
         // BuildDownstreamClients ...
-        func BuildDownstreamClients(ctx context.Context, hooks *core.Hooks, cfg *config.DefaultConfig) (*DownstreamClients, error) {
+        func BuildDownstreamClients(ctx context.Context, hooks *core.Hooks) (*DownstreamClients, error) {
+            cfg := config.GetDefaultConfig(ctx)
             downstreamConfig := cfg.GenCode.Downstream.(*DownstreamConfig)
             if downstreamConfig == nil {
                 downstreamConfig = &DownstreamConfig{}
@@ -95,11 +96,11 @@ let sysl = //{./sysl};
                 &DownstreamConfig{}, createService, &${serviceInterface}{},
                 func(
                     ctx context.Context,
-                    cfg *config.DefaultConfig,
                     serviceIntf interface{},
                     hooks *core.Hooks,
                 ) (core.Manager, *core.GrpcServerManager, error) {
                     serviceInterface := serviceIntf.(*${serviceInterface})
+                    cfg := config.GetDefaultConfig(ctx)
 
                     if hooks == nil {
                         hooks = &core.Hooks{}
@@ -113,7 +114,7 @@ let sysl = //{./sysl};
                         }
                     }
 
-                    genCallbacks := config.NewCallbackV2(
+                    genCallbacks := common.NewCallbackV2(
                         &cfg.GenCode,
                         downstream.ContextTimeout,
                         hooks.MapError,
@@ -121,14 +122,13 @@ let sysl = //{./sysl};
                     )
 
                     ${cond {clientDeps: $`
-                        clients, err := BuildDownstreamClients(ctx, hooks, cfg)
+                        clients, err := BuildDownstreamClients(ctx, hooks)
                         if err != nil {
                             return nil, nil, err
                         }
                     `}}
                     serviceHandler, err := ${newServiceHandler}(
                         ctx,
-                        cfg,
                         hooks,
                         genCallbacks,
                         serviceInterface,

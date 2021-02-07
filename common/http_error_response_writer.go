@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/anz-bank/pkg/log"
+	"github.com/anz-bank/sysl-go/log"
 )
 
 type HTTPError struct {
@@ -65,7 +65,7 @@ func (httpError *HTTPError) WriteError(ctx context.Context, w http.ResponseWrite
 
 	b, err := json.Marshal(httpErrorResponse{marshalTarget})
 	if err != nil {
-		log.Error(ctx, err)
+		log.Error(ctx, err, "error marshalling error response")
 		b = []byte(`{"status":{"code": "1234", "description": "Unknown Error"}}`)
 		httpError.HTTPCode = http.StatusInternalServerError
 	}

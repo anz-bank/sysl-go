@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/anz-bank/pkg/log"
+	"github.com/anz-bank/sysl-go/log"
+
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core/authrules"
@@ -42,7 +43,7 @@ type GrpcGenCallback interface {
 type Hooks struct {
 
 	// Logger returns the common.Logger that should be used throughout the application.
-	Logger func() common.Logger
+	Logger func() log.Logger
 
 	// MapError maps an error to an HTTPError in instances where custom error mapping is required.
 	// Return nil to perform default error mapping; defined as:
@@ -150,18 +151,19 @@ func ResolveGrpcServerOptions(ctx context.Context, h *Hooks, grpcPublicServerCon
 	}
 }
 
-func ResolveGRPCAuthorizationRule(ctx context.Context, cfg *config.DefaultConfig, h *Hooks, endpointName string, authRuleExpression string) (authrules.Rule, error) {
-	return resolveAuthorizationRule(ctx, cfg, h, endpointName, authRuleExpression, authrules.MakeGRPCJWTAuthorizationRule)
+func ResolveGRPCAuthorizationRule(ctx context.Context, h *Hooks, endpointName string, authRuleExpression string) (authrules.Rule, error) {
+	return resolveAuthorizationRule(ctx, h, endpointName, authRuleExpression, authrules.MakeGRPCJWTAuthorizationRule)
 }
 
-func ResolveRESTAuthorizationRule(ctx context.Context, cfg *config.DefaultConfig, h *Hooks, endpointName string, authRuleExpression string) (authrules.Rule, error) {
-	return resolveAuthorizationRule(ctx, cfg, h, endpointName, authRuleExpression, authrules.MakeRESTJWTAuthorizationRule)
+func ResolveRESTAuthorizationRule(ctx context.Context, h *Hooks, endpointName string, authRuleExpression string) (authrules.Rule, error) {
+	return resolveAuthorizationRule(ctx, h, endpointName, authRuleExpression, authrules.MakeRESTJWTAuthorizationRule)
 }
 
-func resolveAuthorizationRule(ctx context.Context, cfg *config.DefaultConfig, h *Hooks, endpointName string, authRuleExpression string, ruleFactory func(authRule authrules.JWTClaimsBasedAuthorizationRule, authenticator jwtauth.Authenticator) (authrules.Rule, error)) (authrules.Rule, error) {
+func resolveAuthorizationRule(ctx context.Context, h *Hooks, endpointName string, authRuleExpression string, ruleFactory func(authRule authrules.JWTClaimsBasedAuthorizationRule, authenticator jwtauth.Authenticator) (authrules.Rule, error)) (authrules.Rule, error) {
+	cfg := config.GetDefaultConfig(ctx)
 	if cfg.Development != nil && cfg.Development.DisableAllAuthorizationRules {
 		// pkg logger API doesnt support warn.
-		log.Infof(ctx, "warning: development.disableAllAuthorizationRules is set, all authorization rules are disabled, this is insecure and should not be used in production.")
+		log.Info(ctx, "warning: development.disableAllAuthorizationRules is set, all authorization rules are disabled, this is insecure and should not be used in production.")
 		return authrules.InsecureAlwaysGrantAccess, nil
 	}
 	var claimsBasedAuthRuleFactory func(authorizationRuleExpression string) (authrules.JWTClaimsBasedAuthorizationRule, error)

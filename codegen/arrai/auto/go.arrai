@@ -145,7 +145,6 @@ let prelude = \app \imports $`
                 _: $`${.:q}`,
             } orderby .
         ::\i:\n}
-        pkglog "github.com/anz-bank/pkg/log"
         "github.com/go-chi/chi"
         "github.com/rickb777/date"
         "google.golang.org/grpc"
