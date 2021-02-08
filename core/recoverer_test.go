@@ -11,7 +11,7 @@ import (
 )
 
 func TestRecoverer(t *testing.T) {
-	mware, hook := testutil.LoggerHookContextMiddleware()
+	mware, logger := testutil.LoggerHookContextMiddleware()
 
 	ts := httptest.NewServer(mware(Recoverer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 		panic("Test")
@@ -23,5 +23,5 @@ func TestRecoverer(t *testing.T) {
 	if res != nil {
 		defer res.Body.Close()
 	}
-	require.NotEmpty(t, hook.Entries)
+	require.NotZero(t, logger.EntryCount())
 }

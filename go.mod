@@ -18,6 +18,7 @@ require (
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/viper v1.6.1
 	github.com/stretchr/testify v1.6.1
+	golang.org/x/tools v0.1.0 // indirect
 	google.golang.org/grpc v1.32.0
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gopkg.in/square/go-jose.v2 v2.5.1

@@ -43,6 +43,7 @@ type GrpcGenCallback interface {
 type Hooks struct {
 
 	// Logger returns the common.Logger that should be used throughout the application.
+	// Note: The returned value will always  level set against the logger
 	Logger func() log.Logger
 
 	// MapError maps an error to an HTTPError in instances where custom error mapping is required.

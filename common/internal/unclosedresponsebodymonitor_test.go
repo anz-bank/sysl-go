@@ -12,7 +12,7 @@ import (
 )
 
 func TestCheckForUnclosedResponses(t *testing.T) {
-	testContext, hook := testutil.NewTestContextWithLoggerHook()
+	testContext, logger := testutil.NewTestContextWithLogger()
 	// setup the monitor
 	ctx := AddResponseBodyMonitorToContext(testContext)
 
@@ -31,7 +31,7 @@ func TestCheckForUnclosedResponses(t *testing.T) {
 		CheckForUnclosedResponses(ctx)
 	})
 
-	require.NotEmpty(t, hook.Entries)
+	require.NotZero(t, logger.EntryCount())
 }
 
 func TestCheckForUnclosedResponses_AllClosed(t *testing.T) {

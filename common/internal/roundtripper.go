@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 	"time"
+
+	"github.com/anz-bank/sysl-go/log"
 )
 
 type loggingRoundtripper struct {
@@ -38,8 +40,8 @@ func (t *loggingRoundtripper) RoundTrip(req *http.Request) (*http.Response, erro
 
 	reqTime := time.Since(start)
 
-	fields := initCommonLogFields(resp.StatusCode, reqTime, resp.Request)
+	ctx := initCommonLogFields(t.ctx, resp.StatusCode, reqTime, resp.Request)
 
-	fields.Info(t.ctx, "Backend request completed")
+	log.Info(ctx, "Backend request completed")
 	return resp, nil
 }

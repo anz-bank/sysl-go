@@ -12,8 +12,9 @@ import (
 	"regexp"
 	"time"
 
+	anzlog "github.com/anz-bank/sysl-go/log"
+
 	"github.com/anz-bank/pkg/health"
-	anzlog "github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
 	"github.com/anz-bank/sysl-go/metrics"
@@ -182,7 +183,7 @@ func (s httpServer) GetName() string {
 
 func prepareServerListener(ctx context.Context, rootRouter http.Handler, tlsConfig *tls.Config, httpConfig config.CommonHTTPServerConfig, name string) httpServer {
 	re := regexp.MustCompile(`TLS handshake error from .* EOF`) // Avoid spurious TLS errors from load balancer
-	writer := &TLSLogFilter{anzlog.From(ctx), re}
+	writer := &TLSLogFilter{anzlog.GetLogger(ctx), re}
 	serverLogger := log.New(writer, "HTTPServer ", log.LstdFlags|log.Llongfile)
 
 	server := makeNewServer(ctx, rootRouter, tlsConfig, httpConfig, serverLogger)

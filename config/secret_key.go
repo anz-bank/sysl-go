@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-
-	"github.com/anz-bank/sysl-go/common"
 )
 
 const (
@@ -14,11 +12,11 @@ const (
 )
 
 type SecretKeyConfig struct {
-	Encoding         *string                 `yaml:"encoding" mapstructure:"encoding" json:"encoding"`
-	Alias            *string                 `yaml:"alias,omitempty" mapstructure:"alias,omitempty" json:"alias,omitempty"`
-	KeyStore         *string                 `yaml:"keyStore,omitempty" mapstructure:"keyStore,omitempty" json:"keyStore,omitempty"`
-	KeyStorePassword *common.SensitiveString `yaml:"keyStorePassword,omitempty" mapstructure:"keyStorePassword,omitempty" json:"keyStorePassword,omitempty"`
-	Value            *common.SensitiveString `yaml:"value,omitempty" mapstructure:"value,omitempty" json:"value,omitempty"`
+	Encoding         *string          `yaml:"encoding" mapstructure:"encoding" json:"encoding"`
+	Alias            *string          `yaml:"alias,omitempty" mapstructure:"alias,omitempty" json:"alias,omitempty"`
+	KeyStore         *string          `yaml:"keyStore,omitempty" mapstructure:"keyStore,omitempty" json:"keyStore,omitempty"`
+	KeyStorePassword *SensitiveString `yaml:"keyStorePassword,omitempty" mapstructure:"keyStorePassword,omitempty" json:"keyStorePassword,omitempty"`
+	Value            *SensitiveString `yaml:"value,omitempty" mapstructure:"value,omitempty" json:"value,omitempty"`
 }
 
 var SecretKeyValidators = map[string]func(cfg *SecretKeyConfig) error{
@@ -58,7 +56,7 @@ func validateBase64Value(cfg *SecretKeyConfig) error {
 }
 
 type SecretKey struct {
-	common.SensitiveString
+	SensitiveString
 }
 
 var SecretKeyReader = map[string]func(cfg *SecretKeyConfig) ([]byte, error){
@@ -89,7 +87,7 @@ func MakeSecretKey(cfg *SecretKeyConfig) (*SecretKey, error) {
 		return nil, err
 	}
 
-	return &SecretKey{common.NewSensitiveString(string(key))}, nil
+	return &SecretKey{NewSensitiveString(string(key))}, nil
 }
 
 func readBase64Value(cfg *SecretKeyConfig) ([]byte, error) {

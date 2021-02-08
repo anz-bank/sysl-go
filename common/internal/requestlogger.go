@@ -83,9 +83,9 @@ func (r *nopLogger) FlushLog()                                                  
 
 func NewRequestLogger(ctx context.Context, req *http.Request) (RequestLogger, context.Context) {
 	cfg := config.GetDefaultConfig(ctx)
-	if cfg.Development.LogPayloadContents {
+	if cfg != nil && cfg.Development != nil && cfg.Development.LogPayloadContents {
 		l := &requestLogger{
-			ctx:        InitFieldsFromRequest(req).Onto(ctx),
+			ctx:        InitFieldsFromRequest(ctx, req),
 			protoMajor: req.ProtoMajor,
 		}
 		l.req.header = req.Header.Clone()

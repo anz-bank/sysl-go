@@ -3,7 +3,6 @@ package config
 import (
 	"context"
 
-	"github.com/anz-bank/sysl-go/config/envvar"
 	"github.com/anz-bank/sysl-go/validator"
 )
 
@@ -36,7 +35,7 @@ func PutDefaultConfig(ctx context.Context, config *DefaultConfig) context.Contex
 // defaultConfig: a pointer to the default config struct to populate
 // customConfig: a pointer to the custom config struct to populate.
 func LoadConfig(file string, defaultConfig *DefaultConfig, customConfig interface{}) error {
-	b := envvar.NewConfigReaderBuilder().WithConfigFile(file)
+	b := NewConfigReaderBuilder().WithConfigFile(file)
 	err := b.Build().Unmarshal(defaultConfig)
 	if err != nil {
 		return err

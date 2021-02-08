@@ -13,9 +13,7 @@ import (
 
 	"github.com/anz-bank/sysl-go/log"
 
-	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config"
-	"github.com/anz-bank/sysl-go/config/envvar"
 	"github.com/anz-bank/sysl-go/health"
 	"github.com/spf13/afero"
 
@@ -65,6 +63,17 @@ func NewServer(
 	downstreamConfig, createService, serviceInterface interface{},
 	newManagers func(ctx context.Context, serviceIntf interface{}, hooks *Hooks) (Manager, *GrpcServerManager, error),
 ) (StoppableServer, error) {
+
+	// initialise the bootstrap logger
+	var bootstrapLogger log.Logger
+	if log.GetLogger(ctx) == nil {
+		bootstrapLogger = log.NewDefaultLogger().WithStr("bootstrap logger",
+			"logging called before bootstrapping complete, to capture these logs call "+
+				"log.PutLogger before core.NewServer")
+		ctx = log.PutLogger(ctx, bootstrapLogger)
+	}
+
+	// load the custom configuration
 	MustTypeCheckCreateService(createService, serviceInterface)
 	customConfig := NewZeroCustomConfig(reflect.TypeOf(downstreamConfig), GetAppConfigType(createService))
 	customConfig, err := LoadCustomConfig(ctx, customConfig)
@@ -95,8 +104,10 @@ func NewServer(
 		},
 	}
 
+	// put the default configuration in the context
 	ctx = config.PutDefaultConfig(ctx, defaultConfig)
 
+	// call the create service callback
 	createServiceResult := reflect.ValueOf(createService).Call(
 		[]reflect.Value{reflect.ValueOf(ctx), appConfig},
 	)
@@ -106,6 +117,7 @@ func NewServer(
 	serviceIntf := createServiceResult[0].Interface()
 	hooksIntf := createServiceResult[1].Interface()
 
+	// validate the returned hooks
 	hooks := hooksIntf.(*Hooks)
 	if hooks != nil && hooks.ValidateConfig != nil {
 		err = hooks.ValidateConfig(ctx, defaultConfig)
@@ -114,7 +126,32 @@ func NewServer(
 		}
 	}
 
-	ctx = log.PutLogger(ctx, BuildLogger(ctx, hooks))
+	// cache the logger from the hooks if provided
+	var hooksLogger log.Logger
+	if hooks != nil && hooks.Logger != nil {
+		hooksLogger = hooks.Logger()
+	}
+
+	// cache the application logger
+	var logger log.Logger
+	existing := log.GetLogger(ctx)
+	if existing != bootstrapLogger {
+		logger = existing
+	} else if hooksLogger != nil {
+		logger = hooksLogger
+	} else {
+		logger = log.NewDefaultLogger()
+	}
+
+	// set the level against the logger
+	if defaultConfig.Library.Log.Level != 0 {
+		logger = logger.WithLevel(defaultConfig.Library.Log.Level)
+	} else {
+		logger = logger.WithLevel(log.InfoLevel)
+	}
+
+	// Put the logger in the context.
+	ctx = log.PutLogger(ctx, logger)
 
 	// Collect prometheus metrics if the admin server is enabled.
 	var promRegistry *prometheus.Registry
@@ -168,7 +205,7 @@ func LoadCustomConfig(ctx context.Context, customConfig interface{}) (interface{
 	}
 
 	// Read application configuration data.
-	b := envvar.NewConfigReaderBuilder().WithFs(fs).WithConfigFile(configPath)
+	b := config.NewConfigReaderBuilder().WithFs(fs).WithConfigFile(configPath)
 
 	envPrefixConfigKey := "envPrefix"
 
@@ -184,7 +221,6 @@ func LoadCustomConfig(ctx context.Context, customConfig interface{}) (interface{
 	env, err := b.Build().GetString(envPrefixConfigKey)
 	// Disable the feature if none is provided
 	if len(env) > 0 && err == nil {
-		log.Info(ctx, "config environment variable prefix set: "+env)
 		b = b.AttachEnvPrefix(env)
 	}
 
@@ -267,21 +303,6 @@ func MustTypeCheckCreateService(createService, serviceInterface interface{}) {
 	}
 }
 
-// BuildLogger returns the logger to use within the application based on the external
-// configuration provided.
-func BuildLogger(ctx context.Context, hooks *Hooks) log.Logger {
-	var logger log.Logger
-	if hooks.Logger != nil {
-		logger = hooks.Logger()
-	} else {
-		logger = log.NewDefaultLogger()
-	}
-
-	cfg := config.GetDefaultConfig(ctx)
-	level := cfg.Library.Log.Level
-	return logger.WithLevel(level)
-}
-
 // GetAppConfigType extracts the app's config type from createService.
 // Precondition: MustTypeCheckCreateService(createService, serviceInterface) succeeded.
 func GetAppConfigType(createService interface{}) reflect.Type {
@@ -298,7 +319,7 @@ func describeCustomConfig(w io.Writer, customConfig interface{}) {
 		reflect.TypeOf(config.CommonServerConfig{}):   "",
 		reflect.TypeOf(config.CommonDownstreamData{}): "",
 		reflect.TypeOf(config.TLSConfig{}):            "",
-		reflect.TypeOf(common.SensitiveString{}):      yamlEgComment(`"*****"`, "sensitive string"),
+		reflect.TypeOf(config.SensitiveString{}):      yamlEgComment(`"*****"`, "sensitive string"),
 	}
 
 	fmt.Fprint(w, "\033[1mConfiguration file YAML schema\033[0m")
@@ -338,11 +359,6 @@ func describeYAMLForType(w io.Writer, t reflect.Type, commonTypes map[reflect.Ty
 		} else {
 			outf(" %s", alias)
 		}
-		return
-	}
-	switch reflect.New(t).Elem().Interface().(type) { //nolint:gocritic
-	case log.Level:
-		outf(" \033[1m%d\033[0m", log.InfoLevel) // FIXME: incorrect
 		return
 	}
 	switch t.Kind() {

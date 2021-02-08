@@ -12,7 +12,6 @@ import (
 
 	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/config"
-	"github.com/anz-bank/sysl-go/config/envvar"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
 	"github.com/spf13/afero"
@@ -80,7 +79,7 @@ func getServerAddr(appCfg []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	b := envvar.NewConfigReaderBuilder().WithFs(memFs).WithConfigFile("config.yaml")
+	b := config.NewConfigReaderBuilder().WithFs(memFs).WithConfigFile("config.yaml")
 
 	err = b.Build().Unmarshal(&cfg)
 	if err != nil {

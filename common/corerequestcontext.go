@@ -12,12 +12,12 @@ import (
 
 // Deprecated: Use log.GetLogger
 func GetLogEntryFromContext(ctx context.Context) *logrus.Entry {
-	return log.GetLogEntryFromContext(ctx)
+	return log.GetLogrusLogEntryFromContext(ctx)
 }
 
 // Deprecated: Use log.GetLogger
 func GetLoggerFromContext(ctx context.Context) *logrus.Logger {
-	return log.GetLoggerFromContext(ctx)
+	return log.GetLogrusLoggerFromContext(ctx)
 }
 
 func NewLoggingRoundTripper(name string, base http.RoundTripper) http.RoundTripper {
@@ -42,7 +42,7 @@ type RestResult struct {
 
 // Deprecated: Use log.GetLogger
 func LoggerToContext(ctx context.Context, logger *logrus.Logger, entry *logrus.Entry) context.Context {
-	return log.LoggerToContext(ctx, logger, entry)
+	return log.LogrusLoggerToContext(ctx, logger, entry)
 }
 
 // RequestHeaderToContext creates a new context containing the request header.

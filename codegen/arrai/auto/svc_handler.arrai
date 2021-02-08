@@ -254,7 +254,7 @@ let sysl = //{./sysl};
                         if valErr != nil {
                             ${cond { 
                                 "permit_invalid_response" <: sysl.patterns(ep):
-                                    'pkglog.Info(ctx, fmt.Errorf("permitting invalid response: %v", valErr))',
+                                    'golog.Infof(ctx, "permitting invalid response: %v", valErr)',
                                 _: $`
                                     // Regard an invalid response object as an internal error.
                                     // To permit an endpoint to return invalid response objects, annotate the

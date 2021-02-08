@@ -5,7 +5,7 @@ go 1.14
 replace github.com/anz-bank/sysl-go => ../../../../..
 
 require (
-	github.com/anz-bank/pkg v0.0.27
+	github.com/anz-bank/pkg v0.0.28
 	github.com/anz-bank/sysl-go v0.0.0-20200325045908-46c4ce0a2736
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/go-playground/universal-translator v0.17.0 // indirect

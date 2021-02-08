@@ -3,44 +3,117 @@ package testutil
 import (
 	"context"
 	"net/http"
+	"time"
 
-	"github.com/anz-bank/pkg/log"
+	"github.com/anz-bank/sysl-go/log"
 )
 
-type TestHook struct {
-	Entries []log.LogEntry
+type TestLogger struct {
+	Level   log.Level
+	Fields  map[string]interface{}
+	entries *TestLogEntries // shared entries
 }
 
-func (t *TestHook) OnLogged(entry *log.LogEntry) error {
-	t.Entries = append(t.Entries, *entry)
-	return nil
+type TestLogEntries struct {
+	Entries []TestLogEntry
 }
 
-func (t *TestHook) LastEntry() *log.LogEntry {
-	i := len(t.Entries) - 1
-	if i < 0 {
+type TestLogEntry struct {
+	Level   log.Level
+	Message string
+	Error   error
+	Fields  map[string]interface{}
+}
+
+func NewTestLogger() TestLogger {
+	return TestLogger{entries: &TestLogEntries{}}
+}
+
+func (l *TestLogger) Entries() []TestLogEntry {
+	return l.entries.Entries
+}
+
+func (l *TestLogger) EntryCount() int {
+	return len(l.entries.Entries)
+}
+
+func (l *TestLogger) Error(err error, message string) { l.log(log.ErrorLevel, err, message) }
+func (l *TestLogger) Info(message string)             { l.log(log.InfoLevel, nil, message) }
+func (l *TestLogger) Debug(message string)            { l.log(log.DebugLevel, nil, message) }
+
+func (l *TestLogger) log(level log.Level, err error, message string) {
+	if l.Level >= level {
+		l.entries.Entries = append(l.entries.Entries, TestLogEntry{
+			Level:   level,
+			Message: message,
+			Error:   err,
+			Fields:  l.copyFields(),
+		})
+	}
+}
+
+func (l *TestLogger) WithStr(key string, value string) log.Logger {
+	return l.withField(key, value)
+}
+
+func (l *TestLogger) WithInt(key string, value int) log.Logger {
+	return l.withField(key, value)
+}
+
+func (l *TestLogger) WithDuration(key string, value time.Duration) log.Logger {
+	return l.withField(key, value)
+}
+
+func (l *TestLogger) withField(key string, value interface{}) log.Logger {
+	fields := l.copyFields()
+	fields[key] = value
+	return &TestLogger{l.Level, fields, l.entries}
+}
+
+func (l *TestLogger) WithLevel(level log.Level) log.Logger {
+	return &TestLogger{level, l.Fields, l.entries}
+}
+
+func (l *TestLogger) Inject(ctx context.Context) context.Context {
+	return ctx // unsupported
+}
+
+func (l *TestLogger) copyFields() map[string]interface{} {
+	fields := make(map[string]interface{})
+	for key, value := range l.Fields {
+		fields[key] = value
+	}
+	return fields
+}
+
+func (l *TestLogger) LastEntry() *TestLogEntry {
+	if len(l.entries.Entries) == 0 {
 		return nil
 	}
-	return &t.Entries[i]
+	return &l.entries.Entries[len(l.entries.Entries)-1]
 }
 
-func NewTestContextWithLoggerHook() (context.Context, *TestHook) {
-	hook := &TestHook{}
-	return TestContextWithLoggerHook(context.Background(), hook), hook
-}
-
-func TestContextWithLoggerHook(ctx context.Context, hook *TestHook) context.Context {
-	ctx = log.WithConfigs(log.SetVerboseMode(true)).Onto(ctx)
-	ctx = log.WithConfigs(log.AddHooks(hook)).Onto(ctx)
+func NewTestContext() context.Context {
+	ctx, _ := NewTestContextWithLogger()
 	return ctx
 }
 
-func LoggerHookContextMiddleware() (func(next http.Handler) http.Handler, *TestHook) {
-	hook := &TestHook{}
+func NewTestContextWithLogger() (context.Context, TestLogger) {
+	return NewTestContextWithLoggerAtLevel(log.InfoLevel)
+}
+
+func NewTestContextWithLoggerAtLevel(level log.Level) (context.Context, TestLogger) {
+	test := NewTestLogger()
+	logger := test.WithLevel(level).(*TestLogger)
+	return log.PutLogger(context.Background(), logger), *logger
+}
+
+func LoggerHookContextMiddleware() (func(next http.Handler) http.Handler, TestLogger) {
+	logger := NewTestLogger()
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r = r.WithContext(TestContextWithLoggerHook(r.Context(), hook))
+			r = r.WithContext(log.PutLogger(r.Context(), &logger))
 			next.ServeHTTP(w, r)
 		})
-	}, hook
+	}, logger
 }

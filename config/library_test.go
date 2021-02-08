@@ -5,7 +5,6 @@ import (
 
 	"github.com/anz-bank/sysl-go/log"
 
-	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/validator"
 
 	"github.com/stretchr/testify/assert"
@@ -32,8 +31,8 @@ func NewString(from string) *string {
 	return &from
 }
 
-func NewSecret(s string) *common.SensitiveString {
-	ss := common.NewSensitiveString(s)
+func NewSecret(s string) *SensitiveString {
+	ss := NewSensitiveString(s)
 	return &ss
 }
 

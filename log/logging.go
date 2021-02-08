@@ -99,6 +99,11 @@ func WithDuration(ctx context.Context, key string, value time.Duration) context.
 	return PutLogger(ctx, GetLogger(ctx).WithDuration(key, value))
 }
 
+// WithLevel returns the given context with a logger that logs at the given level.
+func WithLevel(ctx context.Context, level Level) context.Context {
+	return PutLogger(ctx, GetLogger(ctx).WithLevel(level))
+}
+
 // GetLogger returns the logger from the context, or nil if no logger can be found.
 func GetLogger(ctx context.Context) Logger {
 	m, _ := ctx.Value(loggerKey{}).(Logger)
@@ -244,37 +249,37 @@ func (l *LogrusLogger) Inject(ctx context.Context) context.Context {
 	// historically Sysl-go has provided utility methods to inject a logrus logger into the context.
 	// This approach is deprecated and will soon be removed, after which this method will return
 	// the passed-in context value.
-	return LoggerToContext(ctx, l.Logger, nil)
+	return LogrusLoggerToContext(ctx, l.Logger, nil)
 }
 
 // Deprecated
-type coreRequestContextKey struct{}
+type logrusRequestContextKey struct{}
 
 // Deprecated
-type coreRequestContext struct {
+type logrusRequestContext struct {
 	logger *logrus.Logger
 	entry  *logrus.Entry
 }
 
 // Deprecated: Use GetLogger, Error, Info or Debug methods.
-func LoggerToContext(ctx context.Context, logger *logrus.Logger, entry *logrus.Entry) context.Context {
-	return context.WithValue(ctx, coreRequestContextKey{}, coreRequestContext{logger, entry})
+func LogrusLoggerToContext(ctx context.Context, logger *logrus.Logger, entry *logrus.Entry) context.Context {
+	return context.WithValue(ctx, logrusRequestContextKey{}, logrusRequestContext{logger, entry})
 }
 
 // Deprecated: Use log.GetLogger.
-func GetLogEntryFromContext(ctx context.Context) *logrus.Entry {
-	core := ctx.Value(coreRequestContextKey{})
+func GetLogrusLogEntryFromContext(ctx context.Context) *logrus.Entry {
+	core := ctx.Value(logrusRequestContextKey{})
 	if core == nil {
 		return nil
 	}
-	return core.(coreRequestContext).entry
+	return core.(logrusRequestContext).entry
 }
 
 // Deprecated: Use log.GetLogger.
-func GetLoggerFromContext(ctx context.Context) *logrus.Logger {
-	core := ctx.Value(coreRequestContextKey{})
+func GetLogrusLoggerFromContext(ctx context.Context) *logrus.Logger {
+	core := ctx.Value(logrusRequestContextKey{})
 	if core == nil {
 		return nil
 	}
-	return core.(coreRequestContext).logger
+	return core.(logrusRequestContext).logger
 }

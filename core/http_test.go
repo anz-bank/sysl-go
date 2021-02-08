@@ -162,7 +162,7 @@ func Test_makeNewServer(t *testing.T) {
 }
 
 func Test_prepareServerListener(t *testing.T) {
-	ctx, _ := testutil.NewTestContextWithLoggerHook()
+	ctx, _ := testutil.NewTestContextWithLogger()
 
 	type args struct {
 		rootRouter   http.Handler
@@ -223,7 +223,7 @@ func Test_SelectBasePath_BothFilledSelectsDynamic(t *testing.T) {
 }
 
 func TestHTTPStoppableServerCanBeHardStopped(t *testing.T) {
-	ctx := context.Background()
+	ctx := testutil.NewTestContext()
 	cfg := config.CommonHTTPServerConfig{
 		BasePath: "/",
 		Common: config.CommonServerConfig{
@@ -278,7 +278,7 @@ func TestHTTPStoppableServerCanBeHardStopped(t *testing.T) {
 }
 
 func TestHTTPStoppableServerCanBeGracefullyStopped(t *testing.T) {
-	ctx := context.Background()
+	ctx := testutil.NewTestContext()
 	cfg := config.CommonHTTPServerConfig{
 		BasePath: "/",
 		Common: config.CommonServerConfig{
@@ -368,7 +368,7 @@ func TestHTTPStoppableServerCanBeGracefullyStopped(t *testing.T) {
 }
 
 func TestHTTPStoppableServerGracefulStopTimeout(t *testing.T) {
-	ctx := context.Background()
+	ctx := testutil.NewTestContext()
 	cfg := config.CommonHTTPServerConfig{
 		BasePath: "/",
 		Common: config.CommonServerConfig{
@@ -460,7 +460,7 @@ func TestHTTPStoppableServerGracefulStopTimeout(t *testing.T) {
 }
 
 func Test_configureAdminServerListener_Valid(t *testing.T) {
-	ctx := context.Background()
+	ctx := testutil.NewTestContext()
 
 	manager := &restManagerImpl{
 		handlers: func() []handlerinitialiser.HandlerInitialiser { return []handlerinitialiser.HandlerInitialiser{} },
@@ -504,7 +504,7 @@ func Test_configureAdminServerListener_Valid(t *testing.T) {
 }
 
 func Test_configureAdminServerListener_MissingLibraryConfig(t *testing.T) {
-	ctx := context.Background()
+	ctx := testutil.NewTestContext()
 
 	manager := &restManagerImpl{
 		handlers: func() []handlerinitialiser.HandlerInitialiser { return []handlerinitialiser.HandlerInitialiser{} },
@@ -528,7 +528,7 @@ func Test_configureAdminServerListener_MissingLibraryConfig(t *testing.T) {
 }
 
 func Test_configureAdminServerListener_MissingAdminConfig(t *testing.T) {
-	ctx := context.Background()
+	ctx := testutil.NewTestContext()
 
 	manager := &restManagerImpl{
 		handlers: func() []handlerinitialiser.HandlerInitialiser { return []handlerinitialiser.HandlerInitialiser{} },
@@ -558,7 +558,7 @@ func Test_configureAdminServerListener_MissingAdminConfig(t *testing.T) {
 }
 
 func Test_configureAdminServerListener_MissingMiddlewareHandler(t *testing.T) {
-	ctx := context.Background()
+	ctx := testutil.NewTestContext()
 
 	manager := &restManagerImpl{
 		handlers: func() []handlerinitialiser.HandlerInitialiser { return []handlerinitialiser.HandlerInitialiser{} },

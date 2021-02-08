@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/anz-bank/pkg/log"
+	"github.com/anz-bank/sysl-go/log"
+
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
 	"google.golang.org/grpc"
@@ -33,11 +34,7 @@ func DefaultGrpcServerOptions(ctx context.Context, grpcPublicServerConfig *confi
 		return nil, err
 	}
 
-	// Get a logger. This will EITHER return a custom logger if one was
-	// previously prepared and put in the context, OR it will magically
-	// create a new logger with default configuration that you're not
-	// able to control.
-	logger := log.From(ctx)
+	logger := log.GetLogger(ctx)
 	// Inject the logger into the ctx so we can log when we're serving rpc calls.
 	opts = append(opts, grpc.ChainUnaryInterceptor(makeLoggerInterceptor(logger)))
 
@@ -125,16 +122,17 @@ type logWriterError struct {
 }
 
 func (lw *logWriterError) Write(p []byte) (n int, err error) {
-	lw.logger.Error(errors.New(string(p)))
+	lw.logger.Error(errors.New(string(p)), "gRPC error")
 	return len(p), nil
 }
 
 func prepareGrpcServerListener(ctx context.Context, server *grpc.Server, commonConfig config.CommonServerConfig, name string) StoppableServer {
+	logger := log.GetLogger(ctx)
 	grpclog.SetLoggerV2(
 		grpclog.NewLoggerV2(
-			&logWriterInfo{logger: log.From(ctx)},
-			&logWriterInfo{logger: log.From(ctx)},
-			&logWriterError{logger: log.From(ctx)}))
+			&logWriterInfo{logger: logger},
+			&logWriterInfo{logger: logger},
+			&logWriterError{logger: logger}))
 
 	log.Infof(ctx, "configured gRPC listener for address: %s:%d", commonConfig.HostName, commonConfig.Port)
 	return grpcServer{ctx: ctx, cfg: commonConfig, server: server, name: name}
@@ -142,11 +140,12 @@ func prepareGrpcServerListener(ctx context.Context, server *grpc.Server, commonC
 
 func makeLoggerInterceptor(logger log.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		ctx = log.WithLogger(logger).Onto(ctx)
+		ctx = log.PutLogger(ctx, logger)
 		return handler(ctx, req)
 	}
 }
 
 func TraceidLogInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-	return handler(log.With("traceid", "traceid").Onto(ctx), req)
+	ctx = log.WithStr(ctx, "traceid", "traceid")
+	return handler(ctx, req)
 }

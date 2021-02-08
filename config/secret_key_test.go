@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/anz-bank/sysl-go/common"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -74,7 +73,7 @@ func TestMakeSecretKeyBase64Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, secretKey)
 	assert.Equal(t, "testpassword1234", secretKey.Value())
-	assert.Equal(t, common.DefaultReplacementText, secretKey.String())
+	assert.Equal(t, DefaultReplacementText, secretKey.String())
 }
 
 func TestMakeSecretKeyNilConfig(t *testing.T) {
