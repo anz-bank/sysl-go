@@ -2,12 +2,15 @@ package testutil
 
 import (
 	"context"
-	"net/http"
 	"time"
+
+	"github.com/anz-bank/sysl-go/config"
 
 	"github.com/anz-bank/sysl-go/log"
 )
 
+// The TestLogger is an implementation of log.Logger suitable for use within unit tests.
+// Provision with NewTestLogger or NewTestContext.
 type TestLogger struct {
 	Level   log.Level
 	Fields  map[string]interface{}
@@ -25,8 +28,8 @@ type TestLogEntry struct {
 	Fields  map[string]interface{}
 }
 
-func NewTestLogger() TestLogger {
-	return TestLogger{entries: &TestLogEntries{}}
+func NewTestLogger() *TestLogger {
+	return &TestLogger{entries: &TestLogEntries{}}
 }
 
 func (l *TestLogger) Entries() []TestLogEntry {
@@ -93,27 +96,77 @@ func (l *TestLogger) LastEntry() *TestLogEntry {
 	return &l.entries.Entries[len(l.entries.Entries)-1]
 }
 
-func NewTestContext() context.Context {
-	ctx, _ := NewTestContextWithLogger()
+// TestContextOpt is an interface to help configure the test context.
+type TestContextOpt interface {
+	Apply(ctx context.Context) context.Context
+}
+
+// NewTestContext returns a context suitable for use within unit tests.
+// The context comes equipped with the following:
+// 1. Logger
+// To modify the test context further, pass additional TestContextOpt values.
+func NewTestContext(opts ...TestContextOpt) context.Context {
+	ctx, _ := NewTestContextWithLogger(opts...)
 	return ctx
 }
 
-func NewTestContextWithLogger() (context.Context, TestLogger) {
-	return NewTestContextWithLoggerAtLevel(log.InfoLevel)
+// NewTestContext returns a context (and logger) suitable for use within unit tests.
+// The context comes equipped with the following:
+// 1. Logger
+// To modify the test context further, pass additional TestContextOpt values.
+func NewTestContextWithLogger(opts ...TestContextOpt) (context.Context, *TestLogger) {
+	ctx := log.PutLogger(context.Background(), NewTestLogger())
+	for _, o := range opts {
+		ctx = o.Apply(ctx)
+	}
+	logger := log.GetLogger(ctx)
+	return ctx, logger.(*TestLogger)
 }
 
-func NewTestContextWithLoggerAtLevel(level log.Level) (context.Context, TestLogger) {
-	test := NewTestLogger()
-	logger := test.WithLevel(level).(*TestLogger)
-	return log.PutLogger(context.Background(), logger), *logger
+// WithLogLevel returns a TestContextOpt that sets the log level within the test context.
+func WithLogLevel(level log.Level) TestContextOpt {
+	return &withLogLevel{level}
 }
 
-func LoggerHookContextMiddleware() (func(next http.Handler) http.Handler, TestLogger) {
-	logger := NewTestLogger()
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r = r.WithContext(log.PutLogger(r.Context(), &logger))
-			next.ServeHTTP(w, r)
-		})
-	}, logger
+type withLogLevel struct {
+	level log.Level
+}
+
+func (w *withLogLevel) Apply(ctx context.Context) context.Context {
+	return log.WithLevel(ctx, w.level)
+}
+
+// WithConfig returns a TestContextOpt that adds the given configuration into the test context.
+func WithConfig(cfg *config.DefaultConfig) TestContextOpt {
+	return &withConfig{cfg}
+}
+
+type withConfig struct {
+	cfg *config.DefaultConfig
+}
+
+func (w *withConfig) Apply(ctx context.Context) context.Context {
+	return config.PutDefaultConfig(ctx, w.cfg)
+}
+
+// WithLogPayloadContents returns a TestContextOpt that sets the configuration option within the
+// test context to log the payload contents or not.
+func WithLogPayloadContents(log bool) TestContextOpt {
+	return &withLogPayloadContents{log}
+}
+
+type withLogPayloadContents struct {
+	log bool
+}
+
+func (w *withLogPayloadContents) Apply(ctx context.Context) context.Context {
+	cfg := config.GetDefaultConfig(ctx)
+	if cfg == nil {
+		cfg = &config.DefaultConfig{}
+	}
+	if cfg.Development == nil {
+		cfg.Development = &config.DevelopmentConfig{}
+	}
+	cfg.Development.LogPayloadContents = w.log
+	return config.PutDefaultConfig(ctx, cfg)
 }

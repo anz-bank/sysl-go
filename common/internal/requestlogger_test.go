@@ -9,17 +9,14 @@ import (
 
 	"github.com/anz-bank/sysl-go/log"
 
-	"github.com/anz-bank/sysl-go/config"
-
 	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestLogger_FlushLog(t *testing.T) {
-	ctx, logger := testutil.NewTestContextWithLoggerAtLevel(log.DebugLevel)
-	cfg := config.DefaultConfig{}
-	cfg.Development = &config.DevelopmentConfig{LogPayloadContents: true}
-	ctx = config.PutDefaultConfig(ctx, &cfg)
+	ctx, logger := testutil.NewTestContextWithLogger(
+		testutil.WithLogLevel(log.DebugLevel),
+		testutil.WithLogPayloadContents(true))
 
 	req, err := http.NewRequest("GET", "http://example.com/foo", nil)
 	require.NoError(t, err)

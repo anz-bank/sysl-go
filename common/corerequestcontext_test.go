@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/anz-bank/sysl-go/log"
+
 	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 )
@@ -27,7 +29,9 @@ func TestCoreRequestContextMiddleware(t *testing.T) {
 }
 
 func TestCoreRequestContextMiddleWare_VerboseLogging_LogRequestHeaderAndResponseHeader(t *testing.T) {
-	ctx, logger := testutil.NewTestContextWithLogger()
+	ctx, logger := testutil.NewTestContextWithLogger(
+		testutil.WithLogLevel(log.DebugLevel),
+		testutil.WithLogPayloadContents(true))
 	mware := CoreRequestContextMiddleware
 	body := bytes.NewBufferString("test")
 	req, err := http.NewRequest("GET", "localhost/", body)

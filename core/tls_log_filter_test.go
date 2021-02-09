@@ -23,9 +23,9 @@ func TestTLSLogFilter_Write(t *testing.T) {
 	} {
 		tt := tt
 		t.Run(fmt.Sprintf("TestTLSLogFilter_Write-%d", i), func(t *testing.T) {
-			_, logger := testutil.NewTestContextWithLoggerAtLevel(anzlog.DebugLevel)
+			logger := testutil.NewTestLogger()
 			re := regexp.MustCompile(`hit`)
-			writer := &TLSLogFilter{&logger, re}
+			writer := &TLSLogFilter{logger.WithLevel(anzlog.DebugLevel), re}
 			serverLogger := log.New(writer, "", 0)
 
 			serverLogger.Printf(tt.in)

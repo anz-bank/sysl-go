@@ -7,8 +7,6 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/anz-bank/sysl-go/config"
-
 	"github.com/anz-bank/sysl-go/log"
 
 	"github.com/anz-bank/sysl-go/testutil"
@@ -69,10 +67,9 @@ func (r *testRoundtripper) RoundTrip(req *http.Request) (*http.Response, error) 
 }
 func TestLoggingTransport_RoundTrip400Code(t *testing.T) {
 	tr := testRoundtripper{false, 400}
-	ctx, logger := testutil.NewTestContextWithLoggerAtLevel(log.DebugLevel)
-	cfg := config.DefaultConfig{}
-	cfg.Development = &config.DevelopmentConfig{LogPayloadContents: true}
-	ctx = config.PutDefaultConfig(ctx, &cfg)
+	ctx, logger := testutil.NewTestContextWithLogger(
+		testutil.WithLogLevel(log.DebugLevel),
+		testutil.WithLogPayloadContents(true))
 	transport := NewLoggingRoundTripper(ctx, &tr)
 	body := bytes.NewBufferString("test")
 	req, err := http.NewRequest("POST", "http://localhost:1234/", body)
@@ -109,10 +106,9 @@ func TestLoggingTransport_RoundTrip400Code(t *testing.T) {
 
 func TestLoggingTransport_RoundTripLogFields(t *testing.T) {
 	tr := testRoundtripper{false, 400}
-	ctx, logger := testutil.NewTestContextWithLoggerAtLevel(log.DebugLevel)
-	cfg := config.DefaultConfig{}
-	cfg.Development = &config.DevelopmentConfig{LogPayloadContents: true}
-	ctx = config.PutDefaultConfig(ctx, &cfg)
+	ctx, logger := testutil.NewTestContextWithLogger(
+		testutil.WithLogLevel(log.DebugLevel),
+		testutil.WithLogPayloadContents(true))
 	transport := NewLoggingRoundTripper(ctx, &tr)
 	body := bytes.NewBufferString("test")
 	req, err := http.NewRequest("POST", "http://localhost:1234/", body)

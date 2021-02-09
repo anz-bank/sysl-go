@@ -64,16 +64,23 @@ func NewServer(
 	newManagers func(ctx context.Context, serviceIntf interface{}, hooks *Hooks) (Manager, *GrpcServerManager, error),
 ) (StoppableServer, error) {
 
-	// initialise the bootstrap logger
-	var bootstrapLogger log.Logger
-	if log.GetLogger(ctx) == nil {
-		bootstrapLogger = log.NewDefaultLogger().WithStr("bootstrap logger",
-			"logging called before bootstrapping complete, to capture these logs call "+
-				"log.PutLogger before core.NewServer")
-		ctx = log.PutLogger(ctx, bootstrapLogger)
+	// Cache the external logger (i.e. the logger set within the context before bootstrapping).
+	var externalLogger log.Logger
+	ctx, externalLogger = getExternalLogger(ctx)
+
+	// Put the bootstrap logger in the context if no external logger is provided. The bootstrap
+	// logger is designed to provide a fail-safe logger within the context for the period of
+	// bootstrapping only. In an ideal setup the bootstrap logger will never be called, however in
+	// some edge cases it may be desirable to capture logs before the Hooks.Logger has a chance to
+	// be called. In this instance the recommended approach is to call log.PutLogger on the context
+	// calling this method. The outcome of this approach is that the Hooks.Logger method is ignored.
+	if externalLogger == nil {
+		ctx = log.PutLogger(ctx, log.NewDefaultLogger().WithStr("bootstrap logger",
+			"logging called before bootstrapping complete, to centralise these logs call "+
+				"log.PutLogger before core.NewServer"))
 	}
 
-	// load the custom configuration
+	// Load the custom configuration.
 	MustTypeCheckCreateService(createService, serviceInterface)
 	customConfig := NewZeroCustomConfig(reflect.TypeOf(downstreamConfig), GetAppConfigType(createService))
 	customConfig, err := LoadCustomConfig(ctx, customConfig)
@@ -104,10 +111,10 @@ func NewServer(
 		},
 	}
 
-	// put the default configuration in the context
+	// Put the default configuration in the context.
 	ctx = config.PutDefaultConfig(ctx, defaultConfig)
 
-	// call the create service callback
+	// Create the service by calling the create-service callback.
 	createServiceResult := reflect.ValueOf(createService).Call(
 		[]reflect.Value{reflect.ValueOf(ctx), appConfig},
 	)
@@ -117,7 +124,7 @@ func NewServer(
 	serviceIntf := createServiceResult[0].Interface()
 	hooksIntf := createServiceResult[1].Interface()
 
-	// validate the returned hooks
+	// Validate the hooks returned from service creation.
 	hooks := hooksIntf.(*Hooks)
 	if hooks != nil && hooks.ValidateConfig != nil {
 		err = hooks.ValidateConfig(ctx, defaultConfig)
@@ -126,32 +133,28 @@ func NewServer(
 		}
 	}
 
-	// cache the logger from the hooks if provided
-	var hooksLogger log.Logger
-	if hooks != nil && hooks.Logger != nil {
-		hooksLogger = hooks.Logger()
+	// Set the logger against the context if no external logger is provided. The value will be
+	// either the value returned from the Hooks (if provided) or the default logger.
+	if externalLogger == nil {
+		var logger log.Logger
+		if hooks != nil && hooks.Logger != nil {
+			logger = hooks.Logger()
+		}
+		if logger == nil {
+			logger = log.NewDefaultLogger()
+		}
+		ctx = log.PutLogger(ctx, logger)
 	}
 
-	// cache the application logger
-	var logger log.Logger
-	existing := log.GetLogger(ctx)
-	if existing != bootstrapLogger {
-		logger = existing
-	} else if hooksLogger != nil {
-		logger = hooksLogger
-	} else {
-		logger = log.NewDefaultLogger()
-	}
-
-	// set the level against the logger
+	// Set the level against the logger. The level will be either the value found within the
+	// configuration or the default value (info).
+	var level log.Level
 	if defaultConfig.Library.Log.Level != 0 {
-		logger = logger.WithLevel(defaultConfig.Library.Log.Level)
+		level = defaultConfig.Library.Log.Level
 	} else {
-		logger = logger.WithLevel(log.InfoLevel)
+		level = log.InfoLevel
 	}
-
-	// Put the logger in the context.
-	ctx = log.PutLogger(ctx, logger)
+	ctx = log.WithLevel(ctx, level)
 
 	// Collect prometheus metrics if the admin server is enabled.
 	var promRegistry *prometheus.Registry
@@ -587,4 +590,40 @@ func (s *autogenServer) GracefulStop() error {
 
 func (s autogenServer) GetName() string {
 	return s.name
+}
+
+// getExternalLogger returns the log.Logger instance that has been set within the context before
+// Sysl-go is initialised. This method is designed to support a variety of use-cases:
+//
+// 1. The recommended approach to customise the logging implementation is to provide a logger
+// instance through the Hooks.Logger method. The logger is set against the context and made
+// available throughout the application through various methods (e.g. log.Info). In this
+// configuration (i.e. no external logger has been set), this method returns nil.
+//
+// 2. Due to the way Sysl-go initialises its services, in some edge cases it is desirable to capture
+// logs before the Hooks.Logger has a chance to be called. In this instance the recommendation is to
+// call log.PutLogger on the context before Sysl-go bootstrapping. The outcome of this approach is
+// that the Hooks.Logger method is ignored. In this configuration (i.e. the external logger directly
+// set), this method returns the logger.
+//
+// 3. In order to support legacy Sysl-go applications that directly set a Logrus logger against the
+// context before bootstrapping, this method will wrap and return an appropriate log.Logger instance
+// and set this value against the returned context.
+//
+// 4. For other loggers that are directly set against the context (pkg, zero) but cannot be queried
+// as to whether or not they have been, these loggers will be ignored and the configuration will
+// continue as though no logger has been set. In this configuration this method will return nil.
+func getExternalLogger(ctx context.Context) (context.Context, log.Logger) {
+	logger := log.GetLogger(ctx)
+	if logger != nil {
+		return ctx, logger
+	}
+	logrus := log.GetLogrusLoggerFromContext(ctx)
+	if logrus != nil {
+		lgr := log.NewLogrusLogger(logrus)
+		lgr.Debug("legacy logrus logger configuration detected, " +
+			"use log.PutLogger(NewLogrusLogger(logrus)) instead")
+		return log.PutLogger(ctx, lgr), lgr
+	}
+	return ctx, nil
 }
