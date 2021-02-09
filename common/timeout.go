@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/anz-bank/pkg/log"
+	"github.com/anz-bank/sysl-go/log"
 )
 
 // relevantCaller searches the call stack for the first function outside of net/http.
@@ -36,7 +36,7 @@ func relevantCaller() runtime.Frame {
 }
 
 func logf(ctx context.Context, format string, args ...interface{}) {
-	log.Error(ctx, fmt.Errorf(format, args...))
+	log.Errorf(ctx, fmt.Errorf(format, args...), "timeout error")
 }
 
 // Timeout is a middleware that cancels ctx after a given timeout or call a special handler on timeout.

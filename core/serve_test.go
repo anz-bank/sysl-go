@@ -7,8 +7,9 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/anz-bank/sysl-go/log"
+
 	"github.com/anz-bank/sysl-go/config"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,7 +35,7 @@ func TestNewServerReturnsErrorIfNewManagerReturnsError(t *testing.T) {
 			return &TestServiceInterface{}, nil, nil
 		},
 		&TestServiceInterface{},
-		func(ctx context.Context, cfg *config.DefaultConfig, serviceIntf interface{}, _ *Hooks) (Manager, *GrpcServerManager, error) {
+		func(ctx context.Context, serviceIntf interface{}, _ *Hooks) (Manager, *GrpcServerManager, error) {
 			return nil, nil, fmt.Errorf(errString)
 		},
 	)
@@ -59,7 +60,7 @@ func TestNewServerReturnsErrorIfValidateConfigReturnsError(t *testing.T) {
 			return &TestServiceInterface{}, hooks, nil
 		},
 		&TestServiceInterface{},
-		func(ctx context.Context, cfg *config.DefaultConfig, serviceIntf interface{}, _ *Hooks) (Manager, *GrpcServerManager, error) {
+		func(ctx context.Context, serviceIntf interface{}, _ *Hooks) (Manager, *GrpcServerManager, error) {
 			return nil, nil, nil
 		},
 	)
@@ -70,10 +71,10 @@ func TestNewServerReturnsErrorIfValidateConfigReturnsError(t *testing.T) {
 func TestDescribeYAMLForType(t *testing.T) {
 	t.Parallel()
 
-	// for logrus.Level
+	// for log.Level
 	w := bytes.Buffer{}
-	describeYAMLForType(&w, reflect.TypeOf(logrus.Level(0)), map[reflect.Type]string{}, 0)
-	assert.Equal(t, " \x1b[1minfo\x1b[0m", w.String())
+	describeYAMLForType(&w, reflect.TypeOf(log.DebugLevel), map[reflect.Type]string{}, 0)
+	assert.Equal(t, " \x1b[1m0\x1b[0m", w.String())
 }
 
 func TestDescribeYAMLForTypeContainsFuncs(t *testing.T) {

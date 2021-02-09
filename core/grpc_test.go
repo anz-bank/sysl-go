@@ -105,7 +105,7 @@ func connectAndCheckReturn(t *testing.T, securityOption grpc.DialOption) {
 }
 
 func Test_makeGrpcListenFuncListens(t *testing.T) {
-	ctx, _ := testutil.NewTestContextWithLoggerHook()
+	ctx, _ := testutil.NewTestContextWithLogger()
 
 	s := grpc.NewServer()
 	defer s.GracefulStop()
@@ -122,7 +122,7 @@ func Test_makeGrpcListenFuncListens(t *testing.T) {
 
 func Test_encryptionConfigUsed(t *testing.T) {
 	t.Skip("Skipping as required certs not present")
-	ctx, hook := testutil.NewTestContextWithLoggerHook()
+	ctx, logger := testutil.NewTestContextWithLogger()
 
 	cfg := localSecureServer()
 
@@ -140,7 +140,7 @@ func Test_encryptionConfigUsed(t *testing.T) {
 	require.NoError(t, err)
 
 	connectAndCheckReturn(t, grpc.WithTransportCredentials(creds))
-	for _, entry := range hook.Entries {
+	for _, entry := range logger.Entries() {
 		t.Log(entry.Message)
 	}
 }
@@ -148,7 +148,7 @@ func Test_encryptionConfigUsed(t *testing.T) {
 func Test_serverUsesGivenLogger(t *testing.T) {
 	os.Setenv("GRPC_GO_LOG_VERBOSITY_LEVEL", "99")
 
-	ctx, hook := testutil.NewTestContextWithLoggerHook()
+	ctx, logger := testutil.NewTestContextWithLogger()
 
 	s := grpc.NewServer()
 	defer s.GracefulStop()
@@ -166,7 +166,7 @@ func Test_serverUsesGivenLogger(t *testing.T) {
 
 	var connecting bool
 	cre := regexp.MustCompile(`ClientConn switching balancer`)
-	for _, entry := range hook.Entries {
+	for _, entry := range logger.Entries() {
 		if connecting {
 			break
 		}
@@ -176,7 +176,7 @@ func Test_serverUsesGivenLogger(t *testing.T) {
 }
 
 func Test_libMakesCorrectHandlerCalls(t *testing.T) {
-	ctx, _ := testutil.NewTestContextWithLoggerHook()
+	ctx, _ := testutil.NewTestContextWithLogger()
 
 	manager := &GrpcHandler{
 		cfg: localServer(),

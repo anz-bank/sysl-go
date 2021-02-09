@@ -4,9 +4,10 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/anz-bank/sysl-go/log"
+
 	"github.com/anz-bank/sysl-go/common/internal"
 
-	"github.com/anz-bank/pkg/log"
 	"github.com/google/uuid"
 )
 
@@ -25,7 +26,7 @@ func TraceabilityMiddleware(next http.Handler) http.Handler {
 		ctx := r.Context()
 		val, err := uuid.Parse(r.Header.Get("RequestID"))
 		if err != nil {
-			log.Info(internal.InitFieldsFromRequest(r).Onto(ctx), "Incoming request with invalid or missing RequestID header, filled traceid with new UUID instead")
+			log.Info(internal.InitFieldsFromRequest(ctx, r), "Incoming request with invalid or missing RequestID header, filled traceid with new UUID instead")
 			r = r.WithContext(AddTraceIDToContext(r.Context(), uuid.New(), false))
 		} else {
 			r = r.WithContext(AddTraceIDToContext(r.Context(), val, true))

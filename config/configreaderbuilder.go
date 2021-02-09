@@ -1,4 +1,4 @@
-package envvar
+package config
 
 import (
 	"log"
@@ -8,16 +8,16 @@ import (
 	"github.com/spf13/viper"
 )
 
-// ConfigReaderBuilder exposes the builder api for configReaderImpl.
-// Use NewConfigReaderBuilder() and AttachEnvPrefix() to build a ConfigReaderBuilder. Follow it up one or more calls
-// to WithConfigFile() and/or WithConfigName() and finally use Build() to build the configReaderImpl.
-type ConfigReaderBuilder struct {
+// configReaderBuilder exposes the builder api for configReaderImpl.
+// Use NewConfigReaderBuilder() and AttachEnvPrefix() to Build a configReaderBuilder. Follow it up one or more calls
+// to WithConfigFile() and/or WithConfigName() and finally use Build() to Build the configReaderImpl.
+type configReaderBuilder struct {
 	evarReader configReaderImpl
 }
 
-// NewConfigReaderBuilder builds a new ConfigReaderBuilder.
-func NewConfigReaderBuilder() ConfigReaderBuilder {
-	b := ConfigReaderBuilder{
+// NewConfigReaderBuilder builds a new configReaderBuilder.
+func NewConfigReaderBuilder() configReaderBuilder {
+	b := configReaderBuilder{
 		evarReader: configReaderImpl{
 			envVars: viper.New(),
 		},
@@ -26,7 +26,7 @@ func NewConfigReaderBuilder() ConfigReaderBuilder {
 }
 
 // AttachEnvPrefix attaches appName as prefix.
-func (b ConfigReaderBuilder) AttachEnvPrefix(appName string) ConfigReaderBuilder {
+func (b configReaderBuilder) AttachEnvPrefix(appName string) configReaderBuilder {
 	b.evarReader.envVars.SetEnvPrefix(appName)
 	b.evarReader.envVars.AutomaticEnv()
 	b.evarReader.envVars.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
@@ -34,7 +34,7 @@ func (b ConfigReaderBuilder) AttachEnvPrefix(appName string) ConfigReaderBuilder
 }
 
 // WithConfigFile attaches the passed config file.
-func (b ConfigReaderBuilder) WithConfigFile(configFile string) ConfigReaderBuilder {
+func (b configReaderBuilder) WithConfigFile(configFile string) configReaderBuilder {
 	b.evarReader.envVars.SetConfigFile(configFile)
 	if err := b.evarReader.envVars.MergeInConfig(); err != nil {
 		log.Fatalln(err)
@@ -43,7 +43,7 @@ func (b ConfigReaderBuilder) WithConfigFile(configFile string) ConfigReaderBuild
 }
 
 // WithConfigName attaches the passed config path and name.
-func (b ConfigReaderBuilder) WithConfigName(configName string, configPath ...string) ConfigReaderBuilder {
+func (b configReaderBuilder) WithConfigName(configName string, configPath ...string) configReaderBuilder {
 	b.evarReader.envVars.SetConfigName(configName)
 	for _, path := range configPath {
 		b.evarReader.envVars.AddConfigPath(path)
@@ -55,7 +55,7 @@ func (b ConfigReaderBuilder) WithConfigName(configName string, configPath ...str
 }
 
 // WithFs attaches the file system to use.
-func (b ConfigReaderBuilder) WithFs(fs afero.Fs) ConfigReaderBuilder {
+func (b configReaderBuilder) WithFs(fs afero.Fs) configReaderBuilder {
 	b.evarReader.envVars.SetFs(fs)
 	return b
 }
@@ -70,14 +70,14 @@ func (b ConfigReaderBuilder) WithFs(fs afero.Fs) ConfigReaderBuilder {
 // mode checking can be provided. Beware, there's some subtleties
 // to how ignored keys must be named, see the comments inside
 // configreaderimpl.go for details.
-func (b ConfigReaderBuilder) WithStrictMode(strict bool, ignoredKeys ...string) ConfigReaderBuilder {
+func (b configReaderBuilder) WithStrictMode(strict bool, ignoredKeys ...string) configReaderBuilder {
 	b.evarReader.strictMode = strict
 	b.evarReader.strictModeIgnoredKeys = ignoredKeys
 	return b
 }
 
 // Build Builds and returns the ConfigReader.
-func (b ConfigReaderBuilder) Build() ConfigReader {
+func (b configReaderBuilder) Build() ConfigReader {
 	if err := b.evarReader.envVars.ReadInConfig(); err != nil {
 		log.Fatalln(err)
 	}

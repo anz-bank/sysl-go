@@ -3,9 +3,10 @@ package config
 import (
 	"time"
 
+	"github.com/anz-bank/sysl-go/log"
+
 	"github.com/anz-bank/sysl-go/jwtauth"
 	"github.com/anz-bank/sysl-go/validator"
-	"github.com/sirupsen/logrus"
 )
 
 // LibraryConfig struct.
@@ -23,9 +24,9 @@ type AdminConfig struct {
 
 // LogConfig struct.
 type LogConfig struct {
-	Format       string       `yaml:"format" mapstructure:"format" validate:"nonnil,oneof=color json text"`
-	Level        logrus.Level `yaml:"level" mapstructure:"level" validate:"nonnil"`
-	ReportCaller bool         `yaml:"caller" mapstructure:"caller"`
+	Format       string    `yaml:"format" mapstructure:"format" validate:"nonnil,oneof=color json text"` // Deprecated: Use Hooks#Logger
+	Level        log.Level `yaml:"level" mapstructure:"level" validate:"nonnil"`
+	ReportCaller bool      `yaml:"caller" mapstructure:"caller"` // Deprecated: Use Hooks#Logger
 }
 
 // AuthenticationConfig struct.

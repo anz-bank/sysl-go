@@ -2,13 +2,11 @@ package config
 
 import (
 	"context"
-	"time"
 
-	"github.com/anz-bank/sysl-go/common"
-	"github.com/anz-bank/sysl-go/config/envvar"
 	"github.com/anz-bank/sysl-go/validator"
-	"github.com/go-chi/chi"
 )
+
+type defaultConfigKey struct{}
 
 type DefaultConfig struct {
 	Library LibraryConfig `yaml:"library" mapstructure:"library"`
@@ -21,12 +19,23 @@ type DefaultConfig struct {
 	Development *DevelopmentConfig `yaml:"development" mapstructure:"development"`
 }
 
+// GetDefaultConfig retrieves the externally-provided config from the context.
+func GetDefaultConfig(ctx context.Context) *DefaultConfig {
+	m, _ := ctx.Value(defaultConfigKey{}).(*DefaultConfig)
+	return m
+}
+
+// PutDefaultConfig puts the externally-provided config into the given context, returning the new context.
+func PutDefaultConfig(ctx context.Context, config *DefaultConfig) context.Context {
+	return context.WithValue(ctx, defaultConfigKey{}, config)
+}
+
 // LoadConfig reads and validates a configuration loaded from file.
 // file: the path to the yaml-encoded config file
 // defaultConfig: a pointer to the default config struct to populate
 // customConfig: a pointer to the custom config struct to populate.
 func LoadConfig(file string, defaultConfig *DefaultConfig, customConfig interface{}) error {
-	b := envvar.NewConfigReaderBuilder().WithConfigFile(file)
+	b := NewConfigReaderBuilder().WithConfigFile(file)
 	err := b.Build().Unmarshal(defaultConfig)
 	if err != nil {
 		return err
@@ -46,34 +55,4 @@ func LoadConfig(file string, defaultConfig *DefaultConfig, customConfig interfac
 	}
 
 	return err
-}
-
-func NewCallbackV2(
-	config *GenCodeConfig,
-	downstreamTimeOut time.Duration,
-	mapError func(ctx context.Context, err error) *common.HTTPError,
-	addMiddleware func(ctx context.Context, r chi.Router),
-) common.Callback {
-	// construct the rest configuration (aka. gen callback)
-	return common.Callback{
-		DownstreamTimeout: downstreamTimeOut,
-		RouterBasePath:    config.Upstream.HTTP.BasePath,
-		UpstreamConfig:    &config.Upstream,
-		MapErrorFunc:      mapError,
-		AddMiddlewareFunc: addMiddleware,
-	}
-}
-
-// NewCallback is deprecated, prefer NewCallbackV2.
-func NewCallback(
-	config *GenCodeConfig,
-	downstreamTimeOut time.Duration,
-	mapError func(ctx context.Context, err error) *common.HTTPError,
-) common.Callback {
-	return NewCallbackV2(
-		config,
-		downstreamTimeOut,
-		mapError,
-		nil,
-	)
 }

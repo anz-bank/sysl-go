@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/anz-bank/pkg/log"
+	"github.com/anz-bank/sysl-go/log"
+
 	"github.com/anz-bank/sysl-go/authexpr"
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/jwtauth"

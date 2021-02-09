@@ -37,7 +37,7 @@ let typeImpl = \leafOnly //fn.fix(\typeImpl \t
         _: "",
     }};
     let typeName = cond t {
-        {'attrs': {'sensitive': {'s': (s: "true")}, ...}, ...}: `common.SensitiveString`,
+        {'attrs': {'sensitive': {'s': (s: "true")}, ...}, ...}: `config.SensitiveString`,
         {'primitive': p, ...}: cond p {
             (s: 'DECIMAL' ): `float64`,
             (s: 'INT'     ): `int64`,
@@ -138,6 +138,7 @@ let prelude = \app \imports $`
         "github.com/anz-bank/sysl-go/restlib"
         "github.com/anz-bank/sysl-go/validator"
         "github.com/anz-bank/sysl-go/core/authrules"
+        golog "github.com/anz-bank/sysl-go/log"
 
         ${
             imports => cond . {
@@ -145,7 +146,6 @@ let prelude = \app \imports $`
                 _: $`${.:q}`,
             } orderby .
         ::\i:\n}
-        pkglog "github.com/anz-bank/pkg/log"
         "github.com/go-chi/chi"
         "github.com/rickb777/date"
         "google.golang.org/grpc"

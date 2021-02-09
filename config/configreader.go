@@ -1,4 +1,4 @@
-package envvar
+package config
 
 // ConfigReader lists the methods exposed by ConfigReaderImpl.
 type ConfigReader interface {

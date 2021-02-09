@@ -3,7 +3,7 @@ module rest_with_conditional_downstream
 go 1.14
 
 require (
-	github.com/anz-bank/pkg v0.0.27
+	github.com/anz-bank/pkg v0.0.28
 	github.com/anz-bank/sysl-go v0.84.0
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/go-playground/universal-translator v0.17.0 // indirect

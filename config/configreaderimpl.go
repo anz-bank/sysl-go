@@ -1,11 +1,10 @@
-package envvar
+package config
 
 import (
 	"fmt"
 	"reflect"
 	"strings"
 
-	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/jsontime"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -146,7 +145,7 @@ func makeDefaultDecodeHook() mapstructure.DecodeHookFunc {
 		// Appended by the two default functions
 		mapstructure.StringToTimeDurationHookFunc(),
 		mapstructure.StringToSliceHookFunc(","),
-		// Function to support common.SensitiveString
-		common.StringToSensitiveStringHookFunc(),
+		// Function to support core.SensitiveString
+		StringToSensitiveStringHookFunc(),
 	)
 }

@@ -3,7 +3,7 @@ package core
 import "github.com/anz-bank/sysl-go/status"
 
 var (
-	// Build metadata. These values are intended to be overridden by values
+	// build metadata. These values are intended to be overridden by values
 	// supplied by the build environment at link time. Values are specified
 	// by passing "-X package.Varname=Value" to the linker. For example:
 	//

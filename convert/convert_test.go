@@ -14,7 +14,7 @@ import (
 )
 
 func getContext() context.Context {
-	ctx, _ := testutil.NewTestContextWithLoggerHook()
+	ctx, _ := testutil.NewTestContextWithLogger()
 	return ctx
 }
 

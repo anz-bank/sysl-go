@@ -1,4 +1,4 @@
-package envvar
+package config
 
 import (
 	"fmt"
@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anz-bank/sysl-go/common"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -138,9 +137,9 @@ func TestUnmarshalSensitiveStringFromFile(t *testing.T) {
 	t.Parallel()
 
 	conf := struct {
-		Path      *string                 `yaml:"path" mapstructure:"path"`
-		Password1 *string                 `yaml:"password" mapstructure:"password1"`
-		Password2 *common.SensitiveString `yaml:"password" mapstructure:"password2"`
+		Path      *string          `yaml:"path" mapstructure:"path"`
+		Password1 *string          `yaml:"password" mapstructure:"password1"`
+		Password2 *SensitiveString `yaml:"password" mapstructure:"password2"`
 	}{}
 
 	fs := afero.NewMemMapFs()
@@ -171,7 +170,7 @@ func TestUnmarshalFromFileWithStrictMode(t *testing.T) {
 
 	type scenario struct {
 		name           string
-		b              ConfigReaderBuilder
+		b              configReaderBuilder
 		expectedConfig DemoConfig
 		expectedErr    error
 	}
