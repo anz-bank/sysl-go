@@ -1,12 +1,7 @@
 package common
 
 import (
-	"context"
 	"net/http"
-
-	"github.com/anz-bank/sysl-go/config"
-
-	"github.com/anz-bank/sysl-go/log"
 
 	"github.com/stretchr/testify/mock"
 )
@@ -31,11 +26,4 @@ func (m *MockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	}
 
 	return args.Get(0).(*http.Response), args.Error(1)
-}
-
-func NewTestCoreRequestContext() (log.Logger, context.Context) {
-	logger := log.NewDefaultLogger()
-	ctx := log.PutLogger(context.Background(), logger)
-	ctx = config.PutDefaultConfig(ctx, &config.DefaultConfig{})
-	return logger, ctx
 }

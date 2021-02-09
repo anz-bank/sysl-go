@@ -15,7 +15,7 @@ import (
 )
 
 func TestCoreRequestContextMiddleware(t *testing.T) {
-	logger, ctx := NewTestCoreRequestContext()
+	ctx := testutil.NewTestContext()
 	mware := CoreRequestContextMiddleware
 	body := bytes.NewBufferString("test")
 	req, err := http.NewRequest("GET", "localhost/", body)
@@ -23,8 +23,7 @@ func TestCoreRequestContextMiddleware(t *testing.T) {
 	req = req.WithContext(ctx)
 
 	mware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
-		logger2 := GetLoggerFromContext(r.Context())
-		require.Equal(t, logger, logger2)
+		require.NotNil(t, log.GetLogger(r.Context()))
 	})).ServeHTTP(nil, req)
 }
 
@@ -49,7 +48,8 @@ func TestCoreRequestContextMiddleWare_VerboseLogging_LogRequestHeaderAndResponse
 }
 
 func TestCoreRequestContextMiddleWare_NoVerboseLogging_NotLogRequestHeaderAndResponseHeader(t *testing.T) {
-	ctx, logger := testutil.NewTestContextWithLogger()
+	ctx, logger := testutil.NewTestContextWithLogger(
+		testutil.WithLogPayloadContents(true))
 	mware := CoreRequestContextMiddleware
 	body := bytes.NewBufferString("test")
 	req, err := http.NewRequest("GET", "localhost/", body)
@@ -62,13 +62,6 @@ func TestCoreRequestContextMiddleWare_NoVerboseLogging_NotLogRequestHeaderAndRes
 		require.Equal(t, 1, logger.EntryCount())
 	}()
 	fn.ServeHTTP(w, req)
-}
-
-func TestTestCoreRequestContextMiddleware(t *testing.T) {
-	logger, ctx := NewTestCoreRequestContext()
-
-	logger2 := GetLoggerFromContext(ctx)
-	require.Equal(t, logger, logger2)
 }
 
 func TestSetAndGetNilRequestHeader(t *testing.T) {

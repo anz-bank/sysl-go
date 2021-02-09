@@ -9,16 +9,16 @@ import (
 	"github.com/anz-bank/sysl-go/log"
 )
 
+type TestLogEntries struct {
+	Entries []TestLogEntry
+}
+
 // The TestLogger is an implementation of log.Logger suitable for use within unit tests.
 // Provision with NewTestLogger or NewTestContext.
 type TestLogger struct {
 	Level   log.Level
 	Fields  map[string]interface{}
 	entries *TestLogEntries // shared entries
-}
-
-type TestLogEntries struct {
-	Entries []TestLogEntry
 }
 
 type TestLogEntry struct {
@@ -29,7 +29,7 @@ type TestLogEntry struct {
 }
 
 func NewTestLogger() *TestLogger {
-	return &TestLogger{entries: &TestLogEntries{}}
+	return &TestLogger{Level: log.InfoLevel, entries: &TestLogEntries{}}
 }
 
 func (l *TestLogger) Entries() []TestLogEntry {
