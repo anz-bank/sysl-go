@@ -94,12 +94,12 @@ func (h *GrpcHandler) GrpcPublicServerConfig() *config.CommonServerConfig {
 	return &h.cfg
 }
 
-func connectAndCheckReturn(t *testing.T, securityOption grpc.DialOption) {
+func connectAndCheckReturn(t *testing.T, ctx context.Context, securityOption grpc.DialOption) {
 	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", testPort), securityOption, grpc.WithBlock())
 	require.NoError(t, err)
 	defer conn.Close()
 	client := test.NewTestServiceClient(conn)
-	resp, err := client.Test(context.Background(), &test.TestRequest{Field1: "test"})
+	resp, err := client.Test(ctx, &test.TestRequest{Field1: "test"})
 	require.NoError(t, err)
 	require.Equal(t, "test", resp.GetField1())
 }
@@ -117,7 +117,7 @@ func Test_makeGrpcListenFuncListens(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	connectAndCheckReturn(t, grpc.WithInsecure())
+	connectAndCheckReturn(t, ctx, grpc.WithInsecure())
 }
 
 func Test_encryptionConfigUsed(t *testing.T) {
@@ -139,7 +139,7 @@ func Test_encryptionConfigUsed(t *testing.T) {
 	creds, err := credentials.NewClientTLSFromFile("testdata/creds/ca.pem", "x.test.youtube.com")
 	require.NoError(t, err)
 
-	connectAndCheckReturn(t, grpc.WithTransportCredentials(creds))
+	connectAndCheckReturn(t, ctx, grpc.WithTransportCredentials(creds))
 	for _, entry := range logger.Entries() {
 		t.Log(entry.Message)
 	}
@@ -188,7 +188,7 @@ func Test_libMakesCorrectHandlerCalls(t *testing.T) {
 	}
 
 	// Adapt deprecated GrpcManager type as GrpcServerManager struct
-	grpcServerManager, err := newGrpcServerManagerFromGrpcManager(manager)
+	grpcServerManager, err := newGrpcServerManagerFromGrpcManager(ctx, manager)
 	require.NoError(t, err)
 
 	srv := configurePublicGrpcServerListener(ctx, *grpcServerManager)
@@ -203,7 +203,7 @@ func Test_libMakesCorrectHandlerCalls(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	connectAndCheckReturn(t, grpc.WithInsecure())
+	connectAndCheckReturn(t, ctx, grpc.WithInsecure())
 	require.True(t, manager.methodsCalled["Interceptors"])
 	require.True(t, manager.methodsCalled["EnabledGrpcHandlers"])
 	require.True(t, manager.methodsCalled["GrpcPublicServerConfig"])

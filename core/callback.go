@@ -163,7 +163,6 @@ func ResolveRESTAuthorizationRule(ctx context.Context, h *Hooks, endpointName st
 func resolveAuthorizationRule(ctx context.Context, h *Hooks, endpointName string, authRuleExpression string, ruleFactory func(authRule authrules.JWTClaimsBasedAuthorizationRule, authenticator jwtauth.Authenticator) (authrules.Rule, error)) (authrules.Rule, error) {
 	cfg := config.GetDefaultConfig(ctx)
 	if cfg.Development != nil && cfg.Development.DisableAllAuthorizationRules {
-		// pkg logger API doesnt support warn.
 		log.Info(ctx, "warning: development.disableAllAuthorizationRules is set, all authorization rules are disabled, this is insecure and should not be used in production.")
 		return authrules.InsecureAlwaysGrantAccess, nil
 	}

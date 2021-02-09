@@ -42,8 +42,8 @@ func DefaultGrpcServerOptions(ctx context.Context, grpcPublicServerConfig *confi
 	return opts, nil
 }
 
-func newGrpcServerManagerFromGrpcManager(hl GrpcManager) (*GrpcServerManager, error) {
-	opts, err := extractGrpcServerOptionsFromGrpcManager(hl)
+func newGrpcServerManagerFromGrpcManager(ctx context.Context, hl GrpcManager) (*GrpcServerManager, error) {
+	opts, err := extractGrpcServerOptionsFromGrpcManager(ctx, hl)
 	if err != nil {
 		return nil, err
 	}
@@ -54,12 +54,13 @@ func newGrpcServerManagerFromGrpcManager(hl GrpcManager) (*GrpcServerManager, er
 	}, nil
 }
 
-func extractGrpcServerOptionsFromGrpcManager(hl GrpcManager) ([]grpc.ServerOption, error) {
+func extractGrpcServerOptionsFromGrpcManager(ctx context.Context, hl GrpcManager) ([]grpc.ServerOption, error) {
 	opts, err := config.ExtractGrpcServerOptions(hl.GrpcPublicServerConfig())
 	if err != nil {
 		return nil, err
 	}
 	opts = append(opts, grpc.ChainUnaryInterceptor(hl.Interceptors()...))
+	opts = append(opts, grpc.ChainUnaryInterceptor(makeLoggerInterceptor(log.GetLogger(ctx))))
 	opts = append(opts, grpc.ChainUnaryInterceptor(TraceidLogInterceptor)) // seems wrong to have this last in chain, but that was old behaviour.
 	return opts, nil
 }
@@ -146,6 +147,9 @@ func makeLoggerInterceptor(logger log.Logger) grpc.UnaryServerInterceptor {
 }
 
 func TraceidLogInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+	//var a *string
+	//i := len(*a)
+	//i = i + 1
 	ctx = log.WithStr(ctx, "traceid", "traceid")
 	return handler(ctx, req)
 }
