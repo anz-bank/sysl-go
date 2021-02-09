@@ -65,13 +65,20 @@ SYSL      = sysl
 GOIMPORTS = goimports
 AUTOGEN   = arrai $(AUTO)
 ifndef SYSL_GO_ROOT
-$(error Set SYSL_GO_ROOT is required for NO_DOCKER. Set it to the local path of the sysl-go repo.)
+SYSL_GO_ROOT = $(shell go list -m -f '{{.Dir}}' github.com/anz-bank/sysl-go)
+ifeq ($(SYSL_GO_ROOT),)
+$(error Failed to determine the path of the sysl-go repo, set SYSL_GO_ROOT to the local path)
+endif
 endif
 
 else
 
 SYSL_GO_ROOT = /sysl-go
-SYSL_GO_IMAGE = anzbank/sysl-go:latest
+SYSL_GO_VERSION = $(shell go list -m -f '{{.Version}}' github.com/anz-bank/sysl-go)
+ifeq ($(SYSL_GO_VERSION),)
+$(error Failed to determine the version for github.com/anz-bank/sysl-go)
+endif
+SYSL_GO_IMAGE = anzbank/sysl-go:${SYSL_GO_VERSION}
 DOCKER_RUN = $(DOCKER) run --rm -t -v $$(pwd):/work -w /work
 PROTOC    = $(DOCKER_RUN) anzbank/protoc-gen-sysl:v0.0.24
 SYSL      = $(DOCKER_RUN) --entrypoint sysl $(SYSL_GO_IMAGE)
@@ -80,11 +87,11 @@ GOIMPORTS = $(DOCKER_RUN) --entrypoint goimports $(SYSL_GO_IMAGE)
 
 endif
 
-.PHONY: gen-all-servers
-gen-all-servers: $(foreach app,$(SYSLGO_PACKAGES),$(SERVERS_ROOT)/$(app))
-
 .PHONY: all
 all: gen-all-servers
+
+.PHONY: gen-all-servers
+gen-all-servers: $(foreach app,$(SYSLGO_PACKAGES),$(SERVERS_ROOT)/$(app))
 
 .INTERMEDIATE: model.json
 model.json: $(SYSLGO_SYSL)
