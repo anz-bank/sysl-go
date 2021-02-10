@@ -3,8 +3,9 @@ package core
 import (
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"testing"
+
+	"github.com/anz-bank/sysl-go/common"
 
 	"github.com/anz-bank/sysl-go/log"
 
@@ -15,7 +16,7 @@ import (
 func TestRecoverer(t *testing.T) {
 	mware, logger := loggerHookContextMiddleware()
 
-	ts := httptest.NewServer(mware(Recoverer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+	ts := common.NewHTTPTestServer(mware(Recoverer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 		panic("Test")
 	}))))
 	defer ts.Close()

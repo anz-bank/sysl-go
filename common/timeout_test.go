@@ -3,7 +3,6 @@ package common
 import (
 	"io/ioutil"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"testing"
 	"time"
@@ -38,7 +37,7 @@ func TestTimeoutHandler_NoCallbackCalledIfNotTimeout(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(200); _, _ = w.Write([]byte("OK")) })
 
 	timeoutmware := Timeout(time.Second, tester)
-	ts := httptest.NewServer(timeoutmware(handler))
+	ts := NewHTTPTestServer(timeoutmware(handler))
 	defer ts.Close()
 
 	resp, err := http.Get(ts.URL)
@@ -63,7 +62,7 @@ func TestTimeoutHandler_CallbackCalledIfTimeout(t *testing.T) {
 
 	timeoutmware := Timeout(time.Millisecond, tester)
 
-	ts := httptest.NewServer(timeoutmware(handler))
+	ts := NewHTTPTestServer(timeoutmware(handler))
 	defer ts.Close()
 
 	resp, err := http.Get(ts.URL)
@@ -102,7 +101,7 @@ func TestTimeoutHandler_PanicRethrow(t *testing.T) {
 
 	caught := false
 	timeoutmware := Timeout(time.Millisecond, tester)
-	ts := httptest.NewServer(recoverer(timeoutmware(handler), &caught))
+	ts := NewHTTPTestServer(recoverer(timeoutmware(handler), &caught))
 	defer ts.Close()
 
 	resp, err := http.Get(ts.URL)
@@ -126,7 +125,7 @@ func TestTimeoutHandler_ContextTimoutMoreThanWriteTimeout(t *testing.T) {
 	})
 
 	timeoutmware := Timeout(10*time.Millisecond, tester)
-	ts := httptest.NewUnstartedServer(timeoutmware(handler))
+	ts := NewUnstartedHTTPTestServer(timeoutmware(handler))
 	ts.Config.WriteTimeout = 5 * time.Millisecond
 	ts.Start()
 	//nolint:bodyclose // We don't check the body
@@ -149,7 +148,7 @@ func TestTimeoutHandler_ContextTimoutLessThanWriteTimeout(t *testing.T) {
 	})
 
 	timeoutmware := Timeout(5*time.Millisecond, tester)
-	ts := httptest.NewUnstartedServer(timeoutmware(handler))
+	ts := NewUnstartedHTTPTestServer(timeoutmware(handler))
 	ts.Config.WriteTimeout = 10 * time.Millisecond
 	ts.Start()
 
@@ -178,7 +177,7 @@ func TestTimeoutHandler_ContextTimoutAndWriteTimeoutTooShort(t *testing.T) {
 	})
 
 	timeoutmware := Timeout(10*time.Millisecond, tester)
-	ts := httptest.NewUnstartedServer(timeoutmware(handler))
+	ts := NewUnstartedHTTPTestServer(timeoutmware(handler))
 	ts.Config.WriteTimeout = 10 * time.Millisecond
 	ts.Start()
 
