@@ -1,0 +1,58 @@
+openapi: '3.0.2'
+tags: 
+  - name: "Banana Stand"
+
+info:
+  title: Banana Stand API
+  version: '1.0'
+
+paths:
+  /banana:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BananaRequest'
+
+      responses:
+        '200':
+          description: OK Computer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BananaResponse'
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    BananaRequest:
+      required:
+      - client_id
+      - client_secret
+      properties:
+        client_id:
+          type: string
+          description: The client identifier.
+        client_secret:
+          type: string
+          description: The client secret.
+  
+    BananaResponse:
+      type: object
+      properties:
+        banana:
+          type: string
+          description: The banna issued
+
+    ErrorResponse:
+      type: object
+      properties:
+        details:
+          type: string
+          description: details of the error
