@@ -71,6 +71,37 @@ func unmarshal(resp *http.Response, body []byte, respStruct interface{}) (*HTTPR
 	return makeHTTPResult(resp, body, respStruct), nil
 }
 
+// By default, if contentType is not given or not otherwise recognised,
+// the body will be encoded as JSON.
+func marshalRequestBody(contentType string, v interface{}) (io.Reader, error) {
+	var reader io.Reader
+	// TODO: it would be more correct to attempt to parse the content-type value
+	// rather than guessing what to do based on substring matches.
+	switch {
+	case strings.Contains(contentType, "xml"):
+		var strBody string
+		strBody = reflect.ValueOf(v).Convert(reflect.TypeOf(strBody)).String()
+		if strings.HasSuffix(strBody, " Value>") {
+			return nil, errors.Errorf(`Incompatible type as xml body: %s`, strBody)
+		}
+		reader = strings.NewReader(strBody)
+	case strings.Contains(contentType, "application/x-www-form-urlencoded"):
+		reqData, err := urlencode(v)
+		if err != nil {
+			return nil, err
+		}
+		reader = bytes.NewReader(reqData)
+	default:
+		// assume JSON request body.
+		reqJSON, err := json.Marshal(v)
+		if err != nil {
+			return nil, err
+		}
+		reader = bytes.NewReader(reqJSON)
+	}
+	return reader, nil
+}
+
 // DoHTTPRequest returns HTTPResult.
 func DoHTTPRequest(ctx context.Context,
 	client *http.Client,
@@ -109,31 +140,11 @@ func DoHTTPRequest2(ctx context.Context, config *HTTPRequest) (*HTTPResult, erro
 
 	// Validations 1:
 	// If we have body, marshal it based on the Content-Type of the request.
-	// By default, if Content-Type is not given or not otherwise recognised,
-	// the body will be encoded as JSON.
 	if config.Body != nil {
-		// TODO: it would be more correct to attempt to parse the content-type value
-		// rather than guessing what to do based on substring matches.
-		if strings.Contains(contentType, "xml") {
-			var strBody string
-			strBody = reflect.ValueOf(config.Body).Convert(reflect.TypeOf(strBody)).String()
-			if strings.HasSuffix(strBody, " Value>") {
-				return nil, errors.Errorf(`Incompatible type as xml body: %s`, strBody)
-			}
-			reader = strings.NewReader(strBody)
-		} else if strings.Contains(contentType, "application/x-www-form-urlencoded") {
-			reqData, err := urlencode(config.Body)
-			if err != nil {
-				return nil, err
-			}
-			reader = bytes.NewReader(reqData)
-		} else {
-			// default behaviour: assume JSON request body.
-			reqJSON, err := json.Marshal(config.Body)
-			if err != nil {
-				return nil, err
-			}
-			reader = bytes.NewReader(reqJSON)
+		var err error
+		reader, err = marshalRequestBody(contentType, config.Body)
+		if err != nil {
+			return nil, err
 		}
 	}
 

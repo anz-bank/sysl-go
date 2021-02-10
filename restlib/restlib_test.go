@@ -196,19 +196,19 @@ func TestDoHTTPRequestSendStructAsUrlEncodedBody(t *testing.T) {
 		ExpiresAt:  time.Date(2021, time.February, 10, 0, 0, 0, 0, time.UTC),
 	}
 
-	expectedUrlEncodedData := []byte(`Banana=ripe&BananaType=wrapped&ExpiresAt=2021-02-10T00%3A00%3A00Z`)
+	expectedURLEncodedData := []byte(`Banana=ripe&BananaType=wrapped&ExpiresAt=2021-02-10T00%3A00%3A00Z`)
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		data, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(errorJSON))
+			_, _ = w.Write([]byte(errorJSON))
 			return
 		}
-		if !bytes.Equal(expectedUrlEncodedData, data) {
+		if !bytes.Equal(expectedURLEncodedData, data) {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(errorJSON))
+			_, _ = w.Write([]byte(errorJSON))
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -242,19 +242,19 @@ func TestDoHTTPRequestSendStructAsUrlEncodedBodyWithCharset(t *testing.T) {
 		ExpiresAt:  time.Date(2021, time.February, 10, 0, 0, 0, 0, time.UTC),
 	}
 
-	expectedUrlEncodedData := []byte(`Banana=ripe&BananaType=wrapped&ExpiresAt=2021-02-10T00%3A00%3A00Z`)
+	expectedURLEncodedData := []byte(`Banana=ripe&BananaType=wrapped&ExpiresAt=2021-02-10T00%3A00%3A00Z`)
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		data, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(errorJSON))
+			_, _ = w.Write([]byte(errorJSON))
 			return
 		}
-		if !bytes.Equal(expectedUrlEncodedData, data) {
+		if !bytes.Equal(expectedURLEncodedData, data) {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(errorJSON))
+			_, _ = w.Write([]byte(errorJSON))
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -291,19 +291,19 @@ func TestDoHTTPRequestSendStructWithCustomUrlFieldTagsAsUrlEncodedBody(t *testin
 		ProprietaryBananaSecret: "THIS MUST NOT BE SENT OVER THE WIRE",
 	}
 
-	expectedUrlEncodedData := []byte(`banana=ripe&banana_type=wrapped&expires_at=2021-02-10T00%3A00%3A00Z`)
+	expectedURLEncodedData := []byte(`banana=ripe&banana_type=wrapped&expires_at=2021-02-10T00%3A00%3A00Z`)
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		data, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte(errorJSON))
+			_, _ = w.Write([]byte(errorJSON))
 			return
 		}
-		if !bytes.Equal(expectedUrlEncodedData, data) {
+		if !bytes.Equal(expectedURLEncodedData, data) {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(errorJSON))
+			_, _ = w.Write([]byte(errorJSON))
 			return
 		}
 		w.WriteHeader(http.StatusOK)
