@@ -39,7 +39,7 @@ type Payload struct {
 }
 
 func doGatewayRequestResponse(ctx context.Context, content string) (string, error) {
-	// Naive hand-written http client that attempts to call the Gateway service's encode endpoint.
+	// Naive hand-written http client that attempts to call the Gateway service's banana endpoint.
 	// This does not attempt to depend on generated code or sysl-go's core libraries, as we want to be
 	// able to tell if the codegen or sysl-go libraries are defective or doing something unusual.
 	client := &http.Client{}
