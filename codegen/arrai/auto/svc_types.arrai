@@ -41,7 +41,27 @@ let fieldJsonTag = \type \key
                                 {'attrs': {'validate': {'s': (s: tag)}, ...}, ...}: tag,
                                 _: {},
                             };
+
+                        # Purpose: add url field tags to support scenario where we need
+                        # to marshal the structure into a HTTP request body for a
+                        # application/x-www-form-urlencoded POST request.
+                        #
+                        # For each json field tag we define a url field tag with the
+                        # same value. url field tags are intended to be interpreted by
+                        # the library github.com/google/go-querystring.
+                        #
+                        # Copying across the json tags is a bit of a hack and may not work in
+                        # general:
+                        # 1. not all valid JSON field tags are valid url tags;
+                        # 2. only a subset of go field types are supported when marshaling
+                        #    into an application/x-www-form-urlencoded request body.
+                        #
+                        # Ref: https://pkg.go.dev/github.com/google/go-querystring@v1.0.0/query
+                        # Ref: see restlib/restlib.go & restlib/urllencode.go
+                        let urlTag = jsonTag;
+
                         let structTags = [$`json:"${jsonTag::,}"`]
+                            ++ [$`url:"${jsonTag::,}"`]
                             ++ cond { validateTag: [$`validate:"${validateTag}"`] };
                         $'
                         ${fieldName} ${go.type(attrDef)} `${//seq.join(' ', structTags)}`'
