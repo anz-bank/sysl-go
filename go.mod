@@ -8,6 +8,7 @@ require (
 	github.com/anz-bank/sysl-catalog v1.4.185
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/golang/protobuf v1.4.2
+	github.com/google/go-querystring v1.0.0
 	github.com/google/uuid v1.1.1
 	github.com/mitchellh/mapstructure v1.2.2
 	github.com/pkg/errors v0.9.1
