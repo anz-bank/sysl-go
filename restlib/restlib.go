@@ -108,8 +108,12 @@ func DoHTTPRequest2(ctx context.Context, config *HTTPRequest) (*HTTPResult, erro
 	contentType := headers.Get("Content-Type")
 
 	// Validations 1:
-	// If we have body, marshal it to json
+	// If we have body, marshal it based on the Content-Type of the request.
+	// By default, if Content-Type is not given or not otherwise recognised,
+	// the body will be encoded as JSON.
 	if config.Body != nil {
+		// TODO: it would be more correct to attempt to parse the content-type value
+		// rather than guessing what to do based on substring matches.
 		if strings.Contains(contentType, "xml") {
 			var strBody string
 			strBody = reflect.ValueOf(config.Body).Convert(reflect.TypeOf(strBody)).String()
@@ -117,7 +121,14 @@ func DoHTTPRequest2(ctx context.Context, config *HTTPRequest) (*HTTPResult, erro
 				return nil, errors.Errorf(`Incompatible type as xml body: %s`, strBody)
 			}
 			reader = strings.NewReader(strBody)
+		} else if strings.Contains(contentType, "application/x-www-form-urlencoded") {
+			reqData, err := urlencode(config.Body)
+			if err != nil {
+				return nil, err
+			}
+			reader = bytes.NewReader(reqData)
 		} else {
+			// default behaviour: assume JSON request body.
 			reqJSON, err := json.Marshal(config.Body)
 			if err != nil {
 				return nil, err

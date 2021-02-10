@@ -1,12 +1,14 @@
 package restlib
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/stretchr/testify/require"
@@ -179,6 +181,147 @@ func TestDoHTTPRequestXMLBody(t *testing.T) {
 	strRes, isString := result.Response.(string)
 	require.True(t, isString)
 	require.True(t, xmlBody == strRes)
+}
+
+func TestDoHTTPRequestSendStructAsUrlEncodedBody(t *testing.T) {
+	type BananaRequest struct {
+		Banana     string
+		BananaType string
+		ExpiresAt  time.Time
+	}
+
+	req := &BananaRequest{
+		Banana:     "ripe",
+		BananaType: "wrapped",
+		ExpiresAt:  time.Date(2021, time.February, 10, 0, 0, 0, 0, time.UTC),
+	}
+
+	expectedUrlEncodedData := []byte(`Banana=ripe&BananaType=wrapped&ExpiresAt=2021-02-10T00%3A00%3A00Z`)
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		data, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(errorJSON))
+			return
+		}
+		if !bytes.Equal(expectedUrlEncodedData, data) {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(errorJSON))
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(okJSON))
+	}))
+	defer srv.Close()
+
+	reqHeader := http.Header{}
+	reqHeader.Add("Content-Type", "application/x-www-form-urlencoded")
+	ctx := common.RequestHeaderToContext(context.Background(), reqHeader)
+
+	result, err := DoHTTPRequest(ctx, srv.Client(), "POST", srv.URL, req, make([]string, 0), &OkType{}, &ErrorType{})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	responseObj, ok := result.Response.(*OkType)
+	require.True(t, ok)
+	expectedResponseObj := &OkType{Test: "test string"}
+	require.Equal(t, expectedResponseObj, responseObj)
+}
+
+func TestDoHTTPRequestSendStructAsUrlEncodedBodyWithCharset(t *testing.T) {
+	type BananaRequest struct {
+		Banana     string
+		BananaType string
+		ExpiresAt  time.Time
+	}
+
+	req := &BananaRequest{
+		Banana:     "ripe",
+		BananaType: "wrapped",
+		ExpiresAt:  time.Date(2021, time.February, 10, 0, 0, 0, 0, time.UTC),
+	}
+
+	expectedUrlEncodedData := []byte(`Banana=ripe&BananaType=wrapped&ExpiresAt=2021-02-10T00%3A00%3A00Z`)
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		data, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(errorJSON))
+			return
+		}
+		if !bytes.Equal(expectedUrlEncodedData, data) {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(errorJSON))
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(okJSON))
+	}))
+	defer srv.Close()
+
+	reqHeader := http.Header{}
+	reqHeader.Add("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
+	ctx := common.RequestHeaderToContext(context.Background(), reqHeader)
+
+	result, err := DoHTTPRequest(ctx, srv.Client(), "POST", srv.URL, req, make([]string, 0), &OkType{}, &ErrorType{})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	responseObj, ok := result.Response.(*OkType)
+	require.True(t, ok)
+	expectedResponseObj := &OkType{Test: "test string"}
+	require.Equal(t, expectedResponseObj, responseObj)
+}
+
+func TestDoHTTPRequestSendStructWithCustomUrlFieldTagsAsUrlEncodedBody(t *testing.T) {
+	type BananaRequest struct {
+		Banana                  string    `url:"banana"`
+		BananaType              string    `url:"banana_type"`
+		ExpiresAt               time.Time `url:"expires_at"`
+		ProprietaryBananaSecret string    `url:"-"`
+	}
+
+	// Ref: https://pkg.go.dev/github.com/google/go-querystring/query
+	req := &BananaRequest{
+		Banana:                  "ripe",
+		BananaType:              "wrapped",
+		ExpiresAt:               time.Date(2021, time.February, 10, 0, 0, 0, 0, time.UTC),
+		ProprietaryBananaSecret: "THIS MUST NOT BE SENT OVER THE WIRE",
+	}
+
+	expectedUrlEncodedData := []byte(`banana=ripe&banana_type=wrapped&expires_at=2021-02-10T00%3A00%3A00Z`)
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Content-Type", "application/json")
+		data, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(errorJSON))
+			return
+		}
+		if !bytes.Equal(expectedUrlEncodedData, data) {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(errorJSON))
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(okJSON))
+	}))
+	defer srv.Close()
+
+	reqHeader := http.Header{}
+	reqHeader.Add("Content-Type", "application/x-www-form-urlencoded")
+	ctx := common.RequestHeaderToContext(context.Background(), reqHeader)
+
+	result, err := DoHTTPRequest(ctx, srv.Client(), "POST", srv.URL, req, make([]string, 0), &OkType{}, &ErrorType{})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	responseObj, ok := result.Response.(*OkType)
+	require.True(t, ok)
+	expectedResponseObj := &OkType{Test: "test string"}
+	require.Equal(t, expectedResponseObj, responseObj)
 }
 
 type testResp struct {
