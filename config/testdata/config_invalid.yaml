@@ -1,7 +1,7 @@
 library:
   log:
     format: text
-    level: 3
+    level: 4
     caller: true
   profiling: true
 server:

@@ -6,7 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/anz-bank/sysl-go/log"
+
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,15 +23,15 @@ type libraryConfig struct {
 }
 
 type logConfig struct {
-	Format string       `mapstructure:"format"`
-	Level  logrus.Level `mapstructure:"level"`
-	Level1 logrus.Level `mapstructure:"level1"`
-	Level2 logrus.Level `mapstructure:"level2"`
-	Level3 logrus.Level `mapstructure:"level3"`
-	Level4 logrus.Level `mapstructure:"level4"`
-	Level5 logrus.Level `mapstructure:"level5"`
-	Level6 logrus.Level `mapstructure:"level6"`
-	Caller bool         `mapstructure:"caller"`
+	Format string    `mapstructure:"format"`
+	Level  log.Level `mapstructure:"level"`
+	Level1 log.Level `mapstructure:"level1"`
+	Level2 log.Level `mapstructure:"level2"`
+	Level3 log.Level `mapstructure:"level3"`
+	Level4 log.Level `mapstructure:"level4"`
+	Level5 log.Level `mapstructure:"level5"`
+	Level6 log.Level `mapstructure:"level6"`
+	Caller bool      `mapstructure:"caller"`
 }
 
 type commonDownstreamData struct {
@@ -55,7 +56,7 @@ func TestGetStringFromFile(t *testing.T) {
 	t.Parallel()
 
 	b := NewConfigReaderBuilder()
-	reader := b.AttachEnvPrefix("simpleApp").WithConfigFile("../testdata/config.yaml").Build()
+	reader := b.AttachEnvPrefix("simpleApp").WithConfigFile("testdata/config.yaml").Build()
 	fooURL, err := reader.GetString("genCode.downstream.foo.serviceURL")
 	require.Nil(t, err)
 	assert.Equal(t, "https://foo.example.com", fooURL)
@@ -65,7 +66,7 @@ func TestGetStringErr(t *testing.T) {
 	t.Parallel()
 
 	b := NewConfigReaderBuilder()
-	reader := b.AttachEnvPrefix("simpleApp").WithConfigFile("../testdata/config.yaml").Build()
+	reader := b.AttachEnvPrefix("simpleApp").WithConfigFile("testdata/config.yaml").Build()
 	s, err := reader.GetString("genCode.downstream.foo")
 	require.NotNil(t, err)
 	assert.Equal(t, "", s)
@@ -75,7 +76,7 @@ func TestGetStringFromEnv(t *testing.T) {
 	t.Parallel()
 
 	b := NewConfigReaderBuilder()
-	reader := b.AttachEnvPrefix("simple").WithConfigFile("../testdata/config.yaml").Build()
+	reader := b.AttachEnvPrefix("simple").WithConfigFile("testdata/config.yaml").Build()
 	os.Setenv("SIMPLE_GENCODE_DOWNSTREAM_FOO_SERVICEURL", "https://env.foo.example.com")
 	fooURL, err := reader.GetString("genCode.downstream.foo.serviceURL")
 	require.Nil(t, err)
@@ -86,7 +87,7 @@ func TestGetStringFrom2ndSource(t *testing.T) {
 	t.Parallel()
 
 	b := NewConfigReaderBuilder()
-	reader := b.AttachEnvPrefix("simple").WithConfigFile("../testdata/config.yaml").Build()
+	reader := b.AttachEnvPrefix("simple").WithConfigFile("testdata/config.yaml").Build()
 	os.Setenv("SIMPLE_GENCODE_DOWNSTREAM_BAR_SERVICEURL", "")
 	barURL, err := reader.GetString("genCode.downstream.bar.serviceURL")
 	require.Nil(t, err)
@@ -97,8 +98,8 @@ func TestGetMultipleConfigFiles(t *testing.T) {
 	t.Parallel()
 
 	b := NewConfigReaderBuilder()
-	reader := b.AttachEnvPrefix("simple").WithConfigFile("../testdata/config.yaml").WithConfigName(
-		"config_log", "./", "../testdata").Build()
+	reader := b.AttachEnvPrefix("simple").WithConfigFile("testdata/config.yaml").WithConfigName(
+		"config_log", "./", "testdata").Build()
 	calleeLog, err := reader.GetString("library.log.callee")
 	require.Nil(t, err)
 	assert.Equal(t, "true", calleeLog)
@@ -108,7 +109,7 @@ func TestUnmarshalFromFileWithPrefix(t *testing.T) {
 	t.Parallel()
 
 	conf := config{}
-	b := NewConfigReaderBuilder().WithFs(afero.NewOsFs()).WithConfigFile("../testdata/config.yaml")
+	b := NewConfigReaderBuilder().WithFs(afero.NewOsFs()).WithConfigFile("testdata/config.yaml")
 	fooURL, err := b.Build().GetString("genCode.downstream.foo.serviceURL")
 	require.Nil(t, err)
 	assert.Equal(t, "https://foo.example.com", fooURL)
@@ -126,7 +127,7 @@ func TestUnmarshalFromFile(t *testing.T) {
 
 	conf := config{}
 	b := NewConfigReaderBuilder()
-	reader := b.WithFs(afero.NewOsFs()).WithConfigFile("../testdata/config.yaml").Build()
+	reader := b.WithFs(afero.NewOsFs()).WithConfigFile("testdata/config.yaml").Build()
 	err := reader.Unmarshal(&conf)
 	require.Nil(t, err)
 	assert.Equal(t, "https://foo.example.com", conf.Gencode.Downstream.Foo.ServiceURL)

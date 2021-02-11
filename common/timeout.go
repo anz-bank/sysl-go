@@ -49,7 +49,7 @@ func Timeout(timeout time.Duration, timeoutHandler http.Handler) func(next http.
 // Forked from go/src/net/http/server.go
 // Changes:
 // * Accept a http.Handler instead of a string for the error message handling
-// * Logs panics to logrus
+// * Logs panics to internal logger
 // * Logs to pkg/log instead of the ErrorLog of the *Server associated with request r via ServerContextKey
 
 // Copyright 2009 The Go Authors. All rights reserved.

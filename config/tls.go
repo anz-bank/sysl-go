@@ -10,8 +10,6 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 )
 
 var cipherSuites = map[string]uint16{
@@ -383,7 +381,7 @@ func (t *TLSConfig) Validate() error {
 	}
 
 	if t.Ciphers == nil || len(t.Ciphers) == 0 {
-		logrus.Println("ciphers config missing")
+		log.Println("ciphers config missing")
 	}
 
 	var failedCiphers []string

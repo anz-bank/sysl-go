@@ -77,8 +77,8 @@ func (l *TestLogger) WithLevel(level log.Level) log.Logger {
 	return &TestLogger{level, l.Fields, l.entries}
 }
 
-func (l *TestLogger) Inject(ctx context.Context) context.Context {
-	return ctx // unsupported
+func (l *TestLogger) Inject(ctx context.Context) (context.Context, func(ctx context.Context) log.Logger) {
+	return ctx, func(_ context.Context) log.Logger { return l } // return single instance
 }
 
 func (l *TestLogger) copyFields() map[string]interface{} {

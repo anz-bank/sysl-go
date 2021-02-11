@@ -2,13 +2,15 @@ package config
 
 import (
 	"fmt"
+	rawlog "log"
 	"reflect"
 	"strings"
+
+	"github.com/anz-bank/sysl-go/log"
 
 	"github.com/anz-bank/sysl-go/jsontime"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
 )
@@ -121,21 +123,27 @@ func makeDefaultDecodeHook() mapstructure.DecodeHookFunc {
 			if f.Kind() != reflect.String {
 				return data, nil
 			}
-			switch strings.ToLower(data.(string)) {
+
+			deprecated := func(str string, level log.Level) (log.Level, error) {
+				rawlog.Printf("deprecated config log level: %s, use %s instead", str, level.String())
+				return level, nil
+			}
+
+			switch str := strings.ToLower(data.(string)); str {
 			case "panic":
-				return logrus.PanicLevel, nil
+				return deprecated(str, log.ErrorLevel)
 			case "fatal":
-				return logrus.FatalLevel, nil
+				return deprecated(str, log.ErrorLevel)
 			case "error":
-				return logrus.ErrorLevel, nil
+				return log.ErrorLevel, nil
 			case "warn":
-				return logrus.WarnLevel, nil
+				return deprecated(str, log.InfoLevel)
 			case "info":
-				return logrus.InfoLevel, nil
+				return log.InfoLevel, nil
 			case "debug":
-				return logrus.DebugLevel, nil
+				return log.DebugLevel, nil
 			case "trace":
-				return logrus.TraceLevel, nil
+				return deprecated(str, log.DebugLevel)
 			default:
 				return data, nil
 			}
