@@ -61,7 +61,7 @@ let fieldJsonTag = \type \key
                         let urlTag = jsonTag;
 
                         let structTags = [$`json:"${jsonTag::,}"`]
-                            ++ [$`url:"${jsonTag::,}"`]
+                            ++ [$`url:"${urlTag::,}"`]
                             ++ cond { validateTag: [$`validate:"${validateTag}"`] };
                         $'
                         ${fieldName} ${go.type(attrDef)} `${//seq.join(' ', structTags)}`'
