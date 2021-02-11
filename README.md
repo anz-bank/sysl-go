@@ -1,15 +1,23 @@
-# sysl-go
+<h1>Sysl-go</h1>
 
 Communication library used by SYSL-generated code written in Go.
 
-## 1.1. Getting Started
+- [Getting Started](#getting-started)
+  - [Code](#code)
+  - [Docker](#docker)
+  - [Local Development](#local-development)
+  - [Development](#development)
+  - [Logging](#logging)
 
-#### Go get the repository
+# Getting Started
+
+## Code
 
 ```
 go get github.com/anz-bank/sysl-go
 ```
-#### Use docker
+
+## Docker
 
 ```
 docker pull anzbank/sysl-go:latest
@@ -17,9 +25,8 @@ docker pull anzbank/sysl-go:latest
 docker run --rm -v $(pwd):/mount:ro anzbank/sysl-go /sysl-go/codegen/arrai/service.arrai github.com/anz-bank/sysl-template/gen /mount/api/project.json simple rest-app | tar xf - -C gen/simple
 ```
 See [sysl-template](https://github.com/anz-bank/sysl-template) for more examples
-### 1.1.1. Local Development
 
-### 1.1.2. Prerequisites
+## Local Development
 
 Ensure your environment provides:
 
@@ -39,7 +46,7 @@ On OSX, after installing [go 1.14](https://golang.org/doc/install) run
 
     brew install golangci/tap/golangci-lint make curl protoc-gen-go grpc
 
-### 1.1.3 Development
+## Development
 
 Test and lint everything with
 
@@ -52,3 +59,9 @@ View all relevant make targets with
 View test coverage in the browser with
 
     make coverage
+
+## Logging
+
+Sysl-go comes equipped with flexible, out-of-the-box logging support.
+
+For complete information see [Logging](./log/README.md).

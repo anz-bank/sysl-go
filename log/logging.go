@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/anz-bank/pkg/logging"
+	zero "github.com/anz-bank/pkg/logging"
 
-	"github.com/anz-bank/pkg/log"
+	pkg "github.com/anz-bank/pkg/log"
 	"github.com/sirupsen/logrus"
 )
 
@@ -128,19 +128,19 @@ func PutLogger(ctx context.Context, logger Logger) context.Context {
 // NewDefaultLogger returns a logger that is regarded as the default logger to use within an
 // application when no logger configuration is provided.
 func NewDefaultLogger() Logger {
-	return NewPkgLogger(log.Fields{})
+	return NewPkgLogger(pkg.Fields{})
 }
 
 // NewPkgLogger returns is an implementation of Logger that uses the pkg/log logger.
-func NewPkgLogger(fields log.Fields) Logger {
+func NewPkgLogger(fields pkg.Fields) Logger {
 	return &pkgLogger{fields}
 }
 
 type pkgLogger struct {
-	Fields log.Fields
+	Fields pkg.Fields
 }
 
-func (l *pkgLogger) logger() log.Logger              { return l.Fields.From(context.Background()) }
+func (l *pkgLogger) logger() pkg.Logger              { return l.Fields.From(context.Background()) }
 func (l *pkgLogger) Error(err error, message string) { l.logger().Error(err, message) }
 func (l *pkgLogger) Info(message string)             { l.logger().Info(message) }
 func (l *pkgLogger) Debug(message string)            { l.logger().Debug(message) }
@@ -158,23 +158,23 @@ func (l *pkgLogger) WithDuration(key string, value time.Duration) Logger {
 }
 
 func (l *pkgLogger) WithLevel(level Level) Logger {
-	return &pkgLogger{l.Fields.WithConfigs(log.SetVerboseMode(level == DebugLevel))}
+	return &pkgLogger{l.Fields.WithConfigs(pkg.SetVerboseMode(level == DebugLevel))}
 }
 
 func (l *pkgLogger) Inject(ctx context.Context) (context.Context, func(ctx context.Context) Logger) {
 	// Put and restore the logger natively. Rather than referencing the instance directly for the
 	// purpose of restoration, this approach has the benefit of ensuring that any fields added
 	// directly to the native logger aren't lost if the application uses both a native a wrapped logger.
-	return l.Fields.Onto(ctx), func(c context.Context) Logger { return &pkgLogger{log.WithLogger(log.From(c))} }
+	return l.Fields.Onto(ctx), func(c context.Context) Logger { return &pkgLogger{pkg.WithLogger(pkg.From(c))} }
 }
 
 // NewZeroPkgLogger returns is an implementation of Logger that uses the pkg/logging logger.
-func NewZeroPkgLogger(logger *logging.Logger) Logger {
+func NewZeroPkgLogger(logger *zero.Logger) Logger {
 	return &zeroPkgLogger{logger}
 }
 
 type zeroPkgLogger struct {
-	Logger *logging.Logger
+	Logger *zero.Logger
 }
 
 func (l *zeroPkgLogger) Error(err error, message string) { l.Logger.Error(err).Msg(message) }
@@ -194,14 +194,14 @@ func (l *zeroPkgLogger) WithDuration(key string, value time.Duration) Logger {
 }
 
 func (l *zeroPkgLogger) WithLevel(level Level) Logger {
-	var lvl logging.Level
+	var lvl zero.Level
 	switch level {
 	case ErrorLevel:
-		lvl = logging.ErrorLevel
+		lvl = zero.ErrorLevel
 	case InfoLevel:
-		lvl = logging.InfoLevel
+		lvl = zero.InfoLevel
 	case DebugLevel:
-		lvl = logging.DebugLevel
+		lvl = zero.DebugLevel
 	}
 	return &zeroPkgLogger{l.Logger.WithLevel(lvl)}
 }
@@ -210,7 +210,7 @@ func (l *zeroPkgLogger) Inject(ctx context.Context) (context.Context, func(ctx c
 	// Put and restore the logger natively. Rather than referencing the instance directly for the
 	// purpose of restoration, this approach has the benefit of ensuring that any fields added
 	// directly to the native logger aren't lost if the application uses both a native a wrapped logger.
-	return l.Logger.ToContext(ctx), func(c context.Context) Logger { return &zeroPkgLogger{logging.FromContext(c)} }
+	return l.Logger.ToContext(ctx), func(c context.Context) Logger { return &zeroPkgLogger{zero.FromContext(c)} }
 }
 
 // NewLogrusLogger returns an implementation of Logger that uses the Logrus logger.

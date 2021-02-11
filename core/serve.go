@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	pkg "github.com/anz-bank/pkg/log"
+
 	"github.com/anz-bank/sysl-go/log"
 
 	"github.com/anz-bank/sysl-go/config"
@@ -71,11 +73,11 @@ func NewServer(
 	ctx, externalLogger = getExternalLogger(ctx)
 
 	// Put the bootstrap logger in the context if no external logger is provided. The bootstrap
-	// logger is designed to provide a fail-safe logger within the context for the period of
-	// bootstrapping only. In an ideal setup the bootstrap logger will never be called, however in
-	// some edge cases it may be desirable to capture logs before the Hooks.Logger has a chance to
-	// be called. In this instance the recommended approach is to call log.PutLogger on the context
-	// calling this method. The outcome of this approach is that the Hooks.Logger method is ignored.
+	// logger is designed to provide a fail-safe logger within the context during bootstrapping only.
+	// In an ideal setup the bootstrap logger will never be called, however in some edge cases it
+	// may be desirable to capture logs before the Hooks.Logger has a chance to be called. In this
+	// instance the recommended approach is to call log.PutLogger on the context before calling this
+	// method. The outcome of this approach is that the Hooks.Logger method is ignored.
 	if externalLogger == nil {
 		ctx = log.PutLogger(ctx, log.NewDefaultLogger().WithStr("bootstrap logger",
 			"logging called before bootstrapping complete, to centralise these logs call "+
@@ -616,12 +618,12 @@ func (s autogenServer) GetName() string {
 // set), this method returns the logger.
 //
 // 3. In order to support legacy Sysl-go applications that directly set a Logrus logger against the
-// context before bootstrapping, this method will wrap and return an appropriate log.Logger instance
-// and set this value against the returned context.
+// context before bootstrapping, this method will wrap and return an appropriate log.Logger instance.
 //
-// 4. For other loggers that are directly set against the context (pkg, zero) but cannot be queried
-// as to whether or not they have been, these loggers will be ignored and the configuration will
-// continue as though no logger has been set. In this configuration this method will return nil.
+// 4. In order to support legacy Sysl-go applications that directly set a pkg logger against the
+// context before bootstrapping, this method will wrap and return an appropriate log.Logger instance.
+//
+// 5. For other configurations this method will return nil.
 func getExternalLogger(ctx context.Context) (context.Context, log.Logger) {
 	logger := log.GetLogger(ctx)
 	if logger != nil {
@@ -630,8 +632,14 @@ func getExternalLogger(ctx context.Context) (context.Context, log.Logger) {
 	logrus := log.GetLogrusLoggerFromContext(ctx)
 	if logrus != nil {
 		lgr := log.NewLogrusLogger(logrus)
-		lgr.Debug("legacy logrus logger configuration detected, " +
-			"use log.PutLogger(NewLogrusLogger(logrus)) instead")
+		lgr.Debug("legacy logrus logger configuration detected, use Hooks.Logger instead")
+		return log.PutLogger(ctx, lgr), lgr
+	}
+	fields := pkg.WithLogger(pkg.From(ctx))
+	empty := pkg.Fields{}
+	if fields != empty {
+		lgr := log.NewPkgLogger(fields)
+		lgr.Debug("legacy pkg logger configuration detected, use Hooks.Logger instead")
 		return log.PutLogger(ctx, lgr), lgr
 	}
 	return ctx, nil
