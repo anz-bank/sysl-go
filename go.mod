@@ -4,10 +4,10 @@ go 1.14
 
 require (
 	github.com/alecthomas/participle v0.6.0
-	github.com/anz-bank/pkg v0.0.29
+	github.com/anz-bank/pkg v0.0.33
 	github.com/anz-bank/sysl-catalog v1.4.185
 	github.com/go-chi/chi v4.1.2+incompatible
-	github.com/golang/protobuf v1.4.2
+	github.com/golang/protobuf v1.4.3
 	github.com/google/go-querystring v1.0.0
 	github.com/google/uuid v1.1.1
 	github.com/mitchellh/mapstructure v1.2.2
