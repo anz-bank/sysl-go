@@ -7,7 +7,8 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/anz-bank/pkg/log"
+	"github.com/anz-bank/sysl-go/log"
+
 	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 
@@ -28,7 +29,7 @@ func (m *mockRountTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 }
 
 func TestLoggingRoundtripper(t *testing.T) {
-	ctx, _ := testutil.NewTestContextWithLoggerHook()
+	ctx, _ := testutil.NewTestContextWithLogger()
 	base := mockRountTripper{}
 	base.On("RoundTrip", mock.Anything).Return(&http.Response{}, nil)
 
@@ -66,8 +67,9 @@ func (r *testRoundtripper) RoundTrip(req *http.Request) (*http.Response, error) 
 }
 func TestLoggingTransport_RoundTrip400Code(t *testing.T) {
 	tr := testRoundtripper{false, 400}
-	ctx, hook := testutil.NewTestContextWithLoggerHook()
-	ctx = log.WithConfigs(log.SetVerboseMode(true)).Onto(ctx)
+	ctx, logger := testutil.NewTestContextWithLogger(
+		testutil.WithLogLevel(log.DebugLevel),
+		testutil.WithLogPayload(true))
 	transport := NewLoggingRoundTripper(ctx, &tr)
 	body := bytes.NewBufferString("test")
 	req, err := http.NewRequest("POST", "http://localhost:1234/", body)
@@ -82,8 +84,8 @@ func TestLoggingTransport_RoundTrip400Code(t *testing.T) {
 	reqFound := false
 	respFound := false
 	statusFound := false
-	for _, entry := range hook.Entries {
-		if entry.Verbose {
+	for _, entry := range logger.Entries() {
+		if entry.Level == log.DebugLevel {
 			debugCount++
 			if entry.Message == "Response: header - map[]\nbody[len:9]: - resp body" {
 				reqFound = true
@@ -104,8 +106,9 @@ func TestLoggingTransport_RoundTrip400Code(t *testing.T) {
 
 func TestLoggingTransport_RoundTripLogFields(t *testing.T) {
 	tr := testRoundtripper{false, 400}
-	ctx, hook := testutil.NewTestContextWithLoggerHook()
-	ctx = log.WithConfigs(log.SetVerboseMode(true)).Onto(ctx)
+	ctx, logger := testutil.NewTestContextWithLogger(
+		testutil.WithLogLevel(log.DebugLevel),
+		testutil.WithLogPayload(true))
 	transport := NewLoggingRoundTripper(ctx, &tr)
 	body := bytes.NewBufferString("test")
 	req, err := http.NewRequest("POST", "http://localhost:1234/", body)
@@ -122,14 +125,14 @@ func TestLoggingTransport_RoundTripLogFields(t *testing.T) {
 	reqFound := false
 	respFound := false
 	statusFound := false
-	for _, entry := range hook.Entries {
-		entryTraceIDName, _ := entry.Data.Get(distributedTraceIDName)
-		entrySpanIDName, _ := entry.Data.Get(distributedSpanIDName)
-		entryDistributedParentSpanIDName, _ := entry.Data.Get(distributedParentSpanIDName)
+	for _, entry := range logger.Entries() {
+		entryTraceIDName := entry.Fields[distributedTraceIDName]
+		entrySpanIDName := entry.Fields[distributedSpanIDName]
+		entryDistributedParentSpanIDName := entry.Fields[distributedParentSpanIDName]
 		require.Equal(t, "this is trace id", entryTraceIDName)
 		require.Equal(t, "this is span id", entrySpanIDName)
 		require.Nil(t, entryDistributedParentSpanIDName)
-		if entry.Verbose {
+		if entry.Level == log.DebugLevel {
 			debugCount++
 			if entry.Message == "Response: header - map[]\nbody[len:9]: - resp body" {
 				reqFound = true

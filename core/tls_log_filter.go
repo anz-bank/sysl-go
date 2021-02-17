@@ -3,7 +3,7 @@ package core
 import (
 	"regexp"
 
-	"github.com/anz-bank/pkg/log"
+	"github.com/anz-bank/sysl-go/log"
 )
 
 type TLSLogFilter struct {

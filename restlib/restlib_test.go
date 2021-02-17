@@ -109,7 +109,7 @@ func TestUnmarshalAliasString(t *testing.T) {
 }
 
 func TestDoHTTPRequestOkType(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := common.NewHTTPTestServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte(okJSON))
 	}))
@@ -122,7 +122,7 @@ func TestDoHTTPRequestOkType(t *testing.T) {
 }
 
 func TestDoHTTPRequest204Response(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := common.NewHTTPTestServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(204)
 		_, _ = w.Write(nil)
 	}))
@@ -135,7 +135,7 @@ func TestDoHTTPRequest204Response(t *testing.T) {
 }
 
 func TestDoHTTPRequestErrorType(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := common.NewHTTPTestServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
 		_, _ = w.Write([]byte(errorJSON))
 	}))
@@ -149,7 +149,7 @@ func TestDoHTTPRequestErrorType(t *testing.T) {
 }
 
 func TestDoHTTPRequestRightTypeWrongJSON(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := common.NewHTTPTestServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte(errorJSON))
 	}))
@@ -163,7 +163,7 @@ func TestDoHTTPRequestRightTypeWrongJSON(t *testing.T) {
 
 func TestDoHTTPRequestXMLBody(t *testing.T) {
 	xmlBody := `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ond="http://www.qas.com/OnDemand-2011-03"><soapenv:Header><ond:QAQueryHeader></ond:QAQueryHeader></soapenv:Header><soapenv:Body><ond:QASearch><ond:Country>AUS</ond:Country><ond:Engine>Intuitive</ond:Engine><!--Optional:--><ond:Layout>QADefault</ond:Layout><ond:Search>5 lyg</ond:Search><!--Optional:--><ond:FormattedAddressInPicklist>false</ond:FormattedAddressInPicklist></ond:QASearch></soapenv:Body></soapenv:Envelope>`
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := common.NewHTTPTestServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body := make([]byte, len(xmlBody))
 		w.Header().Add("Content-Type", "text/xml; charset=utf-8")
 		w.WriteHeader(200)
@@ -428,7 +428,7 @@ func TestSendHTTPResponseContentTypeImage(t *testing.T) {
 }
 
 func TestRestResultContextWithoutProvision(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := common.NewHTTPTestServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte(okJSON))
 	}))
@@ -442,7 +442,7 @@ func TestRestResultContextWithoutProvision(t *testing.T) {
 }
 
 func TestRestResultContextOnSuccess(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := common.NewHTTPTestServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 		_, _ = w.Write([]byte(okJSON))
 	}))
@@ -462,7 +462,7 @@ func TestRestResultContextOnSuccess(t *testing.T) {
 }
 
 func TestRestResultContextOnError(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	srv := common.NewHTTPTestServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
 		_, _ = w.Write([]byte(errorJSON))
 	}))

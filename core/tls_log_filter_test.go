@@ -6,7 +6,8 @@ import (
 	"regexp"
 	"testing"
 
-	pkgLog "github.com/anz-bank/pkg/log"
+	anzlog "github.com/anz-bank/sysl-go/log"
+
 	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 )
@@ -22,16 +23,15 @@ func TestTLSLogFilter_Write(t *testing.T) {
 	} {
 		tt := tt
 		t.Run(fmt.Sprintf("TestTLSLogFilter_Write-%d", i), func(t *testing.T) {
-			ctx, hook := testutil.NewTestContextWithLoggerHook()
-			logger := pkgLog.From(ctx)
+			logger := testutil.NewTestLogger()
 			re := regexp.MustCompile(`hit`)
-			writer := &TLSLogFilter{logger, re}
+			writer := &TLSLogFilter{logger.WithLevel(anzlog.DebugLevel), re}
 			serverLogger := log.New(writer, "", 0)
 
 			serverLogger.Printf(tt.in)
 
-			require.Equal(t, 1, len(hook.Entries))
-			require.Equal(t, tt.in, hook.LastEntry().Message)
+			require.Equal(t, 1, logger.EntryCount())
+			require.Equal(t, tt.in, logger.LastEntry().Message)
 		})
 	}
 }

@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/anz-bank/sysl-go/common"
 
 	"github.com/anz-bank/sysl-go/jsontime"
 	"github.com/anz-bank/sysl-go/jwtauth"
@@ -82,7 +83,7 @@ func TestAuthorizePassesAuthorizedRequests(t *testing.T) {
 	}
 	endpoint := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	handler := auth.Auth()(endpoint)
-	server := httptest.NewServer(handler)
+	server := common.NewHTTPTestServer(handler)
 	resp, err := http.Get(server.URL)
 	require.NoError(t, err)
 	defer resp.Body.Close()
@@ -98,7 +99,7 @@ func TestAuthAllowAnonPassthrough(t *testing.T) {
 	}
 	endpoint := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusNoContent) })
 	handler := auth.AuthAllowAnon()(endpoint)
-	server := httptest.NewServer(handler)
+	server := common.NewHTTPTestServer(handler)
 
 	// with no auth header
 	resp, err := http.Get(server.URL)
@@ -116,7 +117,7 @@ func TestAuthAllowAnonReject(t *testing.T) {
 	}
 	endpoint := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	handler := auth.AuthAllowAnon()(endpoint)
-	server := httptest.NewServer(handler)
+	server := common.NewHTTPTestServer(handler)
 
 	// with bad auth header
 	req, _ := http.NewRequest("GET", server.URL, nil)
@@ -136,7 +137,7 @@ func TestAuthNOAuthenticates(t *testing.T) {
 	}
 	endpoint := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	handler := auth.Auth()(endpoint)
-	server := httptest.NewServer(handler)
+	server := common.NewHTTPTestServer(handler)
 	resp, err := http.Get(server.URL)
 	require.NoError(t, err)
 	defer resp.Body.Close()
@@ -155,7 +156,7 @@ func TestAuthNOAuthorizes(t *testing.T) {
 	endpoint := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	handler := auth.WithAuthorisers(authorizor).Auth()(endpoint)
 
-	server := httptest.NewServer(handler)
+	server := common.NewHTTPTestServer(handler)
 	resp, err := http.Get(server.URL)
 	require.NoError(t, err)
 	defer resp.Body.Close()

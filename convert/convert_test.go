@@ -14,8 +14,7 @@ import (
 )
 
 func getContext() context.Context {
-	ctx, _ := testutil.NewTestContextWithLoggerHook()
-	return ctx
+	return testutil.NewTestContext()
 }
 
 func TestStringToIntPtr_Invalid(t *testing.T) {

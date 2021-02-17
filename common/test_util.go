@@ -2,11 +2,11 @@ package common
 
 import (
 	"context"
+	"net"
 	"net/http"
+	"net/http/httptest"
 
-	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/anz-bank/sysl-go/log"
 
 	"github.com/stretchr/testify/mock"
 )
@@ -33,20 +33,20 @@ func (m *MockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	return args.Get(0).(*http.Response), args.Error(1)
 }
 
-func NewTestCoreRequestContext() (*logrus.Logger, *test.Hook, context.Context) {
-	logger, hook := test.NewNullLogger()
-
-	ctx := NewTestCoreRequestContextWithLogger(logger)
-
-	return logger, hook, ctx
+// NewHTTPTestServer returns a new httptest.Server with the given handler suitable for use within
+// unit tests. The returned server comes equipped with the following:
+// 1. log.Logger.
+func NewHTTPTestServer(handler http.Handler) *httptest.Server {
+	ts := NewUnstartedHTTPTestServer(handler)
+	ts.Start()
+	return ts
 }
 
-func NewTestCoreRequestContextWithLogger(logger *logrus.Logger) context.Context {
-	ctx := context.WithValue(context.Background(), coreRequestContextKey{},
-		coreRequestContext{
-			logger: logger,
-			entry:  logger.WithField("traceId", uuid.New().String()),
-		})
-
-	return ctx
+// NewHTTPTestServer returns an unstarted httptest.Server with the given handler suitable for use
+// within unit tests. The returned server comes equipped with the following:
+// 1. log.Logger.
+func NewUnstartedHTTPTestServer(handler http.Handler) *httptest.Server {
+	ts := httptest.NewUnstartedServer(handler)
+	ts.Config.BaseContext = func(net.Listener) context.Context { return log.PutLogger(context.Background(), log.NewDefaultLogger()) }
+	return ts
 }

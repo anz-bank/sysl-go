@@ -94,18 +94,18 @@ func (h *GrpcHandler) GrpcPublicServerConfig() *config.CommonServerConfig {
 	return &h.cfg
 }
 
-func connectAndCheckReturn(t *testing.T, securityOption grpc.DialOption) {
+func connectAndCheckReturn(ctx context.Context, t *testing.T, securityOption grpc.DialOption) {
 	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", testPort), securityOption, grpc.WithBlock())
 	require.NoError(t, err)
 	defer conn.Close()
 	client := test.NewTestServiceClient(conn)
-	resp, err := client.Test(context.Background(), &test.TestRequest{Field1: "test"})
+	resp, err := client.Test(ctx, &test.TestRequest{Field1: "test"})
 	require.NoError(t, err)
 	require.Equal(t, "test", resp.GetField1())
 }
 
 func Test_makeGrpcListenFuncListens(t *testing.T) {
-	ctx, _ := testutil.NewTestContextWithLoggerHook()
+	ctx, _ := testutil.NewTestContextWithLogger()
 
 	s := grpc.NewServer()
 	defer s.GracefulStop()
@@ -117,12 +117,12 @@ func Test_makeGrpcListenFuncListens(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	connectAndCheckReturn(t, grpc.WithInsecure())
+	connectAndCheckReturn(ctx, t, grpc.WithInsecure())
 }
 
 func Test_encryptionConfigUsed(t *testing.T) {
 	t.Skip("Skipping as required certs not present")
-	ctx, hook := testutil.NewTestContextWithLoggerHook()
+	ctx, logger := testutil.NewTestContextWithLogger()
 
 	cfg := localSecureServer()
 
@@ -139,8 +139,8 @@ func Test_encryptionConfigUsed(t *testing.T) {
 	creds, err := credentials.NewClientTLSFromFile("testdata/creds/ca.pem", "x.test.youtube.com")
 	require.NoError(t, err)
 
-	connectAndCheckReturn(t, grpc.WithTransportCredentials(creds))
-	for _, entry := range hook.Entries {
+	connectAndCheckReturn(ctx, t, grpc.WithTransportCredentials(creds))
+	for _, entry := range logger.Entries() {
 		t.Log(entry.Message)
 	}
 }
@@ -148,7 +148,7 @@ func Test_encryptionConfigUsed(t *testing.T) {
 func Test_serverUsesGivenLogger(t *testing.T) {
 	os.Setenv("GRPC_GO_LOG_VERBOSITY_LEVEL", "99")
 
-	ctx, hook := testutil.NewTestContextWithLoggerHook()
+	ctx, logger := testutil.NewTestContextWithLogger()
 
 	s := grpc.NewServer()
 	defer s.GracefulStop()
@@ -166,7 +166,7 @@ func Test_serverUsesGivenLogger(t *testing.T) {
 
 	var connecting bool
 	cre := regexp.MustCompile(`ClientConn switching balancer`)
-	for _, entry := range hook.Entries {
+	for _, entry := range logger.Entries() {
 		if connecting {
 			break
 		}
@@ -176,7 +176,7 @@ func Test_serverUsesGivenLogger(t *testing.T) {
 }
 
 func Test_libMakesCorrectHandlerCalls(t *testing.T) {
-	ctx, _ := testutil.NewTestContextWithLoggerHook()
+	ctx, _ := testutil.NewTestContextWithLogger()
 
 	manager := &GrpcHandler{
 		cfg: localServer(),
@@ -188,7 +188,7 @@ func Test_libMakesCorrectHandlerCalls(t *testing.T) {
 	}
 
 	// Adapt deprecated GrpcManager type as GrpcServerManager struct
-	grpcServerManager, err := newGrpcServerManagerFromGrpcManager(manager)
+	grpcServerManager, err := newGrpcServerManagerFromGrpcManager(ctx, manager)
 	require.NoError(t, err)
 
 	srv := configurePublicGrpcServerListener(ctx, *grpcServerManager)
@@ -203,7 +203,7 @@ func Test_libMakesCorrectHandlerCalls(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	connectAndCheckReturn(t, grpc.WithInsecure())
+	connectAndCheckReturn(ctx, t, grpc.WithInsecure())
 	require.True(t, manager.methodsCalled["Interceptors"])
 	require.True(t, manager.methodsCalled["EnabledGrpcHandlers"])
 	require.True(t, manager.methodsCalled["GrpcPublicServerConfig"])

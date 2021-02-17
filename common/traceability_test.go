@@ -27,7 +27,7 @@ func TestTraceabilityMiddleware(t *testing.T) {
 	for i, tt := range tests {
 		tt := tt
 		t.Run(fmt.Sprintf("TestTraceabilityMiddleware#%d", i), func(t *testing.T) {
-			ctx, loghook := testutil.NewTestContextWithLoggerHook()
+			ctx, logger := testutil.NewTestContextWithLogger()
 
 			mware := TraceabilityMiddleware
 			body := bytes.NewBufferString("test")
@@ -40,9 +40,9 @@ func TestTraceabilityMiddleware(t *testing.T) {
 
 			fn := mware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
 				if tt.expectWarning {
-					require.NotEmpty(t, &loghook.Entries)
+					require.NotZero(t, logger.EntryCount())
 				} else {
-					require.Empty(t, &loghook.Entries)
+					require.Zero(t, logger.EntryCount())
 					require.Equal(t, strings.ToLower(*tt.reqid), strings.ToLower(GetTraceIDFromContext(r.Context()).String()))
 				}
 			}))

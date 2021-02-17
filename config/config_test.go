@@ -4,9 +4,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/anz-bank/sysl-go/log"
+
 	"gopkg.in/go-playground/validator.v9"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -57,7 +58,8 @@ func TestLoadConfig(t *testing.T) {
 	require.Equal(t, "/admintest", myConfig.Server.AdminServer.HTTP.BasePath)
 
 	require.True(t, defaultConfig.Library.Log.ReportCaller)
-	require.Equal(t, logrus.WarnLevel, defaultConfig.Library.Log.Level)
+	require.Equal(t, log.InfoLevel, defaultConfig.Library.Log.Level)
+	require.True(t, defaultConfig.Library.Log.LogPayload)
 
 	require.Equal(t, 8080, defaultConfig.GenCode.Upstream.HTTP.Common.Port)
 	require.Equal(t, 8081, defaultConfig.GenCode.Upstream.GRPC.Port)

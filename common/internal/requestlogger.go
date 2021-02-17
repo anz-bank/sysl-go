@@ -6,8 +6,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/anz-bank/pkg/log"
-	"github.com/anz-bank/sysl-go/logconfig"
+	"github.com/anz-bank/sysl-go/log"
+
+	"github.com/anz-bank/sysl-go/config"
 
 	"github.com/go-chi/chi/middleware"
 )
@@ -55,8 +56,9 @@ func (r *requestLogger) ResponseWriter(base http.ResponseWriter) http.ResponseWr
 }
 
 func (r *requestLogger) FlushLog() {
+	ctx := r.ctx
 	if r.flushed {
-		log.Info(r.ctx, "Already flushed the request")
+		log.Info(ctx, "Already flushed the request")
 		return
 	}
 	r.flushed = true
@@ -64,12 +66,13 @@ func (r *requestLogger) FlushLog() {
 		r.resp.header = r.rw.Header()
 	}
 
-	fields := log.With("logger", "common/internal/requestlogger.go").With("func", "FlushLog()")
+	ctx = log.WithStr(ctx, "logger", "common/internal/requestlogger.go")
+	ctx = log.WithStr(ctx, "func", "FlushLog()")
 
 	reqBody := r.req.body.String()
-	fields.Debugf(r.ctx, "Request: header - %s\nbody[len:%v]: - %s", r.req.header, len(reqBody), reqBody)
+	log.Debugf(ctx, "Request: header - %s\nbody[len:%v]: - %s", r.req.header, len(reqBody), reqBody)
 	respBody := r.resp.body.String()
-	fields.Debugf(r.ctx, "Response: header - %s\nbody[len:%v]: - %s", r.resp.header, len(respBody), respBody)
+	log.Debugf(ctx, "Response: header - %s\nbody[len:%v]: - %s", r.resp.header, len(respBody), respBody)
 }
 
 type nopLogger struct{}
@@ -79,9 +82,10 @@ func (r *nopLogger) ResponseWriter(base http.ResponseWriter) http.ResponseWriter
 func (r *nopLogger) FlushLog()                                                   {}
 
 func NewRequestLogger(ctx context.Context, req *http.Request) (RequestLogger, context.Context) {
-	if logconfig.IsVerboseLogging(ctx) {
+	cfg := config.GetDefaultConfig(ctx)
+	if cfg != nil && cfg.Library.Log.LogPayload {
 		l := &requestLogger{
-			ctx:        InitFieldsFromRequest(req).Onto(ctx),
+			ctx:        InitFieldsFromRequest(ctx, req),
 			protoMajor: req.ProtoMajor,
 		}
 		l.req.header = req.Header.Clone()

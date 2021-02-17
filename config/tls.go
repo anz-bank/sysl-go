@@ -10,9 +10,6 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
-
-	"github.com/anz-bank/sysl-go/common"
-	"github.com/sirupsen/logrus"
 )
 
 var cipherSuites = map[string]uint16{
@@ -69,10 +66,10 @@ type TLSConfig struct {
 }
 
 type TrustedCertPoolConfig struct {
-	Mode     *string                 `yaml:"mode" mapstructure:"mode"`
-	Encoding *string                 `yaml:"encoding" mapstructure:"encoding"`
-	Path     *string                 `yaml:"path" mapstructure:"path"`
-	Password *common.SensitiveString `yaml:"password" mapstructure:"password"`
+	Mode     *string          `yaml:"mode" mapstructure:"mode"`
+	Encoding *string          `yaml:"encoding" mapstructure:"encoding"`
+	Path     *string          `yaml:"path" mapstructure:"path"`
+	Password *SensitiveString `yaml:"password" mapstructure:"password"`
 }
 
 type ServerIdentityConfig struct {
@@ -384,7 +381,7 @@ func (t *TLSConfig) Validate() error {
 	}
 
 	if t.Ciphers == nil || len(t.Ciphers) == 0 {
-		logrus.Println("ciphers config missing")
+		log.Println("ciphers config missing")
 	}
 
 	var failedCiphers []string

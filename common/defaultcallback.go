@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/anz-bank/sysl-go/config"
+
 	"github.com/anz-bank/sysl-go/validator"
 	"github.com/go-chi/chi"
 )
@@ -63,4 +65,34 @@ func (g Callback) MapError(ctx context.Context, err error) *HTTPError {
 		return nil
 	}
 	return g.MapErrorFunc(ctx, err)
+}
+
+func NewCallbackV2(
+	config *config.GenCodeConfig,
+	downstreamTimeOut time.Duration,
+	mapError func(ctx context.Context, err error) *HTTPError,
+	addMiddleware func(ctx context.Context, r chi.Router),
+) Callback {
+	// construct the rest configuration (aka. gen callback)
+	return Callback{
+		DownstreamTimeout: downstreamTimeOut,
+		RouterBasePath:    config.Upstream.HTTP.BasePath,
+		UpstreamConfig:    &config.Upstream,
+		MapErrorFunc:      mapError,
+		AddMiddlewareFunc: addMiddleware,
+	}
+}
+
+// NewCallback is deprecated, prefer NewCallbackV2.
+func NewCallback(
+	config *config.GenCodeConfig,
+	downstreamTimeOut time.Duration,
+	mapError func(ctx context.Context, err error) *HTTPError,
+) Callback {
+	return NewCallbackV2(
+		config,
+		downstreamTimeOut,
+		mapError,
+		nil,
+	)
 }

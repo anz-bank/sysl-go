@@ -7,13 +7,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/anz-bank/sysl-go/logconfig"
+	"github.com/anz-bank/sysl-go/log"
+
 	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 )
 
 func TestLogger_FlushLog(t *testing.T) {
-	ctx, hook := testutil.NewTestContextWithLoggerHook()
+	ctx, logger := testutil.NewTestContextWithLogger(
+		testutil.WithLogLevel(log.DebugLevel),
+		testutil.WithLogPayload(true))
 
 	req, err := http.NewRequest("GET", "http://example.com/foo", nil)
 	require.NoError(t, err)
@@ -38,15 +41,15 @@ func TestLogger_FlushLog(t *testing.T) {
 	}
 	l.LogResponse(&resp)
 
-	require.Equal(t, 2, len(hook.Entries))
+	require.Equal(t, 2, logger.EntryCount())
 
 	l.FlushLog()
-	require.Equal(t, 3, len(hook.Entries))
-	require.Equal(t, "Already flushed the request", hook.LastEntry().Message)
+	require.Equal(t, 3, logger.EntryCount())
+	require.Equal(t, "Already flushed the request", logger.LastEntry().Message)
 }
 
 func TestRequestLogger_NilBody(t *testing.T) {
-	ctx, _ := testutil.NewTestContextWithLoggerHook()
+	ctx, _ := testutil.NewTestContextWithLogger()
 
 	req, err := http.NewRequest("DELETE", "http://example.com/foo", nil)
 	require.NoError(t, err)
@@ -57,9 +60,8 @@ func TestRequestLogger_NilBody(t *testing.T) {
 }
 
 func TestRequestLogger_ResponseWriter(t *testing.T) {
-	ctx, hook := testutil.NewTestContextWithLoggerHook()
+	ctx, logger := testutil.NewTestContextWithLogger()
 
-	ctx = logconfig.SetVerboseLogging(ctx, false)
 	req, err := http.NewRequest("GET", "http://example.com/foo", nil)
 	require.NoError(t, err)
 
@@ -68,5 +70,5 @@ func TestRequestLogger_ResponseWriter(t *testing.T) {
 
 	_, _ = rw.Write([]byte("hello"))
 	l.FlushLog()
-	require.Empty(t, hook.Entries)
+	require.Zero(t, logger.EntryCount())
 }

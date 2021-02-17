@@ -1,7 +1,7 @@
 library:
   log:
     format: text
-    level: 3
+    level: 4
     level1: fatal
     level2: error
     level3: panic
@@ -9,6 +9,7 @@ library:
     level5: debug
     level6: trace
     caller: true
+    logPayload: true
   profiling: true
 server:
   adminServer:
