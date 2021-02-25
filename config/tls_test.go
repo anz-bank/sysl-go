@@ -116,6 +116,7 @@ var tlsConfigSetupTests = []struct {
 		nil,
 		false,
 		false,
+		NewString("RenegotiateNever"),
 	},
 		fmt.Errorf("invalid TLSMin config: 1.4"), "TEST: tlsConfigSetupTests #1"},
 	{TLSConfig{
@@ -127,6 +128,7 @@ var tlsConfigSetupTests = []struct {
 		nil,
 		false,
 		false,
+		NewString("RenegotiateNever"),
 	},
 		fmt.Errorf("invalid client authentication policy: this_is_not_a_valid_policy"), "TEST: tlsConfigSetupTests #2"},
 	{TLSConfig{
@@ -139,6 +141,7 @@ var tlsConfigSetupTests = []struct {
 		nil,
 		false,
 		false,
+		NewString("RenegotiateNever"),
 	}, fmt.Errorf("TLS cipher suite configuration contains more ciphers than the number of known ciphers"), "TEST: tlsConfigSetupTests #3"},
 	{TLSConfig{
 		NewString("1.3"),
@@ -149,6 +152,7 @@ var tlsConfigSetupTests = []struct {
 		nil,
 		false,
 		false,
+		NewString("RenegotiateNever"),
 	},
 		fmt.Errorf("invalid TLS version config"), "TEST: tlsConfigSetupTests #4"},
 }
@@ -187,7 +191,7 @@ func TestConfigureTLS(t *testing.T) {
 		},
 	}
 	cfg := NewTLSConfig("1.2", "1.2", "RequireAndVerifyClientCert",
-		[]string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"}, identity)
+		[]string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"}, []*ServerIdentityConfig{&identity})
 
 	tlsCfg, err := MakeTLSConfig(cfg)
 	req.NoError(err)
@@ -287,6 +291,19 @@ var tlsInvalidConfigTests = []struct {
 		MaxVersion: NewString("1.5"),
 		ClientAuth: NewString("RequireAndVerifyClientCert"),
 	}, fmt.Errorf("max: TLS version not recognized"), "TEST: tlsInvalidConfigTests #7"},
+	{TLSConfig{
+		Ciphers:    []string{},
+		MinVersion: NewString("1.1"),
+		MaxVersion: NewString("1.2"),
+		ClientAuth: NewString("RequireAndVerifyClientCert"),
+	}, fmt.Errorf("renegotiation config missing"), "TEST: tlsInvalidConfigTests #8"},
+	{TLSConfig{
+		Ciphers:       []string{},
+		MinVersion:    NewString("1.1"),
+		MaxVersion:    NewString("1.2"),
+		ClientAuth:    NewString("RequireAndVerifyClientCert"),
+		Renegotiation: NewString("Abc"),
+	}, fmt.Errorf("renegotiation policy is invalid, expected policy is `RenegotiateNever`, `RenegotiateOnceAsClient` or `RenegotiateFreelyAsClient`, but got: Abc"), "TEST: tlsInvalidConfigTests #9"},
 }
 
 func TestValidateInvalidTlsConfigs(t *testing.T) {
@@ -294,6 +311,66 @@ func TestValidateInvalidTlsConfigs(t *testing.T) {
 		err := tt.in.Validate()
 		assert.Error(t, err, tt.name)
 		assert.Equal(t, tt.out, err, tt.name)
+	}
+}
+
+var tlsValidConfigTests = []struct {
+	in   *TLSConfig
+	name string
+}{
+	{nil, "TEST: tlsValidConfigTests #1"},
+	{
+		&TLSConfig{
+			Ciphers:       []string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"},
+			MinVersion:    NewString("1.2"),
+			MaxVersion:    NewString("1.2"),
+			ClientAuth:    NewString("RequireAndVerifyClientCert"),
+			Renegotiation: NewString("RenegotiateOnceAsClient"),
+			TrustedCertPool: &TrustedCertPoolConfig{
+				Mode:     NewString("directory"),
+				Encoding: NewString("PKCS12"),
+				Path:     NewString("."),
+				Password: NewSecret("UGFzc3dvcmQx"),
+			},
+			ServerIdentities: []*ServerIdentityConfig{
+				{
+					PKCS12Store: &Pkcs12Store{
+						NewString("./testdata/multicerttest.p12"),
+						NewSecret("UGFzc3dvcmQx"),
+					},
+				},
+			},
+		}, "TEST: tlsValidConfigTests #2",
+	},
+	{
+		&TLSConfig{
+			Ciphers:       []string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"},
+			MinVersion:    NewString("1.2"),
+			MaxVersion:    NewString("1.2"),
+			ClientAuth:    NewString("RequireAndVerifyClientCert"),
+			Renegotiation: NewString("RenegotiateOnceAsClient"),
+			TrustedCertPool: &TrustedCertPoolConfig{
+				Mode:     NewString("directory"),
+				Encoding: NewString("PKCS12"),
+				Path:     NewString("."),
+				Password: NewSecret("UGFzc3dvcmQx"),
+			},
+			ServerIdentities: []*ServerIdentityConfig{
+				{
+					CertKeyPair: &CertKeyPair{
+						NewString("."),
+						NewString("."),
+					},
+				},
+			},
+		}, "TEST: tlsValidConfigTests #3",
+	},
+}
+
+func TestValidateTlsConfig(t *testing.T) {
+	for _, tt := range tlsValidConfigTests {
+		err := tt.in.Validate()
+		assert.NoError(t, err, tt.name)
 	}
 }
 
@@ -456,6 +533,44 @@ func TestGetTrustedCAsByFile(t *testing.T) {
 	}
 }
 
+func TestGetTrustedCAsFromP12ByDir(t *testing.T) {
+	cfg := &TLSConfig{
+		Ciphers:    []string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"},
+		MinVersion: NewString("1.2"),
+		MaxVersion: NewString("1.2"),
+		ClientAuth: NewString("RequireAndVerifyClientCert"),
+		TrustedCertPool: &TrustedCertPoolConfig{
+			Mode:     NewString("directory"),
+			Encoding: NewString("pkcs12"),
+			Path:     NewString("./testdata"),
+			Password: NewSecret("UGFzc3dvcmQx"),
+		},
+	}
+
+	pool, err := GetTrustedCAs(cfg)
+	assert.NotNil(t, pool)
+	assert.NoError(t, err)
+}
+
+func TestGetTrustedCAsFromP12ByFile(t *testing.T) {
+	cfg := &TLSConfig{
+		Ciphers:    []string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"},
+		MinVersion: NewString("1.2"),
+		MaxVersion: NewString("1.2"),
+		ClientAuth: NewString("RequireAndVerifyClientCert"),
+		TrustedCertPool: &TrustedCertPoolConfig{
+			Mode:     NewString("file"),
+			Encoding: NewString("pkcs12"),
+			Path:     NewString("./testdata/multicerttest.p12"),
+			Password: NewSecret("UGFzc3dvcmQx"),
+		},
+	}
+
+	pool, err := GetTrustedCAs(cfg)
+	assert.NotNil(t, pool)
+	assert.NoError(t, err)
+}
+
 func TestGetTrustedCAsFromSystem(t *testing.T) {
 	cfg := &TLSConfig{
 		Ciphers:    []string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"},
@@ -475,6 +590,35 @@ func TestGetTrustedCAsFromSystem(t *testing.T) {
 	}
 }
 
+var tlsValidTLSTrustedCertPoolConfigTests = []struct {
+	in   *TrustedCertPoolConfig
+	name string
+}{
+	{&TrustedCertPoolConfig{
+		Mode:     NewString("directory"),
+		Encoding: NewString("PEM"),
+		Path:     NewString(""),
+	}, "TEST: tlsValidTlsTrustedCertPoolConfigTests #1"},
+	{&TrustedCertPoolConfig{
+		Mode:     NewString("File"),
+		Encoding: NewString("PEM"),
+		Path:     NewString(""),
+	}, "TEST: tlsValidTlsTrustedCertPoolConfigTests #2"},
+	{&TrustedCertPoolConfig{
+		Mode:     NewString("directory"),
+		Encoding: NewString("PKCS12"),
+		Path:     NewString(""),
+		Password: NewSecret("MTIzNA=="),
+	}, "TEST: tlsValidTlsTrustedCertPoolConfigTests #3"},
+}
+
+func TestValidateTlsTrustedCertPoolConfig(t *testing.T) {
+	for _, tt := range tlsValidTLSTrustedCertPoolConfigTests {
+		err := tt.in.validate()
+		assert.NoError(t, err, tt.name)
+	}
+}
+
 var tlsInvalidTLSTrustedCertPoolConfigTests = []struct {
 	in   *TrustedCertPoolConfig
 	name string
@@ -484,6 +628,11 @@ var tlsInvalidTLSTrustedCertPoolConfigTests = []struct {
 		Encoding: NewString("PEM"),
 		Path:     NewString(""),
 	}, "TEST: tlsValidTlsTrustedCertPoolConfigTests #2"},
+	{&TrustedCertPoolConfig{
+		Mode:     NewString("directory"),
+		Encoding: NewString("PKCS12"),
+		Path:     NewString(""),
+	}, "TEST: tlsValidTlsTrustedCertPoolConfigTests #3"},
 	{&TrustedCertPoolConfig{
 		Mode:     NewString("directory"),
 		Encoding: NewString("UNKNOWN_ENCODING"),
@@ -502,6 +651,129 @@ func TestInvalidateTlsTrustedCertPoolConfig(t *testing.T) {
 	}
 }
 
+var ourIdentityCertificatesFromP12tests = []struct {
+	in   *ServerIdentityConfig
+	name string
+}{
+	{&ServerIdentityConfig{
+		PKCS12Store: &Pkcs12Store{
+			NewString("./testdata/multicerttest.p12"),
+			NewSecret("UGFzc3dvcmQx"),
+		},
+	}, "TEST: ourIdentityCertificatesFromP12tests #1"},
+	{&ServerIdentityConfig{
+		PKCS12Store: &Pkcs12Store{
+			NewString("./testdata/singlecerttest.p12"),
+			NewSecret("MTIzNA=="),
+		},
+	}, "TEST: ourIdentityCertificatesFromP12tests #2"},
+}
+
+func TestIdentityCertificatesFromP12(t *testing.T) {
+	for _, tt := range ourIdentityCertificatesFromP12tests {
+		cfg := NewTLSConfig("1.2", "1.2", "RequireAndVerifyClientCert", []string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"}, []*ServerIdentityConfig{tt.in})
+		res, err := OurIdentityCertificates(cfg)
+		assert.NoError(t, err, tt.name)
+		assert.NotNil(t, res, tt.name)
+		assert.NotNil(t, res[0].Certificate, tt.name)
+		assert.NotNil(t, res[0].PrivateKey, tt.name)
+	}
+}
+
+func TestIdentityCertificatesDecodeP12Fail(t *testing.T) {
+	cfg := NewTLSConfig("1.2", "1.2", "RequireAndVerifyClientCert", []string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"},
+		[]*ServerIdentityConfig{{PKCS12Store: &Pkcs12Store{NewString("./testdata/multicerttest.p12"), NewSecret("YWJjZA==")}}})
+
+	res, err := OurIdentityCertificates(cfg)
+	assert.Nil(t, res)
+	assert.Error(t, err)
+	assert.EqualError(t, err, "pkcs12: decryption password incorrect")
+}
+
+func TestIdentityCertificatesWithNilServerIdentity(t *testing.T) {
+	cfg := &TLSConfig{
+		MinVersion:         NewString("1.2"),
+		MaxVersion:         NewString("1.2"),
+		ClientAuth:         NewString("RequireAndVerifyClientCert"),
+		Ciphers:            []string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"},
+		ServerIdentities:   nil,
+		InsecureSkipVerify: false,
+		Renegotiation:      NewString("RenegotiateNever"),
+	}
+	res, err := OurIdentityCertificates(cfg)
+	assert.Nil(t, res)
+	assert.Nil(t, err)
+}
+
+func TestIdentityCertificatesWithNilServerIdentityCertKeyPairAndPKCS12Store(t *testing.T) {
+	cfg := &TLSConfig{
+		MinVersion:         NewString("1.2"),
+		MaxVersion:         NewString("1.2"),
+		ClientAuth:         NewString("RequireAndVerifyClientCert"),
+		Ciphers:            []string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"},
+		ServerIdentities:   []*ServerIdentityConfig{{}},
+		InsecureSkipVerify: false,
+		Renegotiation:      NewString("RenegotiateNever"),
+	}
+	res, err := OurIdentityCertificates(cfg)
+	assert.Equal(t, []tls.Certificate{}, res)
+	assert.Nil(t, err)
+}
+
+var ourIdentityCertificatesFromCertTestsLoadError = []struct {
+	in   *ServerIdentityConfig
+	name string
+}{
+	{&ServerIdentityConfig{
+		CertKeyPair: &CertKeyPair{
+			CertPath: NewString("key1"),
+			KeyPath:  NewString("key"),
+		},
+	}, "TEST: ourIdentityCertificatesFromP12tests #1 cert load failed"},
+	{&ServerIdentityConfig{
+		CertKeyPair: &CertKeyPair{
+			CertPath: NewString("key"),
+			KeyPath:  NewString("key2"),
+		},
+	}, "TEST: ourIdentityCertificatesFromP12tests #2 key load failed"},
+}
+
+func TestIdentityCertificatesNoCertFileError(t *testing.T) {
+	for _, tt := range ourIdentityCertificatesFromCertTestsLoadError {
+		cfg := NewTLSConfig("1.2", "1.2", "RequireAndVerifyClientCert", []string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"}, []*ServerIdentityConfig{tt.in})
+		res, err := OurIdentityCertificates(cfg)
+		assert.Error(t, err, tt.name)
+		assert.Nil(t, res, tt.name)
+	}
+}
+
+var ourIdentityCertificatesFromP12LoadFailTests = []struct {
+	in   *ServerIdentityConfig
+	name string
+}{
+	{&ServerIdentityConfig{
+		PKCS12Store: &Pkcs12Store{
+			NewString("multicerttest1.p12"),
+			NewSecret("UGFzc3dvcmQx"),
+		},
+	}, "TEST: ourIdentityCertificatesFromP12LoadFailTests #1"},
+	{&ServerIdentityConfig{
+		PKCS12Store: &Pkcs12Store{
+			NewString("multicerttest1.p12"),
+			NewSecret("UGFzc3dvcmQx??"),
+		},
+	}, "TEST: ourIdentityCertificatesFromP12LoadFailTests #2"},
+}
+
+func TestIdentityCertificatesLoadPKCS12StoreError(t *testing.T) {
+	for _, tt := range ourIdentityCertificatesFromP12LoadFailTests {
+		cfg := NewTLSConfig("1.2", "1.2", "RequireAndVerifyClientCert", []string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"}, []*ServerIdentityConfig{tt.in})
+		res, err := OurIdentityCertificates(cfg)
+		assert.Error(t, err, tt.name)
+		assert.Nil(t, res, tt.name)
+	}
+}
+
 func TestInvalidBuildPoolEncodingTypes(t *testing.T) {
 	cfg := &TrustedCertPoolConfig{
 		Mode:     NewString("directory"),
@@ -511,6 +783,33 @@ func TestInvalidBuildPoolEncodingTypes(t *testing.T) {
 	res, err := buildPool(cfg)
 	assert.Nil(t, res)
 	assert.Error(t, err)
+}
+
+func TestValidBuildPoolEncodingTypes(t *testing.T) {
+	cfg := &TrustedCertPoolConfig{
+		Mode:     NewString("directory"),
+		Encoding: NewString("pkcs12"),
+		Path:     NewString("./testdata"),
+		Password: NewSecret("UGFzc3dvcmQx"),
+	}
+
+	res, err := buildPool(cfg)
+	assert.NoError(t, err)
+	assert.NotNil(t, res)
+}
+
+func TestTLSRenegotiation(t *testing.T) {
+	renegotiation, err := TLSRenegotiationSupport(&TLSConfig{Renegotiation: NewString("RENEGotiateOnceAsClient")})
+
+	assert.NoError(t, err)
+	assert.Equal(t, tls2.RenegotiateOnceAsClient, *renegotiation)
+}
+
+func TestTLSRenegotiationFail(t *testing.T) {
+	renegotiation, err := TLSRenegotiationSupport(&TLSConfig{Renegotiation: NewString("RENEGotiateOnce")})
+
+	assert.Nil(t, renegotiation)
+	assert.EqualError(t, err, "renegotiation policy is invalid, expected value is one item in [renegotiatefreelyasclient renegotiatenever renegotiateonceasclient], but got: RENEGotiateOnce")
 }
 
 func TestInsecureSkipVerify(t *testing.T) {
@@ -542,10 +841,12 @@ func TestSelfSignedTLSConfig(t *testing.T) {
 	cfg := &TLSConfig{
 		MinVersion: NewString("1.2"),
 		MaxVersion: NewString("1.3"),
-		ServerIdentity: &ServerIdentityConfig{
-			CertKeyPair: &CertKeyPair{
-				CertPath: &certFilename,
-				KeyPath:  &keyFilename,
+		ServerIdentities: []*ServerIdentityConfig{
+			{
+				CertKeyPair: &CertKeyPair{
+					CertPath: &certFilename,
+					KeyPath:  &keyFilename,
+				},
 			},
 		},
 		InsecureSkipVerify: false,

@@ -3,13 +3,17 @@ package config
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"sort"
 	"strings"
+
+	pkcs12 "github.com/anz-bank/go-pkcs12"
 )
 
 var cipherSuites = map[string]uint16{
@@ -42,6 +46,8 @@ var cipherSuites = map[string]uint16{
 }
 
 var tlsVersions = map[string]uint16{
+	"1.0": tls.VersionTLS10,
+	"1.1": tls.VersionTLS11,
 	"1.2": tls.VersionTLS12,
 	"1.3": tls.VersionTLS13,
 }
@@ -54,15 +60,23 @@ var clientAuthTypes = map[string]tls.ClientAuthType{
 	"RequireAndVerifyClientCert": tls.RequireAndVerifyClientCert,
 }
 
+// Downward compatibility for low version TLS.
+var renegotiationSupportTypes = map[string]tls.RenegotiationSupport{
+	"renegotiatenever":          tls.RenegotiateNever,
+	"renegotiateonceasclient":   tls.RenegotiateOnceAsClient,
+	"renegotiatefreelyasclient": tls.RenegotiateFreelyAsClient,
+}
+
 type TLSConfig struct {
-	MinVersion         *string                `yaml:"min" mapstructure:"min"`
-	MaxVersion         *string                `yaml:"max" mapstructure:"max"`
-	ClientAuth         *string                `yaml:"clientAuth" mapstructure:"clientAuth"`
-	Ciphers            []string               `yaml:"ciphers" mapstructure:"ciphers"`
-	ServerIdentity     *ServerIdentityConfig  `yaml:"serverIdentity" mapstructure:"serverIdentity"`
-	TrustedCertPool    *TrustedCertPoolConfig `yaml:"trustedCertPool" mapstructure:"trustedCertPool"`
-	InsecureSkipVerify bool                   `yaml:"insecureSkipVerify" mapstructure:"insecureSkipVerify"`
-	SelfSigned         bool                   `yaml:"selfSigned" mapstructure:"selfSigned"`
+	MinVersion         *string                 `yaml:"min" mapstructure:"min"`
+	MaxVersion         *string                 `yaml:"max" mapstructure:"max"`
+	ClientAuth         *string                 `yaml:"clientAuth" mapstructure:"clientAuth"`
+	Ciphers            []string                `yaml:"ciphers" mapstructure:"ciphers"`
+	ServerIdentities   []*ServerIdentityConfig `yaml:"serverIdentities" mapstructure:"serverIdentities"` // One server needs more than 1 identities in some cases.
+	TrustedCertPool    *TrustedCertPoolConfig  `yaml:"trustedCertPool" mapstructure:"trustedCertPool"`
+	InsecureSkipVerify bool                    `yaml:"insecureSkipVerify" mapstructure:"insecureSkipVerify"`
+	SelfSigned         bool                    `yaml:"selfSigned" mapstructure:"selfSigned"`
+	Renegotiation      *string                 `yaml:"renegotiation" mapstructure:"renegotiation"` // Downward compatibility for low version TLS.
 }
 
 type TrustedCertPoolConfig struct {
@@ -74,11 +88,18 @@ type TrustedCertPoolConfig struct {
 
 type ServerIdentityConfig struct {
 	CertKeyPair *CertKeyPair `yaml:"certKeyPair" mapstructure:"certKeyPair"`
+	// Add Pkcs12Store to store cert and key as it is protected by password
+	PKCS12Store *Pkcs12Store `yaml:"p12Store" mapstructure:"p12Store"`
 }
 
 type CertKeyPair struct {
 	CertPath *string `yaml:"certPath" mapstructure:"certPath"`
 	KeyPath  *string `yaml:"keyPath" mapstructure:"keyPath"`
+}
+
+type Pkcs12Store struct {
+	Path     *string          `yaml:"path" mapstructure:"path"`
+	Password *SensitiveString `yaml:"password" mapstructure:"password"`
 }
 
 // Cert path modes.
@@ -90,11 +111,13 @@ const (
 
 // Cert encoding types.
 const (
-	PEM = "pem"
+	PEM    = "pem"
+	PKCS12 = "pkcs12"
 )
 
 var CertPoolEncodingTypes = map[string]func(cfg *TrustedCertPoolConfig) (pool *x509.CertPool, err error){
-	PEM: buildPoolFromPEM,
+	PEM:    buildPoolFromPEM,
+	PKCS12: buildPoolFromPKCS12,
 }
 
 func TLSVersions(cfg *TLSConfig) (min, max uint16, err error) {
@@ -147,19 +170,70 @@ func TLSClientAuth(cfg *TLSConfig) (*tls.ClientAuthType, error) {
 	return &policy, nil
 }
 
-func OurIdentityCertificates(cfg *TLSConfig) ([]tls.Certificate, error) {
-	cs := make([]tls.Certificate, 0)
-	if cfg.ServerIdentity.CertKeyPair != nil {
-		pair := cfg.ServerIdentity.CertKeyPair
-		cert, err := tls.LoadX509KeyPair(*pair.CertPath, *pair.KeyPath)
-		if err != nil {
-			return nil, err
-		}
-		cs = append(cs, cert)
-		return cs, nil
+func TLSRenegotiationSupport(cfg *TLSConfig) (*tls.RenegotiationSupport, error) {
+	if policy, ok := renegotiationSupportTypes[strings.ToLower(*cfg.Renegotiation)]; ok {
+		return &policy, nil
 	}
 
-	return nil, nil
+	// Get allowed values, array has better string format than slice, so use array here.
+	keys := []string{}
+	for key := range renegotiationSupportTypes {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+
+	return nil, fmt.Errorf("renegotiation policy is invalid, expected value is one item in %s, but got: %s", keys, *cfg.Renegotiation)
+}
+
+func OurIdentityCertificates(cfg *TLSConfig) ([]tls.Certificate, error) {
+	if len(cfg.ServerIdentities) == 0 {
+		return nil, nil
+	}
+
+	cs := make([]tls.Certificate, 0)
+	for _, identity := range cfg.ServerIdentities {
+		if identity == nil {
+			continue
+		}
+
+		if identity.CertKeyPair != nil {
+			pair := identity.CertKeyPair
+			cert, err := tls.LoadX509KeyPair(*pair.CertPath, *pair.KeyPath)
+			if err != nil {
+				return nil, err
+			}
+			cs = append(cs, cert)
+		} else if identity.PKCS12Store != nil {
+			passBytes, err := base64.StdEncoding.DecodeString((identity.PKCS12Store.Password).Value())
+			if err != nil {
+				return nil, err
+			}
+
+			pass := string(passBytes)
+
+			tlsCert := tls.Certificate{}
+
+			p12bytes, err := ioutil.ReadFile(*identity.PKCS12Store.Path)
+			if err != nil {
+				return nil, err
+			}
+
+			privKey, cert, caCerts, err := pkcs12.DecodeChain(p12bytes, pass)
+			if err != nil {
+				return nil, err
+			}
+
+			tlsCert.PrivateKey = privKey
+			tlsCert.Certificate = append(tlsCert.Certificate, cert.Raw)
+			tlsCert.Leaf = cert
+			for _, caCert := range caCerts {
+				tlsCert.Certificate = append(tlsCert.Certificate, caCert.Raw)
+			}
+			cs = append(cs, tlsCert)
+		}
+	}
+
+	return cs, nil
 }
 
 func findCertsFromPath(cfg *TrustedCertPoolConfig) ([]string, error) {
@@ -216,6 +290,58 @@ func buildPoolFromPEM(cfg *TrustedCertPoolConfig) (*x509.CertPool, error) {
 		if !addedCerts {
 			return nil, fmt.Errorf("failed to append any certificates to the RootCA. The following certs failed: %v", failedCerts)
 		}
+		//TODO: consider redo logging code.
+		log.Printf("failed to append the following certs to RootCAs: %v", failedCerts)
+	}
+
+	return pool, nil
+}
+
+func buildPoolFromPKCS12(cfg *TrustedCertPoolConfig) (*x509.CertPool, error) {
+	pool := x509.NewCertPool()
+
+	passBytes, err := base64.StdEncoding.DecodeString((*cfg.Password).Value())
+	if err != nil {
+		return nil, err
+	}
+
+	pass := string(passBytes)
+
+	files, err := findCertsFromPath(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	var failedCerts []string
+	addedCerts := false
+	for _, file := range files {
+		p12bytes, err := ioutil.ReadFile(file)
+		if err != nil {
+			failedCerts = append(failedCerts, file)
+
+			continue
+		}
+
+		_, cert, caCerts, err := pkcs12.DecodeChain(p12bytes, pass)
+		if err != nil {
+			//TODO: consider redo logging code.
+			log.Println(err)
+			failedCerts = append(failedCerts, file)
+			continue
+		}
+
+		pool.AddCert(cert)
+		for _, cert := range caCerts {
+			pool.AddCert(cert)
+		}
+		addedCerts = true
+	}
+
+	if failedCerts != nil {
+		if !addedCerts {
+			return nil, fmt.Errorf("failed to append any certificates to the RootCA. The following certs failed: %v", failedCerts)
+		}
+		//TODO: consider redo logging code.
 		log.Printf("failed to append the following certs to RootCAs: %v", failedCerts)
 	}
 
@@ -280,6 +406,7 @@ func makeSelfSignedTLSConfig(cfg *TLSConfig) (*tls.Config, error) {
 	}, nil
 }
 
+//nolint:funlen
 func MakeTLSConfig(cfg *TLSConfig) (*tls.Config, error) {
 	if cfg == nil {
 		return nil, nil
@@ -287,6 +414,8 @@ func MakeTLSConfig(cfg *TLSConfig) (*tls.Config, error) {
 
 	if cfg.InsecureSkipVerify {
 		//nolint:gosec // This is configured by the user
+		//TODO: consider redo logging code.
+		log.Println("It is insecure due to skipping server certificate verification")
 		return &tls.Config{InsecureSkipVerify: true}, nil
 	}
 
@@ -319,6 +448,11 @@ func MakeTLSConfig(cfg *TLSConfig) (*tls.Config, error) {
 		return nil, err
 	}
 
+	renegotiation, err := TLSRenegotiationSupport(cfg)
+	if err != nil {
+		return nil, err
+	}
+
 	settings := &tls.Config{
 		MinVersion:               tlsMin,
 		MaxVersion:               tlsMax,
@@ -337,6 +471,10 @@ func MakeTLSConfig(cfg *TLSConfig) (*tls.Config, error) {
 		ClientAuth: *policy,
 		// Certificate authorities to trust when receiving certs from other servers (making requests, i.e acting as client)
 		RootCAs: trustedCAs,
+
+		InsecureSkipVerify: cfg.InsecureSkipVerify,
+
+		Renegotiation: *renegotiation,
 	}
 
 	return settings, nil
@@ -381,6 +519,7 @@ func (t *TLSConfig) Validate() error {
 	}
 
 	if t.Ciphers == nil || len(t.Ciphers) == 0 {
+		//TODO: consider redo logging code.
 		log.Println("ciphers config missing")
 	}
 
@@ -395,12 +534,25 @@ func (t *TLSConfig) Validate() error {
 		return fmt.Errorf("ciphers: %v are not valid", failedCiphers)
 	}
 
-	if t.ServerIdentity == nil {
-		return fmt.Errorf("serverIdentity config missing")
+	if t.Renegotiation == nil {
+		return fmt.Errorf("renegotiation config missing")
 	}
 
-	if err := t.ServerIdentity.validate(); err != nil {
-		return fmt.Errorf("serverIdentity.%v", err)
+	if _, ok := renegotiationSupportTypes[strings.ToLower(*t.Renegotiation)]; !ok {
+		return fmt.Errorf("renegotiation policy is invalid, expected policy is `RenegotiateNever`, `RenegotiateOnceAsClient` or `RenegotiateFreelyAsClient`, but got: %s", *t.Renegotiation)
+	}
+
+	if len(t.ServerIdentities) == 0 {
+		return fmt.Errorf("serverIdentities config missing")
+	}
+
+	for i, identity := range t.ServerIdentities {
+		if identity == nil {
+			return fmt.Errorf("serverIdentities[%d] %s", i, "config missing")
+		}
+		if err := identity.validate(); err != nil {
+			return fmt.Errorf("serverIdentity[%d].%w", i, err)
+		}
 	}
 
 	if t.TrustedCertPool == nil {
@@ -415,9 +567,19 @@ func (t *TLSConfig) Validate() error {
 }
 
 func (b *ServerIdentityConfig) validate() error {
+	if (b.PKCS12Store != nil) == (b.CertKeyPair != nil) {
+		return fmt.Errorf("p12Store/certKeyPair: only one may be configured")
+	}
+
 	if b.CertKeyPair != nil {
 		if err := b.CertKeyPair.validate(); err != nil {
 			return fmt.Errorf("certKeyPair.%v", err)
+		}
+	}
+
+	if b.PKCS12Store != nil {
+		if err := b.PKCS12Store.validate(); err != nil {
+			return fmt.Errorf("p12Store.%v", err)
 		}
 	}
 
@@ -431,6 +593,18 @@ func (c *CertKeyPair) validate() error {
 
 	if c.CertPath == nil {
 		return fmt.Errorf("certPath must be set")
+	}
+
+	return nil
+}
+
+func (p *Pkcs12Store) validate() error {
+	if p.Path == nil {
+		return fmt.Errorf("path must be set")
+	}
+
+	if p.Password == nil {
+		return fmt.Errorf("password must be set")
 	}
 
 	return nil
@@ -452,6 +626,11 @@ func (t *TrustedCertPoolConfig) validate() error {
 		if t.Encoding != nil {
 			lowEncoding := strings.ToLower(*t.Encoding)
 			t.Encoding = &lowEncoding
+			if *t.Encoding == PKCS12 {
+				if t.Password == nil {
+					return fmt.Errorf("password config missing. Must be provided if the encoding config provided is type of %s", PKCS12)
+				}
+			}
 		} else {
 			return fmt.Errorf("encoding missing")
 		}

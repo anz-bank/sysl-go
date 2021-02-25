@@ -10,13 +10,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func NewTLSConfig(tlsMin, tlsMax string, clientAuth string, ciphers []string, identity ServerIdentityConfig) *TLSConfig {
+func NewTLSConfig(tlsMin, tlsMax string, clientAuth string, ciphers []string, identities []*ServerIdentityConfig) *TLSConfig {
 	return &TLSConfig{
-		MinVersion:     &tlsMin,
-		MaxVersion:     &tlsMax,
-		ClientAuth:     &clientAuth,
-		Ciphers:        ciphers,
-		ServerIdentity: &identity,
+		MinVersion:       &tlsMin,
+		MaxVersion:       &tlsMax,
+		ClientAuth:       &clientAuth,
+		Ciphers:          ciphers,
+		ServerIdentities: identities,
+		Renegotiation:    NewString("RenegotiateNever"),
 	}
 }
 

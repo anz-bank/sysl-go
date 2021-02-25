@@ -46,10 +46,12 @@ func localSecureServer() config.CommonServerConfig {
 			MaxVersion: &maxVer,
 			ClientAuth: &clientAuth,
 			Ciphers:    ciphers,
-			ServerIdentity: &config.ServerIdentityConfig{
-				CertKeyPair: &config.CertKeyPair{
-					CertPath: &certPath,
-					KeyPath:  &keyPath,
+			ServerIdentities: []*config.ServerIdentityConfig{
+				{
+					CertKeyPair: &config.CertKeyPair{
+						CertPath: &certPath,
+						KeyPath:  &keyPath,
+					},
 				},
 			},
 		},
