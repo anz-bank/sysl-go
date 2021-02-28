@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -20,9 +21,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/anz-bank/sysl-go/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+var ctx = log.PutLogger(context.Background(), log.NewDefaultLogger())
 
 // TLS
 //nolint:goconst // Better readability inline
@@ -159,7 +163,7 @@ var tlsConfigSetupTests = []struct {
 
 func TestConfigureTLSInvalidConfig(t *testing.T) {
 	for _, tt := range tlsConfigSetupTests {
-		_, err := MakeTLSConfig(&tt.in)
+		_, err := MakeTLSConfig(ctx, &tt.in)
 		assert.Error(t, err, tt.name)
 		assert.Equal(t, tt.out, err, tt.name)
 	}
@@ -193,10 +197,10 @@ func TestConfigureTLS(t *testing.T) {
 	cfg := NewTLSConfig("1.2", "1.2", "RequireAndVerifyClientCert",
 		[]string{"TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"}, []*ServerIdentityConfig{&identity})
 
-	tlsCfg, err := MakeTLSConfig(cfg)
+	tlsCfg, err := MakeTLSConfig(ctx, cfg)
 	req.NoError(err)
 
-	tempCAs, err := GetTrustedCAs(cfg)
+	tempCAs, err := GetTrustedCAs(ctx, cfg)
 	req.NoError(err)
 
 	expectedTLS := &tls2.Config{
@@ -308,7 +312,7 @@ var tlsInvalidConfigTests = []struct {
 
 func TestValidateInvalidTlsConfigs(t *testing.T) {
 	for _, tt := range tlsInvalidConfigTests {
-		err := tt.in.Validate()
+		err := tt.in.Validate(ctx)
 		assert.Error(t, err, tt.name)
 		assert.Equal(t, tt.out, err, tt.name)
 	}
@@ -369,7 +373,7 @@ var tlsValidConfigTests = []struct {
 
 func TestValidateTlsConfig(t *testing.T) {
 	for _, tt := range tlsValidConfigTests {
-		err := tt.in.Validate()
+		err := tt.in.Validate(ctx)
 		assert.NoError(t, err, tt.name)
 	}
 }
@@ -491,7 +495,7 @@ func TestGetTrustedCAsFromPEMByDir(t *testing.T) {
 	err = generateSelfSignedCert(nil, "", certPath, keyPath)
 	require.NoError(t, err)
 
-	pool, err = GetTrustedCAs(cfg)
+	pool, err = GetTrustedCAs(ctx, cfg)
 	assert.NotNil(t, pool)
 	assert.NoError(t, err)
 }
@@ -527,7 +531,7 @@ func TestGetTrustedCAsByFile(t *testing.T) {
 		err := generateSelfSignedCert(nil, "", *tt.in.TrustedCertPool.Path, filepath.Join(tmpDir, "key"))
 		require.NoError(t, err, tt.name)
 
-		pool, err = GetTrustedCAs(tt.in)
+		pool, err = GetTrustedCAs(ctx, tt.in)
 		assert.NotNil(t, pool, tt.name)
 		assert.NoError(t, err, tt.name)
 	}
@@ -547,7 +551,7 @@ func TestGetTrustedCAsFromP12ByDir(t *testing.T) {
 		},
 	}
 
-	pool, err := GetTrustedCAs(cfg)
+	pool, err := GetTrustedCAs(ctx, cfg)
 	assert.NotNil(t, pool)
 	assert.NoError(t, err)
 }
@@ -566,7 +570,7 @@ func TestGetTrustedCAsFromP12ByFile(t *testing.T) {
 		},
 	}
 
-	pool, err := GetTrustedCAs(cfg)
+	pool, err := GetTrustedCAs(ctx, cfg)
 	assert.NotNil(t, pool)
 	assert.NoError(t, err)
 }
@@ -581,7 +585,7 @@ func TestGetTrustedCAsFromSystem(t *testing.T) {
 			Mode: NewString("system"),
 		},
 	}
-	res, err := GetTrustedCAs(cfg)
+	res, err := GetTrustedCAs(ctx, cfg)
 	assert.NoError(t, err)
 	if runtime.GOOS == "windows" {
 		assert.Nil(t, res)
@@ -780,7 +784,7 @@ func TestInvalidBuildPoolEncodingTypes(t *testing.T) {
 		Encoding: NewString("UNKNOWN_CERT_ENCODING"),
 		Path:     NewString("."),
 	}
-	res, err := buildPool(cfg)
+	res, err := buildPool(ctx, cfg)
 	assert.Nil(t, res)
 	assert.Error(t, err)
 }
@@ -793,7 +797,7 @@ func TestValidBuildPoolEncodingTypes(t *testing.T) {
 		Password: NewSecret("UGFzc3dvcmQx"),
 	}
 
-	res, err := buildPool(cfg)
+	res, err := buildPool(ctx, cfg)
 	assert.NoError(t, err)
 	assert.NotNil(t, res)
 }
@@ -817,7 +821,7 @@ func TestInsecureSkipVerify(t *testing.T) {
 		InsecureSkipVerify: true,
 	}
 
-	tlsConfig, err := MakeTLSConfig(cfg)
+	tlsConfig, err := MakeTLSConfig(ctx, cfg)
 	assert.NoError(t, err)
 	assert.Equal(t, true, tlsConfig.InsecureSkipVerify)
 }
@@ -852,7 +856,7 @@ func TestSelfSignedTLSConfig(t *testing.T) {
 		InsecureSkipVerify: false,
 		SelfSigned:         true,
 	}
-	tlsConfig, err := MakeTLSConfig(cfg)
+	tlsConfig, err := MakeTLSConfig(ctx, cfg)
 	assert.NoError(t, err)
 	assert.Equal(t, false, tlsConfig.InsecureSkipVerify)
 	assert.Nil(t, tlsConfig.CipherSuites)

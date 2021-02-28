@@ -8,9 +8,9 @@ import (
 	pb "grpc_custom_server_options/internal/gen/pb/gateway"
 	gateway "grpc_custom_server_options/internal/gen/pkg/servers/gateway"
 
-	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core"
+	"github.com/anz-bank/sysl-go/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -88,13 +88,11 @@ func newAppServer(ctx context.Context) (core.StoppableServer, error) {
 }
 
 func main() {
-	// initialise context with pkg logger
-	logger := log.NewStandardLogger()
-	ctx := log.WithLogger(logger).WithConfigs(log.SetVerboseMode(true)).Onto(context.Background())
+	ctx := log.PutLogger(context.Background(), log.NewDefaultLogger())
 
 	handleError := func(err error) {
 		if err != nil {
-			log.Error(ctx, err)
+			log.Error(ctx, err, "something goes wrong")
 			os.Exit(1)
 		}
 	}

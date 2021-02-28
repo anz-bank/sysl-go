@@ -10,7 +10,6 @@ import (
 
 	pb "grpc_custom_server_options/internal/gen/pb/gateway"
 
-	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
@@ -137,12 +136,8 @@ func TestCustomisationOfServerOptions(t *testing.T) {
 			serverAddr, err := getServerAddr(scenario.appCfg)
 			require.NoError(t, err)
 
-			// Initialise context with pkg logger
-			logger := log.NewStandardLogger()
-			ctx := log.WithLogger(logger).Onto(context.Background())
-
 			// Override sysl-go app command line interface to directly pass in app config
-			ctx = core.WithConfigFile(ctx, scenario.appCfg)
+			ctx := core.WithConfigFile(context.Background(), scenario.appCfg)
 
 			appServer, err := newAppServer(ctx)
 			require.NoError(t, err)

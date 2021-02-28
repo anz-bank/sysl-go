@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
 	"github.com/stretchr/testify/require"
@@ -64,13 +63,8 @@ func doPingRequestResponse(ctx context.Context, identifier int) (int, error) {
 }
 
 func TestApplicationSmokeTest(t *testing.T) {
-
-	// Initialise context with pkg logger
-	logger := log.NewStandardLogger()
-	ctx := log.WithLogger(logger).Onto(context.Background())
-
 	// Override sysl-go app command line interface to directly pass in app config
-	ctx = core.WithConfigFile(ctx, []byte(applicationConfig))
+	ctx := core.WithConfigFile(context.Background(), []byte(applicationConfig))
 
 	// Set environment variable to configure what port the server should listen on
 	os.Setenv("ASDF_GENCODE_UPSTREAM_HTTP_COMMON_PORT", "9021")

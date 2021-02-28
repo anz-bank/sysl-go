@@ -1,16 +1,18 @@
 package config
 
 import (
+	"context"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-func ExtractGrpcServerOptions(cfg *CommonServerConfig) ([]grpc.ServerOption, error) {
+func ExtractGrpcServerOptions(ctx context.Context, cfg *CommonServerConfig) ([]grpc.ServerOption, error) {
 	if cfg == nil || cfg.TLS == nil {
 		return []grpc.ServerOption{}, nil
 	}
 
-	tlsConfig, err := MakeTLSConfig(cfg.TLS)
+	tlsConfig, err := MakeTLSConfig(ctx, cfg.TLS)
 	if err != nil {
 		return nil, err
 	}
@@ -34,13 +36,13 @@ func NewDefaultCommonGRPCDownstreamData() *CommonGRPCDownstreamData {
 // DefaultGRPDialOptions creates []grpc.DialOption from the given config.
 // If cfg is nil then NewDefaultCommonGRPCDownstreamData will be used to define
 // the dial options.
-func DefaultGrpcDialOptions(cfg *CommonGRPCDownstreamData) ([]grpc.DialOption, error) {
+func DefaultGrpcDialOptions(ctx context.Context, cfg *CommonGRPCDownstreamData) ([]grpc.DialOption, error) {
 	if cfg == nil {
 		cfg = NewDefaultCommonGRPCDownstreamData()
 	}
 	var opts []grpc.DialOption
 	if cfg.TLS != nil {
-		tlsConfig, err := MakeTLSConfig(cfg.TLS)
+		tlsConfig, err := MakeTLSConfig(ctx, cfg.TLS)
 		if err != nil {
 			return nil, err
 		}

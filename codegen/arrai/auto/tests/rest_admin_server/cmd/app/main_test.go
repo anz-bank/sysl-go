@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
 	"github.com/stretchr/testify/require"
@@ -59,12 +58,8 @@ func doHTTPGet(ctx context.Context, endpoint string) ([]byte, error) {
 }
 
 func TestAppAdminServerSmokeTest(t *testing.T) {
-	// Initialise context with pkg logger
-	logger := log.NewStandardLogger()
-	ctx := log.WithLogger(logger).Onto(context.Background())
-
 	// Override sysl-go app command line interface to directly pass in app config
-	ctx = core.WithConfigFile(ctx, []byte(applicationConfig))
+	ctx := core.WithConfigFile(context.Background(), []byte(applicationConfig))
 
 	appServer, err := newAppServer(ctx)
 	require.NoError(t, err)

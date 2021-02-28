@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
 	"github.com/stretchr/testify/require"
@@ -113,14 +112,9 @@ func startDummyBackendServer(addr string) (stopServer func() error) {
 }
 
 func TestRestErrorDownstream(t *testing.T) {
-
-	// Initialise context with pkg logger
-	logger := log.NewStandardLogger()
-	ctx := log.WithLogger(logger).Onto(context.Background())
-
 	// Add in a fake filesystem to pass in config
 	// Override sysl-go app command line interface to directly pass in app config
-	ctx = core.WithConfigFile(ctx, []byte(applicationConfig))
+	ctx := core.WithConfigFile(context.Background(), []byte(applicationConfig))
 
 	// Start the dummy backend service running
 	stopBackendServer := startDummyBackendServer("localhost:9022")

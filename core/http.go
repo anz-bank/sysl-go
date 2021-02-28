@@ -48,7 +48,7 @@ func configureAdminServerListener(ctx context.Context, hl Manager, promRegistry 
 
 	rootAdminRouter, adminRouter := configureRouters(hl.AdminServerConfig().BasePath, mWare)
 
-	adminTLSConfig, err := config.MakeTLSConfig(hl.AdminServerConfig().Common.TLS)
+	adminTLSConfig, err := config.MakeTLSConfig(ctx, hl.AdminServerConfig().Common.TLS)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func configureAdminServerListener(ctx context.Context, hl Manager, promRegistry 
 func configurePublicServerListener(ctx context.Context, hl Manager, mWare []func(handler http.Handler) http.Handler) (StoppableServer, error) {
 	rootPublicRouter, publicRouter := configureRouters(hl.PublicServerConfig().HTTP.BasePath, mWare)
 
-	publicTLSConfig, err := config.MakeTLSConfig(hl.PublicServerConfig().HTTP.Common.TLS)
+	publicTLSConfig, err := config.MakeTLSConfig(ctx, hl.PublicServerConfig().HTTP.Common.TLS)
 	if err != nil {
 		return nil, err
 	}

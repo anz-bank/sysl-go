@@ -1,12 +1,12 @@
 package config
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	pkcs12 "github.com/anz-bank/go-pkcs12"
+	"github.com/anz-bank/sysl-go/log"
 )
 
 var cipherSuites = map[string]uint16{
@@ -115,7 +116,7 @@ const (
 	PKCS12 = "pkcs12"
 )
 
-var CertPoolEncodingTypes = map[string]func(cfg *TrustedCertPoolConfig) (pool *x509.CertPool, err error){
+var CertPoolEncodingTypes = map[string]func(ctx context.Context, cfg *TrustedCertPoolConfig) (pool *x509.CertPool, err error){
 	PEM:    buildPoolFromPEM,
 	PKCS12: buildPoolFromPKCS12,
 }
@@ -262,7 +263,7 @@ func findCertsFromPath(cfg *TrustedCertPoolConfig) ([]string, error) {
 	return files, nil
 }
 
-func buildPoolFromPEM(cfg *TrustedCertPoolConfig) (*x509.CertPool, error) {
+func buildPoolFromPEM(ctx context.Context, cfg *TrustedCertPoolConfig) (*x509.CertPool, error) {
 	pool := x509.NewCertPool()
 
 	files, err := findCertsFromPath(cfg)
@@ -290,14 +291,13 @@ func buildPoolFromPEM(cfg *TrustedCertPoolConfig) (*x509.CertPool, error) {
 		if !addedCerts {
 			return nil, fmt.Errorf("failed to append any certificates to the RootCA. The following certs failed: %v", failedCerts)
 		}
-		//TODO: consider redo logging code.
-		log.Printf("failed to append the following certs to RootCAs: %v", failedCerts)
+		log.Infof(ctx, "failed to append the following certs to RootCAs: %v", failedCerts)
 	}
 
 	return pool, nil
 }
 
-func buildPoolFromPKCS12(cfg *TrustedCertPoolConfig) (*x509.CertPool, error) {
+func buildPoolFromPKCS12(ctx context.Context, cfg *TrustedCertPoolConfig) (*x509.CertPool, error) {
 	pool := x509.NewCertPool()
 
 	passBytes, err := base64.StdEncoding.DecodeString((*cfg.Password).Value())
@@ -324,8 +324,7 @@ func buildPoolFromPKCS12(cfg *TrustedCertPoolConfig) (*x509.CertPool, error) {
 
 		_, cert, caCerts, err := pkcs12.DecodeChain(p12bytes, pass)
 		if err != nil {
-			//TODO: consider redo logging code.
-			log.Println(err)
+			log.Error(ctx, err, "failed to decode PKCS12 file")
 			failedCerts = append(failedCerts, file)
 			continue
 		}
@@ -341,14 +340,13 @@ func buildPoolFromPKCS12(cfg *TrustedCertPoolConfig) (*x509.CertPool, error) {
 		if !addedCerts {
 			return nil, fmt.Errorf("failed to append any certificates to the RootCA. The following certs failed: %v", failedCerts)
 		}
-		//TODO: consider redo logging code.
-		log.Printf("failed to append the following certs to RootCAs: %v", failedCerts)
+		log.Infof(ctx, "failed to append the following certs to RootCAs: %v", failedCerts)
 	}
 
 	return pool, nil
 }
 
-func buildPool(cfg *TrustedCertPoolConfig) (*x509.CertPool, error) {
+func buildPool(ctx context.Context, cfg *TrustedCertPoolConfig) (*x509.CertPool, error) {
 	var pool *x509.CertPool
 	buildPoolFn, ok := CertPoolEncodingTypes[strings.ToLower(*cfg.Encoding)]
 	if !ok {
@@ -359,7 +357,7 @@ func buildPool(cfg *TrustedCertPoolConfig) (*x509.CertPool, error) {
 		return nil, fmt.Errorf("unrecognised certificate encoding: %s. Valid encodings are: %v in either upper or lower case", *cfg.Encoding, keys)
 	}
 
-	pool, err := buildPoolFn(cfg)
+	pool, err := buildPoolFn(ctx, cfg)
 
 	if err != nil {
 		return nil, err
@@ -368,12 +366,12 @@ func buildPool(cfg *TrustedCertPoolConfig) (*x509.CertPool, error) {
 	return pool, nil
 }
 
-func GetTrustedCAs(cfg *TLSConfig) (*x509.CertPool, error) {
+func GetTrustedCAs(ctx context.Context, cfg *TLSConfig) (*x509.CertPool, error) {
 	// certificates exchanged are self signed mostly applicable for dev env
 	// skip setting for rootcas, clientcas and cipher suites
 	if cfg.TrustedCertPool != nil {
 		if *cfg.TrustedCertPool.Mode != SYSMODE {
-			pool, err := buildPool(cfg.TrustedCertPool)
+			pool, err := buildPool(ctx, cfg.TrustedCertPool)
 			if err != nil {
 				return nil, err
 			}
@@ -407,15 +405,14 @@ func makeSelfSignedTLSConfig(cfg *TLSConfig) (*tls.Config, error) {
 }
 
 //nolint:funlen
-func MakeTLSConfig(cfg *TLSConfig) (*tls.Config, error) {
+func MakeTLSConfig(ctx context.Context, cfg *TLSConfig) (*tls.Config, error) {
 	if cfg == nil {
 		return nil, nil
 	}
 
 	if cfg.InsecureSkipVerify {
 		//nolint:gosec // This is configured by the user
-		//TODO: consider redo logging code.
-		log.Println("It is insecure due to skipping server certificate verification")
+		log.Info(ctx, "It is insecure due to skipping server certificate verification")
 		return &tls.Config{InsecureSkipVerify: true}, nil
 	}
 
@@ -423,7 +420,7 @@ func MakeTLSConfig(cfg *TLSConfig) (*tls.Config, error) {
 		return makeSelfSignedTLSConfig(cfg)
 	}
 
-	trustedCAs, err := GetTrustedCAs(cfg)
+	trustedCAs, err := GetTrustedCAs(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -481,7 +478,7 @@ func MakeTLSConfig(cfg *TLSConfig) (*tls.Config, error) {
 }
 
 //nolint:funlen // TODO: Break this into smaller functions
-func (t *TLSConfig) Validate() error {
+func (t *TLSConfig) Validate(ctx context.Context) error {
 	if t == nil {
 		return nil
 	}
@@ -519,8 +516,7 @@ func (t *TLSConfig) Validate() error {
 	}
 
 	if t.Ciphers == nil || len(t.Ciphers) == 0 {
-		//TODO: consider redo logging code.
-		log.Println("ciphers config missing")
+		log.Info(ctx, "ciphers config missing")
 	}
 
 	var failedCiphers []string

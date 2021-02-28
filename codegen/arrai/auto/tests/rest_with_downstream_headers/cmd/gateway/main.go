@@ -9,9 +9,9 @@ import (
 	gateway "rest_with_downstream_headers/internal/gen/pkg/servers/gateway"
 	encoder_backend "rest_with_downstream_headers/internal/gen/pkg/servers/gateway/encoder_backend"
 
-	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/core"
+	"github.com/anz-bank/sysl-go/log"
 )
 
 type AppConfig struct{}
@@ -54,21 +54,18 @@ func newAppServer(ctx context.Context) (core.StoppableServer, error) {
 	return gateway.NewServer(ctx,
 		func(ctx context.Context, config AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
 			return &gateway.ServiceInterface{
-					PostEncodeEncoder_id: PostEncodeEncoder_id,
-				}, &core.Hooks{},
-				nil
+				PostEncodeEncoder_id: PostEncodeEncoder_id,
+			}, nil, nil
 		},
 	)
 }
 
 func main() {
-	// initialise context with pkg logger
-	logger := log.NewStandardLogger()
-	ctx := log.WithLogger(logger).WithConfigs(log.SetVerboseMode(true)).Onto(context.Background())
+	ctx := log.PutLogger(context.Background(), log.NewDefaultLogger())
 
 	handleError := func(err error) {
 		if err != nil {
-			log.Error(ctx, err)
+			log.Error(ctx, err, "something goes wrong")
 			os.Exit(1)
 		}
 	}

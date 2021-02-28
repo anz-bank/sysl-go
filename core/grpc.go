@@ -29,7 +29,7 @@ type GrpcServerManager struct {
 }
 
 func DefaultGrpcServerOptions(ctx context.Context, grpcPublicServerConfig *config.CommonServerConfig) ([]grpc.ServerOption, error) {
-	opts, err := config.ExtractGrpcServerOptions(grpcPublicServerConfig)
+	opts, err := config.ExtractGrpcServerOptions(ctx, grpcPublicServerConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func newGrpcServerManagerFromGrpcManager(ctx context.Context, hl GrpcManager) (*
 }
 
 func extractGrpcServerOptionsFromGrpcManager(ctx context.Context, hl GrpcManager) ([]grpc.ServerOption, error) {
-	opts, err := config.ExtractGrpcServerOptions(hl.GrpcPublicServerConfig())
+	opts, err := config.ExtractGrpcServerOptions(ctx, hl.GrpcPublicServerConfig())
 	if err != nil {
 		return nil, err
 	}

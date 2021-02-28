@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -10,8 +11,8 @@ import (
 	"github.com/anz-bank/sysl-go/config"
 )
 
-func BuildDownstreamHTTPClient(serviceName string, hooks *Hooks, cfg *config.CommonDownstreamData) (*http.Client, error) {
-	client, err := config.DefaultHTTPClient(cfg)
+func BuildDownstreamHTTPClient(ctx context.Context, serviceName string, hooks *Hooks, cfg *config.CommonDownstreamData) (*http.Client, error) {
+	client, err := config.DefaultHTTPClient(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -35,8 +36,8 @@ func BuildDownstreamHTTPClient(serviceName string, hooks *Hooks, cfg *config.Com
 // BuildDownstreamGRPCClient creates a grpc client connection to the target indicated by cfg.ServiceAddress.
 // The dial options can be customised by cfg or by hooks, see ResolveGrpcDialOptions for details. The
 // serviceName is the name of the target service. This function is intended to be called from generated code.
-func BuildDownstreamGRPCClient(serviceName string, hooks *Hooks, cfg *config.CommonGRPCDownstreamData) (*grpc.ClientConn, error) {
-	opts, err := ResolveGrpcDialOptions(serviceName, hooks, cfg)
+func BuildDownstreamGRPCClient(ctx context.Context, serviceName string, hooks *Hooks, cfg *config.CommonGRPCDownstreamData) (*grpc.ClientConn, error) {
+	opts, err := ResolveGrpcDialOptions(ctx, serviceName, hooks, cfg)
 	if err != nil {
 		return nil, err
 	}

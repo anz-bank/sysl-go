@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/go-chi/chi"
 	"github.com/sethvargo/go-retry"
@@ -123,12 +122,8 @@ func startDummyBackendServer(addr string) (stopServer func() error) {
 }
 
 func TestRestWithConditionalDownstreamAppSmokeTest(t *testing.T) {
-	// Initialise context with pkg logger
-	logger := log.NewStandardLogger()
-	ctx := log.WithLogger(logger).Onto(context.Background())
-
 	// Override sysl-go app command line interface to directly pass in app config
-	ctx = core.WithConfigFile(ctx, []byte(applicationConfig))
+	ctx := core.WithConfigFile(context.Background(), []byte(applicationConfig))
 
 	// Start the dummy backend service running
 	stopBackendServer := startDummyBackendServer("localhost:9022")

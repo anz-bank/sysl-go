@@ -25,6 +25,7 @@ let sysl = //{./sysl};
             var err error
             ${clientDeps orderby . >> $`
                 ${.import}${prefix(.)}Client, err := core.BuildDownstream${prefix(.)}Client(
+                    ctx,
                     ${.import:q},
                     hooks,
                     &downstreamConfig.${go.name(.import)},

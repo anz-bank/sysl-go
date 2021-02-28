@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"net"
 	"net/http"
 	"net/url"
@@ -55,13 +56,13 @@ type Dialer struct {
 	DualStack bool          `yaml:"dualStack" mapstructure:"dualStack"`
 }
 
-func (g *CommonDownstreamData) Validate() error {
+func (g *CommonDownstreamData) Validate(ctx context.Context) error {
 	if err := validator.Validate(g); err != nil {
 		return err
 	}
 
 	if g.ClientTransport.ClientTLS != nil {
-		if err := g.ClientTransport.ClientTLS.Validate(); err != nil {
+		if err := g.ClientTransport.ClientTLS.Validate(ctx); err != nil {
 			return err
 		}
 	}
@@ -107,9 +108,9 @@ func proxyHandlerFromConfig(cfg *Transport) func(req *http.Request) (*url.URL, e
 }
 
 // defaultHTTPTransport returns a new *http.Transport with the same configuration as http.DefaultTransport.
-func defaultHTTPTransport(cfg *Transport) (*http.Transport, error) {
+func defaultHTTPTransport(ctx context.Context, cfg *Transport) (*http.Transport, error) {
 	// Finalise the handler loading
-	tlsConfig, err := MakeTLSConfig(cfg.ClientTLS)
+	tlsConfig, err := MakeTLSConfig(ctx, cfg.ClientTLS)
 	if err != nil {
 		return nil, err
 	}
@@ -130,12 +131,12 @@ func defaultHTTPTransport(cfg *Transport) (*http.Transport, error) {
 }
 
 // DefaultHTTPClient returns a new *http.Client with sensible defaults, in particular it has a timeout set.
-func DefaultHTTPClient(cfg *CommonDownstreamData) (*http.Client, error) {
+func DefaultHTTPClient(ctx context.Context, cfg *CommonDownstreamData) (*http.Client, error) {
 	if cfg == nil {
 		cfg = DefaultCommonDownstreamData()
 	}
 
-	transport, err := defaultHTTPTransport(&cfg.ClientTransport)
+	transport, err := defaultHTTPTransport(ctx, &cfg.ClientTransport)
 	if err != nil {
 		return nil, err
 	}

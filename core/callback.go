@@ -124,14 +124,14 @@ type Hooks struct {
 	ValidateConfig func(ctx context.Context, cfg *config.DefaultConfig) error
 }
 
-func ResolveGrpcDialOptions(serviceName string, h *Hooks, grpcDownstreamConfig *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {
+func ResolveGrpcDialOptions(ctx context.Context, serviceName string, h *Hooks, grpcDownstreamConfig *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {
 	switch {
 	case len(h.AdditionalGrpcDialOptions) > 0 && h.OverrideGrpcDialOptions != nil:
 		return nil, fmt.Errorf("Hooks.AdditionalGrpcDialOptions and Hooks.OverrideGrpcDialOptions cannot both be set")
 	case h.OverrideGrpcDialOptions != nil:
 		return h.OverrideGrpcDialOptions(serviceName, grpcDownstreamConfig)
 	default:
-		opts, err := config.DefaultGrpcDialOptions(grpcDownstreamConfig)
+		opts, err := config.DefaultGrpcDialOptions(ctx, grpcDownstreamConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -183,7 +183,7 @@ func resolveAuthorizationRule(ctx context.Context, h *Hooks, endpointName string
 	}
 
 	// TODO(fletcher) inject custom http client instrumented with monitoring
-	httpClient, err := config.DefaultHTTPClient(nil)
+	httpClient, err := config.DefaultHTTPClient(ctx, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -9,8 +9,8 @@ import (
 	gateway "simple_grpc_with_downstream/internal/gen/pkg/servers/gateway"
 	encoder_backend "simple_grpc_with_downstream/internal/gen/pkg/servers/gateway/encoder_backend"
 
-	"github.com/anz-bank/pkg/log"
 	"github.com/anz-bank/sysl-go/core"
+	"github.com/anz-bank/sysl-go/log"
 )
 
 type AppConfig struct{}
@@ -39,21 +39,18 @@ func newAppServer(ctx context.Context) (core.StoppableServer, error) {
 	return gateway.NewServer(ctx,
 		func(ctx context.Context, cfg AppConfig) (*gateway.GrpcServiceInterface, *core.Hooks, error) {
 			return &gateway.GrpcServiceInterface{
-					Encode: Encode,
-				}, &core.Hooks{},
-				nil
+				Encode: Encode,
+			}, nil, nil
 		},
 	)
 }
 
 func main() {
-	// initialise context with pkg logger
-	logger := log.NewStandardLogger()
-	ctx := log.WithLogger(logger).WithConfigs(log.SetVerboseMode(true)).Onto(context.Background())
+	ctx := log.PutLogger(context.Background(), log.NewDefaultLogger())
 
 	handleError := func(err error) {
 		if err != nil {
-			log.Error(ctx, err)
+			log.Error(ctx, err, "something goes wrong")
 			os.Exit(1)
 		}
 	}
