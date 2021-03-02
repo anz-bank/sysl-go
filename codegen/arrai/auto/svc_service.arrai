@@ -7,7 +7,7 @@ let sysl = //{./sysl};
     let HttpMethodStatements = \appname \ep
         let patterns = sysl.patterns(ep);
         let returns = sysl.endpoint.returns(ep);
-        let nils = returns where .@item.var != "error" rank (:.@) >> `nil`;
+        let nils = returns => .@item where .var != "error" => .type orderby . >> "nil";
 
         let declareResp = \var
             returns where .@item.var = var && typeWithClientPackage(.@item) >>
@@ -121,7 +121,12 @@ let sysl = //{./sysl};
                                 ${returnDownstreamError(`UnexpectedResponse`, `result`, `valErr`)}
                             }
 
-                            return ${responseVar}, nil
+                            ${
+                                cond {
+                                    returns where .@item.type = [""] && .@item.var = "ok": $`return ${responseVar}, &result.HTTPResponse.Header, nil`,
+                                    _: $`return ${responseVar}, nil`,
+                                }
+                            }
                         }
                     `
             ::\i}

@@ -1,0 +1,35 @@
+PingPong [package="pingpong"]:
+    @go_package = "pingpong"
+    @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_without_return_type"
+    @pb_package = "pingping.v1"
+
+    /ping1/{identifier <: int}:
+        GET:
+            return ok
+            return ok <: Pong
+
+    /ping2/{identifier <: int}:
+        GET:
+            return ok
+            return ok
+            return ok <: Pong
+            
+    /ping3/{identifier <: int}:
+        GET:
+            return ok
+            return ok
+            return ok
+            return ok <: Pong        
+
+    /ping4/{identifier <: int}:
+        GET:
+            return ok
+            return ok1
+            return ok <: Pong 
+
+    /pingTimeout/{identifier <: int}:
+        GET:
+            return ok <: Pong
+
+    !type Pong:
+        identifier <: int
