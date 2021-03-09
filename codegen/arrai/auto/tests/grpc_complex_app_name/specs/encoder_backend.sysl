@@ -1,5 +1,5 @@
-EncoderBackend [package="encoder_backend", ~gRPC]:
-    @go_package = "simple_grpc_with_downstream/internal/gen/pb/encoder_backend"
+Foo :: Bar :: EncoderBackend [package="encoder_backend", ~gRPC]:
+    @go_package = "grpc_complex_app_name/internal/gen/pb/encoder_backend"
 
     Rot13(EncodingRequestRequest <: EncodingRequest):
         return ok <: EncodingResponse

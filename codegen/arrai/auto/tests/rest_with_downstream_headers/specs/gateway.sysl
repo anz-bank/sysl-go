@@ -3,7 +3,6 @@ import encoder_backend
 Gateway [package="gateway"]:
     @go_package = "gateway"
     @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_with_downstream_headers"
-    @pb_package = "gateway.v1"
 
     /encode:
         /{encoder_id<:string}:

@@ -161,4 +161,43 @@ let errorTypes = {"Error_"};
             }).'requestType'
     ),
     goErrorReturnTypes: //test.assert.equal(errorTypes)(go.errorReturnTypes(errorReturnTypes)),
+
+    package: (
+        goPackageExplicitName:
+            let app = {'attrs': {'go_package': {'s': (s: 'github.com/foo/bar;baz')}}};
+            let actual = go.package(app);
+            //test.assert.equal('baz', actual),
+
+        goPackage:
+            let app = {'attrs': {'go_package': {'s': (s: 'github.com/foo/bar')}}};
+            let actual = go.package(app);
+            //test.assert.equal('bar', actual),
+
+        package:
+            let app = {'attrs': {'package': {'s': (s: 'foo')}}};
+            let actual = go.package(app);
+            //test.assert.equal('foo', actual),
+
+        path:
+            let app = {'name': {'part': ('a': [(s: 'Foo'), (s: 'Bar')])}};
+            let actual = go.package(app);
+            //test.assert.equal('foobar', actual),
+    ),
+
+    pbPackage: (
+        goPackageExplicitName:
+            let app = {'attrs': {'go_package': {'s': (s: 'github.com/foo/bar;baz')}}};
+            let actual = go.pbPackage(app);
+            //test.assert.equal('github.com/foo/bar', actual),
+
+        goPackage:
+            let app = {'attrs': {'go_package': {'s': (s: 'github.com/foo/bar')}}};
+            let actual = go.pbPackage(app);
+            //test.assert.equal('github.com/foo/bar', actual),
+
+        goPbPackage:
+            let app = {'attrs': {'go_pb_package': {'s': (s: 'github.com/foo/bar')}}};
+            let actual = go.pbPackage(app);
+            //test.assert.equal('github.com/foo/bar', actual),
+    ),
 )

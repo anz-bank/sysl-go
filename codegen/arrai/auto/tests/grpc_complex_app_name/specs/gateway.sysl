@@ -1,0 +1,15 @@
+import encoder_backend
+
+Foo :: Bar :: Baz :: Gateway [package="gateway", ~gRPC]:
+    @go_package = "grpc_complex_app_name/internal/gen/pb/gateway;gateway"
+
+    Encode(GatewayRequest <: EncodeReq):
+        Foo :: Bar :: EncoderBackend <- Rot13
+        return ok <: EncodeResp
+
+    !type EncodeReq:
+        encoder_id <: string
+        content <: string
+
+    !type EncodeResp:
+        content <: string

@@ -1,7 +1,6 @@
 EncoderBackend [package="encoder_backend"]:
     @go_package = "encoder_backend"
     @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/simple_rest_with_downstream"
-    @pb_package = "encoder_backend.v1"
 
     /rot13:
         POST (EncodingRequestRequest <: EncodingRequest [mediatype="application/json", ~body]):

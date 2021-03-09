@@ -5,7 +5,7 @@ let sysl = //{./sysl};
     let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
     let structName = $`Default${go.name(appname)}Impl`;
     $`
-        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(app))}
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | {go.pbImport(app)})}
 
         ${nonRestEndpoints >> \(@:_, @value: ep) client.clientStruct(ep)::\i}
 
@@ -13,7 +13,12 @@ let sysl = //{./sysl};
         type GrpcServiceInterface struct {
             ${nonRestEndpoints >> \(@value: ep, ...)
                 let name = go.methodName(ep);
-                $`${name} func(ctx context.Context, req *pb.${name}Request${cond {client.notEmpty(ep): $`, client ${name}Client`}}) (*pb.${name}Response, error)`
+                let requestType = go.leafType(ep('param').a(0)('type'));
+                let returns = sysl.endpoint.normalReturns(ep);
+                let returnTypes = returns >> go.name(.type(.type count - 1));
+                let returnType = returnTypes(returnTypes count - 1);
+
+                $`${name} func(ctx context.Context, req *pb.${requestType}${cond {client.notEmpty(ep): $`, client ${name}Client`}}) (*pb.${returnType}, error)`
             ::\i}
         }
 

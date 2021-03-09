@@ -1,10 +1,11 @@
 let go = //{./go};
+let grpc = //{./grpc};
 
 \(:app, :appname, :basepath, :clientDeps, :endpoints, :fixPBPath, ...)
 
     # These are old definitions used prior to deb7738294f04d6628c07db08d5ba92367186c38
     let methodInfos = endpoints => \(@:_, @item: (@:_, @value: ep)) go.pbMethodInfo(ep);
-    let appname = //str.title(appname);
+    let appname = go.name(grpc.app.name(app));
 
     # FIXME this methodSig definition added in deb7738294f04d6628c07db08d5ba92367186c38 is unused
     # let methodSig = \ep
@@ -21,7 +22,7 @@ let go = //{./go};
 
     # TODO: sysl automapping between sysl types and protobuf types
     $`
-        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | go.pbPackage(app))}
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | {go.pbImport(app)})}
 
         ${(methodInfos => .requestType) | (methodInfos => .responseType) => $`
             type ${.} = pb.${.}

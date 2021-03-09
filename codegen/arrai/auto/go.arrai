@@ -66,30 +66,72 @@ let leafType = typeImpl(true);
 
 let varName = //re.compile(`_`).sub("");
 
+# `package` returns the name of the package where an application is found.
+# For example: demo
+#
+# This method exhibits the following behaviour:
+# 1. Use the `go_package` annotation (if present).
+# 2. Use the `package` annotation (if present).
+# 3. Otherwise, derived the package location from the application name.
+#
+# Historically, the `go_package` annotation contained the singular name of the desired package:
+# Foo :: Bar [@package="demo"]
+# However, Protobuf specifications also use the `go_package` annotation to describe the desired
+# package for code generation. Protobuf specifications support two `go_package` formats:
+# 1. github.com/foo/demo
+# 2. github.com/foo/demo/beta;demo
+# Both examples resolve to the `demo` package. The first example uses an implicit package name taken
+# as the final value in the package whereas the second example uses an explicit package name.
+# https://developers.google.com/protocol-buffers/docs/reference/go-generated#package
 let package = \app
     cond app {
-        {'attrs': {'go_package': {'s': (s: go_package)}, ...}, ...}: go_package,
-        {'attrs': {'package': {'s': (s: package)}, ...}, ...}: //str.lower(package),
+        {'attrs': {'go_package': {'s': (s: s)}, ...}, ...}:
+            let parts = //seq.split(';', s);
+            cond parts {
+                [_, p]: p,
+                [p]: let parts = //seq.split('/', p); parts(parts count - 1),
+            },
+        {'attrs': {'package': {'s': (s: s)}, ...}, ...}: //str.lower(s),
         {'name': {'part': (:a)}, ...}: //str.lower($`${a >> .s::}`),
     };
 
+# `pbPackage` returns the package where a protoc-generated application is found.
+# For example: github.com/foo/demo
+#
+# This method exhibits the following behaviour:
+# 1. Use the `go_pb_package` annotation (if present).
+# 2. Use the `go_package` annotation (if present).
+# 3. Otherwise, default to an invalid value.
+#
+# Historically, the `go_pb_package` annotation contained the package:
+# Foo :: Bar [@go_pb_package="github.com/foo/demo"]
+# However, Protobuf specifications natively use the `go_package` annotation to describe the desired
+# package for code generation. Protobuf specifications support two `go_package` formats:
+# 1. github.com/foo/demo
+# 2. github.com/foo/demo;demo
+# Both examples resolve to the `github.com/foo/demo` package. The first example only contains the
+# package whereas the second example contains the package and an explicit package name.
+# https://developers.google.com/protocol-buffers/docs/reference/go-generated#package
 let pbPackage = \app
-    {(
-        alias: `pb`,
-        package: cond app {
-            {'attrs': {'go_pb_package': {'s': (:s)}, ...}, ...}: s,
-            _: '??basepath??/???',  # TODO: what's the right package name?
-        },
-    )};
+    cond app {
+        {'attrs': {'go_pb_package': {'s': (:s)}, ...}, ...}: s,
+        {'attrs': {'go_package': {'s': (:s)}, ...}, ...}: //seq.split(';', s)(0),
+        _: '??basepath??/???',  # TODO: what's the right package name?
+    };
+
+# `pbImport` returns a suitable tuple for use within `prelude` to describe the given
+# protoc-generated application.
+# For example: (alias: 'pb', package: 'github.com/foo/bar')
+let pbImport = \app
+    (alias: 'pb', package: pbPackage(app));
 
 let pbMethodInfo = \ep
     let {'name': (s: methodName), 'param': (a: [param]), 'stmt': (a: stmts), ...} = ep;
     let {'name': (s: pname), 'type': ptype, ...} = param;
     let methodName = name(methodName);
     let last = \xs xs(xs count - 1);
-    let responseType = $`${stmts
-        filter .@item {{'ret': _, ...}: .}
-        >> last(//seq.split(".", //seq.split(" ", .("ret")("payload").s)(2)))
+    let responseType = $`${stmts filter .@item {{'ret': _, ...}: .}
+        >> last(//seq.split(".", last(//seq.split(" ", .("ret")("payload").s))))
     ::}`;
     let requestType = leafType(ptype) || type(ptype); # FIXME unsure if this is correct, this failed until the fallback using type(ptype) was added.
     (
@@ -236,7 +278,6 @@ let module = \module
             sysl.endpoint.calls(ep) => \(@:_, @item: {'target': target, ...}) (
                 :target,
                 import: package(targetApp(target)),
-                pbImport: pbPackage(targetApp(target)),
                 app: (name: targetApp(target, 'name')),
             ));
 
@@ -264,6 +305,7 @@ let module = \module
     :name,
     :package,
     :pbPackage,
+    :pbImport,
     :pbMethodInfo,
     :prelude,
     :type,

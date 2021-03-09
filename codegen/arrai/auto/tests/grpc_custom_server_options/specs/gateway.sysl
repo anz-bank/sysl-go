@@ -1,13 +1,12 @@
 Gateway [package="gateway", ~gRPC]:
     @go_package = "gateway"
     @go_pb_package = "grpc_custom_server_options/internal/gen/pb/gateway"
-    @pb_package = "gateway.v1"
 
     Hello(GatewayRequest <: HelloRequest):
         return ok <: HelloResponse
 
-    !type HelloRequest: # codegen doesnt work if this isn't named MethodName + "Request"
+    !type HelloRequest:
         content <: string
 
-    !type HelloResponse: # codegen doesnt work if this isn't named MethodName + "Response"
+    !type HelloResponse:
         content <: string

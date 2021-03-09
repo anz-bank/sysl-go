@@ -3,7 +3,6 @@ import banana_stand.yaml as BananaStand
 Gateway [package="gateway"]:
     @go_package = "gateway"
     @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_post_urlencoded_form"
-    @pb_package = "gateway.v1"
 
     /banana:
         POST (GatewayRequestRequest <: GatewayRequest [mediatype="application/json", ~body]):

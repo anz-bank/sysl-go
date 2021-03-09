@@ -1,7 +1,6 @@
 PingPong [package="pingpong"]:
     @go_package = "pingpong"
     @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_without_return_type"
-    @pb_package = "pingping.v1"
 
     /ping1/{identifier <: int}:
         GET:

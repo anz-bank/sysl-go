@@ -1,7 +1,6 @@
 PingPong [package="pingpong"]:
     @go_package = "pingpong"
     @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_with_validate"
-    @pb_package = "pingping.v1"
 
     /ping/{identifier <: int}/{value <: int} [validate="identifier:min=0,max=20 value:min=0"]:
         GET:

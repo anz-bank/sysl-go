@@ -1,0 +1,10 @@
+let grpc = //{./grpc};
+
+(
+    app: (
+        name:
+            let app = {'name': {'part': (a: [(s: 'Foo'), (s: 'Bar'), (s: 'Baz'), (s: 'Gateway')])}};
+            let actual = grpc.app.name(app);
+            //test.assert.equal('Gateway', actual),
+    ),
+)

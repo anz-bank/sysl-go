@@ -1,0 +1,18 @@
+
+let app = (
+
+    # `name` returns the name of a gRPC application.
+    # This value differs from `sysl.app.name` in that only the last part of the name is returned.
+    # This is done to fall in line with the implementation of `protoc` generated Go applications.
+    let name = \app
+        let parts = app('name')('part').a;
+        parts(parts count - 1).s;
+
+    (
+        :name,
+    )
+);
+
+(
+    :app,
+)
