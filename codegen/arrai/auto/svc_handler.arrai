@@ -78,7 +78,8 @@ let sysl = //{./sysl};
             let returnTypes = returns >> .type(.type count - 1);
             let urlParams = ep('restParams')('urlParam')?.a:[];
             let queryParams = ep('restParams')('queryParam')?.a:[];
-            let headerParams = ep('param')?.a:{} where {'header', 'required'} (<=) sysl.patterns(.@item('type'));
+            let headerParams = ep('param')?.a:{} where {'header'} (<=) sysl.patterns(.@item('type'))
+                && sysl.type.required(.@item('type'));
             let reqQueryParams =
                 queryParams where !.@item('type')('opt')?.b:false
                 >> (. | {'goType': go.type(.('type'))});
@@ -176,7 +177,7 @@ let sysl = //{./sysl};
                     ::\i:\n}
                     ${headerParams >> \{'name': (s: name), 'type': type, ...}
                         let name = type('attrs')?('name')('s').s:name;
-                        cond {'required' <: sysl.patterns(type): $`
+                        cond {sysl.type.required(type): $`
                             if ${go.name(name)} == "" {
                                 common.HandleError(ctx, w, common.BadRequestError, "${name} header length is zero", nil, s.genCallback.MapError)
                                 return

@@ -4,7 +4,7 @@ EncoderBackend [package="encoder_backend"]:
     @pb_package = "encoder_backend.v1"
 
     /rot13:
-        POST (EncodingRequestRequest <: EncodingRequest [mediatype="application/json", ~body], x <: string [~header, ~required, name="x"], y <: string [~header, ~optional, name="y"], z <: string [~header, ~required, name="z"]):
+        POST (EncodingRequestRequest <: EncodingRequest [mediatype="application/json", ~body], x <: string [~header, name="x"], y <: string [~header, ~optional, name="y"], z <: string [~header, name="z"]):
             return ok <: EncodingResponse
 
     !type EncodingRequest:

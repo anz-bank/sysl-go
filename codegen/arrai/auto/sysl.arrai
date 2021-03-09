@@ -85,10 +85,30 @@ let patterns = \node node('attrs')?('patterns')?('a')('elt').a:{} >> .('s').s =>
 
 let source = \node node('sourceContext')('start') -> [.('line'), .('col')];
 
+let type =
+
+    # `required` returns whether or not the given type is required (true) or optional (false).
+    # This method considers legacy behaviour that used the `optional` and `required` tags to mark
+    # certain types as optional or required. Consider the following representations:
+    # x <: string                   Required. Standard representation.
+    # x <: string?                  Optional. Standard representation.
+    # x <: string [~optional]       Optional. Legacy representation. Output from OpenAPI importer.
+    # x <: string? [~required]      Optional. Potential legacy representation. Never supported.
+    let required = \type
+        cond {
+            'opt' <: (type => .@): !type('opt').b,
+            'optional' <: patterns(type): false,
+            _: true
+        };
+    (
+        :required
+    );
+
 (
     :app,
     :endpoint,
     :patterns,
     :source,
     :isPtr,
+    :type,
 )

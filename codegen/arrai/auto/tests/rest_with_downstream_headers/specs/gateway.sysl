@@ -7,7 +7,7 @@ Gateway [package="gateway"]:
 
     /encode:
         /{encoder_id<:string}:
-            POST (GatewayRequestRequest <: GatewayRequest [mediatype="application/json", ~body], x <: string [~header, ~optional, name="x"], y <: string [~header, ~required, name="y"]):
+            POST (GatewayRequestRequest <: GatewayRequest [mediatype="application/json", ~body], x <: string? [~header, name="x"], y <: string [~header, name="y"]):
                 EncoderBackend <- POST /rot13
                 return ok <: GatewayResponse
 

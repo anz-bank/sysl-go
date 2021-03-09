@@ -20,7 +20,7 @@ let sysl = //{./sysl};
 
         $`
             required := []string{${
-                (ep("param")?.a:{} where {"header", "required"} (<=) sysl.patterns(.@item('type'))) rank (:.@) >>
+                (ep("param")?.a:{} where {"header"} (<=) sysl.patterns(.@item('type')) && sysl.type.required(.@item('type'))) rank (:.@) >>
                     $`"${.('type')?('attrs')?('name')?('s').s:(.('name').s)}"`
             ::, }}
             ${declareResp("ok")::\i}

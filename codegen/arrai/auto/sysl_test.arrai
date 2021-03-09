@@ -378,4 +378,24 @@ let sourceContextdEndpointExpectedCalls = {"POST /blah"};
     endpointCallDiscovery: //test.assert.equal(demoEndpointExpectedCalls)(sysl.endpoint.calls(demoEndpoint) => .@item('endpoint').s),
     endpointWithNoStatements: //test.assert.equal(statementlessEndpointExpectedCalls)(sysl.endpoint.calls(statementlessEndpoint) => .@item('endpoint').s),
     endpointWithSourcecontext: //test.assert.equal(sourceContextdEndpointExpectedCalls)(sysl.endpoint.calls(sourceContextdEndpoint) => .@item('endpoint').s),
+
+    type: (
+        required: (a:true,
+            required:
+                let type = {};
+                //test.assert.true(sysl.type.required(type)),
+
+            optional:
+                let type = {'opt': (b: true)};
+                //test.assert.false(sysl.type.required(type)),
+
+            optionalLegacyOptionalTag:
+                let type = {'attrs': {'patterns': {'a': {'elt': (a: [{'s': (s: 'optional')}])}}}};
+                //test.assert.false(sysl.type.required(type)),
+
+            optionalLegacyRequiredTag:
+                let type = {'attrs': {'patterns': {'a': {'elt': (a: [{'s': (s: 'required')}])}}}, 'opt': (b: true)};
+                //test.assert.false(sysl.type.required(type)),
+        ),
+    ),
 )
