@@ -92,6 +92,12 @@ let sysl = //{./sysl};
                             :type,
                             var: $`${go.name(name)}Param`,
                         );
+            let respContentType = cond returns {
+                [(type: ['bytes'], ...), ...]: 'application/octet-stream',
+                [(type: ['string'], ...), ...]: 'text/plain',
+                _: 'application/json'
+            };
+
             $`
                 // ${method}Handler ...
                 func (s *ServiceHandler) ${method}Handler(w http.ResponseWriter, r *http.Request) {
@@ -115,14 +121,29 @@ let sysl = //{./sysl};
                     `}}
                     ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
                     var req ${method}Request
-                    ${cond ep('restParams')('method').s {('POST', 'PUT'): $`
-                        decoder := json.NewDecoder(r.Body)
-                        decodeErr := decoder.Decode(&req.Request)
+                    ${cond ep('restParams')('method').s {('POST', 'PUT'):
+                        let goBodyType = (ep('param')?.a:{} where "body" <: sysl.patterns(.@item('type'))) single -> go.type(.@item('type'));
+                        cond goBodyType {
+                            '[]byte': $`
+                                decodeBytes, decodeErr := ioutil.ReadAll(r.Body)
+                                req.Request = decodeBytes
+                            `,
+                            'string': $`
+                                decodeBytes, decodeErr := ioutil.ReadAll(r.Body)
+                                req.Request = string(decodeBytes)
+                            `,
+                            _: $`
+                                decoder := json.NewDecoder(r.Body)
+                                decodeErr := decoder.Decode(&req.Request)
+                            `
+                        } ++ $`
+
                         if decodeErr != nil {
-                                common.HandleError(ctx, w, common.BadRequestError, "Error reading request body", decodeErr, s.genCallback.MapError)
-                                return
+                            common.HandleError(ctx, w, common.BadRequestError, "Error reading request body", decodeErr, s.genCallback.MapError)
+                            return
                         }
-                    `}}
+                        `
+                    }}
                     ${urlParams where .@item('type')('primitive')?.s:"" = "INT" >> \{'name': (s: name), ...}
                         $`req.${go.name(name)} = restlib.GetURLParamForInt(r, "${name}")`
                     ::\i:\n}
@@ -140,8 +161,8 @@ let sysl = //{./sysl};
                                 $`
                                     req.${go.name(name)}, conv${type}Err = restlib.GetQueryParamFor${type}(r, "${name}")
                                     if conv${type}Err != nil {
-                                            common.HandleError(ctx, w, common.BadRequestError, "Invalid request", conv${type}Err, s.genCallback.MapError)
-                                            return
+                                        common.HandleError(ctx, w, common.BadRequestError, "Invalid request", conv${type}Err, s.genCallback.MapError)
+                                        return
                                     }
                                 `
                             ::\i}
@@ -272,7 +293,7 @@ let sysl = //{./sysl};
 
                     headermap, httpstatus := common.RespHeaderAndStatusFromContext(ctx)
                     if headermap.Get("Content-Type") == "" {
-                        headermap.Set("Content-Type", "application/json")
+                        headermap.Set("Content-Type", "${respContentType}")
                     }
                     restlib.SetHeaders(w, headermap)
                     restlib.SendHTTPResponse(w, httpstatus${(returnTypes >> \type $`, ${

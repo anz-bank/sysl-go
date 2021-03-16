@@ -11,4 +11,4 @@ FROM ${`${REGISTRY}${REGISTRY:+/}`}alpine
 WORKDIR /app
 COPY --from=builder /app/${appname} /bin/
 CMD ${appname}
-' + '\n'
+' ++ '\n'

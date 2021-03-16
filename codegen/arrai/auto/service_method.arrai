@@ -4,8 +4,9 @@ let sysl = //{./sysl};
 let signature = \module \client \ep
     let method = go.methodName(ep);
     let needClient = client.notEmpty(ep);
+    let goModule = go.module(module);
     $`(ctx context.Context, req *${method}Request${cond {needClient: $`, client ${method}Client`}}) (${
-        (sysl.endpoint.normalReturns(ep) >> $`*${cond{.seq: `[]`}}${go.typeWithPackage(.type, module)}`) ++ ["error"]
+        (sysl.endpoint.normalReturns(ep) >> $"${goModule.typeWithClientPackage(.)}") ++ ["error"]
     ::, })`;
 
 (

@@ -23,7 +23,7 @@ let rec flatten_statements = \s
     # tag in the given Statement s and flattens them all into a single array of Statement.
     let expand = \s \tag //seq.concat((statements(s(tag))) >> flatten_statements(.));
 
-    [s] +
+    [s] ++
         # descend into any kind of Statement that might contain more Statements
         cond s {
             {'cond':_, ...} : expand(s, 'cond'),

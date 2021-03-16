@@ -91,6 +91,18 @@ func marshalRequestBody(contentType string, v interface{}) (io.Reader, error) {
 			return nil, err
 		}
 		reader = bytes.NewReader(reqData)
+	case strings.Contains(contentType, "text/plain"), strings.Contains(contentType, "text/html"):
+		reqData, ok := v.(string)
+		if !ok {
+			return nil, errors.Errorf("Invalid plain text value: %v", v)
+		}
+		reader = bytes.NewReader([]byte(reqData))
+	case strings.Contains(contentType, "application/octet-stream"):
+		reqData, ok := v.([]byte)
+		if !ok {
+			return nil, errors.Errorf("Invalid byte value: %v", v)
+		}
+		reader = bytes.NewReader(reqData)
 	default:
 		// assume JSON request body.
 		reqJSON, err := json.Marshal(v)
@@ -228,6 +240,13 @@ func SendHTTPResponse(w http.ResponseWriter, httpStatus int, responses ...interf
 				_ = xml.NewEncoder(w).Encode(resp)
 			case strings.Contains(contentType, "image"):
 				_, _ = w.Write(reflect.ValueOf(resp).Elem().Bytes())
+			case strings.Contains(contentType, "text/plain"), strings.Contains(contentType, "text/html"):
+				switch data := resp.(type) {
+				case *string:
+					_, _ = w.Write([]byte(*data))
+				case string:
+					_, _ = w.Write([]byte(data))
+				}
 			case strings.Contains(contentType, "octet-stream"), strings.Contains(contentType, "pdf"):
 				switch data := resp.(type) {
 				case *[]byte:

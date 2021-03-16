@@ -1,0 +1,10 @@
+EncoderBackend [package="encoder_backend"]:
+    @go_package = "encoder_backend"
+
+    /reverse-string:
+        POST (body <: string [~body]):
+            return ok <: string
+
+    /reverse-bytes:
+        POST (body <: bytes [~body]):
+            return ok <: bytes

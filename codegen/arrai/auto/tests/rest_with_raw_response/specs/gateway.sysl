@@ -1,0 +1,14 @@
+import encoder_backend
+
+Gateway [package="gateway"]:
+    @go_package = "gateway"
+
+    /reverse-string-n:
+        POST (body <: string [~body]) ?count=int:
+            EncoderBackend <- POST /reverse-string
+            return ok <: string
+
+    /reverse-bytes-n:
+        POST (body <: bytes [~body]) ?count=int:
+            EncoderBackend <- POST /reverse-bytes
+            return ok <: bytes

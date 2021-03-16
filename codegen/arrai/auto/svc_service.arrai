@@ -2,16 +2,18 @@ let go = //{./go};
 let sysl = //{./sysl};
 
 \(:app, :appname, :endpoints, :module, ...)
-    let (:methodSignature, :typeWithClientPackage, ...) = go.module(module);
+    let (:methodSignature, :typeWithClientPackage, :methodReturnTypes, ...) = go.module(module);
 
     let HttpMethodStatements = \appname \ep
         let patterns = sysl.patterns(ep);
         let returns = sysl.endpoint.returns(ep);
-        let nils = returns => .@item where .var != "error" => .type orderby . >> "nil";
+
+        let nils = methodReturnTypes(ep) where .@item != "error" orderby .@ >>
+            cond { .@item = "string": '""', _ : "nil" };
 
         let declareResp = \var
             returns where .@item.var = var && typeWithClientPackage(.@item) >>
-                $`var ${var}Response ${typeWithClientPackage(.)}`;
+                $`var ${var}Response ${//seq.trim_prefix('*', typeWithClientPackage(.))}`;
 
         let returnDownstreamError = \type \var \err
             $`return ${nils ++ [
@@ -113,18 +115,32 @@ let sysl = //{./sysl};
 
                 returns where (.@item -> .var != "error" && .type != [""]) >>
                     let responseVar = $`${makeType(.var)}${go.name(//seq.concat(.type))}Response`;
+                    let responseType = typeWithClientPackage(.);
+
+                    # The current implementation of restlib#unmarshal returns pointer references for raw string
+                    # and byte responses in order to handle aliased string and byte responses also. For this reason,
+                    # raw string and byte responses must be dereferenced before returned.
+                    let ptrResponseType = cond { responseType <: {'string', '[]byte'}: '*' ++ responseType, _: responseType };
+                    let ptrResponseVar = cond { responseType <: {'string', '[]byte'}: '*' ++ responseVar, _: responseVar };
+
+                    # The block below also avoids validating raw string and byte responses. The
+                    # Validator#validate method is designed to validate structs, and while this method does
+                    # include logic to regard all strings as valid it is not primarily intended for such
+                    # usage, therefore non-struct responses (i.e. string and byte) responses are not validated.
                     $`
-                        ${responseVar}, ok := result.Response.(*${typeWithClientPackage(.)})
+                        ${responseVar}, ok := result.Response.(${ptrResponseType})
                         if ok {
-                            valErr := validator.Validate(${responseVar})
-                            if valErr != nil {
-                                ${returnDownstreamError(`UnexpectedResponse`, `result`, `valErr`)}
-                            }
+                            ${cond { responseType !<: {'string', '[]byte'}: $`
+                                valErr := validator.Validate(${responseVar})
+                                if valErr != nil {
+                                    ${returnDownstreamError(`UnexpectedResponse`, `result`, `valErr`)}
+                                }
+                            `}}
 
                             ${
                                 cond {
-                                    returns where .@item.type = [""] && .@item.var = "ok": $`return ${responseVar}, &result.HTTPResponse.Header, nil`,
-                                    _: $`return ${responseVar}, nil`,
+                                    returns where .@item.type = [""] && .@item.var = "ok": $`return ${ptrResponseVar}, &result.HTTPResponse.Header, nil`,
+                                    _: $`return ${ptrResponseVar}, nil`,
                                 }
                             }
                         }

@@ -83,6 +83,35 @@ func TestUnmarshalBytesContent(t *testing.T) {
 	require.True(t, ok)
 }
 
+func TestUnmarshalRawStringContent(t *testing.T) {
+	header := map[string][]string{
+		"Content-Type": {"text/plain"},
+	}
+	var response = ""
+	result, err := unmarshal(&http.Response{Header: header}, []byte("hello"), &response)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.NotNil(t, result.HTTPResponse)
+	require.NotNil(t, result.Body)
+	_, ok := result.Response.(*string)
+	require.True(t, ok)
+}
+
+func TestUnmarshalRawBytesContent(t *testing.T) {
+	header := map[string][]string{
+		"Content-Type": {"application/octet-stream"},
+	}
+	var image = []byte{1, 2}
+	var response []byte = nil
+	result, err := unmarshal(&http.Response{Header: header}, image, &response)
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.NotNil(t, result.HTTPResponse)
+	require.NotNil(t, result.Body)
+	_, ok := result.Response.(*[]byte)
+	require.True(t, ok)
+}
+
 func TestUnmarshalNilTypeOK(t *testing.T) {
 	result, err := unmarshal(&http.Response{}, []byte(okJSON), nil)
 	require.NoError(t, err)
@@ -427,6 +456,54 @@ func TestSendHTTPResponseContentTypeImage(t *testing.T) {
 	require.Equal(t, []byte{1, 2}, b)
 }
 
+func TestSendHTTPResponseContentTypeTextPlain(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	recorder.Header().Set("Content-Type", "text/plain")
+
+	data := "Plain text"
+	SendHTTPResponse(recorder, 200, data)
+
+	result := recorder.Result()
+	require.NotNil(t, result)
+	require.Equal(t, 200, result.StatusCode)
+	b, err := ioutil.ReadAll(result.Body)
+	defer result.Body.Close()
+	require.NoError(t, err)
+	require.Equal(t, []byte(data), b)
+}
+
+func TestSendHTTPResponseContentTypeTextHtml(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	recorder.Header().Set("Content-Type", "text/html")
+
+	data := "Plain text"
+	SendHTTPResponse(recorder, 200, data)
+
+	result := recorder.Result()
+	require.NotNil(t, result)
+	require.Equal(t, 200, result.StatusCode)
+	b, err := ioutil.ReadAll(result.Body)
+	defer result.Body.Close()
+	require.NoError(t, err)
+	require.Equal(t, []byte(data), b)
+}
+
+func TestSendHTTPResponseContentTypeOctetStream(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	recorder.Header().Set("Content-Type", "application/octet-stream")
+
+	data := []byte("Encoded")
+	SendHTTPResponse(recorder, 200, data)
+
+	result := recorder.Result()
+	require.NotNil(t, result)
+	require.Equal(t, 200, result.StatusCode)
+	b, err := ioutil.ReadAll(result.Body)
+	defer result.Body.Close()
+	require.NoError(t, err)
+	require.Equal(t, data, b)
+}
+
 func TestRestResultContextWithoutProvision(t *testing.T) {
 	srv := common.NewHTTPTestServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
@@ -479,4 +556,34 @@ func TestRestResultContextOnError(t *testing.T) {
 	require.Equal(t, 400, restResult.StatusCode)
 	require.NotEmpty(t, restResult.Headers)
 	require.Equal(t, []byte(errorJSON), restResult.Body)
+}
+
+func TestMarshalRequestBodyTextPlain(t *testing.T) {
+	content := "Hello world"
+	reader, err := marshalRequestBody("text/plain", content)
+	require.Nil(t, err)
+	require.NotNil(t, reader)
+	marshalled, err := ioutil.ReadAll(reader)
+	require.Nil(t, err)
+	require.Equal(t, content, string(marshalled))
+}
+
+func TestMarshalRequestBodyTextHtml(t *testing.T) {
+	content := "Hello world"
+	reader, err := marshalRequestBody("text/html", content)
+	require.Nil(t, err)
+	require.NotNil(t, reader)
+	marshalled, err := ioutil.ReadAll(reader)
+	require.Nil(t, err)
+	require.Equal(t, content, string(marshalled))
+}
+
+func TestMarshalRequestBodyOctetStream(t *testing.T) {
+	content := []byte("Hello world")
+	reader, err := marshalRequestBody("application/octet-stream", content)
+	require.Nil(t, err)
+	require.NotNil(t, reader)
+	marshalled, err := ioutil.ReadAll(reader)
+	require.Nil(t, err)
+	require.Equal(t, content, marshalled)
 }
