@@ -266,7 +266,7 @@ func (l *logrusLogger) Inject(ctx context.Context) (context.Context, func(ctx co
 	// This approach is deprecated but is presently included in order to support legacy applications
 	// that continue to use Logrus directly. The obvious downside of using Logrus directly is that
 	// there is no built-in mechanism to persist key/value pairs within the context.
-	return LogrusLoggerToContext(ctx, l.logger, nil), func(ctx context.Context) Logger { return l }
+	return LogrusLoggerToContext(ctx, l.logger, GetLogrusLogEntryFromContext(ctx)), func(ctx context.Context) Logger { return l }
 }
 
 type logrusRequestContextKey struct{}
