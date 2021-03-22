@@ -56,13 +56,13 @@ type Dialer struct {
 	DualStack bool          `yaml:"dualStack" mapstructure:"dualStack"`
 }
 
-func (g *CommonDownstreamData) Validate(ctx context.Context) error {
+func (g *CommonDownstreamData) Validate() error {
 	if err := validator.Validate(g); err != nil {
 		return err
 	}
 
 	if g.ClientTransport.ClientTLS != nil {
-		if err := g.ClientTransport.ClientTLS.Validate(ctx); err != nil {
+		if err := g.ClientTransport.ClientTLS.Validate(); err != nil {
 			return err
 		}
 	}

@@ -478,7 +478,7 @@ func MakeTLSConfig(ctx context.Context, cfg *TLSConfig) (*tls.Config, error) {
 }
 
 //nolint:funlen // TODO: Break this into smaller functions
-func (t *TLSConfig) Validate(ctx context.Context) error {
+func (t *TLSConfig) Validate() error {
 	if t == nil {
 		return nil
 	}
@@ -513,10 +513,6 @@ func (t *TLSConfig) Validate(ctx context.Context) error {
 	_, ok = tlsVersions[*t.MaxVersion]
 	if !ok {
 		return fmt.Errorf("max: TLS version not recognized")
-	}
-
-	if t.Ciphers == nil || len(t.Ciphers) == 0 {
-		log.Info(ctx, "ciphers config missing")
 	}
 
 	var failedCiphers []string

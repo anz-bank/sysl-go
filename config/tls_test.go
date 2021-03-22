@@ -312,7 +312,7 @@ var tlsInvalidConfigTests = []struct {
 
 func TestValidateInvalidTlsConfigs(t *testing.T) {
 	for _, tt := range tlsInvalidConfigTests {
-		err := tt.in.Validate(ctx)
+		err := tt.in.Validate()
 		assert.Error(t, err, tt.name)
 		assert.Equal(t, tt.out, err, tt.name)
 	}
@@ -373,7 +373,7 @@ var tlsValidConfigTests = []struct {
 
 func TestValidateTlsConfig(t *testing.T) {
 	for _, tt := range tlsValidConfigTests {
-		err := tt.in.Validate(ctx)
+		err := tt.in.Validate()
 		assert.NoError(t, err, tt.name)
 	}
 }
