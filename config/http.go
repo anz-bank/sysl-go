@@ -75,6 +75,12 @@ type CommonServerConfig struct {
 	TLS      *TLSConfig `yaml:"tls" mapstructure:"tls"`
 }
 
+// TODO: Inline CommonServerConfig
+// When specifying this configuration value, any common properties should be found at the same level
+// as any HTTP-specific properties, not nested within a separate 'common' component. For an example
+// how this should be done, see GRPCServerConfig.
+// The change should continue to support legacy configurations that nest 'common' properties but
+// encourage users to migrate their properties inline.
 type CommonHTTPServerConfig struct {
 	Common       CommonServerConfig `yaml:"common" mapstructure:"common"`
 	BasePath     string             `yaml:"basePath" mapstructure:"basePath" validate:"startswith=/"`
@@ -82,13 +88,13 @@ type CommonHTTPServerConfig struct {
 	WriteTimeout time.Duration      `yaml:"writeTimeout" mapstructure:"writeTimeout" validate:"nonnil"`
 }
 
-func (c *CommonHTTPServerConfig) Validate() error {
-	// existing validation
-	if err := validator.Validate(c); err != nil {
-		return err
-	}
+type GRPCServerConfig struct {
+	CommonServerConfig `yaml:",inline" mapstructure:",squash"`
+	EnableReflection   bool `yaml:"enableReflection" mapstructure:"enableReflection"`
+}
 
-	return nil
+func (c *CommonHTTPServerConfig) Validate() error {
+	return validator.Validate(c)
 }
 
 func proxyHandlerFromConfig(cfg *Transport) func(req *http.Request) (*url.URL, error) {

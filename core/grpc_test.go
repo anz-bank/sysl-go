@@ -24,38 +24,41 @@ func (*TestServer) Test(ctx context.Context, req *test.TestRequest) (*test.TestR
 	return &test.TestReply{Field1: req.GetField1()}, nil
 }
 
-func localServer() config.CommonServerConfig {
-	return config.CommonServerConfig{
-		HostName: "localhost",
-		Port:     testPort,
+func localServer() config.GRPCServerConfig {
+	return config.GRPCServerConfig{
+		CommonServerConfig: config.CommonServerConfig{
+			HostName: "localhost",
+			Port:     testPort,
+		},
 	}
 }
 
-func localSecureServer() config.CommonServerConfig {
+func localSecureServer() config.GRPCServerConfig {
 	minVer := "1.2"
 	maxVer := "1.3"
 	certPath := "testdata/creds/server1.pem"
 	keyPath := "testdata/creds/server1.key"
 	clientAuth := "NoClientCert"
 	ciphers := []string{"TLS_RSA_WITH_AES_256_CBC_SHA"}
-	return config.CommonServerConfig{
-		HostName: "localhost",
-		Port:     testPort,
-		TLS: &config.TLSConfig{
-			MinVersion: &minVer,
-			MaxVersion: &maxVer,
-			ClientAuth: &clientAuth,
-			Ciphers:    ciphers,
-			ServerIdentities: []*config.ServerIdentityConfig{
-				{
-					CertKeyPair: &config.CertKeyPair{
-						CertPath: &certPath,
-						KeyPath:  &keyPath,
+	return config.GRPCServerConfig{
+		CommonServerConfig: config.CommonServerConfig{
+			HostName: "localhost",
+			Port:     testPort,
+			TLS: &config.TLSConfig{
+				MinVersion: &minVer,
+				MaxVersion: &maxVer,
+				ClientAuth: &clientAuth,
+				Ciphers:    ciphers,
+				ServerIdentities: []*config.ServerIdentityConfig{
+					{
+						CertKeyPair: &config.CertKeyPair{
+							CertPath: &certPath,
+							KeyPath:  &keyPath,
+						},
 					},
 				},
 			},
-		},
-	}
+		}}
 }
 
 type ServerReg struct {
@@ -69,7 +72,7 @@ func (r *ServerReg) RegisterServer(ctx context.Context, server *grpc.Server) {
 }
 
 type GrpcHandler struct {
-	cfg           config.CommonServerConfig
+	cfg           config.GRPCServerConfig
 	reg           ServerReg
 	methodsCalled map[string]bool
 }
@@ -88,10 +91,10 @@ func (h *GrpcHandler) EnabledGrpcHandlers() []handlerinitialiser.GrpcHandlerInit
 
 func (h *GrpcHandler) GrpcAdminServerConfig() *config.CommonServerConfig {
 	h.methodsCalled["GrpcAdminServerConfig"] = true
-	return &h.cfg
+	return &h.cfg.CommonServerConfig
 }
 
-func (h *GrpcHandler) GrpcPublicServerConfig() *config.CommonServerConfig {
+func (h *GrpcHandler) GrpcPublicServerConfig() *config.GRPCServerConfig {
 	h.methodsCalled["GrpcPublicServerConfig"] = true
 	return &h.cfg
 }

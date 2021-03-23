@@ -140,7 +140,7 @@ let sysl = //{./sysl};
                     }
 
                     // Construct a GrpcServerManager to wrap our serviceHandler.
-                    var grpcPublicServerConfig *config.CommonServerConfig = &cfg.GenCode.Upstream.GRPC
+                    var grpcPublicServerConfig *config.GRPCServerConfig = &cfg.GenCode.Upstream.GRPC
 
                     // Here we allow the grpc.ServerOption configuration to be optionally extended or overridden.
                     // See the documentation of core.Hooks for more information.

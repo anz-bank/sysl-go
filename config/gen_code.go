@@ -14,7 +14,7 @@ type GenCodeConfig struct {
 type UpstreamConfig struct {
 	ContextTimeout time.Duration          `yaml:"contextTimeout" mapstructure:"contextTimeout" validate:"nonnil"`
 	HTTP           CommonHTTPServerConfig `yaml:"http" mapstructure:"http"`
-	GRPC           CommonServerConfig     `yaml:"grpc" mapstructure:"grpc"`
+	GRPC           GRPCServerConfig       `yaml:"grpc" mapstructure:"grpc"`
 }
 
 func (c *UpstreamConfig) Validate() error {

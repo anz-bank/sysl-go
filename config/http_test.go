@@ -7,6 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
+
+	"gopkg.in/yaml.v2"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -104,4 +108,30 @@ func TestProxyHandlerFromConfigNoProxy(t *testing.T) {
 	testTransport := Transport{}
 	fn := proxyHandlerFromConfig(&testTransport)
 	require.Nil(t, fn)
+}
+
+func TestGRPCServerConfig(t *testing.T) {
+	yamlStruct := GRPCServerConfig{}
+	yamlValue := `
+hostName: "host"
+port: 8080
+enableReflection: true
+`
+	err := yaml.Unmarshal([]byte(yamlValue), &yamlStruct)
+	require.Nil(t, err)
+	require.Equal(t, "host", yamlStruct.HostName)
+	require.Equal(t, 8080, yamlStruct.Port)
+	require.True(t, yamlStruct.EnableReflection)
+
+	mapStruct := GRPCServerConfig{}
+	mapValue := map[string]interface{}{
+		"hostName":         "host",
+		"port":             8080,
+		"enableReflection": true,
+	}
+	err = mapstructure.Decode(mapValue, &mapStruct)
+	require.Nil(t, err)
+	require.Equal(t, "host", mapStruct.HostName)
+	require.Equal(t, 8080, mapStruct.Port)
+	require.True(t, mapStruct.EnableReflection)
 }

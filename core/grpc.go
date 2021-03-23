@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net"
 
+	"google.golang.org/grpc/reflection"
+
 	"github.com/anz-bank/sysl-go/log"
 
 	"github.com/anz-bank/sysl-go/config"
@@ -19,16 +21,16 @@ type GrpcManager interface {
 	Interceptors() []grpc.UnaryServerInterceptor
 	EnabledGrpcHandlers() []handlerinitialiser.GrpcHandlerInitialiser
 	GrpcAdminServerConfig() *config.CommonServerConfig
-	GrpcPublicServerConfig() *config.CommonServerConfig
+	GrpcPublicServerConfig() *config.GRPCServerConfig
 }
 
 type GrpcServerManager struct {
 	GrpcServerOptions      []grpc.ServerOption
 	EnabledGrpcHandlers    []handlerinitialiser.GrpcHandlerInitialiser
-	GrpcPublicServerConfig *config.CommonServerConfig
+	GrpcPublicServerConfig *config.GRPCServerConfig
 }
 
-func DefaultGrpcServerOptions(ctx context.Context, grpcPublicServerConfig *config.CommonServerConfig) ([]grpc.ServerOption, error) {
+func DefaultGrpcServerOptions(ctx context.Context, grpcPublicServerConfig *config.GRPCServerConfig) ([]grpc.ServerOption, error) {
 	opts, err := config.ExtractGrpcServerOptions(ctx, grpcPublicServerConfig)
 	if err != nil {
 		return nil, err
@@ -67,6 +69,10 @@ func extractGrpcServerOptionsFromGrpcManager(ctx context.Context, hl GrpcManager
 
 func configurePublicGrpcServerListener(ctx context.Context, m GrpcServerManager) StoppableServer {
 	server := grpc.NewServer(m.GrpcServerOptions...)
+	cfg := config.GetDefaultConfig(ctx)
+	if cfg != nil && cfg.GenCode.Upstream.GRPC.EnableReflection {
+		reflection.Register(server)
+	}
 	// Not sure if it is possible to register multiple servers
 	for _, h := range m.EnabledGrpcHandlers {
 		h.RegisterServer(ctx, server)
@@ -77,7 +83,7 @@ func configurePublicGrpcServerListener(ctx context.Context, m GrpcServerManager)
 
 type grpcServer struct {
 	ctx    context.Context
-	cfg    config.CommonServerConfig
+	cfg    config.GRPCServerConfig
 	server *grpc.Server
 	name   string
 }
@@ -127,7 +133,7 @@ func (lw *logWriterError) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func prepareGrpcServerListener(ctx context.Context, server *grpc.Server, commonConfig config.CommonServerConfig, name string) StoppableServer {
+func prepareGrpcServerListener(ctx context.Context, server *grpc.Server, commonConfig config.GRPCServerConfig, name string) StoppableServer {
 	logger := log.GetLogger(ctx)
 	grpclog.SetLoggerV2(
 		grpclog.NewLoggerV2(

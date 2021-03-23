@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func ExtractGrpcServerOptions(ctx context.Context, cfg *CommonServerConfig) ([]grpc.ServerOption, error) {
+func ExtractGrpcServerOptions(ctx context.Context, cfg *GRPCServerConfig) ([]grpc.ServerOption, error) {
 	if cfg == nil || cfg.TLS == nil {
 		return []grpc.ServerOption{}, nil
 	}

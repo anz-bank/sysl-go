@@ -31,7 +31,7 @@ func TestResolveGrpcServerOptionsCannotOverrideAndAddServerOptionsSimultaneously
 	// inconsistent config
 	hooks := &Hooks{
 		AdditionalGrpcServerOptions: []grpc.ServerOption{grpc.MaxRecvMsgSize(123)},
-		OverrideGrpcServerOptions: func(_ context.Context, _ *config.CommonServerConfig) ([]grpc.ServerOption, error) {
+		OverrideGrpcServerOptions: func(_ context.Context, _ *config.GRPCServerConfig) ([]grpc.ServerOption, error) {
 			return []grpc.ServerOption{grpc.MaxRecvMsgSize(123456)}, nil
 		},
 	}
@@ -57,7 +57,7 @@ func TestResolveGrpcServerOptionsCanAddServerOptions(t *testing.T) {
 func TestResolveGrpcServerOptionsCanOverrideServerOptions(t *testing.T) {
 	myCustomOptions := []grpc.ServerOption{grpc.MaxRecvMsgSize(123456), grpc.ReadBufferSize(1)}
 	hooks := &Hooks{
-		OverrideGrpcServerOptions: func(_ context.Context, _ *config.CommonServerConfig) ([]grpc.ServerOption, error) {
+		OverrideGrpcServerOptions: func(_ context.Context, _ *config.GRPCServerConfig) ([]grpc.ServerOption, error) {
 			return myCustomOptions, nil
 		},
 	}

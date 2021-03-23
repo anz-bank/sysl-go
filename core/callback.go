@@ -100,7 +100,7 @@ type Hooks struct {
 	// to append to the default grpc.ServerOption configuration instead of overriding it completely.
 	//
 	// It is an error to set both AdditionalGrpcServerOptions and OverrideGrpcServerOptions.
-	OverrideGrpcServerOptions func(ctx context.Context, grpcPublicServerConfig *config.CommonServerConfig) ([]grpc.ServerOption, error)
+	OverrideGrpcServerOptions func(ctx context.Context, grpcPublicServerConfig *config.GRPCServerConfig) ([]grpc.ServerOption, error)
 
 	// OverrideMakeJWTClaimsBasedAuthorizationRule can be used to customise how authorization rule
 	// expressions are evaluated and used to decide if JWT claims are authorised. By default, if this
@@ -140,7 +140,7 @@ func ResolveGrpcDialOptions(ctx context.Context, serviceName string, h *Hooks, g
 	}
 }
 
-func ResolveGrpcServerOptions(ctx context.Context, h *Hooks, grpcPublicServerConfig *config.CommonServerConfig) ([]grpc.ServerOption, error) {
+func ResolveGrpcServerOptions(ctx context.Context, h *Hooks, grpcPublicServerConfig *config.GRPCServerConfig) ([]grpc.ServerOption, error) {
 	switch {
 	case len(h.AdditionalGrpcServerOptions) > 0 && h.OverrideGrpcServerOptions != nil:
 		return nil, fmt.Errorf("Hooks.AdditionalGrpcServerOptions and Hooks.OverrideGrpcServerOptions cannot both be set")
