@@ -49,17 +49,13 @@ let sysl = //{./sysl};
                         _: qparam('name').s,
                     };
                     let var = \. $`req.${go.name(.('name').s)}`;
-                    let valueExpr = \. \star cond go.type(.('type')) {
-                        ($`${star}string`): $`${star}${var(.)}`,
-                        _:                  $`fmt.Sprintf("%v", ${star}${var(.)})`,
-                    };
                     $`
                         ${reqQueryParams => .@item orderby sysl.source(.('type')) >> $`
-                            q.Add("${queryParamName(.)}", ${valueExpr(., '')})
+                            q = convert.EncodeQueryParam(q, "${queryParamName(.)}", ${var(.)})
                         `::\i}
                         ${optQueryParams => .@item orderby sysl.source(.('type')) >> $`
                             if ${var(.)} != nil {
-                                q.Add("${queryParamName(.)}", ${valueExpr(., '*')})
+                                q = convert.EncodeQueryParam(q, "${queryParamName(.)}", *${var(.)})
                             }
                         `::\i}
                     `

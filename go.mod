@@ -7,6 +7,7 @@ require (
 	github.com/anz-bank/go-pkcs12 v0.2.0
 	github.com/anz-bank/pkg v0.0.33
 	github.com/anz-bank/sysl-catalog v1.4.185
+	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/golang/protobuf v1.4.3
 	github.com/google/go-querystring v1.0.0
