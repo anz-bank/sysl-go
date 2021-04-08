@@ -192,7 +192,7 @@ func DoHTTPRequest2(ctx context.Context, config *HTTPRequest) (*HTTPResult, erro
 
 	// TODO: remove this after confirming that gzip was handled by lower layer
 	var bodyReader io.Reader
-	if m, _ := regexp.MatchString(`(?i)gzip`, httpResponse.Header.Get("Content-Encoding")); m {
+	if m, _ := regexp.MatchString(`(?i)gzip`, httpResponse.Header.Get("Content-Encoding")); m && httpResponse.ContentLength != 0 {
 		bodyReader, err = gzip.NewReader(httpResponse.Body)
 		if err != nil {
 			return nil, err
