@@ -1,4 +1,4 @@
-FROM golang:1.14.10-buster AS stage
+FROM golang:1.16.3-buster AS stage
 
 # requires git make curl
 # but this base image has all of those tools already
@@ -18,7 +18,7 @@ RUN git clone --depth 1 --branch v"$ARRAI_VERSION" https://github.com/arr-ai/arr
 # install goimports
 RUN go get golang.org/x/tools/cmd/goimports
 
-FROM golang:1.14.10-buster
+FROM golang:1.16.3-buster
 COPY --from=stage /go/bin/arrai /bin
 COPY --from=stage /bin/sysl /bin
 COPY --from=stage /go/bin/goimports /bin

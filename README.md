@@ -30,7 +30,7 @@ See [sysl-template](https://github.com/anz-bank/sysl-template) for more examples
 
 Ensure your environment provides:
 
-- [go 1.14](https://golang.org/doc/install)
+- [go 1.16](https://golang.org/doc/install)
 - [golangci-lint 1.29.0](https://github.com/golangci/golangci-lint/releases/tag/v1.29.0)
 - [protobuf 3.11.4](https://github.com/protocolbuffers/protobuf/)
 - `make`
@@ -42,7 +42,7 @@ Ensure your environment provides:
 - [`arrai`](https://github.com/arr-ai/arrai) tool available on PATH
 
 
-On OSX, after installing [go 1.14](https://golang.org/doc/install) run
+On OSX, after installing [go 1.16](https://golang.org/doc/install) run
 
     brew install golangci/tap/golangci-lint make curl protoc-gen-go grpc
 

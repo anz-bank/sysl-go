@@ -214,6 +214,13 @@ func TestConfigureTLS(t *testing.T) {
 		RootCAs:                  tempCAs,
 	}
 
+	// x509.CertPool contains a lazyCert which contains a function pointer, which is not comparable
+	// just compare the subjects and then nil them out
+	req.Equal(expectedTLS.RootCAs.Subjects(), tlsCfg.RootCAs.Subjects())
+	expectedTLS.RootCAs, tlsCfg.RootCAs = nil, nil
+	req.Equal(expectedTLS.ClientCAs.Subjects(), tlsCfg.ClientCAs.Subjects())
+	expectedTLS.ClientCAs, tlsCfg.ClientCAs = nil, nil
+
 	req.Equal(expectedTLS, tlsCfg)
 }
 

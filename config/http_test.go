@@ -94,7 +94,7 @@ func TestProxyHandlerFromConfig(t *testing.T) {
 func TestProxyHandlerFromConfigDefaultProxy(t *testing.T) {
 	os.Setenv(`http_proxy`, `http://localhost:3128`)
 	os.Setenv(`https_proxy`, `http://localhost:3128`)
-	dummyReq, _ := http.NewRequest("", "", nil)
+	dummyReq, _ := http.NewRequest("", "http://", nil)
 	testTransport := Transport{
 		UseProxy: true,
 	}
