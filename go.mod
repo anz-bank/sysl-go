@@ -21,6 +21,9 @@ require (
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/viper v1.6.1
 	github.com/stretchr/testify v1.7.0
+	github.com/yuin/goldmark v1.2.1 // indirect
+	golang.org/x/net v0.0.0-20201021035429-f5854403a974 // indirect
+	golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4 // indirect
 	google.golang.org/grpc v1.32.0
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gopkg.in/square/go-jose.v2 v2.5.1
