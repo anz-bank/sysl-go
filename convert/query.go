@@ -21,7 +21,7 @@ func EncodeQueryParam(params url.Values, key string, value interface{}) url.Valu
 	case reflect.Int64, reflect.Float64, reflect.Bool, reflect.String:
 		params.Add(key, fmt.Sprint(v))
 	default:
-		//Type may be unsupported for query parameter
+		// Type may be unsupported for query parameter
 		params.Add(key, fmt.Sprint(v))
 	}
 	return params

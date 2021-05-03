@@ -164,7 +164,6 @@ let prelude = \app \imports $`
         "net/http"
         "net/url"
 
-        "github.com/anz-bank/sysl-go/catalogservice"
         "github.com/anz-bank/sysl-go/common"
         "github.com/anz-bank/sysl-go/core"
         "github.com/anz-bank/sysl-go/config"
