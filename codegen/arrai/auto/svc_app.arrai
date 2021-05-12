@@ -1,7 +1,7 @@
 let go = //{./go};
 let sysl = //{./sysl};
 
-\(:app, :appname, :basepath, :clientDeps, :clientDeps, :module, :goModule, :restEndpoints, ...)
+\(:app, :appname, :basepath, :clientDeps, :module, :goModule, :restEndpoints, ...)
     let prefix = \dep cond {goModule.depField(dep).grpc: `GRPC`, _: `HTTP`};
     let grpc = cond {"gRPC" <: sysl.patterns(app): `Grpc`};
     let serviceInterface = $`${grpc}ServiceInterface`;
