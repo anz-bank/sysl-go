@@ -44,6 +44,9 @@ ALLTESTS = $(sort $(dir $(wildcard codegen/arrai/auto/tests/*/Makefile)))
 auto-test: $(ALLTESTS)
 	$(foreach dir,$^,$(MAKE) -C $(dir);)
 
+update-auto-test-go-mod: $(ALLTESTS) ## Update go.mod and go.sum files within auto tests
+	$(foreach dir,$^,pushd $(dir) && go mod download && go mod tidy && popd;)
+
 clean: $(ALLTESTS)
 	rm -f $(COVERFILE)
 	@$(foreach dir,$^,$(MAKE) -C $(dir) clean;)

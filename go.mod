@@ -7,7 +7,7 @@ replace github.com/spf13/afero => github.com/anz-bank/afero v1.2.4
 require (
 	github.com/alecthomas/participle v0.6.0
 	github.com/anz-bank/go-pkcs12 v0.2.0
-	github.com/anz-bank/pkg v0.0.33
+	github.com/anz-bank/pkg v0.0.35
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/go-playground/universal-translator v0.17.0 // indirect
