@@ -176,14 +176,14 @@ func DoHTTPRequest2(ctx context.Context, config *HTTPRequest) (*HTTPResult, erro
 		}
 	}
 
-	httpRequest, err := http.NewRequest(config.Method, config.URLString, reader)
+	httpRequest, err := http.NewRequestWithContext(ctx, config.Method, config.URLString, reader)
 	if err != nil {
 		return nil, err
 	}
 
 	httpRequest.Header = headers
 
-	httpResponse, err := config.Client.Do(httpRequest.WithContext(ctx))
+	httpResponse, err := config.Client.Do(httpRequest)
 	if err != nil {
 		return nil, err
 	}
