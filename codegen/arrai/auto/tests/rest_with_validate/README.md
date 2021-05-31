@@ -89,3 +89,30 @@ Annotating the endpoint method is also supported in the instance that this behav
   POST:
     ...
 ```
+
+### Missing required request parameters
+
+Unfortunately request objects were not automatically validated for missing required parameters, 
+and due to not wanting to possibly break existing applications by adding new validations, an option was added to be able to turn on this validation by annotating with `validate` on the entire app or individual types.
+
+You can either turn it on for the entire app:
+```sysl
+App [~validate]:
+  ...
+```
+Or for individual types:
+```sysl
+App:
+  /query:
+    POST (Body <: Name [mediatype="application/json", ~body]):
+      return ok <: Person
+
+  !type Name [~validate]:
+    name <: string
+
+  !type Person:
+    name <: string
+    age <: int [validate="min=0,max=100"]
+    height <: int [validate="min=0"]
+    contact <: string [validate="email"]
+```

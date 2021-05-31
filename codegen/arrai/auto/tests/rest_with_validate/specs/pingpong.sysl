@@ -10,6 +10,30 @@ PingPong [package="pingpong"]:
         GET:
             return ok <: Pong
 
+    /ping-pong:
+        POST (Body <: Ping [mediatype="application/json", ~body]):
+            return ok <: Pong
+
+    /pong-pong:
+        POST (Body <: Pong [mediatype="application/json", ~body]):
+            return ok <: Pong
+
+    !type Ping [~validate]:
+        identifier <: int
+        value <: int
+
     !type Pong:
         identifier <: int [validate="max=10"]
         value <: int [validate="max=10"]
+
+PingPongWithValidate [package="pingpongwithvalidate", ~validate]:
+    @go_package = "pingpong"
+    @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_with_validate"
+
+    /pong-pong:
+        POST (Body <: Pong [mediatype="application/json", ~body]):
+            return ok <: Pong
+
+    !type Pong:
+        identifier <: int
+        value <: int

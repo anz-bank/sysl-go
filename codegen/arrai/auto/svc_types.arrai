@@ -15,6 +15,7 @@ let fieldJsonTag = \type \key
     let entities = orderedTypes(app('types')?:{} where !({"error"} & sysl.patterns(.@value)) && {"tuple", "relation"} & (.@value => .@));
     let aliases = orderedTypes(app('types')?:{} where !({'oneOf', 'oneof', 'tuple', 'relation'} & (.@value => .@)));
     let unions = orderedTypes(app('types')?:{} where ({'oneOf', 'oneof'} & (.@value => .@)));
+    let validateApp = sysl.patterns(app) & {"validate"};
     $`
         ${go.prelude(app, {})}
 
@@ -75,8 +76,8 @@ let fieldJsonTag = \type \key
                     }
                 `}}
                 ${
-                    let optParams = entity('attrDefs') where sysl.isPtr(.@value) orderby .@ >> .@value;
-                    cond {{"validate"} & patterns && optParams: $`
+                    let reqParams = entity('attrDefs') where !sysl.isPtr(.@value) orderby .@ >> .@value;
+                    cond {({"validate"} & patterns || validateApp) && reqParams: $`
                         func (t *${typename}) UnmarshalJSON(data []byte) error {
                             inner := struct {
                                 ${entity('attrDefs') orderby .@ >> \(@: key, @value: attrDef)
