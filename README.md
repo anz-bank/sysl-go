@@ -39,7 +39,7 @@ Ensure your environment provides:
   - https://github.com/golang/protobuf
   - https://github.com/grpc/grpc
 - [`sysl`](https://sysl.io/docs/installation) tool available on PATH
-- [`arrai`](https://github.com/arr-ai/arrai) tool available on PATH
+- [`arrai`](https://arr.ai/docs/install/) tool available on PATH
 
 
 On OSX, after installing [go 1.16](https://golang.org/doc/install) run
