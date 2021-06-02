@@ -55,7 +55,7 @@ let sysl = //{./sysl};
                 let method = go.methodName(ep);
                 let ruleExpression = authorizationRule(ep);
                 cond {authorizationRule(ep): $`
-                    authRule${method}, authRuleErr := core.ResolveRESTAuthorizationRule(ctx, hooks, "${method}", ${"`"+ruleExpression+"`"})
+                    authRule${method}, authRuleErr := core.ResolveRESTAuthorizationRule(ctx, hooks, "${method}", ${"`"++ruleExpression++"`"})
                     if authRuleErr != nil {
                         return nil, authRuleErr
                     }

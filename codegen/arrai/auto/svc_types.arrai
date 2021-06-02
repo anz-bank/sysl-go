@@ -3,7 +3,7 @@ let sysl = //{./sysl};
 let validation = //{./validation};
 
 let orderedTypes = \types
-    (types orderby .@) >> . + (typename: go.name(.@));
+    (types orderby .@) >> . +> (typename: go.name(.@));
 
 let fieldJsonTag = \type \key
     cond type {
@@ -142,7 +142,7 @@ let fieldJsonTag = \type \key
         ${
             let json_mapped_entities =
                 entities
-                >> (. + (
+                >> (. +> (
                         param: //str.lower(.typename),
                         json_map_key: .@value('attrs')?('json_map_key')?('s').s:"",
                     ))
@@ -172,7 +172,7 @@ let fieldJsonTag = \type \key
             }
         `::\i}
         ${unions >> \(@: key, @value: value, :typename)
-            let unionTypes = value('oneOf')('type').a >> .('typeRef')('ref')('path').a >> go.name(.@item.s);
+            let unionTypes = value('oneOf')('type').a >> .('typeRef')('ref')('path').a >> go.name((((.) single).@item).s);
             $`
             // ${typename} can be one of the following types at runtime:
             ${unionTypes >> $`// ${.}`::\i}
