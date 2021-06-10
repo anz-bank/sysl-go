@@ -15,6 +15,7 @@ type LibraryConfig struct {
 	Profiling      bool                  `yaml:"profiling" mapstructure:"profiling"`
 	Health         bool                  `yaml:"health" mapstructure:"health"`
 	Authentication *AuthenticationConfig `yaml:"authentication" mapstructure:"authentication"`
+	Trace          TraceConfig           `yaml:"trace" mapstructure:"trace"`
 }
 
 type AdminConfig struct {
@@ -35,6 +36,11 @@ type LogConfig struct {
 // AuthenticationConfig struct.
 type AuthenticationConfig struct {
 	JWTAuth *jwtauth.Config `yaml:"jwtauth" mapstructure:"jwtauth"`
+}
+
+// TraceConfig struct.
+type TraceConfig struct {
+	IncomingHeaderForID string `yaml:"incomingHeaderForID" mapstructure:"incomingHeaderForID"`
 }
 
 func (c *LibraryConfig) Validate() error {

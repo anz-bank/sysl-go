@@ -7,20 +7,29 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 )
 
+//nolint:maligned // This is just a test and it's easier to read in this order
 type testData struct {
-	reqid         *string
-	expectWarning bool
+	incomingHeaderID             string
+	insertDifferentHeaderIDToCfg bool
+	reqid                        *string
+	expectWarning                bool
 }
 
+var standardHeaderID = defaultIncomingHeaderForID
+var differentHeaderID = "TraceID"
+
 var tests = []testData{
-	{NewString(""), true},
-	{NewString("652817bc-ee0c-40e3-936c-fa74aea0ad49"), false},
-	{NewString("652817bc-AB0C-40E3-936C-fA74AAA0AA49"), false},
-	{nil, true},
+	{standardHeaderID, false, NewString(""), true},
+	{standardHeaderID, false, NewString("652817bc-ee0c-40e3-936c-fa74aea0ad49"), false},
+	{standardHeaderID, true, NewString("652817bc-ee0c-40e3-936c-fa74aea0ad49"), true},
+	{differentHeaderID, true, NewString("652817bc-ee0c-40e3-936c-fa74aea0ad49"), false},
+	{standardHeaderID, false, NewString("652817bc-AB0C-40E3-936C-fA74AAA0AA49"), false},
+	{standardHeaderID, false, nil, true},
 }
 
 func TestTraceabilityMiddleware(t *testing.T) {
@@ -29,13 +38,19 @@ func TestTraceabilityMiddleware(t *testing.T) {
 		t.Run(fmt.Sprintf("TestTraceabilityMiddleware#%d", i), func(t *testing.T) {
 			ctx, logger := testutil.NewTestContextWithLogger()
 
+			if tt.insertDifferentHeaderIDToCfg {
+				cfg := config.DefaultConfig{}
+				cfg.Library.Trace.IncomingHeaderForID = differentHeaderID
+				ctx = config.PutDefaultConfig(ctx, &cfg)
+			}
+
 			mware := TraceabilityMiddleware
 			body := bytes.NewBufferString("test")
 			req, err := http.NewRequest("GET", "localhost/", body)
 			require.Nil(t, err)
 			req = req.WithContext(ctx)
 			if tt.reqid != nil {
-				req.Header.Add("RequestID", *tt.reqid)
+				req.Header.Add(tt.incomingHeaderID, *tt.reqid)
 			}
 
 			fn := mware(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {

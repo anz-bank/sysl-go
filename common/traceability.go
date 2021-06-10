@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/log"
 
 	"github.com/anz-bank/sysl-go/common/internal"
@@ -19,12 +20,13 @@ type requestID struct {
 }
 
 const traceIDLogField = "traceid"
+const defaultIncomingHeaderForID = "RequestID"
 
 // Injects a traceId UUID into the request context.
 func TraceabilityMiddleware(next http.Handler) http.Handler {
 	fn := func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		val, err := uuid.Parse(r.Header.Get("RequestID"))
+		val, err := uuid.Parse(r.Header.Get(getIncomingHeaderForID(ctx)))
 		if err != nil {
 			log.Info(internal.InitFieldsFromRequest(ctx, r), "Incoming request with invalid or missing RequestID header, filled traceid with new UUID instead")
 			r = r.WithContext(AddTraceIDToContext(r.Context(), uuid.New(), false))
@@ -53,4 +55,14 @@ func TryGetTraceIDFromContext(ctx context.Context) (uuid.UUID, bool) {
 
 func AddTraceIDToContext(ctx context.Context, id uuid.UUID, wasProvided bool) context.Context {
 	return context.WithValue(ctx, traceabilityContextKey{}, &requestID{id, wasProvided})
+}
+
+func getIncomingHeaderForID(ctx context.Context) string {
+	ret := defaultIncomingHeaderForID
+	cfg := config.GetDefaultConfig(ctx)
+	if cfg != nil && cfg.Library.Trace.IncomingHeaderForID != "" {
+		ret = cfg.Library.Trace.IncomingHeaderForID
+	}
+
+	return ret
 }
