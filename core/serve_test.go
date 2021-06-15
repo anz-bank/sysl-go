@@ -224,3 +224,43 @@ func TestDescribeYAMLForTypeContainsFuncs(t *testing.T) {
 	assert.Equal(t, "\nfield1: \x1b[1m0\x1b[0m\nfield2: \x1b[1m0\x1b[0m\nField3: \x1b[1m0\x1b[0m",
 		w.String())
 }
+
+type testStoppableServer struct {
+	start func() error
+}
+
+func (s *testStoppableServer) Start() error {
+	if s.start != nil {
+		return s.start()
+	}
+	return nil
+}
+
+func (s *testStoppableServer) Stop() error {
+	return nil
+}
+
+func (s *testStoppableServer) GracefulStop() error {
+	return nil
+}
+
+func (s testStoppableServer) GetName() string {
+	return "testStoppableServer"
+}
+
+// Ensure that a panic in the Start of a subServer gets recovered.
+func TestMultiStoppableServer_Start_WithPanic(t *testing.T) {
+	server := &testStoppableServer{start: func() error {
+		panic("panic")
+		return nil
+	}}
+
+	ctx, err := newServerContext(ctx)
+	assert.Nil(t, err)
+
+	mServer := NewMultiStoppableServer(ctx, []StoppableServer{server})
+	assert.NotPanics(t, func() {
+		err = mServer.Start()
+		assert.Error(t, err)
+	})
+}
