@@ -15,7 +15,7 @@ func (roundTripper) RoundTrip(_ *http.Request) (*http.Response, error) {
 }
 
 func TestDownstreamRoundTripper(t *testing.T) {
-	client, err := BuildDownstreamHTTPClient(ctx,
+	client, _, err := BuildDownstreamHTTPClient(ctx,
 		"Name",
 		&Hooks{
 			DownstreamRoundTripper: func(serviceName string, serviceURL string, original http.RoundTripper) http.RoundTripper {

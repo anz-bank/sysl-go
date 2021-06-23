@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net/http"
 
@@ -122,6 +123,14 @@ type Hooks struct {
 
 	// ValidateConfig can be used to validate (or override) values in the config.
 	ValidateConfig func(ctx context.Context, cfg *config.DefaultConfig) error
+
+	// HTTPClientBuilder can be used to add a function which will be used to create the downstream HTTP clients
+	// instead of the normal generator. This can be used to create custom test HTTP clients.
+	HTTPClientBuilder func(serviceName string) (client *http.Client, serviceURL string, err error)
+
+	// StoppableServerBuilder can be used to add a function which will be used to create the public listener
+	// instead of the normal httpServer. This can be used to create custom test HTTP listeners.
+	StoppableServerBuilder func(ctx context.Context, rootRouter http.Handler, tlsConfig *tls.Config, httpConfig config.CommonHTTPServerConfig, name string) StoppableServer
 }
 
 func ResolveGrpcDialOptions(ctx context.Context, serviceName string, h *Hooks, grpcDownstreamConfig *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {

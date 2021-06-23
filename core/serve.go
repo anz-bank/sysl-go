@@ -178,6 +178,7 @@ func NewServer(
 		grpcServerManager:  grpcManager,
 		prometheusRegistry: promRegistry,
 		multiServer:        nil,
+		hooks:              hooks,
 	}
 
 	return server, nil
@@ -425,6 +426,7 @@ type autogenServer struct {
 	grpcServerManager  *GrpcServerManager
 	prometheusRegistry *prometheus.Registry
 	multiServer        StoppableServer
+	hooks              *Hooks
 }
 
 //nolint:funlen,gocognit
@@ -476,7 +478,7 @@ func (s *autogenServer) Start() error {
 	// Make the listener function for the REST Public server
 	if s.restManager != nil && s.restManager.PublicServerConfig() != nil {
 		log.Info(ctx, "found PublicServerConfig for REST")
-		serverPublic, err := configurePublicServerListener(ctx, s.restManager, mWare.public)
+		serverPublic, err := configurePublicServerListener(ctx, s.restManager, mWare.public, s.hooks)
 		if err != nil {
 			return err
 		}

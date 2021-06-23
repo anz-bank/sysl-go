@@ -85,7 +85,7 @@ func configureAdminServerListener(ctx context.Context, hl Manager, promRegistry 
 	return listenAdmin, nil
 }
 
-func configurePublicServerListener(ctx context.Context, hl Manager, mWare []func(handler http.Handler) http.Handler) (StoppableServer, error) {
+func configurePublicServerListener(ctx context.Context, hl Manager, mWare []func(handler http.Handler) http.Handler, hooks *Hooks) (StoppableServer, error) {
 	rootPublicRouter, publicRouter := configureRouters(hl.PublicServerConfig().HTTP.BasePath, mWare)
 
 	publicTLSConfig, err := config.MakeTLSConfig(ctx, hl.PublicServerConfig().HTTP.Common.TLS)
@@ -101,7 +101,12 @@ func configurePublicServerListener(ctx context.Context, hl Manager, mWare []func
 		anzlog.Info(ctx, "No service handlers enabled by config.")
 	}
 
-	listenPublic := prepareServerListener(ctx, rootPublicRouter, publicTLSConfig, hl.PublicServerConfig().HTTP, "REST Public Server")
+	prepareServerListenerFn := prepareServerListener
+	if hooks != nil && hooks.StoppableServerBuilder != nil {
+		prepareServerListenerFn = hooks.StoppableServerBuilder
+	}
+
+	listenPublic := prepareServerListenerFn(ctx, rootPublicRouter, publicTLSConfig, hl.PublicServerConfig().HTTP, "REST Public Server")
 
 	return listenPublic, nil
 }
@@ -181,7 +186,7 @@ func (s httpServer) GetName() string {
 	return s.name
 }
 
-func prepareServerListener(ctx context.Context, rootRouter http.Handler, tlsConfig *tls.Config, httpConfig config.CommonHTTPServerConfig, name string) httpServer {
+func prepareServerListener(ctx context.Context, rootRouter http.Handler, tlsConfig *tls.Config, httpConfig config.CommonHTTPServerConfig, name string) StoppableServer {
 	re := regexp.MustCompile(`TLS handshake error from .* EOF`) // Avoid spurious TLS errors from load balancer
 	writer := &TLSLogFilter{anzlog.GetLogger(ctx), re}
 	serverLogger := log.New(writer, "HTTPServer ", log.LstdFlags|log.Llongfile)

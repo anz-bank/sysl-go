@@ -3,34 +3,33 @@ package core
 import (
 	"context"
 	"net/http"
-	"time"
 
-	"github.com/anz-bank/sysl-go/common"
 	"google.golang.org/grpc"
 
+	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config"
 )
 
-func BuildDownstreamHTTPClient(ctx context.Context, serviceName string, hooks *Hooks, cfg *config.CommonDownstreamData) (*http.Client, error) {
-	client, err := config.DefaultHTTPClient(ctx, cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	if cfg == nil {
-		client.Timeout = time.Minute
-	}
-
-	client.Transport = common.NewLoggingRoundTripper(serviceName, client.Transport)
-	if hooks.DownstreamRoundTripper != nil {
-		serviceURL := ""
+func BuildDownstreamHTTPClient(ctx context.Context, serviceName string, hooks *Hooks, cfg *config.CommonDownstreamData) (client *http.Client, serviceURL string, err error) {
+	if hooks != nil && hooks.HTTPClientBuilder != nil {
+		client, serviceURL, err = hooks.HTTPClientBuilder(serviceName)
+	} else {
+		client, err = config.DefaultHTTPClient(ctx, cfg)
 		if cfg != nil {
 			serviceURL = cfg.ServiceURL
 		}
+	}
+
+	if err != nil {
+		return nil, "", err
+	}
+
+	client.Transport = common.NewLoggingRoundTripper(serviceName, client.Transport)
+	if hooks != nil && hooks.DownstreamRoundTripper != nil {
 		client.Transport = hooks.DownstreamRoundTripper(serviceName, serviceURL, client.Transport)
 	}
 
-	return client, nil
+	return
 }
 
 // BuildDownstreamGRPCClient creates a grpc client connection to the target indicated by cfg.ServiceAddress.

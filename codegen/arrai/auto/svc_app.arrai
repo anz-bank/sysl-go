@@ -24,7 +24,16 @@ let sysl = //{./sysl};
             }
             var err error
             ${clientDeps orderby . >> $`
-                ${.import}${prefix(.)}Client, err := core.BuildDownstream${prefix(.)}Client(
+                ${cond {
+                    goModule.depField(.).grpc:
+                        $`
+                            ${.import}${prefix(.)}Client, err := core.BuildDownstream${prefix(.)}Client(
+                        `,
+                    _:
+                        $`
+                            ${.import}${prefix(.)}Client, ${.import}${prefix(.)}URL, err := core.BuildDownstream${prefix(.)}Client(
+                        `,
+                }}
                     ctx,
                     ${.import:q},
                     hooks,
@@ -42,7 +51,7 @@ let sysl = //{./sysl};
                         $`
                             ${.import}Client := &${.import}.Client{
                                 Client:  ${.import}${prefix(.)}Client,
-                                URL:     downstreamConfig.${go.name(.import)}.ServiceURL,
+                                URL:     ${.import}${prefix(.)}URL,
                                 Headers: downstreamConfig.${go.name(.import)}.Headers,
                             }
                         `,
@@ -127,9 +136,9 @@ let sysl = //{./sysl};
 
                     var downstream *DownstreamConfig
                     var is bool
-                    if downstream, is = cfg.GenCode.Downstream.(*DownstreamConfig); !is {
+                    if downstream, is = cfg.GenCode.Downstream.(*DownstreamConfig); !is || downstream == nil {
                         downstream = &DownstreamConfig{
-                            ContextTimeout: 30,
+                            ContextTimeout: 30 * time.Second,
                         }
                     }
 

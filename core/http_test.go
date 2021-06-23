@@ -396,7 +396,7 @@ func TestHTTPStoppableServerGracefulStopTimeout(t *testing.T) {
 		fmt.Fprintf(w, "hello")
 	})
 
-	s := prepareServerListener(ctx, h, nil, cfg, "")
+	s := prepareServerListener(ctx, h, nil, cfg, "").(httpServer)
 	s.gracefulStopTimeout = 10 * time.Millisecond
 
 	go func() {
