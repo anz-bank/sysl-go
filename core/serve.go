@@ -200,12 +200,16 @@ func LoadCustomConfig(ctx context.Context, customConfig interface{}) (interface{
 	} else {
 		fs = afero.NewOsFs()
 		if len(os.Args) != 2 {
-			return nil, fmt.Errorf("Wrong number of arguments (usage: %s (config | -h | --help))", os.Args[0])
+			return nil, fmt.Errorf("Wrong number of arguments (usage: %s (config | -h | --help | -v | --version))", os.Args[0])
 		}
-		if os.Args[1] == "--help" || os.Args[1] == "-h" {
+		switch os.Args[1] {
+		case "--help", "-h":
 			fmt.Printf("Usage: %s config\n\n", os.Args[0])
 			describeCustomConfig(os.Stdout, customConfig)
 			fmt.Print("\n\n")
+			return nil, ErrDisplayHelp(2)
+		case "--version", "-v":
+			fmt.Printf("%s\n", buildMetadata.String())
 			return nil, ErrDisplayHelp(2)
 		}
 		configPath = os.Args[1]
