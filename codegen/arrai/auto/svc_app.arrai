@@ -81,27 +81,28 @@ let sysl = //{./sysl};
             switch err.(type) {
                 case core.ErrDisplayHelp:
                     return
-            }
+                case nil:
+                    signalChan := make(chan os.Signal, 1)
+                    signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
-            signalChan := make(chan os.Signal, 1)
-            signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+                    errChan := make(chan error, 1)
+                    go func() {
+                        defer func() {
+                            if r := recover(); r != nil {
+                                errChan <- fmt.Errorf("Server panic: %v", r)
+                            }
+                        }()
 
-            errChan := make(chan error, 1)
-            go func() {
-                defer func() {
-                    if r := recover(); r != nil {
-                        errChan <- fmt.Errorf("Server panic: %v", r)
+                        errChan <- srv.Start()
+                    }()
+
+                    select {
+                    case <-signalChan:
+                        err = srv.GracefulStop()
+                    case err = <-errChan:
                     }
-                }()
-
-                errChan <- srv.Start()
-            }()
-
-            select {
-            case <-signalChan:
-                err = srv.GracefulStop()
-            case err = <-errChan:
             }
+
             if err != nil {
                 log.Fatal(err)
             }
