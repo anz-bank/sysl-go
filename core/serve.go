@@ -431,6 +431,7 @@ type autogenServer struct {
 	prometheusRegistry *prometheus.Registry
 	multiServer        StoppableServer
 	hooks              *Hooks
+	m                  sync.Mutex // protect access to multiServer
 }
 
 //nolint:funlen,gocognit
@@ -509,13 +510,19 @@ func (s *autogenServer) Start() error {
 		panic(err)
 	}
 
-	s.multiServer = NewMultiStoppableServer(ctx, servers)
+	s.newMultiStoppableServer(ctx, servers)
 
 	if healthServer != nil {
 		healthServer.SetReady(true)
 	}
 
 	return s.multiServer.Start()
+}
+
+func (s *autogenServer) newMultiStoppableServer(ctx context.Context, servers []StoppableServer) {
+	s.m.Lock()
+	defer s.m.Unlock()
+	s.multiServer = &multiStoppableServer{ctx, servers}
 }
 
 // FIXME replace MultiError with some existing type that does this job better.
@@ -533,14 +540,28 @@ func (e MultiError) Error() string {
 }
 
 func (s *autogenServer) Stop() error {
+	s.m.Lock()
+	defer s.m.Unlock()
+
+	if s.multiServer == nil {
+		return nil
+	}
+
 	return s.multiServer.Stop()
 }
 
 func (s *autogenServer) GracefulStop() error {
+	s.m.Lock()
+	defer s.m.Unlock()
+
+	if s.multiServer == nil {
+		return nil
+	}
+
 	return s.multiServer.GracefulStop()
 }
 
-func (s autogenServer) GetName() string {
+func (s *autogenServer) GetName() string {
 	return s.name
 }
 
