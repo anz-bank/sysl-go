@@ -200,7 +200,7 @@ let sysl = //{./sysl};
                         let name = type('attrs')?('name')('s').s:name;
                         cond {sysl.type.required(type): $`
                             if ${go.name(name)} == "" {
-                                common.HandleError(ctx, w, common.BadRequestError, "${name} header length is zero", nil, s.genCallback.MapError)
+                                common.HandleError(ctx, w, common.BadRequestError, "${name} header length is zero", common.NewZeroHeaderLengthError("${name}"), s.genCallback.MapError)
                                 return
                             }
                         `}

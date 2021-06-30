@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
 	"github.com/stretchr/testify/require"
@@ -37,6 +39,14 @@ type Payload struct {
 }
 
 func doGatewayRequestResponse(ctx context.Context, content string) (string, error) {
+	return doGatewayRequestResponse_impl(ctx, content, false)
+}
+
+func doGatewayRequestResponseMissingHeader(ctx context.Context, content string) (string, error) {
+	return doGatewayRequestResponse_impl(ctx, content, true)
+}
+
+func doGatewayRequestResponse_impl(ctx context.Context, content string, missingRequiredHeader bool) (string, error) {
 	// Naive hand-written http client that attempts to call the Gateway service's encode endpoint.
 	// This does not attempt to depend on generated code or sysl-go's core libraries, as we want to be
 	// able to tell if the codegen or sysl-go libraries are defective or doing something unusual.
@@ -54,7 +64,9 @@ func doGatewayRequestResponse(ctx context.Context, content string) (string, erro
 	if err != nil {
 		return "", err
 	}
-	req.Header.Add("y", `blahblah`)
+	if !missingRequiredHeader {
+		req.Header.Add("y", `blahblah`)
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
@@ -149,6 +161,19 @@ func startDummyEncoderBackendServer(addr string) (stopServer func() error) {
 	return stopServer
 }
 
+func confirmErrorType(confirm chan bool) func(ctx context.Context, err error) *common.HTTPError {
+	return func(ctx context.Context, err error) *common.HTTPError {
+		var zeroHeaderLengthError *common.ZeroHeaderLengthError
+		if errors.As(err, &zeroHeaderLengthError) && zeroHeaderLengthError.CausedByParam("y") {
+			confirm <- true
+		} else {
+			confirm <- false
+		}
+
+		return nil
+	}
+}
+
 func TestRestWithDownstreamHeadersAppSmokeTest(t *testing.T) {
 	// Override sysl-go app command line interface to directly pass in app config
 	ctx := core.WithConfigFile(context.Background(), []byte(applicationConfig))
@@ -160,7 +185,9 @@ func TestRestWithDownstreamHeadersAppSmokeTest(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	appServer, err := newAppServer(ctx)
+	confirmChan := make(chan bool, 1)
+
+	appServer, err := newAppServerWithErrorMapper(ctx, confirmErrorType(confirmChan))
 	require.NoError(t, err)
 	defer func() {
 		err := appServer.Stop()
@@ -197,4 +224,8 @@ func TestRestWithDownstreamHeadersAppSmokeTest(t *testing.T) {
 	actual, err := doGatewayRequestResponse(ctx, "hello world")
 	require.Nil(t, err)
 	require.Equal(t, expected, actual)
+
+	_, err = doGatewayRequestResponseMissingHeader(ctx, "hello world")
+	require.Error(t, err)
+	require.True(t, <-confirmChan)
 }

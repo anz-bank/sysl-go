@@ -140,3 +140,19 @@ func CreateDownstreamError(ctx context.Context, kind Kind, response *http.Respon
 
 	return err
 }
+
+type ZeroHeaderLengthError struct {
+	paramCanonical string
+}
+
+func NewZeroHeaderLengthError(param string) error {
+	return &ZeroHeaderLengthError{paramCanonical: http.CanonicalHeaderKey(param)}
+}
+
+func (e *ZeroHeaderLengthError) Error() string {
+	return fmt.Sprintf("%s header length is zero", e.paramCanonical)
+}
+
+func (e *ZeroHeaderLengthError) CausedByParam(param string) bool {
+	return e.paramCanonical == http.CanonicalHeaderKey(param)
+}

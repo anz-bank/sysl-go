@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
-	gateway "rest_with_downstream_headers/internal/gen/pkg/servers/gateway"
-	encoder_backend "rest_with_downstream_headers/internal/gen/pkg/servers/gateway/encoder_backend"
+	"rest_with_downstream_headers/internal/gen/pkg/servers/gateway"
+	"rest_with_downstream_headers/internal/gen/pkg/servers/gateway/encoder_backend"
 
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/core"
@@ -51,11 +51,15 @@ func PostEncodeEncoder_id(ctx context.Context, req *gateway.PostEncodeEncoder_id
 }
 
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
+	return newAppServerWithErrorMapper(ctx, nil)
+}
+
+func newAppServerWithErrorMapper(ctx context.Context, mapError func(ctx context.Context, err error) *common.HTTPError) (core.StoppableServer, error) {
 	return gateway.NewServer(ctx,
 		func(ctx context.Context, config AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
 			return &gateway.ServiceInterface{
 				PostEncodeEncoder_id: PostEncodeEncoder_id,
-			}, nil, nil
+			}, &core.Hooks{MapError: mapError}, nil
 		},
 	)
 }
