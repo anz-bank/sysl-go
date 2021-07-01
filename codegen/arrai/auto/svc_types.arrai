@@ -23,7 +23,7 @@ let fieldJsonTag = \type \key
             let entity = value('tuple')?:(value('relation'));
             let patterns = sysl.patterns(value);
             $`
-                // ${typename} ${cond value {{'attrs': {'description': {'s': (s: descr)}, ...}, ...}: descr, _: "..."}}
+                // ${typename} ${cond value {{'attrs': {'description': {'s': (s: descr), ...}, ...}, ...}: descr, _: "..."}}
                 type ${typename} struct {
                     ${entity('attrDefs') orderby .@ >> \(@: key, @value: attrDef)
                         let fieldName = go.name(key);
@@ -39,7 +39,7 @@ let fieldJsonTag = \type \key
                             });
                         let validateTag =
                             cond attrDef {
-                                {'attrs': {'validate': {'s': (s: tag)}, ...}, ...}: tag,
+                                {'attrs': {'validate': {'s': (s: tag), ...}, ...}, ...}: tag,
                                 _: {},
                             };
 

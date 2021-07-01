@@ -37,7 +37,7 @@ let typeImpl = \leafOnly //fn.fix(\typeImpl \t
         _: "",
     }};
     let typeName = cond t {
-        {'attrs': {'sensitive': {'s': (s: "true")}, ...}, ...}: `config.SensitiveString`,
+        {'attrs': {'sensitive': {'s': (s: "true"), ...}, ...}, ...}: `config.SensitiveString`,
         {'primitive': p, ...}: cond p {
             (s: 'DECIMAL' ): `float64`,
             (s: 'INT'     ): `int64`,
@@ -48,7 +48,7 @@ let typeImpl = \leafOnly //fn.fix(\typeImpl \t
             (s: 'BYTES'   ): `[]byte`,
             (s: 'DATE'    ): `date.Date`,
             (s: 'DATETIME'): cond t {
-                {'attrs': {'time_format': {'s': (s: "stdtime")}, ...}, ...}: `time.Time`,
+                {'attrs': {'time_format': {'s': (s: "stdtime"), ...}, ...}, ...}: `time.Time`,
                 _: `convert.JSONTime`,
             },
         },
@@ -85,13 +85,13 @@ let varName = //re.compile(`_`).sub("");
 # https://developers.google.com/protocol-buffers/docs/reference/go-generated#package
 let package = \app
     cond app {
-        {'attrs': {'go_package': {'s': (s: s)}, ...}, ...}:
+        {'attrs': {'go_package': {'s': (s: s), ...}, ...}, ...}:
             let parts = //seq.split(';', s);
             cond parts {
                 [_, p]: p,
                 [p]: let parts = //seq.split('/', p); parts(parts count - 1),
             },
-        {'attrs': {'package': {'s': (s: s)}, ...}, ...}: //str.lower(s),
+        {'attrs': {'package': {'s': (s: s), ...}, ...}, ...}: //str.lower(s),
         {'name': {'part': (:a)}, ...}: //str.lower($`${a >> .s::}`),
     };
 
@@ -114,8 +114,8 @@ let package = \app
 # https://developers.google.com/protocol-buffers/docs/reference/go-generated#package
 let pbPackage = \app
     cond app {
-        {'attrs': {'go_pb_package': {'s': (:s)}, ...}, ...}: s,
-        {'attrs': {'go_package': {'s': (:s)}, ...}, ...}: //seq.split(';', s)(0),
+        {'attrs': {'go_pb_package': {'s': (:s), ...}, ...}, ...}: s,
+        {'attrs': {'go_package': {'s': (:s), ...}, ...}, ...}: //seq.split(';', s)(0),
         _: '??basepath??/???',  # TODO: what's the right package name?
     };
 

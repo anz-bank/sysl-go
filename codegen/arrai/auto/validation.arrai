@@ -15,8 +15,8 @@ let paramValidateTags = \ep
     let split = \delim \seq let [head, ...tail] = //seq.split(delim, seq); [head, //seq.join(delim, tail)];
     let tags = \string split(':', string) -> (@:.(0), @value:.(1));
     cond ep('attrs')?('validate')?:{} {
-        {'s':v}: //seq.split(' ', v.s) => tags(.@item),
-        {'a':{'elt':(a:a)}}: a => let {'s':(s:s)} = .@item; tags(s),
+        {'s':v, ...}: //seq.split(' ', v.s) => tags(.@item),
+        {'a':{'elt':(a:a)}, ...}: a => let {'s':(s:s), ...} = .@item; tags(s),
     };
 
 (

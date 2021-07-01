@@ -49,8 +49,10 @@ let endpoint =
     # `returns` returns an array of returns from endpoint `ep`. Each return is a
     # tuple with attribute `var` holding the  variable name and attribute `type`
     # holding the type name as an array of the `.`-separate parts.
+    # Note this regex should match (or use) parseReturn in github.com/anz-bank/sysl/pkg/arrai/sysl.arrai
+    # (for now it uses the current regex with the intent of refactoring more at a later stage).
     let returns =
-        let splitRet = //re.compile(`(.*?)\s*<:\s*((?:sequence\s+of\s+)?)(.*)`).match;
+        let splitRet = //re.compile(`(.*?)\s*<:\s*((?:sequence\s+of\s+)?)(.*?)\s*(?:\[.*\])?$`).match;
         \ep
             statements(ep) where "ret" <: (.@item => .@) >>
                 let payload = .("ret")("payload").s;

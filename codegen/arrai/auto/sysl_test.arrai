@@ -374,10 +374,201 @@ let modelWithSourceContextdEndpoint = <<('{
 let sourceContextdEndpoint = //encoding.json.decode(modelWithSourceContextdEndpoint)("apps")("Service")("endpoints")("Foo");
 let sourceContextdEndpointExpectedCalls = {"POST /blah"};
 
+# The following demo model was generated from
+# openapi: '3.0.2'
+# info:
+# paths:
+#   /banana:
+#     post:
+#       responses:
+#         '200':
+#           description: OK Computer
+#           content:
+#             application/json:
+#               schema:
+#                 $ref: '#/components/schemas/BananaResponse'
+# components:
+#   schemas:
+#     BananaResponse:
+#       properties:
+#
+# using sysl v0.403.0
+# note that sysl v0.397.0 started adding annotations on return statements when generated from openapi
+let modelWithReturnAnnotation = <<(`{
+ "apps": {
+  "BananaStand": {
+   "name": {
+    "part": [
+     "BananaStand"
+    ]
+   },
+   "attrs": {
+    "description": {
+     "s": "No description.\n",
+     "sourceContext": {
+      "file": "specs/banana_stand.yaml",
+      "start": {
+       "line": 7,
+       "col": 18
+      },
+      "end": {
+       "line": 10,
+       "col": 5
+      }
+     },
+     "sourceContexts": [
+      {
+       "file": "specs/banana_stand.yaml",
+       "start": {
+        "line": 7,
+        "col": 18
+       },
+       "end": {
+        "line": 10,
+        "col": 5
+       }
+      }
+     ]
+    }
+   },
+   "endpoints": {
+    "POST /banana": {
+     "name": "POST /banana",
+     "docstring": "No description.",
+     "attrs": {
+      "patterns": {
+       "a": {
+        "elt": [
+         {
+          "s": "rest"
+         }
+        ]
+       }
+      }
+     },
+     "stmt": [
+      {
+       "ret": {
+        "payload": "ok <: BananaResponse [mediatype=\"application/json\"]"
+       },
+       "sourceContext": {
+        "file": "specs/banana_stand.yaml",
+        "start": {
+         "line": 13,
+         "col": 12
+        },
+        "end": {
+         "line": 13,
+         "col": 70
+        }
+       },
+       "sourceContexts": [
+        {
+         "file": "specs/banana_stand.yaml",
+         "start": {
+          "line": 13,
+          "col": 12
+         },
+         "end": {
+          "line": 13,
+          "col": 70
+         }
+        }
+       ]
+      }
+     ],
+     "restParams": {
+      "method": "POST",
+      "path": "/banana"
+     },
+     "sourceContext": {
+      "file": "specs/banana_stand.yaml",
+      "start": {
+       "line": 11,
+       "col": 8
+      },
+      "end": {
+       "line": 18,
+       "col": 5
+      }
+     },
+     "sourceContexts": [
+      {
+       "file": "specs/banana_stand.yaml",
+       "start": {
+        "line": 11,
+        "col": 8
+       },
+       "end": {
+        "line": 18,
+        "col": 5
+       }
+      }
+     ]
+    }
+   },
+   "types": {
+    "EXTERNAL_BananaResponse": {
+     "primitive": "STRING",
+     "sourceContext": {
+      "file": "specs/banana_stand.yaml",
+      "start": {
+       "line": 18,
+       "col": 4
+      },
+      "end": {
+       "line": 20,
+       "col": 1
+      }
+     },
+     "sourceContexts": [
+      {
+       "file": "specs/banana_stand.yaml",
+       "start": {
+        "line": 18,
+        "col": 4
+       },
+       "end": {
+        "line": 20,
+        "col": 1
+       }
+      }
+     ]
+    }
+   },
+   "sourceContext": {
+    "file": "specs/banana_stand.yaml",
+    "start": {
+     "line": 6
+    },
+    "end": {
+     "line": 20,
+     "col": 1
+    }
+   },
+   "sourceContexts": [
+    {
+     "file": "specs/banana_stand.yaml",
+     "start": {
+      "line": 6
+     },
+     "end": {
+      "line": 20,
+      "col": 1
+     }
+    }
+   ]
+  }
+ }
+}`)>>;
+let returnAnnotation = //encoding.json.decode(modelWithReturnAnnotation)("apps")("BananaStand")("endpoints")("POST /banana");
+let returnAnnotationExpectedReturns = [(seq: {}, type: ["BananaResponse"], var: "ok")];
+
 (
     endpointCallDiscovery: //test.assert.equal(demoEndpointExpectedCalls)(sysl.endpoint.calls(demoEndpoint) => .@item('endpoint').s),
     endpointWithNoStatements: //test.assert.equal(statementlessEndpointExpectedCalls)(sysl.endpoint.calls(statementlessEndpoint) => .@item('endpoint').s),
     endpointWithSourcecontext: //test.assert.equal(sourceContextdEndpointExpectedCalls)(sysl.endpoint.calls(sourceContextdEndpoint) => .@item('endpoint').s),
+    endpointReturnAnnotation: //test.assert.equal(returnAnnotationExpectedReturns)(sysl.endpoint.returns(returnAnnotation)),
 
     type: (
         required: (a:true,

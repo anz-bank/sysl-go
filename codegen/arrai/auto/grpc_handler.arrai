@@ -17,7 +17,7 @@ let grpc = //{./grpc};
     let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
     let goAppname = go.name(grpc.app.name(app));
     let authorizationRule = \ep cond ep {
-        {'attrs': {'authorization_rule': {'s': (s: rule)}, ...}, ...} : rule,
+        {'attrs': {'authorization_rule': {'s': (s: rule), ...}, ...}, ...} : rule,
     };
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | {go.pbImport(app)})}

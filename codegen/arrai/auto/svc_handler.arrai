@@ -5,7 +5,7 @@ let sysl = //{./sysl};
     let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
     let dbimport = cond {hasDB: {(alias: "_", package: "github.com/mattn/go-sqlite3")}};
     let authorizationRule = \ep cond ep {
-        {'attrs': {'authorization_rule': {'s': (s: rule)}, ...}, ...} : rule,
+        {'attrs': {'authorization_rule': {'s': (s: rule), ...}, ...}, ...} : rule,
     };
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | dbimport)}
