@@ -1,0 +1,13 @@
+Gateway [package="gateway"]:
+    @go_package = "gateway"
+    @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_miscellaneous"
+
+    /ping/binary:
+        POST (GatewayBinaryRequestRequest <: GatewayBinaryRequest [mediatype="application/json", ~body]):
+            return ok <: GatewayBinaryResponse
+
+    !type GatewayBinaryRequest:
+        content <: bytes
+    
+    !type GatewayBinaryResponse:
+        content <: bytes
