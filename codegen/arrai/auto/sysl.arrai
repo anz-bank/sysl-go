@@ -53,11 +53,18 @@ let endpoint =
     # (for now it uses the current regex with the intent of refactoring more at a later stage).
     let returns =
         let splitRet = //re.compile(`(.*?)\s*<:\s*((?:sequence\s+of\s+)?)(.*?)\s*(?:\[.*\])?$`).match;
+        let numRE = //re.compile(`^(\d)\d\d$`).match;
         \ep
-            statements(ep) where "ret" <: (.@item => .@) >>
+            (statements(ep) where "ret" <: (.@item => .@) >>
                 let payload = .("ret")("payload").s;
                 let [_, var, seq, type] = splitRet(payload)(0)?:["", payload, "", ""];
-                (:var, seq: seq != "", type: //seq.split(".", type));
+                let var = cond numRE(var) {
+                    [[_, '2']]: "ok",
+                    [[_, _]]: "error",
+                    _: var
+                };
+                (:var, seq: seq != "", type: //seq.split(".", type))
+            ) => .@item orderby .;
 
     # `normalReturns(ep)`
     #

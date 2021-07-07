@@ -564,11 +564,23 @@ let modelWithReturnAnnotation = <<(`{
 let returnAnnotation = //encoding.json.decode(modelWithReturnAnnotation)("apps")("BananaStand")("endpoints")("POST /banana");
 let returnAnnotationExpectedReturns = [(seq: {}, type: ["BananaResponse"], var: "ok")];
 
+let returnStatementsJSON = <<(`{
+     "stmt": [
+      { "ret": { "payload": "ok <: AOK [mediatype=\"application/json\"]" } },
+      { "ret": { "payload": "200 <: BOK [mediatype=\"application/json\"]" } },
+      { "ret": { "payload": "error <: CErr [mediatype=\"application/json\"]" } },
+      { "ret": { "payload": "501 <: DErr [mediatype=\"application/json\"]" } }
+     ]
+}`)>>;
+let returnStatements = //encoding.json.decode(returnStatementsJSON);
+let returnStatementsExpectedReturns = {'AOK': 'ok', 'BOK': 'ok', 'CErr': 'error', 'DErr': 'error'};
+
 (
     endpointCallDiscovery: //test.assert.equal(demoEndpointExpectedCalls)(sysl.endpoint.calls(demoEndpoint) => .@item('endpoint').s),
     endpointWithNoStatements: //test.assert.equal(statementlessEndpointExpectedCalls)(sysl.endpoint.calls(statementlessEndpoint) => .@item('endpoint').s),
     endpointWithSourcecontext: //test.assert.equal(sourceContextdEndpointExpectedCalls)(sysl.endpoint.calls(sourceContextdEndpoint) => .@item('endpoint').s),
     endpointReturnAnnotation: //test.assert.equal(returnAnnotationExpectedReturns)(sysl.endpoint.returns(returnAnnotation)),
+    returnStatementsTest: //test.assert.equal(returnStatementsExpectedReturns)(sysl.endpoint.returns(returnStatements) => (@:.@item.type(0), @value:.@item.var)),
 
     type: (
         required: (a:true,
