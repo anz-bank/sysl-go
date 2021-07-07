@@ -61,5 +61,5 @@ jobs:
       - name: Test against downstream repos
         env:
           DOWNSTREAM_TEST: ${{ secrets.DOWNSTREAM_TEST }}
-          ORG_GITHUB_TOKEN: ${{ secrets.ORG_GITHUB_TOKEN }}
+          ORG_GITHUB_TOKEN: ${{ secrets.SYSL_REGRESSION_TEST_TOKEN }}
         run: eval "${DOWNSTREAM_TEST:-echo 'no downstream repos to test'}"
