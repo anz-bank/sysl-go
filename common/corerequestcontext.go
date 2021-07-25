@@ -47,7 +47,7 @@ func LoggerToContext(ctx context.Context, logger *logrus.Logger, entry *logrus.E
 
 // RequestHeaderToContext creates a new context containing the request header.
 func RequestHeaderToContext(ctx context.Context, header http.Header) context.Context {
-	return context.WithValue(ctx, reqHeaderContextKey{}, &reqHeaderContext{header})
+	return context.WithValue(ctx, reqHeaderContextKey{}, &reqHeaderContext{header.Clone()})
 }
 
 // RequestHeaderFromContext retrieves the request header from the context.
@@ -57,12 +57,12 @@ func RequestHeaderFromContext(ctx context.Context) http.Header {
 	if reqHeader == nil {
 		return nil
 	}
-	return reqHeader.header
+	return reqHeader.header.Clone()
 }
 
 // RespHeaderAndStatusToContext creates a new context containing the response header and status.
 func RespHeaderAndStatusToContext(ctx context.Context, header http.Header, status int) context.Context {
-	return context.WithValue(ctx, respHeaderAndStatusContextKey{}, &respHeaderAndStatusContext{header, status})
+	return context.WithValue(ctx, respHeaderAndStatusContextKey{}, &respHeaderAndStatusContext{header.Clone(), status})
 }
 
 // RespHeaderAndStatusFromContext retrieves response header and status from the context.
@@ -73,7 +73,7 @@ func RespHeaderAndStatusFromContext(ctx context.Context) (header http.Header, st
 		return nil, http.StatusOK
 	}
 
-	header = respHeaderAndStatus.header
+	header = respHeaderAndStatus.header.Clone()
 	status = respHeaderAndStatus.status
 	return
 }
