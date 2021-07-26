@@ -3,10 +3,12 @@ package restlib
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -600,4 +602,56 @@ func TestMarshalRequestBodyOctetStream(t *testing.T) {
 	marshalled, err := ioutil.ReadAll(reader)
 	require.Nil(t, err)
 	require.Equal(t, content, marshalled)
+}
+
+var (
+	testServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte(okJSON))
+	}))
+)
+
+type rtfunc func(req *http.Request) (*http.Response, error)
+
+func (r rtfunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return r(req)
+}
+
+func TestConcurrentRequestRace(t *testing.T) {
+	// This test is used to check for race conditions when concurrent calls are made to
+	testURL := testServer.URL
+
+	// Shared context
+	header := http.Header{
+		"exists": {"value"},
+	}
+	ctx := common.RequestHeaderToContext(context.Background(), header)
+
+	wg := sync.WaitGroup{}
+	for i := 0; i < 10; i++ {
+		testClient := &http.Client{}
+		i := i // Avoids race condition in test when transport reads i
+
+		// Unique transport trying to write to header map
+		testClient.Transport = rtfunc(func(req *http.Request) (*http.Response, error) {
+			req.Header.Add("new", fmt.Sprintf("%d", i))
+			return http.DefaultTransport.RoundTrip(req)
+		})
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, err := DoHTTPRequest2(ctx, &HTTPRequest{
+				Client:        testClient,
+				Method:        "GET",
+				URLString:     testURL,
+				Body:          []byte("Hello"),
+				Required:      []string{},
+				OKResponse:    &OkType{},
+				ErrorResponse: &ErrorType{},
+			})
+			require.NoError(t, err)
+		}()
+	}
+	wg.Wait()
 }
