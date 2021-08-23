@@ -40,6 +40,8 @@ Ensure your environment provides:
   - https://github.com/grpc/grpc
 - [`sysl`](https://sysl.io/docs/installation) tool available on PATH
 - [`arrai`](https://arr.ai/docs/install/) tool available on PATH
+- [`go-bindata`](https://github.com/go-bindata/go-bindata) tool available on PATH
+- [`goimports`](https://pkg.go.dev/golang.org/x/tools/cmd/goimports) tool available on PATH
 
 
 On OSX, after installing [go 1.16](https://golang.org/doc/install) run
