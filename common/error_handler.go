@@ -60,7 +60,7 @@ func MapError(ctx context.Context, err error) HTTPError {
 
 	switch e := err.(type) {
 	case ErrorKinder:
-		switch e.(ErrorKinder).ErrorKind() {
+		switch e.ErrorKind() {
 		case BadRequestError:
 			httpCode = 400
 			errorCode = "1001"
