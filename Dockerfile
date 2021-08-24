@@ -3,7 +3,7 @@ FROM golang:1.16.3-buster AS stage
 # requires git make curl
 # but this base image has all of those tools already
 
-ENV SYSL_VERSION=0.258.0
+ARG SYSL_VERSION=0.258.0
 ENV ARRAI_VERSION=0.194.0
 
 # install sysl. sysl's build process added a dependency on docker, which
