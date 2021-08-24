@@ -19,6 +19,12 @@ jobs:
       - name: Check out code
         uses: actions/checkout@master
 
+      - name: Get SYSL version
+        run: |
+          curl -H "Accept: application/vnd.gituhb.v3+json" https://api.github.com/repos/anz-bank/sysl/releases > releases.json
+          SYSL_VERSION=`cat releases.json | jq -r '.[0] | .tag_name'`
+          echo "SYSL_VERSION=$SYSL_VERSION" >> $GITHUB_ENV
+
       - name: Build docker container image
         uses: docker/build-push-action@v1
         with:
@@ -27,7 +33,7 @@ jobs:
           tag_with_ref: true
           add_git_labels: true
           tags: latest
-          build_args: SYSLGO_VERSION=${{ github.ref }}
+          build_args: SYSLGO_VERSION=${{ github.ref }},SYSL_VERSION=${{ env.SYSL_VERSION}}
           labels: org.opencontainers.image.revision=${{ github.sha }},org.opencontainers.image.url=https://sysl.io
 
       - name: Test container image
