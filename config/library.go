@@ -25,7 +25,7 @@ type AdminConfig struct {
 
 // LogConfig struct.
 type LogConfig struct {
-	Format       string    `yaml:"format" mapstructure:"format" validate:"nonnil,oneof=color json text"` // Deprecated: Use Hooks#Logger
+	Format       string    `yaml:"format" mapstructure:"format" validate:"oneof=color json text"` // Deprecated: Use Hooks#Logger
 	Level        log.Level `yaml:"level" mapstructure:"level" validate:"nonnil"`
 	ReportCaller bool      `yaml:"caller" mapstructure:"caller"` // Deprecated: Use Hooks#Logger
 
@@ -50,4 +50,9 @@ func (c *LibraryConfig) Validate() error {
 	}
 
 	return nil
+}
+
+func SetLibraryConfigDefaults(prefix string, set func(key string, value interface{})) {
+	set(prefix+"Log.Format", "text")
+	set(prefix+"Log.Level", log.InfoLevel)
 }

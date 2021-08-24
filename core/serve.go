@@ -18,6 +18,7 @@ import (
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/health"
 	"github.com/anz-bank/sysl-go/log"
+	"github.com/anz-bank/sysl-go/validator"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/afero"
 )
@@ -137,6 +138,11 @@ func NewServer(
 		}
 	}
 
+	err = validator.Validate(defaultConfig)
+	if err != nil {
+		return nil, err
+	}
+
 	// Set the logger against the context if no external logger is provided. The value will be
 	// either the value returned from the Hooks (if provided) or the default logger.
 	if externalLogger == nil {
@@ -216,7 +222,7 @@ func LoadCustomConfig(ctx context.Context, customConfig interface{}) (interface{
 	}
 
 	// Read application configuration data.
-	b := config.NewConfigReaderBuilder().WithFs(fs).WithConfigFile(configPath)
+	b := config.NewConfigReaderBuilder().WithFs(fs).WithConfigFile(configPath).WithDefaults(config.SetDefaults)
 
 	envPrefixConfigKey := "envPrefix"
 

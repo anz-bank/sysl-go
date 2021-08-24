@@ -21,3 +21,10 @@ func (c *UpstreamConfig) Validate() error {
 	// TODO: Actually validate
 	return nil
 }
+
+func SetGenCodeConfigDefaults(prefix string, set func(key string, value interface{})) {
+	set(prefix+"Upstream.ContextTimeout", "30s")
+	set(prefix+"Upstream.HTTP.BasePath", "/")
+	set(prefix+"Upstream.HTTP.ReadTimeout", "30s")
+	set(prefix+"Upstream.HTTP.WriteTimeout", "30s")
+}

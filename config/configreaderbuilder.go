@@ -83,3 +83,10 @@ func (b ConfigReaderBuilder) Build() ConfigReader {
 	}
 	return b.evarReader
 }
+
+// WithDefaults takes a function than can be called to set default values.
+func (b ConfigReaderBuilder) WithDefaults(setDefaults func(func(key string, value interface{}))) ConfigReaderBuilder {
+	setDefaults(b.evarReader.envVars.SetDefault)
+
+	return b
+}
