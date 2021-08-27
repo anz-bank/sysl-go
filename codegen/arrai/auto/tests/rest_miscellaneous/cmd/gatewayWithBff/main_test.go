@@ -117,8 +117,8 @@ func startAndTestServer(t *testing.T, applicationConfig, basePath string) {
 }
 
 func TestMiscellaniousSmokeTest(t *testing.T) {
-	startAndTestServer(t, fmt.Sprintf(applicationConfig, ""), "")
-	startAndTestServer(t, fmt.Sprintf(applicationConfig, `basePath: ""`), "")
+	startAndTestServer(t, fmt.Sprintf(applicationConfig, ""), "/bff")
+	startAndTestServer(t, fmt.Sprintf(applicationConfig, `basePath: ""`), "/bff")
 	startAndTestServer(t, fmt.Sprintf(applicationConfig, `basePath: "/"`), "")
 	startAndTestServer(t, fmt.Sprintf(applicationConfig, `basePath: "/foo"`), "/foo")
 }

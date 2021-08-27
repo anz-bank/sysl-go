@@ -7,21 +7,21 @@ import (
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/log"
 
-	"rest_miscellaneous/internal/gen/pkg/servers/gateway"
+	"rest_miscellaneous/internal/gen/pkg/servers/gatewayWithBff"
 )
 
 type AppConfig struct{}
 
-func PostPingBinary(_ context.Context, req *gateway.PostPingBinaryRequest) (*gateway.GatewayBinaryResponse, error) {
-	return &gateway.GatewayBinaryResponse{
+func PostPingBinary(_ context.Context, req *gatewayWithBff.PostPingBinaryRequest) (*gatewayWithBff.GatewayBinaryResponse, error) {
+	return &gatewayWithBff.GatewayBinaryResponse{
 		Content: req.Request.Content,
 	}, nil
 }
 
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
-	return gateway.NewServer(ctx,
-		func(ctx context.Context, config AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
-			return &gateway.ServiceInterface{
+	return gatewayWithBff.NewServer(ctx,
+		func(ctx context.Context, config AppConfig) (*gatewayWithBff.ServiceInterface, *core.Hooks, error) {
+			return &gatewayWithBff.ServiceInterface{
 				PostPingBinary: PostPingBinary,
 			}, nil, nil
 		},

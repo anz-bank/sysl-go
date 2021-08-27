@@ -8,6 +8,21 @@ Gateway [package="gateway"]:
 
     !type GatewayBinaryRequest:
         content <: bytes
-    
+
+    !type GatewayBinaryResponse:
+        content <: bytes
+
+GatewayWithBff [package="gatewayWithBff"]:
+    @basePath = "bff"
+    @go_package = "gatewayWithBff"
+    @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_miscellaneous"
+
+    /ping/binary:
+        POST (GatewayBinaryRequestRequest <: GatewayBinaryRequest [mediatype="application/json", ~body]):
+            return ok <: GatewayBinaryResponse
+
+    !type GatewayBinaryRequest:
+        content <: bytes
+
     !type GatewayBinaryResponse:
         content <: bytes

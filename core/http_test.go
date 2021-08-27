@@ -224,6 +224,20 @@ func Test_SelectBasePath_BothFilledSelectsDynamic(t *testing.T) {
 	assert.Equal(t, "/dynamic", SelectBasePath("/spec", "/dynamic"))
 }
 
+func Test_SelectBasePath_FullTable(t *testing.T) {
+	for _, i := range []struct{ spec, config, result string }{
+		{"", "", "/"},
+		{"", "/foo", "/foo"},
+		{"bar", "", "/bar"},
+		{"/bar", "", "/bar"},
+		{"bar", "/", "/"},
+		{"bar", "/foo", "/foo"},
+		{"/bar", "/foo", "/foo"},
+	} {
+		assert.Equal(t, i.result, SelectBasePath(i.spec, i.config))
+	}
+}
+
 func TestHTTPStoppableServerCanBeHardStopped(t *testing.T) {
 	ctx := testutil.NewTestContext()
 	cfg := config.CommonHTTPServerConfig{

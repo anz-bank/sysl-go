@@ -63,14 +63,6 @@ func TestValidateGlobalConfigBadBasePath(t *testing.T) {
 	ErrorDueToFields(t, err, "BasePath")
 }
 
-func TestValidateGlobalConfigEmptyBasePath(t *testing.T) {
-	config := defaultAdminServer()
-	config.BasePath = ""
-	err := config.Validate()
-	require.Error(t, err)
-	ErrorDueToFields(t, err, "BasePath")
-}
-
 func TestValidateGlobalConfigSlashBasePath(t *testing.T) {
 	config := defaultAdminServer()
 	config.BasePath = "/"

@@ -1,7 +1,8 @@
 SYSLGO_SYSL = specs/gateway.sysl
-SYSLGO_PACKAGES = gateway
+SYSLGO_PACKAGES = gateway gatewayWithBff
 SYSLGO_APP.gateway = Gateway
-PKGPATH = rest_post_urlencoded_form
+SYSLGO_APP.gatewayWithBff = GatewayWithBff
+PKGPATH = rest_miscellaneous
 
 include ../common.mk
 

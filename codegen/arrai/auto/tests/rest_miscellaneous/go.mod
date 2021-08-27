@@ -1,4 +1,4 @@
-module rest_post_urlencoded_form
+module rest_miscellaneous
 
 go 1.16
 

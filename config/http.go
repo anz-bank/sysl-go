@@ -83,7 +83,7 @@ type CommonServerConfig struct {
 // encourage users to migrate their properties inline.
 type CommonHTTPServerConfig struct {
 	Common       CommonServerConfig `yaml:"common" mapstructure:"common"`
-	BasePath     string             `yaml:"basePath" mapstructure:"basePath" validate:"startswith=/"`
+	BasePath     string             `yaml:"basePath" mapstructure:"basePath" validate:"omitempty,startswith=/"`
 	ReadTimeout  time.Duration      `yaml:"readTimeout" mapstructure:"readTimeout" validate:"nonnil"`
 	WriteTimeout time.Duration      `yaml:"writeTimeout" mapstructure:"writeTimeout" validate:"nonnil"`
 }

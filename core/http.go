@@ -86,7 +86,7 @@ func configureAdminServerListener(ctx context.Context, hl Manager, promRegistry 
 }
 
 func configurePublicServerListener(ctx context.Context, hl Manager, mWare []func(handler http.Handler) http.Handler, hooks *Hooks) (StoppableServer, error) {
-	rootPublicRouter, publicRouter := configureRouters(hl.PublicServerConfig().HTTP.BasePath, mWare)
+	rootPublicRouter, publicRouter := configureRouters("", mWare) // note basePath will be patched during the WireRoutes call below
 
 	publicTLSConfig, err := config.MakeTLSConfig(ctx, hl.PublicServerConfig().HTTP.Common.TLS)
 	if err != nil {
@@ -218,32 +218,30 @@ func makeNewServer(ctx context.Context, router http.Handler, tlsConfig *tls.Conf
 }
 
 func configureRouters(basePath string, mWare []func(handler http.Handler) http.Handler) (rootRouter, router *chi.Mux) {
-	if basePath == "" {
-		basePath = "/"
-	}
 	rootRouter = chi.NewRouter()
 	rootRouter.Use(mWare...)
-	router = rootRouter.Route(basePath, nil).(*chi.Mux)
+	if basePath == "" || basePath == "/" {
+		router = rootRouter
+	} else {
+		router = rootRouter.Route(basePath, nil).(*chi.Mux)
+	}
 
 	return rootRouter, router
 }
 
-// SelectBasePath chooses between a specified base path and a dynmaically chosen one.
-func SelectBasePath(fromSpec, dynamic string) string {
-	switch fromSpec {
-	case "": // fromSpec not specified
-		switch dynamic {
-		case "": // dynamic not specified
-			return "/"
-		default:
-			return dynamic
-		}
-	default: // fromSpec specified
-		switch dynamic {
-		case "": // dynamic not specified
-			return fromSpec
-		default:
-			return dynamic
-		}
+// SelectBasePath chooses between a basePath from the spec or config (config takes precedence).
+func SelectBasePath(fromSpec, fromCfg string) string {
+	if fromCfg != "" {
+		return fromCfg
 	}
+
+	if fromSpec == "" {
+		return "/"
+	}
+
+	if fromSpec[0] != '/' {
+		fromSpec = "/" + fromSpec
+	}
+
+	return fromSpec
 }
