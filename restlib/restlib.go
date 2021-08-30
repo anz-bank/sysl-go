@@ -207,13 +207,7 @@ func DoHTTPRequest2(ctx context.Context, config *HTTPRequest) (*HTTPResult, erro
 	}
 
 	// OK
-	switch httpResponse.StatusCode {
-	case http.StatusOK,
-		http.StatusCreated,
-		http.StatusAccepted,
-		http.StatusNonAuthoritativeInfo,
-		http.StatusNoContent,
-		http.StatusResetContent:
+	if httpResponse.StatusCode >= 200 && httpResponse.StatusCode < 300 {
 		return unmarshal(httpResponse, respBody, config.OKResponse)
 	}
 

@@ -179,6 +179,19 @@ func TestDoHTTPRequest204ResponseGZIP(t *testing.T) {
 	require.IsType(t, &OkType{}, result.Response)
 }
 
+func TestDoHTTPRequest206Response(t *testing.T) {
+	srv := common.NewHTTPTestServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(206)
+		_, _ = w.Write(nil)
+	}))
+	defer srv.Close()
+
+	result, err := DoHTTPRequest(context.Background(), srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.IsType(t, &OkType{}, result.Response)
+}
+
 func TestDoHTTPRequestErrorType(t *testing.T) {
 	srv := common.NewHTTPTestServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
