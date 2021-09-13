@@ -12,6 +12,7 @@ import (
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
 	"github.com/stretchr/testify/require"
+	"rest_custom_middleware/internal/gen/pkg/servers/pingpong"
 )
 
 const serverPort = 9021 // no guarantee this port is free
@@ -94,5 +95,15 @@ func TestApplicationSmokeTest(t *testing.T) {
 	actual, err := doPingRequestResponse(ctx)
 	require.Nil(t, err)
 	require.Equal(t, expected, actual)
+}
 
+func TestRestCustomMiddleware(t *testing.T) {
+	t.Parallel()
+	pingpongTester := pingpong.NewTestServer(t, context.Background(), createService, "")
+	defer pingpongTester.Close()
+
+	pingpongTester.GetPingList().
+		ExpectResponseCode(http.StatusOK).
+		ExpectResponseBody(pingpong.Pong{"once upon a time there was a rambutan"}).
+		Send()
 }

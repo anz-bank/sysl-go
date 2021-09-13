@@ -18,14 +18,14 @@ func PostPingBinary(_ context.Context, req *gatewayWithBff.PostPingBinaryRequest
 	}, nil
 }
 
+func createService(_ context.Context, _ AppConfig) (*gatewayWithBff.ServiceInterface, *core.Hooks, error) {
+	return &gatewayWithBff.ServiceInterface{
+		PostPingBinary: PostPingBinary,
+	}, nil, nil
+}
+
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
-	return gatewayWithBff.NewServer(ctx,
-		func(ctx context.Context, config AppConfig) (*gatewayWithBff.ServiceInterface, *core.Hooks, error) {
-			return &gatewayWithBff.ServiceInterface{
-				PostPingBinary: PostPingBinary,
-			}, nil, nil
-		},
-	)
+	return gatewayWithBff.NewServer(ctx, createService)
 }
 
 func main() {

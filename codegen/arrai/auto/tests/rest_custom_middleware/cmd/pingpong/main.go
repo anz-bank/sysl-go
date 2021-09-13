@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	pingpong "rest_custom_middleware/internal/gen/pkg/servers/pingpong"
+	"rest_custom_middleware/internal/gen/pkg/servers/pingpong"
 
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/log"
@@ -16,7 +16,7 @@ import (
 
 type AppConfig struct{}
 
-func GetPingList(ctx context.Context, req *pingpong.GetPingListRequest) (*pingpong.Pong, error) {
+func GetPingList(ctx context.Context, _ *pingpong.GetPingListRequest) (*pingpong.Pong, error) {
 	preamble := ctx.Value("preamble").(string)
 	fruit := ctx.Value("fruit").(string)
 	return &pingpong.Pong{
@@ -35,20 +35,20 @@ func withValue(key, val string) func(next http.Handler) http.Handler {
 	}
 }
 
-func newAppServer(ctx context.Context) (core.StoppableServer, error) {
-	return pingpong.NewServer(ctx,
-		func(ctx context.Context, config AppConfig) (*pingpong.ServiceInterface, *core.Hooks, error) {
-			return &pingpong.ServiceInterface{
-					GetPingList: GetPingList,
-				}, &core.Hooks{
-					AddHTTPMiddleware: func(ctx context.Context, r chi.Router) {
-						r.Use(withValue("fruit", "rambutan"))
-						r.Use(withValue("preamble", "once upon a time there was a"))
-					},
-				},
-				nil
+func createService(_ context.Context, _ AppConfig) (*pingpong.ServiceInterface, *core.Hooks, error) {
+	return &pingpong.ServiceInterface{
+			GetPingList: GetPingList,
+		}, &core.Hooks{
+			AddHTTPMiddleware: func(ctx context.Context, r chi.Router) {
+				r.Use(withValue("fruit", "rambutan"))
+				r.Use(withValue("preamble", "once upon a time there was a"))
+			},
 		},
-	)
+		nil
+}
+
+func newAppServer(ctx context.Context) (core.StoppableServer, error) {
+	return pingpong.NewServer(ctx, createService)
 }
 
 func main() {

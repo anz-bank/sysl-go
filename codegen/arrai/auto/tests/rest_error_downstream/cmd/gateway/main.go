@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	gateway "rest_error_downstream/internal/gen/pkg/servers/gateway"
-	backend "rest_error_downstream/internal/gen/pkg/servers/gateway/backend"
+	"rest_error_downstream/internal/gen/pkg/servers/gateway"
+	"rest_error_downstream/internal/gen/pkg/servers/gateway/backend"
 
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/core"
@@ -16,7 +16,7 @@ import (
 type AppConfig struct{}
 
 // FIXME why does autogen tack a "List" suffix on the name of this?
-func GetApiDoopList(ctx context.Context, req *gateway.GetApiDoopListRequest, client gateway.GetApiDoopListClient) (*gateway.GatewayResponse, error) {
+func GetApiDoopList(ctx context.Context, _ *gateway.GetApiDoopListRequest, client gateway.GetApiDoopListClient) (*gateway.GatewayResponse, error) {
 	err := client.BackendPostDoop(ctx, &backend.PostDoopRequest{})
 	if err != nil {
 		downstreamErr, ok := err.(*common.DownstreamError)
@@ -34,14 +34,14 @@ func GetApiDoopList(ctx context.Context, req *gateway.GetApiDoopListRequest, cli
 	return &gateway.GatewayResponse{Content: "???"}, nil
 }
 
+func createService(_ context.Context, _ AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
+	return &gateway.ServiceInterface{
+		GetApiDoopList: GetApiDoopList,
+	}, nil, nil
+}
+
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
-	return gateway.NewServer(ctx,
-		func(ctx context.Context, config AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
-			return &gateway.ServiceInterface{
-				GetApiDoopList: GetApiDoopList,
-			}, nil, nil
-		},
-	)
+	return gateway.NewServer(ctx, createService)
 }
 
 func main() {

@@ -8,9 +8,25 @@ import (
 	"github.com/anz-bank/sysl-go/log"
 
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway"
+	"rest_miscellaneous/internal/gen/pkg/servers/gateway/encoder_backend"
 )
 
 type AppConfig struct{}
+
+func GetPingList(ctx context.Context, req *gateway.GetPingListRequest, client gateway.GetPingListClient) (*gateway.Pong, error) {
+	backendReq := &encoder_backend.GetPingListRequest{
+		ID: req.ID,
+	}
+
+	encoderResponse, err := client.Encoder_backendGetPingList(ctx, backendReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return &gateway.Pong{
+		Identifier: encoderResponse.Identifier,
+	}, nil
+}
 
 func PostPingBinary(_ context.Context, req *gateway.PostPingBinaryRequest) (*gateway.GatewayBinaryResponse, error) {
 	return &gateway.GatewayBinaryResponse{
@@ -18,14 +34,15 @@ func PostPingBinary(_ context.Context, req *gateway.PostPingBinaryRequest) (*gat
 	}, nil
 }
 
+func createService(_ context.Context, _ AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
+	return &gateway.ServiceInterface{
+		GetPingList:    GetPingList,
+		PostPingBinary: PostPingBinary,
+	}, nil, nil
+}
+
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
-	return gateway.NewServer(ctx,
-		func(ctx context.Context, config AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
-			return &gateway.ServiceInterface{
-				PostPingBinary: PostPingBinary,
-			}, nil, nil
-		},
-	)
+	return gateway.NewServer(ctx, createService)
 }
 
 func main() {

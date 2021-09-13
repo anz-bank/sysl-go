@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	pingpong "simple_rest/internal/gen/pkg/servers/pingpong"
+	"simple_rest/internal/gen/pkg/servers/pingpong"
 
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/log"
@@ -37,17 +37,17 @@ func GetPingoneof(_ context.Context, req *pingpong.GetGetoneofRequest) (*pingpon
 	return &ret, nil
 }
 
+func createService(_ context.Context, _ AppConfig) (*pingpong.ServiceInterface, *core.Hooks, error) {
+	return &pingpong.ServiceInterface{
+			GetPing:        GetPing,
+			GetPingtimeout: GetPingTimeout,
+			GetGetoneof:    GetPingoneof,
+		}, &core.Hooks{},
+		nil
+}
+
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
-	return pingpong.NewServer(ctx,
-		func(ctx context.Context, config AppConfig) (*pingpong.ServiceInterface, *core.Hooks, error) {
-			return &pingpong.ServiceInterface{
-					GetPing:        GetPing,
-					GetPingtimeout: GetPingTimeout,
-					GetGetoneof:    GetPingoneof,
-				}, &core.Hooks{},
-				nil
-		},
-	)
+	return pingpong.NewServer(ctx, createService)
 }
 
 func main() {

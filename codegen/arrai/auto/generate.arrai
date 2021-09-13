@@ -7,10 +7,12 @@ let generators = {
     "grpc_client.go":      //{./grpc_client},
     "grpc_handler.go":     //{./grpc_handler},
     "grpc_interface.go":   //{./grpc_interface},
+    "mocks.go":            //{./svc_mocks},
     "requestrouter.go":    //{./svc_router},
     "service.go":          //{./svc_service},
     "servicehandler.go":   //{./svc_handler},
     "serviceinterface.go": //{./svc_interface},
+    "tester.go":           //{./svc_tester},
     "types.go":            //{./svc_types},
 };
 
@@ -27,8 +29,8 @@ let _inferHasDB = \app hasRelationTypes(app);
 
     groups:
         let auto = "auto";
-        let restClient = {"service.go", "types.go"};
-        let restService = {"service.go", "types.go", "requestrouter.go", "servicehandler.go", "serviceinterface.go"};
+        let restClient = {"mocks.go", "service.go", "types.go"};
+        let restService = {"requestrouter.go", "service.go", "servicehandler.go", "serviceinterface.go", "tester.go", "types.go"};
         let grpcClient = {"grpc_client.go"};
         let grpcService = {"grpc_handler.go", "grpc_interface.go"};
         let app = {"app.go", "app_spec.go", "main.go.sample"};

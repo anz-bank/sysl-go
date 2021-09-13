@@ -1,7 +1,6 @@
 SYSLGO_SYSL = specs/gateway.sysl
-SYSLGO_PACKAGES = gateway encoderbackend
+SYSLGO_PACKAGES = gateway
 SYSLGO_APP.gateway = Gateway
-SYSLGO_APP.encoderbackend = EncoderBackend
 PKGPATH = simple_rest_with_downstream
 
 include ../common.mk

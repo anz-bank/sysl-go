@@ -1,6 +1,16 @@
+import encoder_backend
+
 Gateway [package="gateway"]:
     @go_package = "gateway"
     @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_miscellaneous"
+
+    /ping:
+        GET ?id=int:
+            EncoderBackend <- GET /ping
+            return ok <: pong
+
+    !type Pong:
+        identifier <: int
 
     /ping/binary:
         POST (GatewayBinaryRequestRequest <: GatewayBinaryRequest [mediatype="application/json", ~body]):

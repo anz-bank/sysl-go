@@ -1,0 +1,127 @@
+let go = //{./go};
+let sysl = //{./sysl};
+
+\(:app, :appname, :basepath, :clientDeps, :module, :goModule, :restEndpoints, ...)
+    let package = go.package(app);
+    $`
+        ${go.prelude(app, clientDeps => $`${basepath}/${.import}`)}
+
+        type DownstreamMocks struct {
+            ${restEndpoints >> \(@value: ep, ...)
+                let name = go.methodName(ep);
+                $`${name} *${name}Mock`
+            ::\i}
+        }
+
+        func NewDownstreamMocks(tester *e2e.Tester) *DownstreamMocks {
+            return &DownstreamMocks{
+                ${restEndpoints >> \(@value: ep, ...)
+                    let name = go.methodName(ep);
+                    $`${name}: New${name}Mock(tester),`
+                ::\i}
+            }
+        }
+
+        ${restEndpoints >> \(@value: ep, ...)
+            let name = $`${go.methodName(ep)}Mock`;
+            $`
+                type ${name} struct {
+                    e     e2e.Endpoint
+                    tests []e2e.Tests
+                }
+
+                func New${name}(tester *e2e.Tester) *${name} {
+                    d := tester.NewDownstream("${package}", "${ep('restParams')('method').s}", "${ep('restParams')('path').s}")
+
+                    return &${name}{e: d}
+                }
+
+                func (d *${name}) ExpectHeaders(headers map[string]string) *${name} {
+                    d.tests = append(d.tests, e2e.ExpectHeaders(headers))
+
+                    return d
+                }
+
+                func (d *${name}) ExpectHeadersExist(headers []string) *${name} {
+                    d.tests = append(d.tests, e2e.ExpectHeadersExist(headers))
+
+                    return d
+                }
+
+                func (d *${name}) ExpectHeadersDoNotExist(headers []string) *${name} {
+                    d.tests = append(d.tests, e2e.ExpectHeadersDoNotExist(headers))
+
+                    return d
+                }
+
+                func (d *${name}) ExpectHeadersExistExactly(headers []string) *${name} {
+                    d.tests = append(d.tests, e2e.ExpectHeadersExistExactly(headers))
+
+                    return d
+                }
+
+                ${(ep('param')?.a:{}) where "body" <: sysl.patterns(.@item('type')) >> go.type(.('type')) >>
+                    $`
+                        func (d *${name}) ExpectBody(body ${.}) *${name} {
+                            ${cond . {
+                                '[]byte': `d.tests = append(d.tests, e2e.ExpectBody(body))`,
+                                'string': `d.tests = append(d.tests, e2e.ExpectBody(([]byte)(body)))`,
+                                _: `bodyJson, _ := json.Marshal(body)
+                                    d.tests = append(d.tests, e2e.ExpectJSONBody(bodyJson))
+                                `,
+                            }}
+
+                            return d
+                        }
+                    `
+                ::\i}
+
+                func (d *${name}) ExpectBodyPlain(body []byte) *${name} {
+                    d.tests = append(d.tests, e2e.ExpectBody(body))
+
+                    return d
+                }
+
+                func (d *${name}) ExpectQueryParams(query map[string][]string) *${name} {
+                    d.tests = append(d.tests, e2e.ExpectQueryParams(query))
+
+                    return d
+                }
+
+                func (d *${name}) Expect(test e2e.Tests) *${name} {
+                    d.tests = append(d.tests, test)
+
+                    return d
+                }
+
+                ${{}# TODO: Add typed versions based on the specifications eg, Mock200Response
+                }
+                func (d *${name}) MockResponse(returnCode int, returnHeaders map[string]string, returnBody interface{}) {
+                    var bodyBytes []byte
+                    switch returnBody := returnBody.(type) {
+                    case []byte:
+                        bodyBytes = returnBody
+                    case string:
+                        bodyBytes = ([]byte)(returnBody)
+                    default:
+                        bodyBytes, _ = json.Marshal(returnBody)
+                    }
+                    d.tests = append(d.tests, e2e.Response(returnCode, returnHeaders, bodyBytes))
+                    d.e.Expect(d.tests...)
+                    d.tests = nil
+                }
+
+                func (d *${name}) MockResponsePlain(returnCode int, returnHeaders map[string]string, returnBody []byte) {
+                    d.tests = append(d.tests, e2e.Response(returnCode, returnHeaders, returnBody))
+                    d.e.Expect(d.tests...)
+                    d.tests = nil
+                }
+
+                func (d *${name}) Timeout() {
+                    d.tests = append(d.tests, e2e.ForceDownstreamTimeout())
+                    d.e.Expect(d.tests...)
+                    d.tests = nil
+                }
+            `
+        ::\i}
+    `

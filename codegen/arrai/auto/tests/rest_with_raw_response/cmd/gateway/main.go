@@ -10,8 +10,8 @@ import (
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/log"
 
-	gateway "rest_with_raw_response/internal/gen/pkg/servers/gateway"
-	encoder_backend "rest_with_raw_response/internal/gen/pkg/servers/gateway/encoder_backend"
+	"rest_with_raw_response/internal/gen/pkg/servers/gateway"
+	"rest_with_raw_response/internal/gen/pkg/servers/gateway/encoder_backend"
 )
 
 type AppConfig struct{}
@@ -54,15 +54,15 @@ func PostPingString(ctx context.Context, req *gateway.PostReverseStringNRequest,
 	return result, nil
 }
 
+func createService(_ context.Context, _ AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
+	return &gateway.ServiceInterface{
+		PostReverseBytesN:  PostPingBytes,
+		PostReverseStringN: PostPingString,
+	}, nil, nil
+}
+
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
-	return gateway.NewServer(ctx,
-		func(ctx context.Context, config AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
-			return &gateway.ServiceInterface{
-				PostReverseBytesN:  PostPingBytes,
-				PostReverseStringN: PostPingString,
-			}, nil, nil
-		},
-	)
+	return gateway.NewServer(ctx, createService)
 }
 
 func main() {

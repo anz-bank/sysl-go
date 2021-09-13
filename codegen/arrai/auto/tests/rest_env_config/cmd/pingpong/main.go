@@ -4,29 +4,32 @@ import (
 	"context"
 	"os"
 
-	pingpong "rest_env_config/internal/gen/pkg/servers/pingpong"
+	"rest_env_config/internal/gen/pkg/servers/pingpong"
 
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/log"
 )
 
-type AppConfig struct{}
+type AppConfig struct {
+	Identifier2 int64 `yaml:"id2" mapstructure:"id2"`
+}
 
-func GetPing(ctx context.Context, req *pingpong.GetPingRequest) (*pingpong.Pong, error) {
+func (c *AppConfig) GetPing(_ context.Context, req *pingpong.GetPingRequest) (*pingpong.Pong, error) {
 	return &pingpong.Pong{
-		Identifier: req.Identifier,
+		Identifier:  req.Identifier,
+		Identifier2: c.Identifier2,
 	}, nil
 }
 
+func createService(_ context.Context, config AppConfig) (*pingpong.ServiceInterface, *core.Hooks, error) {
+	return &pingpong.ServiceInterface{
+			GetPing: config.GetPing,
+		}, &core.Hooks{},
+		nil
+}
+
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
-	return pingpong.NewServer(ctx,
-		func(ctx context.Context, config AppConfig) (*pingpong.ServiceInterface, *core.Hooks, error) {
-			return &pingpong.ServiceInterface{
-					GetPing: GetPing,
-				}, &core.Hooks{},
-				nil
-		},
-	)
+	return pingpong.NewServer(ctx, createService)
 }
 
 func main() {

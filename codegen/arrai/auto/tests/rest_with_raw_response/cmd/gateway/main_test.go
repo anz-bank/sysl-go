@@ -12,6 +12,7 @@ import (
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
 	"github.com/stretchr/testify/require"
+	"rest_with_raw_response/internal/gen/pkg/servers/gateway"
 )
 
 const applicationConfig = `---
@@ -29,10 +30,6 @@ genCode:
       clientTimeout: 10s
 `
 
-type Payload struct {
-	Content string `json:"content"`
-}
-
 func doReverseBytesRequestResponse(ctx context.Context, b []byte, count int) ([]byte, error) {
 	// Naive hand-written http client that attempts to call the Gateway service's encode endpoint.
 	// This does not attempt to depend on generated code or sysl-go's core libraries, as we want to be
@@ -46,7 +43,7 @@ func doReverseBytesRequestResponse(ctx context.Context, b []byte, count int) ([]
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode >= 400 {
 		return nil, fmt.Errorf("got response with http status %d >= 400", resp.StatusCode)
 	}
@@ -71,7 +68,7 @@ func doReverseStringRequestResponse(ctx context.Context, s string, count int) (s
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode >= 400 {
 		return "", fmt.Errorf("got response with http status %d >= 400", resp.StatusCode)
 	}
@@ -202,4 +199,65 @@ func TestSimpleRestWithDownstreamAppSmokeTest(t *testing.T) {
 	actualString, err := doReverseStringRequestResponse(ctx, "hello world", 1)
 	require.Nil(t, err)
 	require.Equal(t, "dlrow olleh", actualString)
+}
+
+func TestRestWithRawResponse(t *testing.T) {
+	t.Parallel()
+	gatewayTester := gateway.NewTestServer(t, context.Background(), createService, "")
+	defer gatewayTester.Close()
+
+	sendByte := []byte{65, 55, 67}
+	returnByte := []byte{67, 55, 65}
+
+	sendString := "hello world"
+	returnString := "dlrow olleh"
+
+	gatewayTester.Mocks.Encoder_backend.PostReverseBytes.
+		ExpectBody(sendByte).
+		MockResponse(http.StatusOK, map[string]string{"Content-Type": `application/octet-stream`}, returnByte)
+
+	gatewayTester.Mocks.Encoder_backend.PostReverseString.
+		ExpectBody(sendString).
+		MockResponse(http.StatusOK, map[string]string{"Content-Type": `text/html; charset=utf-8`}, returnString)
+
+	gatewayTester.PostReverseBytesN(1).
+		WithBody(sendByte).
+		ExpectResponseCode(http.StatusOK).
+		ExpectResponseBody(returnByte).
+		Send()
+
+	gatewayTester.PostReverseStringN(1).
+		WithBody(sendString).
+		ExpectResponseCode(http.StatusOK).
+		ExpectResponseBody(returnString).
+		Send()
+}
+
+func TestRestWithRawResponse_ActualDownstream(t *testing.T) {
+	stopEncoderBackendServer := startDummyEncoderBackendServer("localhost:9022")
+	defer func() {
+		err := stopEncoderBackendServer()
+		require.NoError(t, err)
+	}()
+
+	gatewayTester := gateway.NewTestServerWithActualDownstreams(t, context.Background(), createService, applicationConfig)
+	defer gatewayTester.Close()
+
+	sendByte := []byte{65, 55, 67}
+	returnByte := []byte{67, 55, 65}
+
+	sendString := "hello world"
+	returnString := "dlrow olleh"
+
+	gatewayTester.PostReverseBytesN(1).
+		WithBody(sendByte).
+		ExpectResponseCode(http.StatusOK).
+		ExpectResponseBody(returnByte).
+		Send()
+
+	gatewayTester.PostReverseStringN(1).
+		WithBody(sendString).
+		ExpectResponseCode(http.StatusOK).
+		ExpectResponseBody(returnString).
+		Send()
 }

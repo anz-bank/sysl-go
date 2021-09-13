@@ -14,6 +14,8 @@ import (
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
 	"github.com/stretchr/testify/require"
+	"rest_miscellaneous/internal/gen/pkg/servers/gateway"
+	"rest_miscellaneous/internal/gen/pkg/servers/gateway/encoder_backend"
 )
 
 const applicationConfig = `---
@@ -27,6 +29,8 @@ genCode:
         port: 9021 # FIXME no guarantee this port is free
   downstream:
     contextTimeout: "1s"
+    encoder_backend:
+      clientTimeout: 1s
 `
 
 type Payload struct {
@@ -116,9 +120,55 @@ func startAndTestServer(t *testing.T, applicationConfig, basePath string) {
 	require.Equal(t, expected, actual)
 }
 
-func TestMiscellaniousSmokeTest(t *testing.T) {
+func TestMiscellaneousSmokeTest(t *testing.T) {
 	startAndTestServer(t, fmt.Sprintf(applicationConfig, ""), "")
 	startAndTestServer(t, fmt.Sprintf(applicationConfig, `basePath: ""`), "")
 	startAndTestServer(t, fmt.Sprintf(applicationConfig, `basePath: "/"`), "")
 	startAndTestServer(t, fmt.Sprintf(applicationConfig, `basePath: "/foo"`), "/foo")
+}
+
+func TestMiscellaneous(t *testing.T) {
+	inputBytes := make([]byte, 256)
+	for i := range inputBytes {
+		inputBytes[i] = byte(i)
+	}
+
+	for _, test := range []struct {
+		name, basePath string
+	}{
+		{`missing`, ``},
+		{`empty`, `basePath: ""`},
+		{`slash`, `basePath: "/"`},
+		{`foo`, `basePath: "/foo"`},
+	} {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			gatewayTester := gateway.NewTestServer(t, context.Background(), createService, fmt.Sprintf(applicationConfig, test.basePath))
+			defer gatewayTester.Close()
+
+			gatewayTester.PostPingBinary().
+				WithBody(gateway.GatewayBinaryRequest{inputBytes}).
+				ExpectResponseCode(200).
+				ExpectResponseBody(gateway.GatewayBinaryResponse{inputBytes}).
+				Send()
+		})
+	}
+}
+
+func TestMiscellaneous_DownstreamQuery(t *testing.T) {
+	t.Parallel()
+	gatewayTester := gateway.NewTestServer(t, context.Background(), createService, "")
+	defer gatewayTester.Close()
+
+	const expectId = 24
+
+	gatewayTester.Mocks.Encoder_backend.GetPingList.
+		ExpectQueryParams(map[string][]string{"id": {fmt.Sprint(expectId)}}).
+		MockResponse(200, map[string]string{"Content-Type": `application/json`}, encoder_backend.Pong{Identifier: expectId})
+
+	gatewayTester.GetPingList(expectId).
+		ExpectResponseCode(200).
+		ExpectResponseBody(gateway.Pong{Identifier: expectId}).
+		Send()
 }

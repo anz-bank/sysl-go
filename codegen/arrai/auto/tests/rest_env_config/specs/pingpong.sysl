@@ -8,3 +8,4 @@ PingPong [package="pingpong"]:
 
     !type Pong:
         identifier <: int
+        identifier2 <: int

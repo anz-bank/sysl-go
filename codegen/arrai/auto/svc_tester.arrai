@@ -1,0 +1,196 @@
+let go = //{./go};
+let sysl = //{./sysl};
+
+\(:app, :appname, :basepath, :clientDeps, :module, :goModule, :restEndpoints, ...)
+    let package = go.package(app);
+    $`
+        ${go.prelude(app, clientDeps => $`${basepath}/${.import}`)}
+
+        // TestServer for ${appname}
+        type TestServer struct {
+            e     *e2e.Tester
+            Mocks Mocks
+        }
+
+        type Mocks struct {
+            ${clientDeps orderby . >> $`${go.name(.import)} *${.import}.DownstreamMocks`::\i}
+        }
+
+        func NewTestServer(t *testing.T, ctx context.Context, createService, cfg interface{}) *TestServer {
+            return newTestServerImp(t, ctx, createService, cfg, false)
+        }
+
+        func NewTestServerWithActualDownstreams(t *testing.T, ctx context.Context, createService, cfg interface{}) *TestServer {
+            return newTestServerImp(t, ctx, createService, cfg, true)
+        }
+
+        func newTestServerImp(t *testing.T, ctx context.Context, createService, cfg interface{}, withActualDownstreams bool) *TestServer {
+            byteCfg, err := e2e.ConfigToYamlData(cfg, core.GetAppConfigType(createService))
+            require.NoError(t, err, "Failed to convert cfg")
+
+            testServer, ctx, testHooks := e2e.NewTester(t, context.Background(), byteCfg)
+
+            if withActualDownstreams {
+                testHooks.HTTPClientBuilder = nil
+            }
+
+            createService = e2e.CreateServiceWithTestHooksPatched(createService, testHooks)
+
+            srv, err := NewServer(ctx, createService)
+
+            require.NoError(t, err)
+            err = srv.Start()
+            require.NoError(t, err)
+
+            var mocks Mocks
+            if !withActualDownstreams {
+                mocks = Mocks{
+                    ${clientDeps orderby . >> $`${go.name(.import)}: ${.import}.NewDownstreamMocks(testServer),`::\i}
+                }
+            }
+
+            return &TestServer{
+                e: testServer,
+                Mocks: mocks,
+            }
+        }
+
+        func (t *TestServer) GetE2eTester() *e2e.Tester {
+            return t.e
+        }
+
+        func (t *TestServer) Close() {
+            t.e.Close()
+        }
+
+        ${restEndpoints >> \(@value: ep, ...)
+            let testType = $`${go.methodName(ep)}Test`;
+            let args = ep('restParams')?:{}
+                        -> (.('queryParam')?.a:{}) ++ (.('urlParam')?.a:{})
+                        orderby sysl.source(.@item('type'))
+                        >> $`${go.asVariableName(.@item('name').s)} ${go.type(.@item('type'))}`;
+            $`
+                type ${testType} struct {
+                    e  *e2e.Tester
+                    tc e2e.TestCall2
+                }
+
+                func (t *TestServer) ${go.methodName(ep)}(${args ::, }) *${testType} {
+                    basePath := core.SelectBasePath("${app('attrs')?('basePath')?('s').s:""}", t.e.CfgBasePath())
+                    if basePath == "/" {
+                        basePath = ""
+                    }
+                    ${
+                        let pathvars = ep('restParams')('urlParam')?.a:{};
+                        let terms = pathvars => $`{${.@item('name').s}}`;
+                        let formatArgs = $`${//seq.split("/")(ep('restParams')('path').s) >> cond {. <: terms: "%v", _: .}::/}`;
+                        let params = pathvars >> $`${go.asVariableName(.('name').s)}`;
+                        $`u, err := url.Parse(fmt.Sprintf("%s${formatArgs}", basePath, ${params::, }))`
+                    }
+                    if err != nil {
+                        panic(err)
+                    }
+
+                    ${let queryParams = ep('restParams')('queryParam')?.a:{}; cond {queryParams: 
+                        let reqQueryParams = queryParams where !.@item('type')('opt')?.b:false;
+                        let optQueryParams = queryParams where .@item('type')('opt')?.b:false;
+                        let queryParamName = \qparam cond {
+                            'queryParamNames' <: qparam('attrs')?:{}:
+                                $"${//seq.concat(qparam('attrs')?('queryParamNames'):{} where (qparam.name <: .) >> (. &~ {qparam.name}))::}",
+                            _: qparam('name').s,
+                        };
+                        let var = \. $`${go.asVariableName(.('name').s)}`;
+                        $`
+                            q := u.Query()
+                            ${reqQueryParams => .@item orderby sysl.source(.('type')) >> $`
+                                q = convert.EncodeQueryParam(q, "${queryParamName(.)}", ${var(.)})
+                            `::\i}
+                            ${optQueryParams => .@item orderby sysl.source(.('type')) >> $`
+                                if ${var(.)} != nil {
+                                    q = convert.EncodeQueryParam(q, "${queryParamName(.)}", *${var(.)})
+                                }
+                            `::\i}
+                            u.RawQuery = q.Encode()
+                        `
+                    }}
+
+                    return &${testType}{
+                        e: t.e,
+                        tc: e2e.TestCall2{
+                            Method: "${ep('restParams')('method').s}",
+                            URL:    u.String(),
+                        },
+                    }
+                }
+
+                func (t *${testType}) WithHeaders(headers map[string]string) *${testType} {
+                    t.tc.Headers = headers
+
+                    return t
+                }
+
+                ${
+                    (ep('param')?.a:{}) where "body" <: sysl.patterns(.@item('type')) >> go.type(.('type')) >>
+                    $`
+                        func (t *${testType}) WithBody(body ${.}) *${testType} {
+                            ${cond . {
+                                '[]byte': `t.tc.Body = body`,
+                                'string': `t.tc.Body = ([]byte)(body)`,
+                                _: `t.tc.Body, _ = json.Marshal(body)`,
+                            }}
+
+                            return t
+                        }
+
+                        func (t *${testType}) WithBodyPlain(body []byte) *${testType} {
+                            t.tc.Body = body
+
+                            return t
+                        }
+                    `
+                ::\i}
+
+                func (t *${testType}) ExpectResponseCode(code int) *${testType} {
+                    t.tc.ExpectedCode = &code
+
+                    return t
+                }
+
+                ${{}# TODO: Add typed versions based on the specifications eg, Expect200ResponseBody
+                }
+                func (t *${testType}) ExpectResponseBody(body interface{}) *${testType} {
+                    switch body := body.(type) {
+                    case []byte:
+                        t.tc.ExpectedBody = body
+                    case string:
+                        t.tc.ExpectedBody = []byte(body)
+                    default:
+                        var err error
+                        bodyMarshalled, err := json.Marshal(body)
+                        if err != nil {
+                            panic(fmt.Sprintf("Failed to convert body: %v", err))
+                        }
+                        t.tc.ExpectedBody = bodyMarshalled
+                    }
+
+                    return t
+                }
+
+                func (t *${testType}) TestResponseCode(testCodeFn func(t *testing.T, actual int)) *${testType} {
+                    t.tc.TestCodeFn = testCodeFn
+
+                    return t
+                }
+
+                func (t *${testType}) TestResponseBody(testBodyFn func(t *testing.T, actual []byte)) *${testType} {
+                    t.tc.TestBodyFn = testBodyFn
+
+                    return t
+                }
+
+                func (t *${testType}) Send() {
+                    t.e.Do2(t.tc)
+                }
+            `
+        ::\i}
+    `

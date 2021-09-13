@@ -2,20 +2,13 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"testing"
-	"time"
 
-	"github.com/anz-bank/sysl-go/core"
-	"github.com/sethvargo/go-retry"
-	"github.com/stretchr/testify/require"
+	"rest_env_config/internal/gen/pkg/servers/pingpong"
 )
-
-const serverPort = 9021 // no guarantee this port is free
 
 // BEWARE: the implementation of our config loading library
 // (viper), completely ignores environment variables that you
@@ -26,82 +19,23 @@ const serverPort = 9021 // no guarantee this port is free
 // Ref: https://github.com/spf13/viper/issues/584
 const applicationConfig = `---
 envPrefix: ASDF
-genCode:
-  upstream:
-    http:
-      basePath: "/"
-      common:
-        hostName: "localhost"
-        port: "this-should-be-replaced-by-env-var"
-  downstream:
-    contextTimeout: "30s"
+app:
+    id2: 56789 #"this-should-be-replaced-by-env-var"
 `
 
-func doPingRequestResponse(ctx context.Context, identifier int) (int, error) {
-	client := &http.Client{}
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("http://localhost:%d/ping/%d", serverPort, identifier), nil)
-	if err != nil {
-		return -1, err
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		return -1, err
-	}
-	defer resp.Body.Close()
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return -1, err
-	}
-	var obj struct {
-		Identifier int `json:"identifier"`
-	}
-	err = json.Unmarshal(data, &obj)
-	if err != nil {
-		return -1, err
-	}
-	return obj.Identifier, nil
-}
+func TestRestEnvConfig(t *testing.T) {
+	t.Parallel()
 
-func TestApplicationSmokeTest(t *testing.T) {
-	// Override sysl-go app command line interface to directly pass in app config
-	ctx := core.WithConfigFile(context.Background(), []byte(applicationConfig))
+	const expected1 = 12345
+	const expected2 = 9021
 
-	// Set environment variable to configure what port the server should listen on
-	os.Setenv("ASDF_GENCODE_UPSTREAM_HTTP_COMMON_PORT", "9021")
+	_ = os.Setenv("ASDF_APP_ID2", fmt.Sprint(expected2))
 
-	appServer, err := newAppServer(ctx)
-	require.NoError(t, err)
-	defer func() {
-		err := appServer.Stop()
-		if err != nil {
-			panic(err)
-		}
-	}()
+	pingpongTester := pingpong.NewTestServer(t, context.Background(), createService, applicationConfig)
+	defer pingpongTester.Close()
 
-	// Start application server
-	go func() {
-		err := appServer.Start()
-		if err != nil {
-			panic(err)
-		}
-	}()
-
-	// Wait for application to come up
-	backoff, err := retry.NewFibonacci(10 * time.Millisecond)
-	require.Nil(t, err)
-	backoff = retry.WithMaxDuration(10*time.Second, backoff)
-	err = retry.Do(ctx, backoff, func(ctx context.Context) error {
-		_, err := doPingRequestResponse(ctx, 0)
-		if err != nil {
-			return retry.RetryableError(err)
-		}
-		return nil
-	})
-
-	// Test to see if the ping endpoint of our pingpong application server works
-	expected := 12345
-	actual, err := doPingRequestResponse(ctx, 12345)
-	require.Nil(t, err)
-	require.Equal(t, expected, actual)
-
+	pingpongTester.GetPing(expected1).
+		ExpectResponseCode(http.StatusOK).
+		ExpectResponseBody(pingpong.Pong{expected1, expected2}).
+		Send()
 }
