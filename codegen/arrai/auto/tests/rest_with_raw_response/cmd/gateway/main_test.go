@@ -13,6 +13,7 @@ import (
 	"github.com/sethvargo/go-retry"
 	"github.com/stretchr/testify/require"
 	"rest_with_raw_response/internal/gen/pkg/servers/gateway"
+	"rest_with_raw_response/internal/gen/pkg/servers/gateway/encoder_backend"
 )
 
 const applicationConfig = `---
@@ -220,6 +221,14 @@ func TestRestWithRawResponse(t *testing.T) {
 		ExpectBody(sendString).
 		MockResponse(http.StatusOK, map[string]string{"Content-Type": `text/html; charset=utf-8`}, returnString)
 
+	gatewayTester.Mocks.Encoder_backend.PostPingStringAlias.
+		ExpectBody(encoder_backend.PingStringRequest(sendString)).
+		MockResponse(http.StatusOK, map[string]string{"Content-Type": `text/html; charset=utf-8`}, encoder_backend.PingStringRequest(returnString))
+
+	gatewayTester.Mocks.Encoder_backend.PostPingByteAlias.
+		ExpectBody(encoder_backend.PingByteRequest(sendByte)).
+		MockResponse(http.StatusOK, map[string]string{"Content-Type": `application/octet-stream`}, encoder_backend.PingByteRequest(returnByte))
+
 	gatewayTester.PostReverseBytesN(1).
 		WithBody(sendByte).
 		ExpectResponseCode(http.StatusOK).
@@ -230,6 +239,18 @@ func TestRestWithRawResponse(t *testing.T) {
 		WithBody(sendString).
 		ExpectResponseCode(http.StatusOK).
 		ExpectResponseBody(returnString).
+		Send()
+
+	gatewayTester.PostPingStringAlias().
+		WithBody(gateway.PingStringRequest(sendString)).
+		ExpectResponseCode(http.StatusOK).
+		ExpectResponseBody(gateway.PingStringResponse(returnString)).
+		Send()
+
+	gatewayTester.PostPingByteAlias().
+		WithBody(gateway.PingByteRequest(sendByte)).
+		ExpectResponseCode(http.StatusOK).
+		ExpectResponseBody(gateway.PingByteResponse(returnByte)).
 		Send()
 }
 

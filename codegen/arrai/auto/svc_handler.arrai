@@ -92,9 +92,10 @@ let sysl = //{./sysl};
                             :type,
                             var: $`${go.name(name)}Param`,
                         );
-            let respContentType = cond returns {
-                [(type: ['bytes'], ...), ...]: 'application/octet-stream',
-                [(type: ['string'], ...), ...]: 'text/plain',
+            let respContentType = cond returnTypes >> go.baseType(., app('types')?:{}) || . {
+                ['bytes', ...]: 'application/octet-stream',
+                ['[]byte', ...]: 'application/octet-stream',
+                ['string', ...]: 'text/plain',
                 _: 'application/json'
             };
 

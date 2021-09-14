@@ -63,12 +63,14 @@ let sysl = //{./sysl};
                 ${(ep('param')?.a:{}) where "body" <: sysl.patterns(.@item('type')) >> go.type(.('type')) >>
                     $`
                         func (d *${name}) ExpectBody(body ${.}) *${name} {
-                            ${cond . {
-                                '[]byte': `d.tests = append(d.tests, e2e.ExpectBody(body))`,
-                                'string': `d.tests = append(d.tests, e2e.ExpectBody(([]byte)(body)))`,
-                                _: `bodyJson, _ := json.Marshal(body)
-                                    d.tests = append(d.tests, e2e.ExpectJSONBody(bodyJson))
-                                `,
+                            ${
+                                let base = go.baseType(., app('types')?:{} => (@:go.name(.@), :.@value));
+                                cond base || . {
+                                    '[]byte': `d.tests = append(d.tests, e2e.ExpectBody(body))`,
+                                    'string': `d.tests = append(d.tests, e2e.ExpectBody(([]byte)(body)))`,
+                                    _: `bodyJson, _ := json.Marshal(body)
+                                        d.tests = append(d.tests, e2e.ExpectJSONBody(bodyJson))
+                                    `,
                             }}
 
                             return d

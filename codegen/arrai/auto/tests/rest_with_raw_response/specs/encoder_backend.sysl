@@ -8,3 +8,23 @@ EncoderBackend [package="encoder_backend"]:
     /reverse-bytes:
         POST (body <: bytes [~body]):
             return ok <: bytes
+
+    /ping-string-alias:
+        POST (body <: ping-string-request [~body]):
+            return ok <: ping-string-response
+
+    /ping-byte-alias:
+        POST (body <: ping-byte-request [~body]):
+            return ok <: ping-byte-response
+
+    !alias ping-string-request:
+        string
+
+    !alias ping-byte-request:
+        bytes
+
+    !alias ping-string-response:
+        string
+
+    !alias ping-byte-response:
+        bytes

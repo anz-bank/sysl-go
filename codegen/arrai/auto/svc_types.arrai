@@ -164,7 +164,7 @@ let fieldJsonTag = \type \key
         }
         ${aliases where .@item.@ != "Empty" && !//seq.has_prefix("EXTERNAL_", .@item.@) >> $`
             // ${.typename} ...
-            type ${.typename} ${go.type(.@value)}
+            type ${.typename} = ${go.type(.@value)}
         `::\i}
         ${aliases where .@item.@ = "Empty" >> $`
             // ${.typename} ...

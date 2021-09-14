@@ -224,6 +224,12 @@ let typeWithPackage = \(:type, :seq, ...) \package
                 ++ name(//seq.concat(type)); cond { result: '*' ++ result },
         };
 
+# `baseType` returns the base for aliased types otherwise returns {}.
+let baseType = \t \allTypes
+    let aliases = allTypes where !({'oneOf', 'oneof', 'tuple', 'relation'} & (.@value => .@));
+    let nonEmpty = aliases where .@ != "Empty" && !//seq.has_prefix("EXTERNAL_", .@);
+    type(nonEmpty(t)?:{});
+
 let module = \module
     let typeWithClientPackage = \(:type, :seq, ...)
         let pkgnames = type => .@item;
@@ -310,6 +316,7 @@ let module = \module
     :prelude,
     :type,
     :leafType,
+    :baseType,
     :varName,
     :errorReturnTypes,
     :asVariableName,

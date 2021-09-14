@@ -16,7 +16,7 @@ import (
 
 type AppConfig struct{}
 
-func PostPingBytes(ctx context.Context, req *gateway.PostReverseBytesNRequest, client gateway.PostReverseBytesNClient) ([]byte, error) {
+func PostReverseBytesN(ctx context.Context, req *gateway.PostReverseBytesNRequest, client gateway.PostReverseBytesNClient) ([]byte, error) {
 	result := req.Request
 
 	for i := 0; i < int(req.Count); i++ {
@@ -35,7 +35,7 @@ func PostPingBytes(ctx context.Context, req *gateway.PostReverseBytesNRequest, c
 	return result, nil
 }
 
-func PostPingString(ctx context.Context, req *gateway.PostReverseStringNRequest, client gateway.PostReverseStringNClient) (string, error) {
+func PostReverseStringN(ctx context.Context, req *gateway.PostReverseStringNRequest, client gateway.PostReverseStringNClient) (string, error) {
 	result := req.Request
 
 	for i := 0; i < int(req.Count); i++ {
@@ -54,10 +54,46 @@ func PostPingString(ctx context.Context, req *gateway.PostReverseStringNRequest,
 	return result, nil
 }
 
+func PostPingStringAlias(ctx context.Context, req *gateway.PostPingStringAliasRequest, client gateway.PostPingStringAliasClient) (*gateway.PingStringResponse, error) {
+	encoderReq := &encoder_backend.PostPingStringAliasRequest{
+		Request: encoder_backend.PingStringRequest(req.Request),
+	}
+
+	header := make(http.Header)
+	header.Set("Content-Type", "text/plain")
+	ctx = common.RequestHeaderToContext(ctx, header)
+	response, err := client.Encoder_backendPostPingStringAlias(ctx, encoderReq)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := gateway.PingStringResponse(*response)
+	return &resp, nil
+}
+
+func PostPingByteAlias(ctx context.Context, req *gateway.PostPingByteAliasRequest, client gateway.PostPingByteAliasClient) (*gateway.PingByteResponse, error) {
+	encoderReq := &encoder_backend.PostPingByteAliasRequest{
+		Request: encoder_backend.PingByteRequest(req.Request),
+	}
+
+	header := make(http.Header)
+	header.Set("Content-Type", "application/octet-stream")
+	ctx = common.RequestHeaderToContext(ctx, header)
+	response, err := client.Encoder_backendPostPingByteAlias(ctx, encoderReq)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := gateway.PingByteResponse(*response)
+	return &resp, nil
+}
+
 func createService(_ context.Context, _ AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
 	return &gateway.ServiceInterface{
-		PostReverseBytesN:  PostPingBytes,
-		PostReverseStringN: PostPingString,
+		PostPingStringAlias: PostPingStringAlias,
+		PostPingByteAlias:   PostPingByteAlias,
+		PostReverseBytesN:   PostReverseBytesN,
+		PostReverseStringN:  PostReverseStringN,
 	}, nil, nil
 }
 

@@ -12,3 +12,25 @@ Gateway [package="gateway"]:
         POST (body <: bytes [~body]) ?count=int:
             EncoderBackend <- POST /reverse-bytes
             return ok <: bytes
+
+    /ping-string-alias:
+        POST (body <: ping-string-request [~body]):
+            EncoderBackend <- POST /ping-string-alias
+            return ok <: ping-string-response
+
+    /ping-byte-alias:
+        POST (body <: ping-byte-request [~body]):
+            EncoderBackend <- POST /ping-byte-alias
+            return ok <: ping-byte-response
+
+    !alias ping-string-request:
+        string
+
+    !alias ping-byte-request:
+        bytes
+
+    !alias ping-string-response:
+        string
+
+    !alias ping-byte-response:
+        bytes
