@@ -171,6 +171,7 @@ let prelude = \app \imports $`
         "github.com/anz-bank/sysl-go/database"
         "github.com/anz-bank/sysl-go/handlerinitialiser"
         "github.com/anz-bank/sysl-go/restlib"
+        "github.com/anz-bank/sysl-go/testutil/e2e"
         "github.com/anz-bank/sysl-go/validator"
         "github.com/anz-bank/sysl-go/core/authrules"
         golog "github.com/anz-bank/sysl-go/log"
