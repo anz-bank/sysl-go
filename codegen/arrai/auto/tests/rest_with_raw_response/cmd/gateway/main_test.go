@@ -261,7 +261,7 @@ func TestRestWithRawResponse_ActualDownstream(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	gatewayTester := gateway.NewTestServerWithActualDownstreams(t, context.Background(), createService, applicationConfig)
+	gatewayTester := gateway.NewIntegrationTestServer(t, context.Background(), createService, applicationConfig)
 	defer gatewayTester.Close()
 
 	sendByte := []byte{65, 55, 67}
