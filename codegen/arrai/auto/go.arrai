@@ -163,6 +163,7 @@ let prelude = \app \imports $`
         "log"
         "net/http"
         "net/url"
+        "testing"
 
         "github.com/anz-bank/sysl-go/common"
         "github.com/anz-bank/sysl-go/core"
@@ -175,6 +176,7 @@ let prelude = \app \imports $`
         "github.com/anz-bank/sysl-go/validator"
         "github.com/anz-bank/sysl-go/core/authrules"
         golog "github.com/anz-bank/sysl-go/log"
+        "github.com/stretchr/testify/require"
 
         ${
             imports => cond . {
