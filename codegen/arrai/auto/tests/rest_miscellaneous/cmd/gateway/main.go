@@ -28,6 +28,21 @@ func GetPingList(ctx context.Context, req *gateway.GetPingListRequest, client ga
 	}, nil
 }
 
+func GetPingString(ctx context.Context, req *gateway.GetPingStringRequest, client gateway.GetPingStringClient) (*gateway.PongString, error) {
+	backendReq := &encoder_backend.GetPingStringRequest{
+		S: req.S,
+	}
+
+	encoderResponse, err := client.Encoder_backendGetPingString(ctx, backendReq)
+	if err != nil {
+		return nil, err
+	}
+
+	return &gateway.PongString{
+		S: encoderResponse.S,
+	}, nil
+}
+
 func PostPingBinary(_ context.Context, req *gateway.PostPingBinaryRequest) (*gateway.GatewayBinaryResponse, error) {
 	return &gateway.GatewayBinaryResponse{
 		Content: req.Request.Content,
@@ -37,6 +52,7 @@ func PostPingBinary(_ context.Context, req *gateway.PostPingBinaryRequest) (*gat
 func createService(_ context.Context, _ AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
 	return &gateway.ServiceInterface{
 		GetPingList:    GetPingList,
+		GetPingString:  GetPingString,
 		PostPingBinary: PostPingBinary,
 	}, nil, nil
 }

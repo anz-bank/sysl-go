@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/anz-bank/sysl-go/restlib"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -113,6 +114,26 @@ func ExpectQueryParams(query map[string][]string) Tests {
 	return func(t *testing.T, w http.ResponseWriter, r *http.Request) {
 		expected := in.Encode()
 		actual := r.URL.Query().Encode()
+		assert.Equal(t, expected, actual, loc)
+	}
+}
+
+func ExpectURLParam(key string, expected string) Tests {
+	loc := GetTestLine()
+
+	return func(t *testing.T, w http.ResponseWriter, r *http.Request) {
+		actual := restlib.GetURLParam(r, key)
+
+		assert.Equal(t, expected, actual, loc)
+	}
+}
+
+func ExpectURLParamForInt(key string, expected int64) Tests {
+	loc := GetTestLine()
+
+	return func(t *testing.T, w http.ResponseWriter, r *http.Request) {
+		actual := restlib.GetURLParamForInt(r, key)
+
 		assert.Equal(t, expected, actual, loc)
 	}
 }

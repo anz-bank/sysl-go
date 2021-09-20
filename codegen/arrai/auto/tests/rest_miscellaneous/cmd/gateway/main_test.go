@@ -162,13 +162,23 @@ func TestMiscellaneous_DownstreamQuery(t *testing.T) {
 	defer gatewayTester.Close()
 
 	const expectId = 24
+	const expectString = "Foo"
 
 	gatewayTester.Mocks.Encoder_backend.GetPingList.
 		ExpectQueryParams(map[string][]string{"id": {fmt.Sprint(expectId)}}).
 		MockResponse(200, map[string]string{"Content-Type": `application/json`}, encoder_backend.Pong{Identifier: expectId})
 
+	gatewayTester.Mocks.Encoder_backend.GetPingString.
+		ExpectURLParamS(expectString).
+		MockResponse(200, map[string]string{"Content-Type": `application/json`}, encoder_backend.PongString{S: expectString})
+
 	gatewayTester.GetPingList(expectId).
 		ExpectResponseCode(200).
 		ExpectResponseBody(gateway.Pong{Identifier: expectId}).
+		Send()
+
+	gatewayTester.GetPingString(expectString).
+		ExpectResponseCode(200).
+		ExpectResponseBody(gateway.PongString{S: expectString}).
 		Send()
 }

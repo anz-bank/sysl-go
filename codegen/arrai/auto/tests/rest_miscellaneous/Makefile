@@ -6,7 +6,7 @@ PKGPATH = rest_miscellaneous
 
 include ../common.mk
 
-test:gen-all-servers
+test: gen-all-servers
 	go test -v ./...
 PHONY: .test
 

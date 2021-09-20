@@ -22,6 +22,14 @@ Gateway [package="gateway"]:
     !type GatewayBinaryResponse:
         content <: bytes
 
+    /ping-string/{s <: string}:
+        GET:
+            EncoderBackend <- GET /ping-string/{s}
+            return ok <: PongString
+
+    !type PongString:
+        s <: string
+
 GatewayWithBff [package="gatewayWithBff"]:
     @basePath = "bff"
     @go_package = "gatewayWithBff"

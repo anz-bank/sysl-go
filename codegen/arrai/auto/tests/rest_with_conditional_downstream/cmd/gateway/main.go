@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	gateway "rest_with_conditional_downstream/internal/gen/pkg/servers/gateway"
-	backend "rest_with_conditional_downstream/internal/gen/pkg/servers/gateway/backend"
+	"rest_with_conditional_downstream/internal/gen/pkg/servers/gateway"
+	"rest_with_conditional_downstream/internal/gen/pkg/servers/gateway/backend"
 
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/log"
@@ -44,14 +44,14 @@ func GetFizzbuzz(ctx context.Context, req *gateway.GetFizzbuzzRequest, client ga
 	return &gateway.GatewayResponse{Content: b.String()}, nil
 }
 
+func createService(_ context.Context, _ AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
+	return &gateway.ServiceInterface{
+		GetFizzbuzz: GetFizzbuzz,
+	}, nil, nil
+}
+
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
-	return gateway.NewServer(ctx,
-		func(ctx context.Context, config AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
-			return &gateway.ServiceInterface{
-				GetFizzbuzz: GetFizzbuzz,
-			}, nil, nil
-		},
-	)
+	return gateway.NewServer(ctx, createService)
 }
 
 func main() {

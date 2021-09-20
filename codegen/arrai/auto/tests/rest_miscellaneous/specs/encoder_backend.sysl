@@ -8,3 +8,10 @@ EncoderBackend [package="encoder_backend"]:
 
     !type Pong:
         identifier <: int
+
+    /ping-string/{s <: string}:
+        GET:
+            return ok <: PongString
+
+    !type PongString:
+        s <: string
