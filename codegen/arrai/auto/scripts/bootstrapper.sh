@@ -75,5 +75,7 @@ arrai run --out=/work/Makefile /sysl-go/codegen/arrai/auto/makefile.arrai "$TEMP
 cp /sysl-go/codegen/arrai/auto/codegen.mk /work/codegen.mk
 if [ ! -f "go.mod" ]; then
     go mod init "$GO_MOD"
+    codegenVersion="${SYSLGO_VERSION##*/}"
+    echo "\nrequire github.com/anz-bank/sysl-go ${codegenVersion} // indirect" >> go.mod
 fi
 printf "\e[1;32mCodegen ready!\e[0m To generate code, run make.\n"

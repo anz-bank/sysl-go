@@ -12,10 +12,10 @@ $`
 
     .PHONY: clean
     clean:
-        rm -rf internal/gen
+    	rm -rf internal/gen
 
-    PHONY: .test
+    .PHONY: test
     test: gen-all-servers
-        go test -v ./...
+    	go test -v ./...
 
 `
