@@ -6,6 +6,10 @@ FROM golang:1.16.3-buster AS stage
 ENV SYSL_VERSION=0.258.0
 ENV ARRAI_VERSION=0.194.0
 
+ENV PROTOC_VERSION=3.17.3
+ENV PROTOC_GEN_GO_VERSION=1.27.1
+ENV PROTOC_GEN_GO_GRPC_VERSION=1.1
+
 # install sysl. sysl's build process added a dependency on docker, which
 # is an obstacle to building from source, so instead install the binary
 WORKDIR /temp-deps/sysl
@@ -18,10 +22,24 @@ RUN git clone --depth 1 --branch v"$ARRAI_VERSION" https://github.com/arr-ai/arr
 # install goimports
 RUN go get golang.org/x/tools/cmd/goimports
 
+#install unzip
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive \
+    apt-get install --no-install-recommends --assume-yes \
+      unzip
+
+#install protoc compiler and plugins
+RUN curl -LJO https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip && unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d /
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v$PROTOC_GEN_GO_VERSION
+RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v$PROTOC_GEN_GO_GRPC_VERSION
+
 FROM golang:1.16.3-buster
 COPY --from=stage /go/bin/arrai /bin
 COPY --from=stage /bin/sysl /bin
 COPY --from=stage /go/bin/goimports /bin
+COPY --from=stage /bin/protoc /bin
+COPY --from=stage /go/bin/protoc-gen-go /bin
+COPY --from=stage /go/bin/protoc-gen-go-grpc /bin
 
 # copy sysl-go to /sysl-go
 COPY ./codegen/arrai/auto /sysl-go/codegen/arrai/auto

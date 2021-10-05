@@ -80,7 +80,7 @@ $(error Failed to determine the version for github.com/anz-bank/sysl-go)
 endif
 SYSL_GO_IMAGE = anzbank/sysl-go:${SYSL_GO_VERSION}
 DOCKER_RUN = $(DOCKER) run --rm -t -v $$(pwd):/work -w /work
-PROTOC    = $(DOCKER_RUN) anzbank/protoc-gen-sysl:v0.0.24
+PROTOC    = $(DOCKER_RUN) --entrypoint protoc $(SYSL_GO_IMAGE)
 SYSL      = $(DOCKER_RUN) --entrypoint sysl $(SYSL_GO_IMAGE)
 AUTOGEN   = $(DOCKER_RUN) --entrypoint arrai $(SYSL_GO_IMAGE) $(AUTO)
 GOIMPORTS = $(DOCKER_RUN) --entrypoint goimports $(SYSL_GO_IMAGE)

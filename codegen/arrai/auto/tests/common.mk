@@ -4,7 +4,7 @@ SYSL_GO_ROOT=../../../../../
 
 PB_GO_TARGETS = $(foreach proto,$(PROTOS),internal/gen/pb/$(proto)/$(proto).pb.go)
 
-PROTOC_GRPC_PB_GO = mkdir -p $(dir $@) && protoc --proto_path=specs --go_out=$(dir $@) --go-grpc_out=$(dir $@) $^
+PROTOC_GRPC_PB_GO = mkdir -p $(dir $@) && $(PROTOC) --proto_path=specs --go_out=$(dir $@) --go-grpc_out=$(dir $@) $^
 
 default: test
 .PHONY: default
