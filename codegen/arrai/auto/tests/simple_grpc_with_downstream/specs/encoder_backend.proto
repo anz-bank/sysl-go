@@ -2,6 +2,8 @@ syntax  = "proto3";
 
 package encoder_backend;
 
+option go_package = ".;encoder_backend";
+
 message EncodingResponse {
     string content = 1;
 }

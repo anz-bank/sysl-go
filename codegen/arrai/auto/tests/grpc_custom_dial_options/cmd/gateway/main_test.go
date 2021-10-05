@@ -51,7 +51,9 @@ func doGatewayRequestResponse(ctx context.Context, content string) (string, erro
 	return response.Content, nil
 }
 
-type dummyEncoderBackend struct{}
+type dummyEncoderBackend struct {
+	ebpb.UnimplementedEncoderBackendServer
+}
 
 func (s dummyEncoderBackend) Rot13(ctx context.Context, req *ebpb.EncodingRequest) (*ebpb.EncodingResponse, error) {
 	var md metadata.MD

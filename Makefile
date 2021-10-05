@@ -39,17 +39,22 @@ check-coverage: test  ## Check that test coverage meets the required level
 coverage: test  ## Show test coverage in your browser
 	go tool cover -html=$(COVERFILE)
 
-ALLTESTS = $(sort $(dir $(wildcard codegen/arrai/auto/tests/*/Makefile)))
+ALL_TESTS = $(sort $(dir $(wildcard codegen/arrai/auto/tests/*/Makefile)))
 
-auto-test: $(ALLTESTS)
+auto-test: $(ALL_TESTS)
 	$(foreach dir,$^,$(MAKE) -C $(dir);)
 
-update-auto-test-go-mod: $(ALLTESTS) ## Update go.mod and go.sum files within auto tests
+update-auto-test-go-mod: $(ALL_TESTS) ## Update go.mod and go.sum files within auto tests
 	$(foreach dir,$^,pushd $(dir) && go mod download && go mod tidy && popd;)
 
-clean: $(ALLTESTS)
+clean: $(ALL_TESTS)
 	rm -f $(COVERFILE)
 	@$(foreach dir,$^,$(MAKE) -C $(dir) clean;)
+
+ALL_GRPC_TESTS = $(sort $(dir $(wildcard codegen/arrai/auto/tests/*grpc*/Makefile)))
+
+update-auto-test-proto-pb: $(ALL_GRPC_TESTS) ## Update go.mod and go.sum files within auto tests
+	$(foreach dir,$^,pushd $(dir) && $(MAKE) -B protos && popd;)
 
 CHECK_COVERAGE = awk -F '[ \t%]+' '/^total:/ && $$3 < $(COVERAGE) {exit 1}'
 FAIL_COVERAGE = { echo '$(COLOUR_RED)FAIL - Coverage below $(COVERAGE)%$(COLOUR_NORMAL)'; exit 1; }
