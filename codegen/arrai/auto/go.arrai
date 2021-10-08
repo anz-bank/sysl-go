@@ -126,7 +126,7 @@ let pbImport = \app
     (alias: 'pb', package: pbPackage(app));
 
 let pbMethodInfo = \ep
-    let {'name': (s: methodName), 'param': (a: [param]), 'stmt': (a: stmts), ...} = ep;
+    let {'name': (s: methodName), 'param': (a: [param, ...]), 'stmt': (a: stmts), ...} = ep;
     let {'name': (s: pname), 'type': ptype, ...} = param;
     let methodName = name(methodName);
     let last = \xs xs(xs count - 1);
