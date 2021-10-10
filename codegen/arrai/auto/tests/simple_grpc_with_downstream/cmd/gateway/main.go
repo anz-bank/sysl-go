@@ -6,8 +6,8 @@ import (
 	"os"
 
 	pb "simple_grpc_with_downstream/internal/gen/pb/gateway"
-	gateway "simple_grpc_with_downstream/internal/gen/pkg/servers/gateway"
-	encoder_backend "simple_grpc_with_downstream/internal/gen/pkg/servers/gateway/encoder_backend"
+	"simple_grpc_with_downstream/internal/gen/pkg/servers/gateway"
+	"simple_grpc_with_downstream/internal/gen/pkg/servers/gateway/encoder_backend"
 
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/log"
@@ -35,14 +35,14 @@ func Encode(ctx context.Context, req *pb.EncodeRequest, client gateway.EncodeCli
 	}
 }
 
+func createService(ctx context.Context, cfg AppConfig) (*gateway.GrpcServiceInterface, *core.Hooks, error) {
+	return &gateway.GrpcServiceInterface{
+		Encode: Encode,
+	}, nil, nil
+}
+
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
-	return gateway.NewServer(ctx,
-		func(ctx context.Context, cfg AppConfig) (*gateway.GrpcServiceInterface, *core.Hooks, error) {
-			return &gateway.GrpcServiceInterface{
-				Encode: Encode,
-			}, nil, nil
-		},
-	)
+	return gateway.NewServer(ctx, createService)
 }
 
 func main() {

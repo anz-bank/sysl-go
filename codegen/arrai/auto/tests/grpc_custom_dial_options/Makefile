@@ -1,18 +1,13 @@
 SYSLGO_SYSL = specs/gateway.sysl
-SYSLGO_PACKAGES = gateway encoderbackend
+SYSLGO_PACKAGES = gateway
 SYSLGO_APP.gateway = Gateway
-SYSLGO_APP.encoderbackend = EncoderBackend
 PKGPATH = grpc_custom_dial_options
 
 PROTOS = encoder_backend gateway
 
 include ../common.mk
 
-# This rule is wonky as make does not understand there is
-# a dependency between the specs and the *.go files *inside*
-# internal/gen/pkg/servers/gateway. But, if we add those detailed rules,
-# it is not compatible with how codegen.mk is structured.
-test: cmd/gateway/main.go cmd/gateway/main_test.go internal/gen/pkg/servers/gateway
+test: gen-all-servers cmd/gateway/main.go cmd/gateway/main_test.go
 	go test -v ./...
 PHONY: .test
 

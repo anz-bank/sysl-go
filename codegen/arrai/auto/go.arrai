@@ -158,6 +158,7 @@ let prelude = \app \imports $`
         "context"
         "database/sql"
         "encoding/json"
+        "errors"
         "flag"
         "fmt"
         "log"
@@ -176,6 +177,7 @@ let prelude = \app \imports $`
         "github.com/anz-bank/sysl-go/validator"
         "github.com/anz-bank/sysl-go/core/authrules"
         golog "github.com/anz-bank/sysl-go/log"
+        "github.com/stretchr/testify/assert"
         "github.com/stretchr/testify/require"
 
         ${
@@ -189,6 +191,7 @@ let prelude = \app \imports $`
         "google.golang.org/grpc"
         "google.golang.org/grpc/codes"
         "google.golang.org/grpc/status"
+        "google.golang.org/protobuf/proto"
         "gopkg.in/yaml.v2"
     )`;
 

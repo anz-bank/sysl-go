@@ -5,7 +5,7 @@ import (
 	"os"
 
 	pb "grpc_jwt_authorization/internal/gen/pb/gateway"
-	gateway "grpc_jwt_authorization/internal/gen/pkg/servers/gateway"
+	"grpc_jwt_authorization/internal/gen/pkg/servers/gateway"
 
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/log"
@@ -14,22 +14,22 @@ import (
 type AppConfig struct {
 }
 
-func Hello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error) {
+func Hello(_ context.Context, _ *pb.HelloRequest) (*pb.HelloResponse, error) {
 	return &pb.HelloResponse{
 		Content: "why hello there",
 	}, nil
 }
 
-func newAppServer(ctx context.Context) (core.StoppableServer, error) {
-	return gateway.NewServer(ctx,
-		func(ctx context.Context, cfg AppConfig) (*gateway.GrpcServiceInterface, *core.Hooks, error) {
-			return &gateway.GrpcServiceInterface{
-					Hello: Hello,
-				},
-				&core.Hooks{},
-				nil
+func createService(_ context.Context, _ AppConfig) (*gateway.GrpcServiceInterface, *core.Hooks, error) {
+	return &gateway.GrpcServiceInterface{
+			Hello: Hello,
 		},
-	)
+		&core.Hooks{},
+		nil
+}
+
+func newAppServer(ctx context.Context) (core.StoppableServer, error) {
+	return gateway.NewServer(ctx, createService)
 }
 
 func main() {

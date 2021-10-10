@@ -6,7 +6,7 @@ import (
 	"os"
 
 	pb "grpc_custom_server_options/internal/gen/pb/gateway"
-	gateway "grpc_custom_server_options/internal/gen/pkg/servers/gateway"
+	"grpc_custom_server_options/internal/gen/pkg/servers/gateway"
 
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core"
@@ -56,35 +56,35 @@ func Hello(ctx context.Context, req *pb.HelloRequest) (*pb.HelloResponse, error)
 	}, nil
 }
 
-func newAppServer(ctx context.Context) (core.StoppableServer, error) {
-	return gateway.NewServer(ctx,
-		func(ctx context.Context, cfg AppConfig) (*gateway.GrpcServiceInterface, *core.Hooks, error) {
-			// We can access the AppConfig here to help define our
-			// custom grpc.ServerOption configuration
-			opts := []grpc.ServerOption{}
-			for _, kvpair := range cfg.CustomMetadata {
-				f := makeCustomGrpcMetadataInjector(kvpair.Key, kvpair.Value)
-				opts = append(opts, grpc.ChainUnaryInterceptor(f))
-			}
+func createService(_ context.Context, cfg AppConfig) (*gateway.GrpcServiceInterface, *core.Hooks, error) {
+	// We can access the AppConfig here to help define our
+	// custom grpc.ServerOption configuration
+	opts := []grpc.ServerOption{}
+	for _, kvpair := range cfg.CustomMetadata {
+		f := makeCustomGrpcMetadataInjector(kvpair.Key, kvpair.Value)
+		opts = append(opts, grpc.ChainUnaryInterceptor(f))
+	}
 
-			// example of using a hook to append gRPC server options
-			myHooks := &core.Hooks{}
-			if cfg.SetAdditionalGrpcServerOptions {
-				myHooks.AdditionalGrpcServerOptions = opts
-			}
-			// example of using a hook to override gRPC server options
-			if cfg.SetOverrideGrpcServerOptions {
-				myHooks.OverrideGrpcServerOptions = func(_ context.Context, _ *config.GRPCServerConfig) ([]grpc.ServerOption, error) {
-					return opts, nil
-				}
-			}
-			return &gateway.GrpcServiceInterface{
-					Hello: Hello,
-				},
-				myHooks,
-				nil
+	// example of using a hook to append gRPC server options
+	myHooks := &core.Hooks{}
+	if cfg.SetAdditionalGrpcServerOptions {
+		myHooks.AdditionalGrpcServerOptions = opts
+	}
+	// example of using a hook to override gRPC server options
+	if cfg.SetOverrideGrpcServerOptions {
+		myHooks.OverrideGrpcServerOptions = func(_ context.Context, _ *config.GRPCServerConfig) ([]grpc.ServerOption, error) {
+			return opts, nil
+		}
+	}
+	return &gateway.GrpcServiceInterface{
+			Hello: Hello,
 		},
-	)
+		myHooks,
+		nil
+}
+
+func newAppServer(ctx context.Context) (core.StoppableServer, error) {
+	return gateway.NewServer(ctx, createService)
 }
 
 func main() {

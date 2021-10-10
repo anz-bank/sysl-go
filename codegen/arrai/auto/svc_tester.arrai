@@ -1,21 +1,53 @@
 let go = //{./go};
 let sysl = //{./sysl};
+let grpc = //{./grpc};
 
-\(:app, :appname, :basepath, :clientDeps, :module, :goModule, :restEndpoints, ...)
+\(:app, :appname, :basepath, :clientDeps, :module, :goModule, :restEndpoints, :nonRestEndpoints, ...)
     let package = go.package(app);
+    let gRPC = "gRPC" <: sysl.patterns(app);
+    let goAppname = cond {gRPC: go.name(grpc.app.name(app)), _:""};
+    let grpcClientDeps = clientDeps where goModule.depField(.).grpc;
+    let restClientDeps = clientDeps where !goModule.depField(.).grpc;
+
     $`
-        ${go.prelude(app, clientDeps => $`${basepath}/${.import}`)}
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | cond {gRPC: {go.pbImport(app)}})}
 
         // TestServer for ${appname}
         type TestServer struct {
             e     *e2e.Tester
             Mocks Mocks
+            ${cond {gRPC: $`
+
+                conn   *grpc.ClientConn
+                client pb.${goAppname}Client
+            `}}
         }
 
         type Mocks struct {
             ${clientDeps orderby . >> $`${go.name(.import)} *${.import}.DownstreamMocks`::\i}
         }
 
+        ${cond {grpcClientDeps: $`
+            func overrideGrpcDialOptions(t *testing.T, mocks *Mocks) func(serviceName string, cfg *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {
+                return func(serviceName string, cfg *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {
+                    switch serviceName {
+                    ${
+                        grpcClientDeps orderby . >> 
+                        let upperName = go.name(.import);
+                        $`
+                            case "${.import}":
+                                cfg.ServiceAddress = "mock${upperName}"
+                                mocks.${upperName} = ${.import}.NewDownstreamMocks(t)
+                                return mocks.${upperName}.GetDialOption(), nil
+                        `
+                    ::\i}
+                    }
+
+                    return nil, errors.New("Unknown service name?")
+                }
+            }
+
+        `}}
         func NewTestServer(t *testing.T, ctx context.Context, createService, cfg interface{}) *TestServer {
             return newTestServerImp(t, ctx, createService, cfg, false)
         }
@@ -30,28 +62,63 @@ let sysl = //{./sysl};
 
             testServer, ctx, testHooks := e2e.NewTester(t, context.Background(), byteCfg)
 
+            var mocks Mocks
             if withActualDownstreams {
                 testHooks.HTTPClientBuilder = nil
+            } ${cond {grpcClientDeps: $`
+                    else {
+                        testHooks.OverrideGrpcDialOptions = overrideGrpcDialOptions(t, &mocks)
+                    }
+                `}}
+
+            // Force ContextTimeout
+            testHooks.ValidateConfig = func(_ context.Context, cfg *config.DefaultConfig) error {
+                var downstream *DownstreamConfig
+                var is bool
+                if downstream, is = cfg.GenCode.Downstream.(*DownstreamConfig); !is || downstream == nil {
+                    downstream = &DownstreamConfig{}
+                    cfg.GenCode.Downstream = downstream
+                }
+                if downstream.ContextTimeout == 0 {
+                    downstream.ContextTimeout = e2e.DownstreamTimeout
+                }
+                ${restClientDeps orderby . >> $`
+                    if downstream.${go.name(.import)}.ClientTimeout == 0 {
+                        downstream.${go.name(.import)}.ClientTimeout = e2e.DownstreamTimeout
+                    }
+                `::\i}
+
+                return nil
             }
 
             createService = e2e.CreateServiceWithTestHooksPatched(createService, testHooks)
 
             srv, err := NewServer(ctx, createService)
-
             require.NoError(t, err)
+
             err = srv.Start()
             require.NoError(t, err)
 
-            var mocks Mocks
-            if !withActualDownstreams {
-                mocks = Mocks{
-                    ${clientDeps orderby . >> $`${go.name(.import)}: ${.import}.NewDownstreamMocks(testServer),`::\i}
+            ${cond {gRPC: $`
+                conn, err := grpc.Dial("test${goAppname}", grpc.WithContextDialer(testServer.GetBufDialer), grpc.WithInsecure())
+                require.NoError(t, err)
+                client := pb.New${goAppname}Client(conn)
+            `}}
+
+            ${cond {restClientDeps: $`
+                if !withActualDownstreams {
+                    ${restClientDeps orderby . >> $`mocks.${go.name(.import)} = ${.import}.NewDownstreamMocks(testServer)`::\i}
                 }
-            }
+            `}}
 
             return &TestServer{
                 e: testServer,
                 Mocks: mocks,
+                ${cond {gRPC: $`
+
+                    conn:   conn,
+                    client: client,
+                `}}
             }
         }
 
@@ -60,11 +127,22 @@ let sysl = //{./sysl};
         }
 
         func (t *TestServer) Close() {
+            ${cond {gRPC: $`
+                if t.conn != nil {
+                    t.conn.Close()
+                }
+            `}}
             t.e.Close()
+            ${grpcClientDeps orderby . >> $`
+                if t.Mocks.${go.name(.import)} != nil {
+                    t.Mocks.${go.name(.import)}.Stop()
+                }
+            `::\i}
         }
 
         ${restEndpoints >> \(@value: ep, ...)
-            let testType = $`${go.methodName(ep)}Test`;
+            let name = go.methodName(ep);
+            let testType = $`${name}Test`;
             let args = ep('restParams')?:{}
                         -> (.('queryParam')?.a:{}) ++ (.('urlParam')?.a:{})
                         orderby sysl.source(.@item('type'))
@@ -75,7 +153,7 @@ let sysl = //{./sysl};
                     tc e2e.TestCall2
                 }
 
-                func (t *TestServer) ${go.methodName(ep)}(${args ::, }) *${testType} {
+                func (t *TestServer) ${name}(${args ::, }) *${testType} {
                     basePath := core.SelectBasePath("${app('attrs')?('basePath')?('s').s:""}", t.e.CfgBasePath())
                     if basePath == "/" {
                         basePath = ""
@@ -190,6 +268,83 @@ let sysl = //{./sysl};
 
                 func (t *${testType}) Send() {
                     t.e.Do2(t.tc)
+                }
+            `
+        ::\i}
+
+        ${nonRestEndpoints >> \(@value: ep, ...)
+            let methodInfo = go.pbMethodInfo(ep);
+            let name = methodInfo.name;
+            let requestType = methodInfo.requestType;
+            let responseType = methodInfo.responseType;
+
+            let testType = $`${name}Test`;
+
+            $`
+                type ${testType} struct {
+                    t      *testing.T
+                    client pb.${goAppname}Client
+
+                    ctx       context.Context
+                    req       *pb.${requestType}
+                    res       *pb.${responseType}
+                    err       error
+                    testResFn func(t *testing.T, actual *pb.${responseType}, err error)
+                }
+
+                func (t *TestServer) ${name}() *${testType} {
+                    return &${testType}{
+                        ctx:    context.Background(),
+                        t:      t.e.T(),
+                        client: t.client,
+                    }
+                }
+
+                func (t *${testType}) WithRequest(req *pb.${requestType}) *${testType} {
+                    t.req = req
+
+                    return t
+                }
+
+                func (t *${testType}) WithContext(ctx context.Context) *${testType} {
+                    t.ctx = ctx
+
+                    return t
+                }
+
+                func (t *${testType}) ExpectResponse(res *pb.${responseType}) *${testType} {
+                    t.res = res
+
+                    return t
+                }
+
+                func (t *${testType}) ExpectError(err error) *${testType} {
+                    t.err = err
+
+                    return t
+                }
+
+                func (t *${testType}) TestResponse(testResFn func(t *testing.T, actualResponse *pb.${responseType}, err error)) *${testType} {
+                    t.testResFn = testResFn
+
+                    return t
+                }
+
+                func (t *${testType}) Send() {
+                    require.NotNil(t.t, t.req, "Need to call WithRequest before Send")
+
+                    response, err := t.client.${name}(t.ctx, t.req)
+                    if t.err != nil {
+                        require.Error(t.t, err)
+                        require.Equal(t.t, t.err.Error(), err.Error())
+                    }
+                    if t.res != nil {
+                        require.NoError(t.t, err)
+                        require.True(t.t, proto.Equal(t.res, response), "Responses not equal!\nExpected: %s\nActual: %s", t.res.String(), response.String())
+                    }
+                    if t.testResFn != nil {
+                        t.testResFn(t.t, response, err)
+                    }
                 }
             `
         ::\i}

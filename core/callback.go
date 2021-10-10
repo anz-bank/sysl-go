@@ -131,6 +131,10 @@ type Hooks struct {
 	// StoppableServerBuilder can be used to add a function which will be used to create the public listener
 	// instead of the normal httpServer. This can be used to create custom test HTTP listeners.
 	StoppableServerBuilder func(ctx context.Context, rootRouter http.Handler, tlsConfig *tls.Config, httpConfig config.CommonHTTPServerConfig, name string) StoppableServer
+
+	// StoppableGrpcServerBuilder can be used to add a function which will be used to create the public gRPC listener
+	// instead of the normal net.Listen. This can be used to create custom test gRPC listeners.
+	StoppableGrpcServerBuilder func(ctx context.Context, server *grpc.Server, commonConfig config.GRPCServerConfig, name string) StoppableServer
 }
 
 func ResolveGrpcDialOptions(ctx context.Context, serviceName string, h *Hooks, grpcDownstreamConfig *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {

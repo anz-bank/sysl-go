@@ -159,6 +159,8 @@ func Test_serverUsesGivenLogger(t *testing.T) {
 	defer s.GracefulStop()
 	test.RegisterTestServiceServer(s, &TestServer{})
 
+	setLogger(ctx)
+
 	srv := prepareGrpcServerListener(ctx, s, localServer(), "")
 	go func() {
 		err := srv.Start()
@@ -196,7 +198,7 @@ func Test_libMakesCorrectHandlerCalls(t *testing.T) {
 	grpcServerManager, err := newGrpcServerManagerFromGrpcManager(ctx, manager)
 	require.NoError(t, err)
 
-	srv := configurePublicGrpcServerListener(ctx, *grpcServerManager)
+	srv := configurePublicGrpcServerListener(ctx, *grpcServerManager, nil)
 	require.NotNil(t, srv)
 
 	defer func() {

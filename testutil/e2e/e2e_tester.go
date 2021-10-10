@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -14,6 +15,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/test/bufconn"
 	"gopkg.in/yaml.v2"
 
 	"github.com/anz-bank/sysl-go/config"
@@ -29,10 +32,15 @@ type Endpoint interface {
 
 type Tester struct {
 	t *testing.T
-	*httptest.Server
+
+	restServer      *httptest.Server
 	restDownstreams map[string]*restDownstream
-	bm              status.BuildMetadata
-	cfgBasePath     string
+	restCfgBasePath string
+
+	grpcServer   *grpc.Server
+	grpcListener *bufconn.Listener
+
+	bm status.BuildMetadata
 }
 
 func ConfigToYamlData(cfg interface{}, appCfgType reflect.Type) ([]byte, error) {
@@ -71,22 +79,32 @@ func NewTesterWithBuildMetadata(t *testing.T, ctx context.Context, bm status.Bui
 	ctx = core.WithConfigFile(ctx, yamlConfigData)
 
 	hooks := &core.Hooks{
-		HTTPClientBuilder:      e2eTester.HTTPClientGetter,
-		StoppableServerBuilder: e2eTester.prepareServerListener,
+		HTTPClientBuilder:          e2eTester.HTTPClientGetter,
+		StoppableServerBuilder:     e2eTester.prepareServerListener,
+		StoppableGrpcServerBuilder: e2eTester.prepareGrpcServerListener,
 	}
 
 	return e2eTester, ctx, hooks
 }
 
+func (b *Tester) T() *testing.T {
+	return b.t
+}
+
 func (b *Tester) EndpointURL(suffix string) string {
-	return b.URL + suffix
+	return b.restServer.URL + suffix
 }
 
 func (b *Tester) Close() {
 	for _, be := range b.restDownstreams {
 		be.close()
 	}
-	b.Server.Close()
+	if b.restServer != nil {
+		b.restServer.Close()
+	}
+	if b.grpcServer != nil {
+		b.grpcServer.Stop()
+	}
 }
 
 func (b *Tester) BuildMetadata() *status.BuildMetadata {
@@ -98,7 +116,7 @@ func (b *Tester) BuildID() string {
 }
 
 func (b *Tester) CfgBasePath() string {
-	return b.cfgBasePath
+	return b.restCfgBasePath
 }
 
 func (b *Tester) NewDownstream(host, method, path string) Endpoint {
@@ -116,7 +134,7 @@ func (b *Tester) Do(tc TestCall) {
 	require.NoError(b.t, err)
 	req.Header = makeHeader(tc.Headers)
 	// nolint: bodyclose // helper calls close()
-	resp, err := b.Client().Do(req)
+	resp, err := b.restServer.Client().Do(req)
 	require.NoError(b.t, err)
 	if tc.TestCodeFn != nil {
 		tc.TestCodeFn(b.t, tc.ExpectedCode, resp.StatusCode)
@@ -140,7 +158,7 @@ func (b *Tester) Do2(tc TestCall2) {
 	require.NoError(b.t, err)
 	req.Header = makeHeader(tc.Headers)
 	// nolint: bodyclose // helper calls close()
-	resp, err := b.Client().Do(req)
+	resp, err := b.restServer.Client().Do(req)
 	require.NoError(b.t, err)
 	require.NotNil(b.t, resp)
 
@@ -178,17 +196,43 @@ func (b *Tester) prepareServerListener(ctx context.Context, rootRouter http.Hand
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rootRouter.ServeHTTP(w, r.WithContext(ctx))
 	})
-	b.Server = httptest.NewServer(handler)
-	b.cfgBasePath = cfg.BasePath
+	b.restServer = httptest.NewServer(handler)
+	b.restCfgBasePath = cfg.BasePath
 
 	return b
 }
 
+const bufSize = 1024 * 1024
+
+func (b *Tester) prepareGrpcServerListener(_ context.Context, server *grpc.Server, _ config.GRPCServerConfig, _ string) core.StoppableServer {
+	b.grpcServer = server
+	b.grpcListener = bufconn.Listen(bufSize)
+
+	return b
+}
+
+func (b *Tester) GetBufDialer(context.Context, string) (net.Conn, error) {
+	return b.grpcListener.Dial()
+}
+
 func (b *Tester) Start() error {
+	if b.grpcServer != nil {
+		go func() {
+			if err := b.grpcServer.Serve(b.grpcListener); err != nil {
+				panic(err)
+			}
+		}()
+	}
+
 	return nil
 }
 
 func (b *Tester) GracefulStop() error {
+	if b.grpcServer != nil {
+		b.grpcServer.GracefulStop()
+		b.grpcServer = nil
+	}
+
 	b.Close()
 
 	return nil
@@ -201,5 +245,5 @@ func (b *Tester) Stop() error {
 }
 
 func (b *Tester) GetName() string {
-	return "REST Test Server"
+	return "Test Server"
 }

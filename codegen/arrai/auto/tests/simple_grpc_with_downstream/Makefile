@@ -1,7 +1,6 @@
 SYSLGO_SYSL = specs/gateway.sysl
-SYSLGO_PACKAGES = gateway encoder_backend
+SYSLGO_PACKAGES = gateway
 SYSLGO_APP.gateway = Gateway
-SYSLGO_APP.encoder_backend = EncoderBackend
 PKGPATH = simple_grpc_with_downstream
 
 PROTOS = encoder_backend gateway

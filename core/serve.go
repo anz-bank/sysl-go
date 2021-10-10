@@ -502,7 +502,7 @@ func (s *autogenServer) Start() error {
 	// Make the listener function for the gRPC Public server.
 	if s.grpcServerManager != nil && s.grpcServerManager.GrpcPublicServerConfig != nil && len(s.grpcServerManager.EnabledGrpcHandlers) > 0 {
 		log.Info(ctx, "found GrpcPublicServerConfig for gRPC")
-		serverPublicGrpc := configurePublicGrpcServerListener(ctx, *s.grpcServerManager)
+		serverPublicGrpc := configurePublicGrpcServerListener(ctx, *s.grpcServerManager, s.hooks)
 		servers = append(servers, serverPublicGrpc)
 		grpcIsRunning = true
 	} else {

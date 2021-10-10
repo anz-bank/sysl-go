@@ -10,6 +10,8 @@ import (
 	"unicode"
 
 	"google.golang.org/grpc"
+	"grpc_complex_app_name/internal/gen/pkg/servers/gateway"
+	"grpc_complex_app_name/internal/gen/pkg/servers/gateway/encoder_backend"
 
 	ebpb "grpc_complex_app_name/internal/gen/pb/encoder_backend"
 	pb "grpc_complex_app_name/internal/gen/pb/gateway"
@@ -31,17 +33,15 @@ genCode:
       serviceAddress: localhost:9022
 `
 
-type Payload struct {
-	Content string `json:"content"`
-}
-
 func doGatewayRequestResponse(ctx context.Context, content string) (string, error) {
 	conn, err := grpc.Dial("localhost:9021", grpc.WithInsecure())
 	if err != nil {
 		fmt.Printf("test client failed to connect to gateway: %s\n", err.Error())
 		return "", err
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 
 	client := pb.NewGatewayClient(conn)
 	response, err := client.Encode(ctx, &pb.EncodeReq{Content: content, EncoderId: "rot13"})
@@ -56,7 +56,7 @@ type dummyEncoderBackend struct {
 	ebpb.UnimplementedEncoderBackendServer
 }
 
-func (s dummyEncoderBackend) Rot13(ctx context.Context, req *ebpb.EncodingRequest) (*ebpb.EncodingResponse, error) {
+func (s dummyEncoderBackend) Rot13(_ context.Context, req *ebpb.EncodingRequest) (*ebpb.EncodingResponse, error) {
 	// valuable business logic as used in our dummy implementation of EncoderBackend service
 	toRot13 := make(map[rune]rune)
 	az := []rune{'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z'}
@@ -76,7 +76,6 @@ func (s dummyEncoderBackend) Rot13(ctx context.Context, req *ebpb.EncodingReques
 		return b.String()
 	}
 	return &ebpb.EncodingResponse{Content: rot13(req.Content)}, nil
-
 }
 
 func grpcLogger(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
@@ -122,7 +121,7 @@ func startDummyEncoderBackendServer(addr string) (stopServer func() error) {
 	return stopServer
 }
 
-func TestSimpleGRPCWithDownstreamAppSmokeTest(t *testing.T) {
+func TestGRPCComplexAppNameSmokeTest(t *testing.T) {
 	// Override sysl-go app command line interface to directly pass in app config
 	ctx := core.WithConfigFile(context.Background(), []byte(applicationConfig))
 
@@ -167,4 +166,49 @@ func TestSimpleGRPCWithDownstreamAppSmokeTest(t *testing.T) {
 	actual, err := doGatewayRequestResponse(ctx, "hello world")
 	require.Nil(t, err)
 	require.Equal(t, expected, actual)
+}
+
+func TestGRPCComplexAppName_Mocked(t *testing.T) {
+	gatewayTester := gateway.NewTestServer(t, context.Background(), createService, "")
+	defer gatewayTester.Close()
+
+	gatewayTester.Mocks.Encoder_backend.Rot13.
+		ExpectRequest(&encoder_backend.EncodingRequest{Content: "hello world"}).
+		MockResponse(&encoder_backend.EncodingResponse{Content: "uryyb jbeyq"})
+
+	gatewayTester.Mocks.Encoder_backend.Rot13.
+		ExpectRequest(&encoder_backend.EncodingRequest{Content: "hello world!"}).
+		MockResponse(&encoder_backend.EncodingResponse{Content: "uryyb jbeyq!"})
+
+	gatewayTester.Encode().
+		WithRequest(&pb.EncodeReq{Content: "hello world", EncoderId: "rot13"}).
+		ExpectResponse(&pb.EncodeResp{Content: "uryyb jbeyq"}).
+		Send()
+
+	gatewayTester.Encode().
+		WithRequest(&pb.EncodeReq{Content: "hello world!", EncoderId: "rot13"}).
+		ExpectResponse(&pb.EncodeResp{Content: "uryyb jbeyq!"}).
+		Send()
+}
+
+func TestGRPCComplexAppName_Integration(t *testing.T) {
+	// Start the dummy encoder backend service running
+	stopEncoderBackendServer := startDummyEncoderBackendServer("localhost:9022")
+	defer func() {
+		err := stopEncoderBackendServer()
+		require.NoError(t, err)
+	}()
+
+	gatewayTester := gateway.NewIntegrationTestServer(t, context.Background(), createService, applicationConfig)
+	defer gatewayTester.Close()
+
+	gatewayTester.Encode().
+		WithRequest(&pb.EncodeReq{Content: "hello world", EncoderId: "rot13"}).
+		ExpectResponse(&pb.EncodeResp{Content: "uryyb jbeyq"}).
+		Send()
+
+	gatewayTester.Encode().
+		WithRequest(&pb.EncodeReq{Content: "hello world!", EncoderId: "rot13"}).
+		ExpectResponse(&pb.EncodeResp{Content: "uryyb jbeyq!"}).
+		Send()
 }

@@ -2,6 +2,7 @@ package e2e
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,7 +11,9 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core"
+	"google.golang.org/grpc"
 )
 
 var (
@@ -148,6 +151,34 @@ func CreateServiceWithTestHooksPatched(createService interface{}, testHooks *cor
 		} else {
 			h.HTTPClientBuilder = testHooks.HTTPClientBuilder
 			h.StoppableServerBuilder = testHooks.StoppableServerBuilder
+			if testHooks.OverrideGrpcDialOptions != nil {
+				if h.AdditionalGrpcDialOptions == nil {
+					h.OverrideGrpcDialOptions = testHooks.OverrideGrpcDialOptions
+				} else {
+					additionalGrpcDialOptions := h.AdditionalGrpcDialOptions
+					h.AdditionalGrpcDialOptions = nil
+
+					h.OverrideGrpcDialOptions = func(serviceName string, cfg *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {
+						options, err := testHooks.OverrideGrpcDialOptions(serviceName, cfg)
+						if err != nil {
+							return nil, err
+						}
+						options = append(options, additionalGrpcDialOptions...)
+
+						return options, nil
+					}
+				}
+			}
+			h.StoppableGrpcServerBuilder = testHooks.StoppableGrpcServerBuilder
+			if h.ValidateConfig == nil {
+				h.ValidateConfig = testHooks.ValidateConfig
+			} else {
+				h.ValidateConfig = func(ctx context.Context, cfg *config.DefaultConfig) error {
+					_ = testHooks.ValidateConfig(ctx, cfg)
+
+					return h.ValidateConfig(ctx, cfg)
+				}
+			}
 		}
 		createServiceResult[1] = reflect.ValueOf(h)
 

@@ -35,14 +35,14 @@ func Encode(ctx context.Context, req *pb.EncodeReq, client gateway.EncodeClient)
 	}
 }
 
+func createService(_ context.Context, _ AppConfig) (*gateway.GrpcServiceInterface, *core.Hooks, error) {
+	return &gateway.GrpcServiceInterface{
+		Encode: Encode,
+	}, nil, nil
+}
+
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
-	return gateway.NewServer(ctx,
-		func(ctx context.Context, cfg AppConfig) (*gateway.GrpcServiceInterface, *core.Hooks, error) {
-			return &gateway.GrpcServiceInterface{
-				Encode: Encode,
-			}, nil, nil
-		},
-	)
+	return gateway.NewServer(ctx, createService)
 }
 
 func main() {

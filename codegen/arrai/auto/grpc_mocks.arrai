@@ -1,0 +1,143 @@
+let go = //{./go};
+let grpc = //{./grpc};
+
+\(:app, :appname, :basepath, :clientDeps, :module, :goModule, :nonRestEndpoints, ...)
+    let package = go.package(app);
+    let goAppname = go.name(grpc.app.name(app));
+    $`
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | {go.pbImport(app)})}
+
+        type DownstreamMocks struct {
+            ${nonRestEndpoints >> \(@value: ep, ...)
+                let name = go.methodName(ep);
+                $`${name} *${name}Mock`
+            ::\i}
+
+            lis    *bufconn.Listener
+            server *grpc.Server
+        }
+
+        const bufSize = 1024 * 1024
+
+        func NewDownstreamMocks(t *testing.T) *DownstreamMocks {
+            lis := bufconn.Listen(bufSize)
+            server := grpc.NewServer()
+
+            dm :=  &DownstreamMocks{
+                ${nonRestEndpoints >> \(@value: ep, ...)
+                    let name = go.methodName(ep);
+                    $`${name}: New${name}Mock(),`
+                ::\i}
+
+                lis:    lis,
+                server: server,
+            }
+
+            pb.Register${goAppname}Server(server, &dummyServer{t: t, dm: dm})
+            go func() {
+                if err := server.Serve(lis); err != nil {
+                    panic(fmt.Errorf("Server exited with error: %w", err))
+                }
+            }()
+
+            return dm
+        }
+
+        func (d *DownstreamMocks) GetDialOption() []grpc.DialOption {
+            bufDialer := func(context.Context, string) (net.Conn, error) {
+                return d.lis.Dial()
+            }
+
+            return []grpc.DialOption{grpc.WithContextDialer(bufDialer), grpc.WithInsecure()}
+        }
+
+        func (d *DownstreamMocks) Stop() {
+            d.server.Stop()
+        }
+
+        type dummyServer struct {
+            pb.Unimplemented${goAppname}Server
+
+            t  *testing.T
+            dm *DownstreamMocks
+        }
+
+        ${nonRestEndpoints >> \(@value: ep, ...)
+            let methodInfo = go.pbMethodInfo(ep);
+            let name = methodInfo.name;
+            let requestType = methodInfo.requestType;
+            let responseType = methodInfo.responseType;
+            let nameMock = $`${name}Mock`;
+            $`
+                type ${name}Test func(*testing.T, context.Context, *${requestType}) (*${responseType}, error)
+
+                type ${nameMock} struct {
+                    expectReq *${requestType}
+                    tests     []${name}Test
+                }
+
+                func New${nameMock}() *${nameMock} {
+                    return &${nameMock}{}
+                }
+
+                func (d *${nameMock}) ExpectRequest(req *${requestType}) *${nameMock} {
+                    d.expectReq = req
+
+                    return d
+                }
+
+                func (d *${nameMock}) MockResponse(res *${responseType}) {
+                    expectReq := d.expectReq
+                    d.expectReq = nil
+                    loc := e2e.GetTestLine()
+
+                    d.tests = append(d.tests, func(t *testing.T, _ context.Context, reqActual *${requestType}) (*${responseType}, error) {
+                        if expectReq != nil {
+                            assert.True(t, proto.Equal(expectReq, reqActual), "%s\nRequests not equal!\nExpected: %s\nActual: %s", loc, expectReq.String(), reqActual.String())
+                        }
+
+                        return res, nil
+                    })
+                }
+
+                func (d *${nameMock}) Mock(test ${name}Test) {
+                    expectReq := d.expectReq
+                    d.expectReq = nil
+                    loc := e2e.GetTestLine()
+
+                    d.tests = append(d.tests, func(t *testing.T, ctx context.Context, reqActual *${requestType}) (*${responseType}, error) {
+                        if expectReq != nil {
+                            assert.True(t, proto.Equal(expectReq, reqActual), "%s\nRequests not equal!\nExpected: %s\nActual: %s", loc, expectReq.String(), reqActual.String())
+                        }
+
+                        return test(t, ctx, reqActual)
+                    })
+                }
+
+                func (d *${nameMock}) Timeout() {
+                    expectReq := d.expectReq
+                    d.expectReq = nil
+                    loc := e2e.GetTestLine()
+
+                    d.tests = append(d.tests, func(t *testing.T, _ context.Context, reqActual *${requestType}) (*${responseType}, error) {
+                        if expectReq != nil {
+                            assert.True(t, proto.Equal(expectReq, reqActual), "%s\nRequests not equal!\nExpected: %s\nActual: %s", loc, expectReq.String(), reqActual.String())
+                        }
+
+                        <-time.After(e2e.DownstreamTimeout + 100*time.Millisecond)
+
+                        return nil, nil
+                    })
+                }
+
+                func (s dummyServer) ${name}(ctx context.Context, req *${requestType}) (*${responseType}, error) {
+                    require.NotEmpty(s.t, s.dm.${name}.tests, "Unexpected downstream call")
+
+                    test := s.dm.${name}.tests[0]
+                    s.dm.${name}.tests = s.dm.${name}.tests[1:]
+
+                    return test(s.t, ctx, req)
+                }
+            `
+        ::\i}
+    `

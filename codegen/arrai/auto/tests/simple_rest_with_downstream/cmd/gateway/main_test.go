@@ -71,11 +71,11 @@ func TestSimpleRestWithDownstream_Extras(t *testing.T) {
 		WithBody(gateway.GatewayRequest{Content: "timeout"}).
 		TestResponseCode(func(t *testing.T, actual int) {
 			called++
-			require.Equal(t, 503, actual)
+			require.Equal(t, http.StatusGatewayTimeout, actual)
 		}).
 		TestResponseBody(func(t *testing.T, actual []byte) {
 			called++
-			require.Equal(t, `{"status":{"code":"1013","description":"Downstream system is unavailable"}}`, string(actual))
+			require.Equal(t, `{"status":{"code":"1005","description":"Time out from down stream services"}}`, string(actual))
 		}).
 		Send()
 

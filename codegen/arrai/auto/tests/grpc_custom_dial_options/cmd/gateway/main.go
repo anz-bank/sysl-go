@@ -6,12 +6,11 @@ import (
 	"os"
 
 	pb "grpc_custom_dial_options/internal/gen/pb/gateway"
-	gateway "grpc_custom_dial_options/internal/gen/pkg/servers/gateway"
-	encoder_backend "grpc_custom_dial_options/internal/gen/pkg/servers/gateway/encoder_backend"
+	"grpc_custom_dial_options/internal/gen/pkg/servers/gateway"
+	"grpc_custom_dial_options/internal/gen/pkg/servers/gateway/encoder_backend"
 
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/log"
-
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
@@ -46,22 +45,22 @@ func makeCustomGrpcMetadataInjector(key, value string) grpc.UnaryClientIntercept
 	return f
 }
 
-func newAppServer(ctx context.Context) (core.StoppableServer, error) {
-	return gateway.NewServer(ctx,
-		func(ctx context.Context, cfg AppConfig) (*gateway.GrpcServiceInterface, *core.Hooks, error) {
-			// Customise how we connect to the backend_encoder service with gRPC
-			myCustomDialOpts := []grpc.DialOption{}
-			f := makeCustomGrpcMetadataInjector("rot-parameter-override", "17")
-			myCustomDialOpts = append(myCustomDialOpts, grpc.WithChainUnaryInterceptor(f))
+func createService(_ context.Context, _ AppConfig) (*gateway.GrpcServiceInterface, *core.Hooks, error) {
+	// Customise how we connect to the backend_encoder service with gRPC
+	myCustomDialOpts := []grpc.DialOption{}
+	f := makeCustomGrpcMetadataInjector("rot-parameter-override", "17")
+	myCustomDialOpts = append(myCustomDialOpts, grpc.WithChainUnaryInterceptor(f))
 
-			return &gateway.GrpcServiceInterface{
-					Encode: Encode,
-				}, &core.Hooks{
-					AdditionalGrpcDialOptions: myCustomDialOpts,
-				},
-				nil
+	return &gateway.GrpcServiceInterface{
+			Encode: Encode,
+		}, &core.Hooks{
+			AdditionalGrpcDialOptions: myCustomDialOpts,
 		},
-	)
+		nil
+}
+
+func newAppServer(ctx context.Context) (core.StoppableServer, error) {
+	return gateway.NewServer(ctx, createService)
 }
 
 func main() {

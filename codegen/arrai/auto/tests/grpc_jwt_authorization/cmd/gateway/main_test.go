@@ -4,21 +4,15 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"testing"
-	"time"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"grpc_jwt_authorization/internal/gen/pkg/servers/gateway"
 
 	pb "grpc_jwt_authorization/internal/gen/pb/gateway"
 
-	"github.com/anz-bank/sysl-go/config"
-	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/jwtauth/jwttest"
 
-	"github.com/sethvargo/go-retry"
-	"github.com/spf13/afero"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,13 +29,6 @@ library:
           jwksUrl: http://localhost:9029/.well-known/jwks.json
           cacheTTL: 1m
           cacheRefresh: 1m
-genCode:
-  upstream:
-    grpc:
-      hostName: "localhost"
-      port: 9021 # FIXME no guarantee this port is free
-  downstream:
-    contextTimeout: "30s"
 `)
 
 var appCfgTwo = []byte(`---
@@ -54,13 +41,6 @@ library:
           jwksUrl: http://localhost:9029/.well-known/jwks.json
           cacheTTL: 1m
           cacheRefresh: 1m
-genCode:
-  upstream:
-    grpc:
-      hostName: "localhost"
-      port: 9021 # FIXME no guarantee this port is free
-  downstream:
-    contextTimeout: "30s"
 `)
 
 var appCfgThree = []byte(`---
@@ -73,13 +53,6 @@ library:
           jwksUrl: http://localhost:9029/.well-known/jwks.json
           cacheTTL: 1m
           cacheRefresh: 1m
-genCode:
-  upstream:
-    grpc:
-      hostName: "localhost"
-      port: 9021 # FIXME no guarantee this port is free
-  downstream:
-    contextTimeout: "30s"
 `)
 
 var appCfgFour = []byte(`---
@@ -92,13 +65,6 @@ library:
           jwksUrl: http://localhost:9029/.well-known/jwks.json
           cacheTTL: 1m
           cacheRefresh: 1m
-genCode:
-  upstream:
-    grpc:
-      hostName: "localhost"
-      port: 9021 # FIXME no guarantee this port is free
-  downstream:
-    contextTimeout: "30s"
 `)
 
 var appCfgFive = []byte(`---
@@ -111,62 +77,13 @@ library:
           jwksUrl: http://localhost:9029/.well-known/jwks.json
           cacheTTL: 1m
           cacheRefresh: 1m
-genCode:
-  upstream:
-    grpc:
-      hostName: "localhost"
-      port: 9021 # FIXME no guarantee this port is free
-  downstream:
-    contextTimeout: "30s"
 `)
 
 var appCfgSix = []byte(`---
 app:
 development:
   disableAllAuthorizationRules: true
-genCode:
-  upstream:
-    grpc:
-      hostName: "localhost"
-      port: 9021 # FIXME no guarantee this port is free
-  downstream:
-    contextTimeout: "30s"
 `)
-
-func getServerAddr(appCfg []byte) (string, error) {
-	cfg := config.DefaultConfig{}
-	memFs := afero.NewMemMapFs()
-	err := afero.Afero{Fs: memFs}.WriteFile("config.yaml", appCfg, 0777)
-	if err != nil {
-		return "", err
-	}
-	b := config.NewConfigReaderBuilder().WithFs(memFs).WithConfigFile("config.yaml")
-
-	err = b.Build().Unmarshal(&cfg)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%s:%d", cfg.GenCode.Upstream.GRPC.HostName, cfg.GenCode.Upstream.GRPC.Port), nil
-}
-
-func doGatewayRequestResponse(ctx context.Context, addr string, rawJWT string) (string, error) {
-	conn, err := grpc.Dial(addr, grpc.WithInsecure())
-	if err != nil {
-		fmt.Printf("test client failed to connect to gateway: %s\n", err.Error())
-		return "", err
-	}
-	defer conn.Close()
-
-	ctx = metadata.AppendToOutgoingContext(ctx, "Authorization", "bearer "+rawJWT)
-
-	client := pb.NewGatewayClient(conn)
-	response, err := client.Hello(ctx, &pb.HelloRequest{})
-	if err != nil {
-		fmt.Printf("test client got error after making Hello request to gateway: %s\n", err.Error())
-		return "", err
-	}
-	return response.Content, nil
-}
 
 // implementation of a JWT issuer jkws endpoint for the application to trust
 func serveIssuerJKWS(addr string, issuer jwttest.Issuer) (stopServer func() error) {
@@ -272,72 +189,24 @@ func TestJWTAuthorizationOfGRPCEndpoints(t *testing.T) {
 	for i := range scenarios {
 		scenario := scenarios[i]
 		t.Run(scenario.name, func(t *testing.T) {
-			// Figure out what address our server will listening on
-			serverAddr, err := getServerAddr(scenario.appCfg)
-			require.NoError(t, err)
+			gatewayTester := gateway.NewTestServer(t, context.Background(), createService, scenario.appCfg)
+			defer gatewayTester.Close()
 
-			// Override sysl-go app command line interface to directly pass in app config
-			ctx := core.WithConfigFile(context.Background(), scenario.appCfg)
-
-			appServer, err := newAppServer(ctx)
-			require.NoError(t, err)
-			defer func() {
-				err := appServer.Stop()
-				if err != nil {
-					panic(err)
-				}
-			}()
-
-			// Start gateway application server
-			go func() {
-				err := appServer.Start()
-				if err != nil {
-					panic(err)
-				}
-			}()
-
-			isResponseExpected := func(response string, err error) bool {
-				if len(scenario.expectedError) > 0 {
-					return err != nil && err.Error() == scenario.expectedError
-				}
-				if err != nil {
-					return false
-				}
-				for _, expectedFragment := range scenario.expectedResponseFragments {
-					if !strings.Contains(response, expectedFragment) {
-						return false
+			gatewayTester.Hello().
+				WithRequest(&pb.HelloRequest{Content: "echo"}).
+				WithContext(metadata.AppendToOutgoingContext(context.Background(), "Authorization", "bearer "+scenario.rawJWT)).
+				TestResponse(func(t *testing.T, actualResponse *pb.HelloResponse, err error) {
+					if len(scenario.expectedError) > 0 {
+						require.Error(t, err)
+						require.Equal(t, scenario.expectedError, err.Error())
+					} else {
+						require.NoError(t, err)
+						for _, expectedFragment := range scenario.expectedResponseFragments {
+							require.Contains(t, actualResponse.Content, expectedFragment)
+						}
 					}
-				}
-				return true
-			}
-
-			// Test if the endpoint of our gateway application server works.
-			// There is a retry loop here since we might need to wait a bit
-			// for the application server to come up.
-			backoff, err := retry.NewFibonacci(20 * time.Millisecond)
-			require.Nil(t, err)
-
-			var actualResponse string
-			backoff = retry.WithMaxDuration(5*time.Second, backoff)
-			_ = retry.Do(ctx, backoff, func(ctx context.Context) error {
-				actualResponse, err = doGatewayRequestResponse(ctx, serverAddr, scenario.rawJWT)
-				if isResponseExpected(actualResponse, err) {
-					return nil
-				}
-				if err != nil {
-					return retry.RetryableError(err)
-				}
-				return nil
-			})
-			if len(scenario.expectedError) > 0 {
-				require.Error(t, err)
-				require.Equal(t, scenario.expectedError, err.Error())
-			} else {
-				require.NoError(t, err)
-				for _, expectedFragment := range scenario.expectedResponseFragments {
-					require.Contains(t, actualResponse, expectedFragment)
-				}
-			}
+				}).
+				Send()
 		})
 	}
 }

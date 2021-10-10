@@ -6,14 +6,12 @@ import (
 	"fmt"
 	"net"
 
-	"google.golang.org/grpc/reflection"
-
-	"github.com/anz-bank/sysl-go/log"
-
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
+	"github.com/anz-bank/sysl-go/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/reflection"
 )
 
 // Deprecated: prefer GrpcServerManager.
@@ -67,7 +65,7 @@ func extractGrpcServerOptionsFromGrpcManager(ctx context.Context, hl GrpcManager
 	return opts, nil
 }
 
-func configurePublicGrpcServerListener(ctx context.Context, m GrpcServerManager) StoppableServer {
+func configurePublicGrpcServerListener(ctx context.Context, m GrpcServerManager, hooks *Hooks) StoppableServer {
 	server := grpc.NewServer(m.GrpcServerOptions...)
 	cfg := config.GetDefaultConfig(ctx)
 	if cfg != nil && cfg.GenCode.Upstream.GRPC.EnableReflection {
@@ -78,7 +76,23 @@ func configurePublicGrpcServerListener(ctx context.Context, m GrpcServerManager)
 		h.RegisterServer(ctx, server)
 	}
 
-	return prepareGrpcServerListener(ctx, server, *m.GrpcPublicServerConfig, "gRPC Public server")
+	setLogger(ctx)
+
+	prepareGrpcServerListenerFn := prepareGrpcServerListener
+	if hooks != nil && hooks.StoppableGrpcServerBuilder != nil {
+		prepareGrpcServerListenerFn = hooks.StoppableGrpcServerBuilder
+	}
+
+	return prepareGrpcServerListenerFn(ctx, server, *m.GrpcPublicServerConfig, "gRPC Public server")
+}
+
+func setLogger(ctx context.Context) {
+	logger := log.GetLogger(ctx)
+	grpclog.SetLoggerV2(
+		grpclog.NewLoggerV2(
+			&logWriterInfo{logger: logger},
+			&logWriterInfo{logger: logger},
+			&logWriterError{logger: logger}))
 }
 
 type grpcServer struct {
@@ -134,13 +148,6 @@ func (lw *logWriterError) Write(p []byte) (n int, err error) {
 }
 
 func prepareGrpcServerListener(ctx context.Context, server *grpc.Server, commonConfig config.GRPCServerConfig, name string) StoppableServer {
-	logger := log.GetLogger(ctx)
-	grpclog.SetLoggerV2(
-		grpclog.NewLoggerV2(
-			&logWriterInfo{logger: logger},
-			&logWriterInfo{logger: logger},
-			&logWriterError{logger: logger}))
-
 	log.Infof(ctx, "configured gRPC listener for address: %s:%d", commonConfig.HostName, commonConfig.Port)
 	return grpcServer{ctx: ctx, cfg: commonConfig, server: server, name: name}
 }
