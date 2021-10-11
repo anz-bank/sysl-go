@@ -115,7 +115,7 @@ let fieldJsonTag = \type \key
 
         `::\i}
         ${endpoints >> \(@value: ep, ...)
-            let typename = $`${go.methodName(ep)}Request`;
+            let typename = $`${go.methodName(app, ep)}Request`;
             let paramTags = validation.paramValidateTags(ep) => (:.@, @value:$'`validate:"${.@value}"`');
             $`
                 // ${typename} ...

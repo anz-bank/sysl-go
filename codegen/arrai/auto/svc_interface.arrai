@@ -1,7 +1,7 @@
 let go = //{./go};
 
 \(:app, :appname, :clientDeps, :endpoints, :goModule, :hasDB, :basepath, :module, :restEndpoints, ...)
-    let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
+    let client = //{./client}((:app, :appname, :clientDeps, :hasDB, :module));
     let signature = //{./service_method}.signature(module, client);
     let structName = $`Default${go.name(appname)}Impl`;
     $`
@@ -21,8 +21,8 @@ let go = //{./go};
         // ServiceInterface for ${appname}
         type ServiceInterface struct {
             ${endpoints >> \(@:_, @value: ep)
-                let method = go.methodName(ep);
-                $`${method} func${signature(ep)}`
+                let method = go.methodName(app, ep);
+                $`${method} func${signature(app, ep)}`
             ::\i}
         }
 

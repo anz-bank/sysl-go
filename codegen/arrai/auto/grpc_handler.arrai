@@ -14,7 +14,7 @@ let grpc = //{./grpc};
     :nonRestEndpoints,
     ...
 )
-    let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
+    let client = //{./client}((:app, :appname, :clientDeps, :hasDB, :module));
     let goAppname = go.name(grpc.app.name(app));
     let authorizationRule = \ep cond ep {
         {'attrs': {'authorization_rule': {'s': (s: rule), ...}, ...}, ...} : rule,

@@ -13,7 +13,7 @@ import (
 
 type AppConfig struct{}
 
-func GetPingList(ctx context.Context, req *gateway.GetPingListRequest, client gateway.GetPingListClient) (*gateway.Pong, error) {
+func GetPingList(ctx context.Context, req *gateway.GetPingIdListRequest, client gateway.GetPingIdListClient) (*gateway.Pong, error) {
 	backendReq := &encoder_backend.GetPingListRequest{
 		ID: req.ID,
 	}
@@ -28,12 +28,12 @@ func GetPingList(ctx context.Context, req *gateway.GetPingListRequest, client ga
 	}, nil
 }
 
-func GetPingString(ctx context.Context, req *gateway.GetPingStringRequest, client gateway.GetPingStringClient) (*gateway.PongString, error) {
-	backendReq := &encoder_backend.GetPingStringRequest{
+func GetPingString(ctx context.Context, req *gateway.GetPingStringSRequest, client gateway.GetPingStringSClient) (*gateway.PongString, error) {
+	backendReq := &encoder_backend.GetPingStringSRequest{
 		S: req.S,
 	}
 
-	encoderResponse, err := client.Encoder_backendGetPingString(ctx, backendReq)
+	encoderResponse, err := client.Encoder_backendGetPingStringS(ctx, backendReq)
 	if err != nil {
 		return nil, err
 	}
@@ -51,8 +51,8 @@ func PostPingBinary(_ context.Context, req *gateway.PostPingBinaryRequest) (*gat
 
 func createService(_ context.Context, _ AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
 	return &gateway.ServiceInterface{
-		GetPingList:    GetPingList,
-		GetPingString:  GetPingString,
+		GetPingIdList:  GetPingList,
+		GetPingStringS: GetPingString,
 		PostPingBinary: PostPingBinary,
 	}, nil, nil
 }

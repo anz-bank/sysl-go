@@ -9,7 +9,7 @@ let grpc = //{./grpc};
 
         type DownstreamMocks struct {
             ${nonRestEndpoints >> \(@value: ep, ...)
-                let name = go.methodName(ep);
+                let name = go.methodName(app, ep);
                 $`${name} *${name}Mock`
             ::\i}
 
@@ -25,7 +25,7 @@ let grpc = //{./grpc};
 
             dm :=  &DownstreamMocks{
                 ${nonRestEndpoints >> \(@value: ep, ...)
-                    let name = go.methodName(ep);
+                    let name = go.methodName(app, ep);
                     $`${name}: New${name}Mock(),`
                 ::\i}
 

@@ -36,7 +36,7 @@ let go = //{./go};
             ${restEndpoints >> \(@value: ep, ...)
                 ep('restParams') ->
                     let method = //str.title(//str.lower(.('method').s));
-                    $`r.${method}("${.('path').s}", s.svcHandler.${go.methodName(ep)}Handler)`
+                    $`r.${method}("${.('path').s}", s.svcHandler.${go.methodName(app, ep)}Handler)`
             ::\i}
         })
     }

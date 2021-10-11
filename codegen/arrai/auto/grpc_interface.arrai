@@ -2,7 +2,7 @@ let go = //{./go};
 let sysl = //{./sysl};
 
 \(:app, :appname, :clientDeps, :endpoints, :goModule, :hasDB, :basepath, :module, :nonRestEndpoints, ...)
-    let client = //{./client}((:appname, :clientDeps, :hasDB, :module));
+    let client = //{./client}((:app, :appname, :clientDeps, :hasDB, :module));
     let structName = $`Default${go.name(appname)}Impl`;
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | {go.pbImport(app)})}
@@ -12,7 +12,7 @@ let sysl = //{./sysl};
         // GrpcServiceInterface for ${appname}
         type GrpcServiceInterface struct {
             ${nonRestEndpoints >> \(@value: ep, ...)
-                let name = go.methodName(ep);
+                let name = go.methodName(app, ep);
                 let requestType = go.leafType(ep('param').a(0)('type'));
                 let returns = sysl.endpoint.normalReturns(ep);
                 let returnTypes = returns >> go.name(.type(.type count - 1));

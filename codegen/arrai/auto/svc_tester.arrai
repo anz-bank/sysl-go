@@ -141,7 +141,7 @@ let grpc = //{./grpc};
         }
 
         ${restEndpoints >> \(@value: ep, ...)
-            let name = go.methodName(ep);
+            let name = go.methodName(app, ep);
             let testType = $`${name}Test`;
             let args = ep('restParams')?:{}
                         -> (.('queryParam')?.a:{}) ++ (.('urlParam')?.a:{})

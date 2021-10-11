@@ -162,7 +162,7 @@ let sysl = //{./sysl};
 
         // Service interface for ${appname}
         type Service interface {
-            ${endpoints >> methodSignature(.@value)::\i}
+            ${endpoints >> methodSignature(app, .@value)::\i}
         }
 
         // Client for ${appname} API
@@ -178,8 +178,8 @@ let sysl = //{./sysl};
         }
 
         ${endpoints where cond .@item.@value {{'restParams': _, ...}: true} >> \(@value: ep, ...) $`
-            // ${go.methodName(ep)} ...
-            func (s *Client) ${methodSignature(ep)} {
+            // ${go.methodName(app, ep)} ...
+            func (s *Client) ${methodSignature(app, ep)} {
                 ${HttpMethodStatements(appname, ep)}
             }
         `::\i}

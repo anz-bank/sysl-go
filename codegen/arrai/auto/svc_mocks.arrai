@@ -8,7 +8,7 @@ let sysl = //{./sysl};
 
         type DownstreamMocks struct {
             ${restEndpoints >> \(@value: ep, ...)
-                let name = go.methodName(ep);
+                let name = go.methodName(app, ep);
                 $`${name} *${name}Mock`
             ::\i}
         }
@@ -16,14 +16,14 @@ let sysl = //{./sysl};
         func NewDownstreamMocks(tester *e2e.Tester) *DownstreamMocks {
             return &DownstreamMocks{
                 ${restEndpoints >> \(@value: ep, ...)
-                    let name = go.methodName(ep);
+                    let name = go.methodName(app, ep);
                     $`${name}: New${name}Mock(tester),`
                 ::\i}
             }
         }
 
         ${restEndpoints >> \(@value: ep, ...)
-            let name = $`${go.methodName(ep)}Mock`;
+            let name = $`${go.methodName(app, ep)}Mock`;
             $`
                 type ${name} struct {
                     e     e2e.Endpoint

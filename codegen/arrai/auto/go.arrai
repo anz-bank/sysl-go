@@ -199,10 +199,10 @@ let methodName =
     # TODO: Remove these warts.
     let hasArg = //re.compile(`\{(\p{L}+)\}$`).match;
     let hasList = //re.compile(`[\p{L}\p{N}]$`).match; # TODO: Should be \[...\]
-    \ep
+    \app \ep
         cond ep {
             {'restParams': {'method': (s: method), 'path': (s: path), ...r}, ...m}:
-                let vars_in_url_name = "vars_in_url_name" <: sysl.patterns(ep);
+                let vars_in_url_name = ("vars_in_url_name" <: sysl.patterns(app)) || ("vars_in_url_name" <: sysl.patterns(ep));
                 let withArg = cond {hasArg(path) && //str.upper(method) = "POST": "WithArg"};
                 let getList = cond {hasList(path) && //str.upper(method) = "GET": "List"};
                 let methodPostfix = //seq.split("/")(//seq.trim_prefix("/", path)) >>
@@ -259,14 +259,14 @@ let module = \module
             };
         (tn orderby .) ++ ["error"];
 
-    let methodSignature = \ep
-        $`${methodName(ep)}(ctx context.Context, req *${methodName(ep)}Request) (${methodReturnTypes(ep) ::, })`;
+    let methodSignature = \app \ep
+        $`${methodName(app, ep)}(ctx context.Context, req *${methodName(app, ep)}Request) (${methodReturnTypes(ep) ::, })`;
 
     let callSignature = \{'target': target, 'endpoint': ep, ...}
         let dep = targetApp(target);
         let package = package(dep);
         let ep = sysl.app.endpoint(dep, ep.s);
-        let method = methodName(ep);
+        let method = methodName(dep, ep);
         cond {
             'gRPC' <: sysl.patterns(dep):
                 pbMethodInfo(ep) -> $`${name(package)}${.name} func${.sig(package, true)}`,

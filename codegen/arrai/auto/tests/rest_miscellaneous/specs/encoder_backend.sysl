@@ -1,4 +1,4 @@
-EncoderBackend [package="encoder_backend"]:
+EncoderBackend [package="encoder_backend", ~vars_in_url_name]:
     @go_package = "encoder_backend"
     @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_miscellaneous"
 

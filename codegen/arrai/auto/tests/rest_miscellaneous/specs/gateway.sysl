@@ -1,12 +1,17 @@
 import encoder_backend
 
-Gateway [package="gateway"]:
+Gateway [package="gateway", ~vars_in_url_name]:
     @go_package = "gateway"
     @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_miscellaneous"
 
-    /ping:
+    /ping/id:
         GET ?id=int:
             EncoderBackend <- GET /ping
+            return ok <: pong
+
+    # should not conflict due to ~vars_in_url_name
+    /ping/{id <: int}/id:
+        GET:
             return ok <: pong
 
     !type Pong:
