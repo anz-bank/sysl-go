@@ -35,6 +35,13 @@ Gateway [package="gateway", ~vars_in_url_name]:
     !type PongString:
         s <: string
 
+    /generate/compilable/code:
+        GET:
+            return 200 <: pong
+            return 201 <: PongString
+            return 400 <: GatewayBinaryRequest
+            return 500 <: GatewayBinaryResponse
+
 GatewayWithBff [package="gatewayWithBff"]:
     @basePath = "bff"
     @go_package = "gatewayWithBff"

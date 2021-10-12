@@ -9,6 +9,10 @@ let isPtr = \t t('opt')?:false;
 
 let statements = \x x('stmt')?.a?:[];
 
+# replaceArrayElement will replace the ith element in an array with val
+let replaceArrayElement = \arr \i \val
+    arr >>> \j \cur cond {j=i: val, _:cur};
+
 # flatten_statements(s : Statement) -> [Statement]
 # flatten_statements performs a deep traversal of all trees of Statement discoverable
 # inside the given Statement s, and returns a flattened array containing all of those
@@ -120,4 +124,5 @@ let type =
     :source,
     :isPtr,
     :type,
+    :replaceArrayElement,
 )

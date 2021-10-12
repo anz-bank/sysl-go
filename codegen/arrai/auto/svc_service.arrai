@@ -12,8 +12,11 @@ let sysl = //{./sysl};
             cond { .@item = "string": '""', _ : "nil" };
 
         let declareResp = \var
-            returns where .@item.var = var && typeWithClientPackage(.@item) >>
-                $`var ${var}Response ${//seq.trim_prefix('*', typeWithClientPackage(.))}`;
+            let r = returns where .@item.var = var && typeWithClientPackage(.@item) >>
+                $`var ${var}Response ${//seq.trim_prefix('*', typeWithClientPackage(.))}`
+                rank(@:.@item);
+            # just the first type for now, todo: remove where .@ < 1
+            r where .@ < 1;
 
         let returnDownstreamError = \type \var \err
             $`return ${nils ++ [
@@ -109,7 +112,7 @@ let sysl = //{./sysl};
                         _: go.name(input),
                     };
 
-                returns where (.@item -> .var != "error" && .type != [""]) >>
+                (returns where (.@item -> .var != "error" && .type != [""]) rank(@: typeWithClientPackage(.@item))) >>> \i \.
                     let responseVar = $`${makeType(.var)}${go.name(//seq.concat(.type))}Response`;
                     let responseType = typeWithClientPackage(.);
 
@@ -136,7 +139,8 @@ let sysl = //{./sysl};
                             ${
                                 cond {
                                     returns where .@item.type = [""] && .@item.var = "ok": $`return ${ptrResponseVar}, &result.HTTPResponse.Header, nil`,
-                                    _: $`return ${ptrResponseVar}, nil`,
+                                    # return response in correct location for function signature (nil otherwise)
+                                    _: $`return ${sysl.replaceArrayElement(nils, i, ptrResponseVar) ::, }, nil`,
                                 }
                             }
                         }
