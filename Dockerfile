@@ -3,8 +3,8 @@ FROM golang:1.16.3-buster AS stage
 # requires git make curl
 # but this base image has all of those tools already
 
-ENV SYSL_VERSION=0.258.0
-ENV ARRAI_VERSION=0.194.0
+ENV SYSL_VERSION=0.459.0
+ENV ARRAI_VERSION=0.277.0
 
 ENV PROTOC_VERSION=3.17.3
 ENV PROTOC_GEN_GO_VERSION=1.27.1
@@ -17,7 +17,8 @@ RUN curl -LJO https://github.com/anz-bank/sysl/releases/download/v"$SYSL_VERSION
 RUN chown root:root /bin/sysl
 
 # install arrai
-RUN git clone --depth 1 --branch v"$ARRAI_VERSION" https://github.com/arr-ai/arrai.git && make -C arrai install
+RUN curl -LJO https://github.com/arr-ai/arrai/releases/download/v"$ARRAI_VERSION"/arrai_v"$ARRAI_VERSION"_linux-amd64.tar.gz && tar -xvf arrai_v"$ARRAI_VERSION"_linux-amd64.tar.gz && mv arrai /bin/arrai
+RUN chown root:root /bin/arrai
 
 # install goimports
 RUN go get golang.org/x/tools/cmd/goimports
@@ -34,7 +35,7 @@ RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v$PROTOC_GEN_GO_VERS
 RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v$PROTOC_GEN_GO_GRPC_VERSION
 
 FROM golang:1.16.3-buster
-COPY --from=stage /go/bin/arrai /bin
+COPY --from=stage /bin/arrai /bin
 COPY --from=stage /bin/sysl /bin
 COPY --from=stage /go/bin/goimports /bin
 COPY --from=stage /bin/protoc /bin
