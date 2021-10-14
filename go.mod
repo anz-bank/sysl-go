@@ -2,8 +2,6 @@ module github.com/anz-bank/sysl-go
 
 go 1.16
 
-replace github.com/spf13/afero => github.com/anz-bank/afero v1.2.4
-
 require (
 	github.com/alecthomas/participle v0.6.0
 	github.com/anz-bank/go-pkcs12 v0.2.0
