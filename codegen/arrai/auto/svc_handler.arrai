@@ -123,7 +123,9 @@ let sysl = //{./sysl};
                     ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
                     var req ${method}Request
                     ${cond ep('restParams')('method').s {('POST', 'PUT'):
-                        let goBodyType = (ep('param')?.a:{} where "body" <: sysl.patterns(.@item('type'))) single -> go.type(.@item('type'));
+                        let body = ep('param')?.a:{} where "body" <: sysl.patterns(.@item('type'));
+                        let _ = cond {!body: //error($`POST and PUT both require a body, ${method} doesn't have a body!`)};
+                        let goBodyType = body single -> go.type(.@item('type'));
                         cond goBodyType {
                             '[]byte': $`
                                 decodeBytes, decodeErr := ioutil.ReadAll(r.Body)
