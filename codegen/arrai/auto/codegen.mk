@@ -95,9 +95,9 @@ gen-all-servers: $(foreach app,$(SYSLGO_PACKAGES),$(SERVERS_ROOT)/$(app))
 
 .INTERMEDIATE: model.json
 model.json: $(SYSLGO_SYSL)
-	# note: if we use > $@ here then if we are running inside a
-	# terminal, then sysl pb detects that and logs warnings
-	# to stdout which pollute our JSON output. So use --output $@.
+# note: if we use > $@ here then if we are running inside a
+# terminal, then sysl pb detects that and logs warnings
+# to stdout which pollute our JSON output. So use --output $@.
 	$(SYSL) pb --mode json --root . $< --output $@ || (rm $@ && false)
 
 $(SERVERS_ROOT)/%: model.json codegen.mk
