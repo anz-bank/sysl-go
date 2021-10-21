@@ -27,7 +27,8 @@ RUN go get golang.org/x/tools/cmd/goimports
 RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive \
     apt-get install --no-install-recommends --assume-yes \
-      unzip
+      unzip \
+      netcat-openbsd
 
 #install protoc compiler and plugins
 RUN curl -LJO https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip && unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d /
@@ -41,6 +42,7 @@ COPY --from=stage /go/bin/goimports /bin
 COPY --from=stage /bin/protoc /bin
 COPY --from=stage /go/bin/protoc-gen-go /bin
 COPY --from=stage /go/bin/protoc-gen-go-grpc /bin
+COPY --from=stage /bin/nc /bin
 
 # copy sysl-go to /sysl-go
 COPY ./codegen/arrai/auto /sysl-go/codegen/arrai/auto

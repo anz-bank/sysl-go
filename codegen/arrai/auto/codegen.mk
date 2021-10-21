@@ -79,7 +79,7 @@ ifeq ($(SYSL_GO_VERSION),)
 $(error Failed to determine the version for github.com/anz-bank/sysl-go)
 endif
 SYSL_GO_IMAGE = anzbank/sysl-go:${SYSL_GO_VERSION}
-DOCKER_RUN = $(DOCKER) run --rm -t -v $$(pwd):/work -w /work
+DOCKER_RUN = $(DOCKER) run --rm -t -v $$(pwd):/work -w /work $(DOCKER_RUN_EXTRA_PARAMS)
 PROTOC    = $(DOCKER_RUN) --entrypoint protoc $(SYSL_GO_IMAGE)
 SYSL      = $(DOCKER_RUN) --entrypoint sysl $(SYSL_GO_IMAGE)
 AUTOGEN   = $(DOCKER_RUN) --entrypoint arrai $(SYSL_GO_IMAGE) $(AUTO)
