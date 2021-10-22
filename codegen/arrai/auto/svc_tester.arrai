@@ -336,7 +336,7 @@ let grpc = //{./grpc};
                     response, err := t.client.${name}(t.ctx, t.req)
                     if t.err != nil {
                         require.Error(t.t, err)
-                        require.Equal(t.t, t.err.Error(), err.Error())
+                        require.EqualError(t.t, err, t.err.Error())
                     }
                     if t.res != nil {
                         require.NoError(t.t, err)
