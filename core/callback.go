@@ -103,6 +103,13 @@ type Hooks struct {
 	// It is an error to set both AdditionalGrpcServerOptions and OverrideGrpcServerOptions.
 	OverrideGrpcServerOptions func(ctx context.Context, grpcPublicServerConfig *config.GRPCServerConfig) ([]grpc.ServerOption, error)
 
+	// ShouldSetGrpcGlobalLogger can be used to override the default value (true for normal runs and false for tests).
+	//
+	// The gRPC library has a function to set a global variable grpclog.SetLoggerV2, if we call it across multiple
+	// tests it causes the race condition checker to error (it finds a legitimate race for multiple tests but not for
+	// standard runs).
+	ShouldSetGrpcGlobalLogger func() bool
+
 	// OverrideMakeJWTClaimsBasedAuthorizationRule can be used to customise how authorization rule
 	// expressions are evaluated and used to decide if JWT claims are authorised. By default, if this
 	// hook is nil, then authrules.MakeDefaultJWTClaimsBasedAuthorizationRule is used.

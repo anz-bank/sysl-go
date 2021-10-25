@@ -79,6 +79,7 @@ func NewTesterWithBuildMetadata(t *testing.T, ctx context.Context, bm status.Bui
 	ctx = core.WithConfigFile(ctx, yamlConfigData)
 
 	hooks := &core.Hooks{
+		ShouldSetGrpcGlobalLogger:  func() bool { return false },
 		HTTPClientBuilder:          e2eTester.HTTPClientGetter,
 		StoppableServerBuilder:     e2eTester.prepareServerListener,
 		StoppableGrpcServerBuilder: e2eTester.prepareGrpcServerListener,

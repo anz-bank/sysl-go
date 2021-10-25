@@ -179,6 +179,10 @@ func CreateServiceWithTestHooksPatched(createService interface{}, testHooks *cor
 					return h.ValidateConfig(ctx, cfg)
 				}
 			}
+			// Prefer the app set func over the test default
+			if h.ShouldSetGrpcGlobalLogger == nil {
+				h.ShouldSetGrpcGlobalLogger = testHooks.ShouldSetGrpcGlobalLogger
+			}
 		}
 		createServiceResult[1] = reflect.ValueOf(h)
 

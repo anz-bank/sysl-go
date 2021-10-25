@@ -76,7 +76,9 @@ func configurePublicGrpcServerListener(ctx context.Context, m GrpcServerManager,
 		h.RegisterServer(ctx, server)
 	}
 
-	setLogger(ctx)
+	if (hooks == nil) || (hooks.ShouldSetGrpcGlobalLogger == nil) || hooks.ShouldSetGrpcGlobalLogger() {
+		setLogger(ctx)
+	}
 
 	prepareGrpcServerListenerFn := prepareGrpcServerListener
 	if hooks != nil && hooks.StoppableGrpcServerBuilder != nil {
