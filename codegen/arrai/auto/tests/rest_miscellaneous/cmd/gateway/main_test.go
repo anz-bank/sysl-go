@@ -182,3 +182,17 @@ func TestMiscellaneous_DownstreamQuery(t *testing.T) {
 		ExpectResponseBody(gateway.PongString{S: expectString}).
 		Send()
 }
+
+func TestMiscellaneous_Patch(t *testing.T) {
+	t.Parallel()
+	gatewayTester := gateway.NewTestServer(t, context.Background(), createService, "")
+	defer gatewayTester.Close()
+
+	const expectString = "Foo"
+
+	gatewayTester.PatchPing().
+		WithBody(gateway.GatewayPatchRequest{expectString}).
+		ExpectResponseCode(200).
+		ExpectResponseBody(gateway.GatewayPatchResponse{expectString}).
+		Send()
+}

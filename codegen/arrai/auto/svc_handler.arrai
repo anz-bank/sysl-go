@@ -122,9 +122,9 @@ let sysl = //{./sysl};
                     `}}
                     ctx = common.RespHeaderAndStatusToContext(ctx, make(http.Header), http.StatusOK)
                     var req ${method}Request
-                    ${cond ep('restParams')('method').s {('POST', 'PUT'):
+                    ${cond ep('restParams')('method').s {('POST', 'PUT', 'PATCH'):
                         let body = ep('param')?.a:{} where "body" <: sysl.patterns(.@item('type'));
-                        let _ = cond {!body: //error($`POST and PUT both require a body, ${method} doesn't have a body!`)};
+                        let _ = cond {!body: //error($`POST, PUT and PATCH require a body, ${method} doesn't have a body!`)};
                         let goBodyType = body single -> go.type(.@item('type'));
                         cond goBodyType {
                             '[]byte': $`

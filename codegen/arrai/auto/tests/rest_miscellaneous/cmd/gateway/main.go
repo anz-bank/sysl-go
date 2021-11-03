@@ -49,10 +49,17 @@ func PostPingBinary(_ context.Context, req *gateway.PostPingBinaryRequest) (*gat
 	}, nil
 }
 
+func PatchPing(_ context.Context, req *gateway.PatchPingRequest) (*gateway.GatewayPatchResponse, error) {
+	return &gateway.GatewayPatchResponse{
+		Content: req.Request.Content,
+	}, nil
+}
+
 func createService(_ context.Context, _ AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
 	return &gateway.ServiceInterface{
 		GetPingIdList:  GetPingList,
 		GetPingStringS: GetPingString,
+		PatchPing:      PatchPing,
 		PostPingBinary: PostPingBinary,
 	}, nil, nil
 }

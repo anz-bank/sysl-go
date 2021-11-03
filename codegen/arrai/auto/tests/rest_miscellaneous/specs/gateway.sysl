@@ -42,6 +42,16 @@ Gateway [package="gateway", ~vars_in_url_name]:
             return 400 <: GatewayBinaryRequest
             return 500 <: GatewayBinaryResponse
 
+    /ping:
+        PATCH (GatewayPatchRequestRequest <: GatewayPatchRequest [mediatype="application/json", ~body]):
+            return ok <: GatewayPatchResponse
+
+    !type GatewayPatchRequest:
+        content <: string
+
+    !type GatewayPatchResponse:
+        content <: string
+
 GatewayWithBff [package="gatewayWithBff"]:
     @basePath = "bff"
     @go_package = "gatewayWithBff"
