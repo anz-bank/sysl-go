@@ -29,9 +29,9 @@ func GetPingTimeout(_ context.Context, req *pingpong.GetPingtimeoutRequest) (*pi
 func GetPingoneof(_ context.Context, req *pingpong.GetGetoneofRequest) (*pingpong.OneOfResponse, error) {
 	var ret pingpong.OneOfResponse
 	if req.Identifier == 1 {
-		ret = pingpong.OneOfResponseOne{1}
+		ret = pingpong.OneOfResponse{OneOfResponseOne: &pingpong.OneOfResponseOne{1}}
 	} else {
-		ret = pingpong.OneOfResponseTwo{"Two"}
+		ret = pingpong.OneOfResponse{OneOfResponseTwo: &pingpong.OneOfResponseTwo{"Two"}}
 	}
 
 	return &ret, nil

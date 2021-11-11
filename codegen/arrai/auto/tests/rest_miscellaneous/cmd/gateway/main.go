@@ -6,6 +6,7 @@ import (
 
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/log"
+	"rest_miscellaneous/internal/gen/pkg/servers/gateway/oneof_backend"
 
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/encoder_backend"
@@ -55,12 +56,46 @@ func PatchPing(_ context.Context, req *gateway.PatchPingRequest) (*gateway.Gatew
 	}, nil
 }
 
+func PostRotateOneOf(ctx context.Context, req *gateway.PostRotateOneOfRequest, client gateway.PostRotateOneOfClient) (*gateway.OneOfResponse, error) {
+	proor := &oneof_backend.PostRotateOneOfRequest{}
+	for _, v := range req.Request.Values {
+		switch {
+		case v.One != nil:
+			proor.Request.Values = append(proor.Request.Values, oneof_backend.OneOfRequest_values{One: &oneof_backend.One{v.One.One}})
+		case v.Two != nil:
+			proor.Request.Values = append(proor.Request.Values, oneof_backend.OneOfRequest_values{Two: &oneof_backend.Two{v.Two.Two}})
+		case v.Three != nil:
+			proor.Request.Values = append(proor.Request.Values, oneof_backend.OneOfRequest_values{Three: &oneof_backend.Three{v.Three.Three}})
+		}
+	}
+
+	resp, err := client.Oneof_backendPostRotateOneOf(ctx, proor)
+	if err != nil {
+		return nil, err
+	}
+
+	goor := &gateway.OneOfResponse{}
+	for _, v := range resp.Values {
+		switch {
+		case v.One != nil:
+			goor.Values = append(goor.Values, gateway.OneOfResponse_values{One: &gateway.One{v.One.One}})
+		case v.Two != nil:
+			goor.Values = append(goor.Values, gateway.OneOfResponse_values{Two: &gateway.Two{v.Two.Two}})
+		case v.Three != nil:
+			goor.Values = append(goor.Values, gateway.OneOfResponse_values{Three: &gateway.Three{v.Three.Three}})
+		}
+	}
+
+	return goor, nil
+}
+
 func createService(_ context.Context, _ AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
 	return &gateway.ServiceInterface{
-		GetPingIdList:  GetPingList,
-		GetPingStringS: GetPingString,
-		PatchPing:      PatchPing,
-		PostPingBinary: PostPingBinary,
+		PostRotateOneOf: PostRotateOneOf,
+		GetPingIdList:   GetPingList,
+		GetPingStringS:  GetPingString,
+		PatchPing:       PatchPing,
+		PostPingBinary:  PostPingBinary,
 	}, nil, nil
 }
 

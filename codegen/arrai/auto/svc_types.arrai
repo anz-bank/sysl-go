@@ -15,6 +15,7 @@ let fieldJsonTag = \type \key
     let entities = orderedTypes(app('types')?:{} where !({"error"} & sysl.patterns(.@value)) && {"tuple", "relation"} & (.@value => .@));
     let aliases = orderedTypes(app('types')?:{} where !({'oneOf', 'oneof', 'tuple', 'relation'} & (.@value => .@)));
     let unions = orderedTypes(app('types')?:{} where ({'oneOf', 'oneof'} & (.@value => .@)));
+    let allUnionTypes = //rel.union(unions => (.@item.@value('oneOf')('type').a >> .('typeRef')('ref')('path').a >> ((.) single).@item.s => .@item));
     let validateApp = sysl.patterns(app) & {"validate"};
     $`
         ${go.prelude(app, {})}
@@ -76,9 +77,11 @@ let fieldJsonTag = \type \key
                     }
                 `}}
                 ${
-                    let reqParams = entity('attrDefs') where !sysl.isPtr(.@value) orderby .@ >> .@value;
-                    cond {({"validate"} & patterns || validateApp) && reqParams: $`
-                        func (t *${typename}) UnmarshalJSON(data []byte) error {
+                    let reqParams = entity('attrDefs') where !sysl.isPtr(.@value);
+                    let needsUnmarshalJSON = ({"validate"} & patterns || validateApp) && reqParams;
+
+                    cond {needsUnmarshalJSON || (key <: allUnionTypes): $`
+                        func unmarshalJSONWithValidation${typename}(data []byte) (*${typename}, bool, error) {
                             inner := struct {
                                 ${entity('attrDefs') orderby .@ >> \(@: key, @value: attrDef)
                                     $'${go.name(key)} ${cond { !sysl.isPtr(attrDef) : '*', _ : ''}}${go.type(attrDef)} `json:"${fieldJsonTag(attrDef, key)::,},omitempty"`'
@@ -86,22 +89,47 @@ let fieldJsonTag = \type \key
                             }{}
                             err := json.Unmarshal(data, &inner)
                             if err != nil {
-                                return err
+                                return nil, false, err
                             }
+                            filled := 0
                             ${entity('attrDefs') where !sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
                                 $`
                                     if inner.${go.name(key)} == nil {
-                                        return errors.New("${fieldJsonTag(attrDef, key)::,} cannot be nil")
+                                        return nil, false, errors.New("${fieldJsonTag(attrDef, key)::,} cannot be nil")
+                                    } else {
+                                        filled++
                                     }
                                 `
                             ::\i}
-                            *t = ${typename}{
+                            ${entity('attrDefs') where sysl.isPtr(.@value) orderby .@ >> \(@: key, @value: attrDef)
+                                $`
+                                    if inner.${go.name(key)} != nil {
+                                        filled++
+                                    }
+                                `
+                            ::\i}
+
+
+                            return &${typename}{
                                 ${entity('attrDefs') orderby .@ >> \(@: key, @value: attrDef)
                                     let fieldName = go.name(key);
                                     $`${fieldName}: ${cond { !sysl.isPtr(attrDef) : '*', _ : ''}}inner.${fieldName},`
                                 ::\i}
-                            }
-                            return nil
+                            }, filled > 0, nil
+                        }
+
+                        ${
+                            cond {needsUnmarshalJSON: $`
+                                func (t *${typename}) UnmarshalJSON(data []byte) error {
+                                    val, _, err := unmarshalJSONWithValidation${typename}(data)
+                                    if err != nil {
+                                        return err
+                                    }
+                                    *t = *val
+
+                                    return nil
+                                }
+                            `}
                         }
                     `}
                 }
@@ -176,13 +204,49 @@ let fieldJsonTag = \type \key
             $`
             // ${typename} can be one of the following types at runtime:
             ${unionTypes >> $`// ${.}`::\i}
-            type ${typename} interface {
-                is${typename}()
+            type ${typename} struct {
+                ${unionTypes >> $`
+                    *${.}
+                    `::\i}
             }
-            ${unionTypes >> $`
-                // is${typename} identifies ${.} as an instance of ${typename}
-                func (i ${.}) is${typename}() {
-                }
+
+            // Marshal data from the first non-nil pointer in the struct to JSON
+            func (dst *${typename}) MarshalJSON() ([]byte, error) {
+                ${unionTypes >> $`
+                    if dst.${.} != nil {
+                        return json.Marshal(dst.${.})
+                    }
                 `::\i}
+
+                return nil, nil // no data in oneOf schema
+            }
+
+            // Unmarshal JSON data into one of the pointers in the struct
+            func (dst *${typename}) UnmarshalJSON(data []byte) error {
+                match := 0
+
+                ${unionTypes >> $`
+                    // try to unmarshal data into ${.}
+                    dst${.}, filled, err := unmarshalJSONWithValidation${.}(data)
+                    if err == nil && filled {
+                        match++
+                        dst.${.} = dst${.}
+                    }
+
+                `::\i}
+
+                if match > 1 {
+                    // reset to nil
+                    ${unionTypes >> $`
+                        dst.${.} = nil
+                    `::\i}
+
+                    return fmt.Errorf("Data matches more than one schema in oneOf(${typename})")
+                } else if match == 1 {
+                    return nil
+                } else {
+                    return fmt.Errorf("Data failed to match schemas in oneOf(${typename})")
+                }
+            }
         `::\i}
     `

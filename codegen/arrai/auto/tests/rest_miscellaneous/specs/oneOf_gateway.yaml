@@ -1,0 +1,71 @@
+openapi: '3.0.3'
+
+info:
+  title: One Of Backend
+  version: '1.0'
+
+paths:
+  /rotate-one-of:
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json; charset = utf-8:
+            schema:
+              $ref: "#/components/schemas/OneOfRequest"
+
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json; charset = utf-8:
+              schema:
+                $ref: "#/components/schemas/OneOfResponse"
+
+components:
+  schemas:
+    OneOfRequest:
+      type: object
+      properties:
+        values:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/One'
+              - $ref: '#/components/schemas/Two'
+              - $ref: '#/components/schemas/Three'
+
+    OneOfResponse:
+      type: object
+      properties:
+        values:
+          type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/One'
+              - $ref: '#/components/schemas/Two'
+              - $ref: '#/components/schemas/Three'
+
+    One:
+      type: object
+      properties:
+        one:
+          type: boolean
+      required:
+        - one
+
+    Two:
+      type: object
+      properties:
+        two:
+          type: string
+      required:
+        - two
+
+    Three:
+      type: object
+      properties:
+        three:
+          type: integer
+      required:
+        - three

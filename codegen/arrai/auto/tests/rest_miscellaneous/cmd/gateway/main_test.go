@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/encoder_backend"
+	"rest_miscellaneous/internal/gen/pkg/servers/gateway/oneof_backend"
 )
 
 const applicationConfig = `---
@@ -30,6 +31,8 @@ genCode:
   downstream:
     contextTimeout: "1s"
     encoder_backend:
+      clientTimeout: 1s
+    oneof_backend:
       clientTimeout: 1s
 `
 
@@ -194,5 +197,56 @@ func TestMiscellaneous_Patch(t *testing.T) {
 		WithBody(gateway.GatewayPatchRequest{expectString}).
 		ExpectResponseCode(200).
 		ExpectResponseBody(gateway.GatewayPatchResponse{expectString}).
+		Send()
+}
+
+func TestMiscellaneous_OneOf(t *testing.T) {
+	t.Parallel()
+	gatewayTester := gateway.NewTestServer(t, context.Background(), createService, "")
+	defer gatewayTester.Close()
+
+	gatewayTester.Mocks.Oneof_backend.PostRotateOneOf.
+		ExpectBody(oneof_backend.OneOfRequest{[]oneof_backend.OneOfRequest_values{
+			{One: &oneof_backend.One{true}},
+			{Two: &oneof_backend.Two{"two"}},
+			{Three: &oneof_backend.Three{3}},
+		}}).
+		MockResponse(200, nil, oneof_backend.OneOfResponse{[]oneof_backend.OneOfResponse_values{
+			{Three: &oneof_backend.Three{3}},
+			{One: &oneof_backend.One{true}},
+			{Two: &oneof_backend.Two{"two"}},
+		}})
+
+	gatewayTester.PostRotateOneOf().
+		WithBody(gateway.OneOfRequest{[]gateway.OneOfRequest_values{
+			{One: &gateway.One{true}},
+			{Two: &gateway.Two{"two"}},
+			{Three: &gateway.Three{3}},
+		}}).
+		ExpectResponseCode(200).
+		ExpectResponseBody(gateway.OneOfResponse{[]gateway.OneOfResponse_values{
+			{Three: &gateway.Three{3}},
+			{One: &gateway.One{true}},
+			{Two: &gateway.Two{"two"}},
+		}}).
+		Send()
+}
+
+func TestMiscellaneous_OneOfRaw(t *testing.T) {
+	t.Parallel()
+	gatewayTester := gateway.NewTestServer(t, context.Background(), createService, "")
+	defer gatewayTester.Close()
+
+	req := ([]byte)(`{"values":[{"one":true},{"two":"two"},{"three":3}]}`)
+	res := ([]byte)(`{"values":[{"three":3},{"one":true},{"two":"two"}]}`)
+
+	gatewayTester.Mocks.Oneof_backend.PostRotateOneOf.
+		ExpectBodyPlain(req).
+		MockResponse(200, nil, res)
+
+	gatewayTester.PostRotateOneOf().
+		WithBodyPlain(req).
+		ExpectResponseCode(200).
+		ExpectResponseBody(res).
 		Send()
 }

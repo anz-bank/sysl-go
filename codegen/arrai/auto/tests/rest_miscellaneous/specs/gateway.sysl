@@ -1,4 +1,6 @@
 import encoder_backend
+import oneOf_backend.yaml as oneof_backend
+import oneOf_gateway.yaml as Gateway
 
 Gateway [package="gateway", ~vars_in_url_name]:
     @go_package = "gateway"
@@ -51,6 +53,10 @@ Gateway [package="gateway", ~vars_in_url_name]:
 
     !type GatewayPatchResponse:
         content <: string
+
+    /rotate-one-of:
+        POST:
+            oneof_backend <- POST /rotate-one-of
 
 GatewayWithBff [package="gatewayWithBff"]:
     @basePath = "bff"
