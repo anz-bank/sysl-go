@@ -562,7 +562,7 @@ let modelWithReturnAnnotation = <<(`{
  }
 }`)>>;
 let returnAnnotation = //encoding.json.decode(modelWithReturnAnnotation)("apps")("BananaStand")("endpoints")("POST /banana");
-let returnAnnotationExpectedReturns = [(seq: {}, type: ["BananaResponse"], var: "ok")];
+let returnAnnotationExpectedReturns = [(codeAndMediaType: {(code: {}, mediatype: "application/json")}, seq: {}, type: ["BananaResponse"], var: "ok")];
 
 let returnStatementsJSON = <<(`{
      "stmt": [

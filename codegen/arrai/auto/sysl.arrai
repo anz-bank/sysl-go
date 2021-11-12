@@ -56,19 +56,26 @@ let endpoint =
     # Note this regex should match (or use) parseReturn in github.com/anz-bank/sysl/pkg/arrai/sysl.arrai
     # (for now it uses the current regex with the intent of refactoring more at a later stage).
     let returns =
-        let splitRet = //re.compile(`(.*?)\s*<:\s*((?:sequence\s+of\s+)?)(.*?)\s*(?:\[.*\])?$`).match;
+        let splitRet = //re.compile(`(.*?)\s*<:\s*((?:sequence\s+of\s+)?)(.*?)\s*((?:\[.*\])?)$`).match;
         let numRE = //re.compile(`^(\d)\d\d$`).match;
+        let mediatype = 
+            let mTypeRE = //re.compile(`(?:^\[|,)\s*mediatype\s*=\s*(?:"([^"]*)"|'([^']*)')\s*(?:\]$|,)`).match;
+            \attrs mTypeRE(attrs)(0)?:{} -> \res cond res count {2: (res where .@item rank (:.@))(1) } where .@char rank (:.@);
         \ep
-            (statements(ep) where "ret" <: (.@item => .@) >>
+            let res = (statements(ep) where "ret" <: (.@item => .@) >>
                 let payload = .("ret")("payload").s;
-                let [_, var, seq, type] = splitRet(payload)(0)?:["", payload, "", ""];
+                let [_, var, seq, type, attrs] = splitRet(payload)(0)?:["", payload, "", "", ""];
                 let var = cond numRE(var) {
-                    [[_, '2']]: "ok",
-                    [[_, _]]: "error",
-                    _: var
+                    [[_, '2']]: (code: var, var: "ok"),
+                    [[_, _]]: (code: var, var: "error"),
+                    _: (code: {}, :var)
                 };
-                (:var, seq: seq != "", type: //seq.split(".", type))
-            ) => .@item orderby .;
+                (var: var.var, seq: seq != "", type: //seq.split(".", type), mediatype: mediatype(attrs), code: var.code)
+            ) => .@item;
+            # merge mediatype and code into a single entry so that we only have a single entry for each var/seq/type
+            res => (:.var, :.seq, :.type) orderby . >>
+                \v let filtered = res where (.var = v.var && .seq = v.seq && .type = v.type) => (:.code, :.mediatype);
+                v +> (codeAndMediaType: filtered);
 
     # `normalReturns(ep)`
     #

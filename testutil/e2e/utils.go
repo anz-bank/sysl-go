@@ -106,6 +106,63 @@ func verifyHeaders(expected http.Header, actual http.Header, checkForExtra ...bo
 	return nil
 }
 
+func expectHeadersExistImp(headers []string, actual http.Header) error {
+	var missing []string
+	for _, h := range headers {
+		if _, exists := actual[http.CanonicalHeaderKey(h)]; !exists {
+			missing = append(missing, h)
+		}
+	}
+
+	if len(missing) > 0 {
+		return fmt.Errorf("Expected headers were missing: %s", missing)
+	}
+
+	return nil
+}
+
+func expectHeadersDoNotExistImp(headers []string, actual http.Header) error {
+	var extra []string
+	for _, h := range headers {
+		if _, exists := actual[http.CanonicalHeaderKey(h)]; exists {
+			extra = append(extra, h)
+		}
+	}
+
+	if len(extra) > 0 {
+		return fmt.Errorf("Headers were expected to be missing: %s", extra)
+	}
+
+	return nil
+}
+
+func expectHeadersExistExactlyImp(headers []string, actual http.Header) (missingError, extraError error) {
+	var extra, missing []string
+	m := map[string]interface{}{}
+
+	for _, h := range headers {
+		can := http.CanonicalHeaderKey(h)
+		m[can] = nil
+		if _, exists := actual[can]; !exists {
+			missing = append(missing, h)
+		}
+	}
+	for h := range actual {
+		if _, exists := m[h]; !exists {
+			extra = append(extra, h)
+		}
+	}
+
+	if len(missing) > 0 {
+		missingError = fmt.Errorf("Expected headers were missing: %s", missing)
+	}
+	if len(extra) > 0 {
+		extraError = fmt.Errorf("Extra headers were found: %s", extra)
+	}
+
+	return missingError, extraError
+}
+
 func GetResponseBodyAndClose(b io.ReadCloser) []byte {
 	if b == nil {
 		return nil

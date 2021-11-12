@@ -181,6 +181,10 @@ func (b *Tester) Do2(tc TestCall2) {
 	if tc.TestBodyFn != nil {
 		tc.TestBodyFn(b.t, actualResp)
 	}
+
+	for _, testRespFns := range tc.TestRespFns {
+		testRespFns(b.t, resp)
+	}
 }
 
 func (b *Tester) HTTPClientGetter(host string) (*http.Client, string, error) {

@@ -11,6 +11,7 @@ import (
 )
 
 type Tests func(t *testing.T, w http.ResponseWriter, r *http.Request)
+type ResponseTest func(t *testing.T, actual *http.Response)
 
 type TestCall struct {
 	Method       string
@@ -32,6 +33,47 @@ type TestCall2 struct {
 	ExpectedBody []byte
 	TestCodeFn   func(t *testing.T, actual int)
 	TestBodyFn   func(t *testing.T, actual []byte)
+	TestRespFns  []ResponseTest
+}
+
+// ExpectResponseHeaders: Expects the given headers and their values exist in the response.
+// checkForExtra is an optional parameter to check for extra headers not expected.
+func ExpectResponseHeaders(headers map[string]string, checkForExtra ...bool) ResponseTest {
+	hdrs := makeHeader(headers)
+	loc := GetTestLine()
+
+	return func(t *testing.T, actual *http.Response) {
+		assert.NoError(t, verifyHeaders(hdrs, actual.Header, checkForExtra...), loc)
+	}
+}
+
+// ExpectResponseHeadersExist: Expects the given header names can be found in the response.
+func ExpectResponseHeadersExist(headers []string) ResponseTest {
+	loc := GetTestLine()
+
+	return func(t *testing.T, actual *http.Response) {
+		assert.NoError(t, expectHeadersExistImp(headers, actual.Header), loc)
+	}
+}
+
+// ExpectResponseHeadersDoNotExist: Expects the given header names cannot be found in the response.
+func ExpectResponseHeadersDoNotExist(headers []string) ResponseTest {
+	loc := GetTestLine()
+
+	return func(t *testing.T, actual *http.Response) {
+		assert.NoError(t, expectHeadersDoNotExistImp(headers, actual.Header), loc)
+	}
+}
+
+// ExpectResponseHeadersExistExactly: Expects the given headers in the response exist (and no others).
+func ExpectResponseHeadersExistExactly(headers []string) ResponseTest {
+	loc := GetTestLine()
+
+	return func(t *testing.T, actual *http.Response) {
+		missingError, extraError := expectHeadersExistExactlyImp(headers, actual.Header)
+		assert.NoError(t, missingError, loc)
+		assert.NoError(t, extraError, loc)
+	}
 }
 
 // ExpectHeaders: Expects the given headers and their values exist in the response.
@@ -50,16 +92,7 @@ func ExpectHeadersExist(headers []string) Tests {
 	loc := GetTestLine()
 
 	return func(t *testing.T, w http.ResponseWriter, r *http.Request) {
-		var missing []string
-		for _, h := range headers {
-			if _, exists := r.Header[http.CanonicalHeaderKey(h)]; !exists {
-				missing = append(missing, h)
-			}
-		}
-
-		if len(missing) > 0 {
-			assert.Empty(t, missing, "Expected headers were missing. %s", loc)
-		}
+		assert.NoError(t, expectHeadersExistImp(headers, r.Header), loc)
 	}
 }
 
@@ -68,16 +101,7 @@ func ExpectHeadersDoNotExist(headers []string) Tests {
 	loc := GetTestLine()
 
 	return func(t *testing.T, w http.ResponseWriter, r *http.Request) {
-		var extra []string
-		for _, h := range headers {
-			if _, exists := r.Header[http.CanonicalHeaderKey(h)]; exists {
-				extra = append(extra, h)
-			}
-		}
-
-		if len(extra) > 0 {
-			assert.Empty(t, extra, "Headers were expected to be missing. %s", loc)
-		}
+		assert.NoError(t, expectHeadersDoNotExistImp(headers, r.Header), loc)
 	}
 }
 
@@ -86,24 +110,9 @@ func ExpectHeadersExistExactly(headers []string) Tests {
 	loc := GetTestLine()
 
 	return func(t *testing.T, w http.ResponseWriter, r *http.Request) {
-		var extra, missing []string
-		m := map[string]interface{}{}
-
-		for _, h := range headers {
-			can := http.CanonicalHeaderKey(h)
-			m[can] = nil
-			if _, exists := r.Header[can]; !exists {
-				missing = append(missing, h)
-			}
-		}
-		for h := range r.Header {
-			if _, exists := m[h]; !exists {
-				extra = append(extra, h)
-			}
-		}
-
-		assert.Empty(t, missing, "Expected headers were missing. %s", loc)
-		assert.Empty(t, extra, "Extra headers were found. %s", loc)
+		missingError, extraError := expectHeadersExistExactlyImp(headers, r.Header)
+		assert.NoError(t, missingError, loc)
+		assert.NoError(t, extraError, loc)
 	}
 }
 

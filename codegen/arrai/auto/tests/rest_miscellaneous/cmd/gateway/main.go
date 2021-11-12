@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/anz-bank/sysl-go/core"
@@ -89,13 +90,24 @@ func PostRotateOneOf(ctx context.Context, req *gateway.PostRotateOneOfRequest, c
 	return goor, nil
 }
 
+func GetPingMultiCode(_ context.Context, req *gateway.GetPingMultiCodeRequest) (*gateway.Pong, *gateway.PongString, error) {
+	if req.Code == 0 {
+		return &gateway.Pong{0}, nil, nil
+	} else if req.Code == 1 {
+		return nil, &gateway.PongString{"One"}, nil
+	}
+
+	return nil, nil, fmt.Errorf("Code can only be 0 or 1")
+}
+
 func createService(_ context.Context, _ AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
 	return &gateway.ServiceInterface{
-		PostRotateOneOf: PostRotateOneOf,
-		GetPingIdList:   GetPingList,
-		GetPingStringS:  GetPingString,
-		PatchPing:       PatchPing,
-		PostPingBinary:  PostPingBinary,
+		PostRotateOneOf:  PostRotateOneOf,
+		GetPingIdList:    GetPingList,
+		GetPingStringS:   GetPingString,
+		PatchPing:        PatchPing,
+		PostPingBinary:   PostPingBinary,
+		GetPingMultiCode: GetPingMultiCode,
 	}, nil, nil
 }
 

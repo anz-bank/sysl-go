@@ -37,16 +37,18 @@ Gateway [package="gateway", ~vars_in_url_name]:
     !type PongString:
         s <: string
 
-    /generate/compilable/code:
+    # testing multiple error returns compiles and multiple mediatypes respond correct type
+    /ping/multi/{code <: int}:
         GET:
-            return 200 <: pong
+            return 200 <: Pong [mediatype="application/json;charset=UTF-8"]
             return 201 <: PongString
             return 400 <: GatewayBinaryRequest
             return 500 <: GatewayBinaryResponse
 
+    # testing PATH and mediatype
     /ping:
         PATCH (GatewayPatchRequestRequest <: GatewayPatchRequest [mediatype="application/json", ~body]):
-            return ok <: GatewayPatchResponse
+            return 202 <: GatewayPatchResponse [mediatype="application/json;charset=UTF-8"]
 
     !type GatewayPatchRequest:
         content <: string

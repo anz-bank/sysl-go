@@ -188,7 +188,7 @@ func DoHTTPRequest2(ctx context.Context, config *HTTPRequest) (*HTTPResult, erro
 		return nil, err
 	}
 
-	defer httpResponse.Body.Close()
+	defer func() { _ = httpResponse.Body.Close() }()
 
 	// TODO: remove this after confirming that gzip was handled by lower layer
 	var bodyReader io.Reader
@@ -228,31 +228,33 @@ func SendHTTPResponse(w http.ResponseWriter, httpStatus int, responses ...interf
 	contentType := w.Header().Get("Content-Type")
 
 	for _, resp := range responses {
-		if resp != nil {
-			switch {
-			case strings.Contains(contentType, "xml"):
-				_ = xml.NewEncoder(w).Encode(resp)
-			case strings.Contains(contentType, "image"):
-				_, _ = w.Write(reflect.ValueOf(resp).Elem().Bytes())
-			case strings.Contains(contentType, "text/plain"), strings.Contains(contentType, "text/html"):
-				switch data := resp.(type) {
-				case *string:
-					_, _ = w.Write([]byte(*data))
-				case string:
-					_, _ = w.Write([]byte(data))
-				}
-			case strings.Contains(contentType, "octet-stream"), strings.Contains(contentType, "pdf"):
-				switch data := resp.(type) {
-				case *[]byte:
-					_, _ = w.Write(*data)
-				case []byte:
-					_, _ = w.Write(data)
-				}
-			default:
-				_ = json.NewEncoder(w).Encode(resp)
-			}
-			return
+		if resp == nil || (reflect.ValueOf(resp).Kind() == reflect.Ptr && reflect.ValueOf(resp).IsNil()) {
+			continue
 		}
+
+		switch {
+		case strings.Contains(contentType, "xml"):
+			_ = xml.NewEncoder(w).Encode(resp)
+		case strings.Contains(contentType, "image"):
+			_, _ = w.Write(reflect.ValueOf(resp).Elem().Bytes())
+		case strings.Contains(contentType, "text/plain"), strings.Contains(contentType, "text/html"):
+			switch data := resp.(type) {
+			case *string:
+				_, _ = w.Write([]byte(*data))
+			case string:
+				_, _ = w.Write([]byte(data))
+			}
+		case strings.Contains(contentType, "octet-stream"), strings.Contains(contentType, "pdf"):
+			switch data := resp.(type) {
+			case *[]byte:
+				_, _ = w.Write(*data)
+			case []byte:
+				_, _ = w.Write(data)
+			}
+		default:
+			_ = json.NewEncoder(w).Encode(resp)
+		}
+		return
 	}
 }
 

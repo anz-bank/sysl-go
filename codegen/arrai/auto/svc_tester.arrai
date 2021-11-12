@@ -234,6 +234,30 @@ let grpc = //{./grpc};
                     return t
                 }
 
+                func (t *${testType}) ExpectResponseHeaders(headers map[string]string) *${testType} {
+                    t.tc.TestRespFns = append(t.tc.TestRespFns, e2e.ExpectResponseHeaders(headers))
+
+                    return t
+                }
+
+                func (t *${testType}) ExpectResponseHeadersExist(headers []string) *${testType} {
+                    t.tc.TestRespFns = append(t.tc.TestRespFns, e2e.ExpectResponseHeadersExist(headers))
+
+                    return t
+                }
+
+                func (t *${testType}) ExpectResponseHeadersDoNotExist(headers []string) *${testType} {
+                    t.tc.TestRespFns = append(t.tc.TestRespFns, e2e.ExpectResponseHeadersDoNotExist(headers))
+
+                    return t
+                }
+
+                func (t *${testType}) ExpectResponseHeadersExistExactly(headers []string) *${testType} {
+                    t.tc.TestRespFns = append(t.tc.TestRespFns, e2e.ExpectResponseHeadersExistExactly(headers))
+
+                    return t
+                }
+
                 ${{}# TODO: Add typed versions based on the specifications eg, Expect200ResponseBody
                 }
                 func (t *${testType}) ExpectResponseBody(body interface{}) *${testType} {

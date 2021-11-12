@@ -195,7 +195,8 @@ func TestMiscellaneous_Patch(t *testing.T) {
 
 	gatewayTester.PatchPing().
 		WithBody(gateway.GatewayPatchRequest{expectString}).
-		ExpectResponseCode(200).
+		ExpectResponseCode(202).
+		ExpectResponseHeaders(map[string]string{"Content-Type": `application/json;charset=UTF-8`}).
 		ExpectResponseBody(gateway.GatewayPatchResponse{expectString}).
 		Send()
 }
@@ -248,5 +249,23 @@ func TestMiscellaneous_OneOfRaw(t *testing.T) {
 		WithBodyPlain(req).
 		ExpectResponseCode(200).
 		ExpectResponseBody(res).
+		Send()
+}
+
+func TestMiscellaneous_MultiCode(t *testing.T) {
+	t.Parallel()
+	gatewayTester := gateway.NewTestServer(t, context.Background(), createService, "")
+	defer gatewayTester.Close()
+
+	gatewayTester.GetPingMultiCode(0).
+		ExpectResponseCode(200).
+		ExpectResponseHeaders(map[string]string{"Content-Type": `application/json;charset=UTF-8`}).
+		ExpectResponseBody(gateway.Pong{0}).
+		Send()
+
+	gatewayTester.GetPingMultiCode(1).
+		ExpectResponseCode(201).
+		ExpectResponseHeaders(map[string]string{"Content-Type": `application/json`}).
+		ExpectResponseBody(gateway.PongString{"One"}).
 		Send()
 }
