@@ -1,7 +1,18 @@
 PingPong [package="pingpong"]:
     /ping:
         GET:
-            return ok <: Pong
+            return 200 <: Pong
 
     !type Pong:
         data <: string
+
+    /writeErrorCallback:
+        GET:
+            return 418 <: ErrorResponse
+
+    /errorWriter:
+        GET:
+            return 402 <: ErrorResponse
+
+    !type ErrorResponse:
+        err <: string

@@ -49,5 +49,6 @@ func timeoutHandler(w http.ResponseWriter, r *http.Request) {
 				Description: "timeout expired while processing response",
 			}
 		},
+		nil,
 	)
 }

@@ -143,10 +143,11 @@ let sysl = //{./sysl};
                         }
                     }
 
-                    genCallbacks := common.NewCallbackV2(
+                    genCallbacks := common.NewCallbackV3(
                         &cfg.GenCode,
                         downstream.ContextTimeout,
                         hooks.MapError,
+                        hooks.WriteError,
                         hooks.AddHTTPMiddleware,
                     )
 

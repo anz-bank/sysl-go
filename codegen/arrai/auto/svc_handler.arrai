@@ -103,20 +103,20 @@ let sysl = //{./sysl};
                 // ${method}Handler ...
                 func (s *ServiceHandler) ${method}Handler(w http.ResponseWriter, r *http.Request) {
                     if s.serviceInterface.${method} == nil {
-                        common.HandleError(r.Context(), w, common.InternalError, "not implemented", nil, s.genCallback.MapError)
+                        common.HandleError(r.Context(), w, common.InternalError, "not implemented", nil, s.genCallback.MapError, s.genCallback.WriteError)
                         return
                     }
 
                     ctx := common.RequestHeaderToContext(r.Context(), r.Header)
                     ${cond {authorizationRule(ep): $`
                         if _, ok := s.authorizationRules["${method}"]; !ok {
-                            common.HandleError(r.Context(), w, common.InternalError, "authorization rule for method ${method} not implemented", nil, s.genCallback.MapError)
+                            common.HandleError(r.Context(), w, common.InternalError, "authorization rule for method ${method} not implemented", nil, s.genCallback.MapError, s.genCallback.WriteError)
                             return
                         }
                         ctx, authorizationErr := s.authorizationRules["${method}"](ctx)
                         // TODO give HTTP-idiomatic 401 & 403 responses.
                         if authorizationErr != nil {
-                            common.HandleError(ctx, w, common.UnauthorizedError, "Auth error", authorizationErr, s.genCallback.MapError)
+                            common.HandleError(ctx, w, common.UnauthorizedError, "Auth error", authorizationErr, s.genCallback.MapError, s.genCallback.WriteError)
                             return
                         }
                     `}}
@@ -142,7 +142,7 @@ let sysl = //{./sysl};
                         } ++ $`
 
                         if decodeErr != nil {
-                            common.HandleError(ctx, w, common.BadRequestError, "Error reading request body", decodeErr, s.genCallback.MapError)
+                            common.HandleError(ctx, w, common.BadRequestError, "Error reading request body", decodeErr, s.genCallback.MapError, s.genCallback.WriteError)
                             return
                         }
                         `
@@ -164,7 +164,7 @@ let sysl = //{./sysl};
                                 $`
                                     req.${go.name(name)}, conv${type}Err = restlib.GetQueryParamFor${type}(r, "${name}")
                                     if conv${type}Err != nil {
-                                        common.HandleError(ctx, w, common.BadRequestError, "Invalid request", conv${type}Err, s.genCallback.MapError)
+                                        common.HandleError(ctx, w, common.BadRequestError, "Invalid request", conv${type}Err, s.genCallback.MapError, s.genCallback.WriteError)
                                         return
                                     }
                                 `
@@ -190,7 +190,7 @@ let sysl = //{./sysl};
                         $`
                             req.${go.name(.name)}, convErr = convert.StringTo${type}(ctx, ${.var})
                             if convErr != nil {
-                                    common.HandleError(ctx, w, common.BadRequestError, "Invalid request", convErr, s.genCallback.MapError)
+                                    common.HandleError(ctx, w, common.BadRequestError, "Invalid request", convErr, s.genCallback.MapError, s.genCallback.WriteError)
                                     return
                             }
                         `
@@ -203,7 +203,7 @@ let sysl = //{./sysl};
                         let name = type('attrs')?('name')('s').s:name;
                         cond {sysl.type.required(type): $`
                             if ${go.name(name)} == "" {
-                                common.HandleError(ctx, w, common.BadRequestError, "${name} header length is zero", common.NewZeroHeaderLengthError("${name}"), s.genCallback.MapError)
+                                common.HandleError(ctx, w, common.BadRequestError, "${name} header length is zero", common.NewZeroHeaderLengthError("${name}"), s.genCallback.MapError, s.genCallback.WriteError)
                                 return
                             }
                         `}
@@ -212,14 +212,14 @@ let sysl = //{./sysl};
                     defer cancel()
                     valErr := validator.Validate(&req)
                     if valErr != nil {
-                        common.HandleError(ctx, w, common.BadRequestError, "Invalid request", valErr, s.genCallback.MapError)
+                        common.HandleError(ctx, w, common.BadRequestError, "Invalid request", valErr, s.genCallback.MapError, s.genCallback.WriteError)
                         return
                     }
 
                     ${cond {hasDB: $`
                         conn, dberr := s.DB.Conn(ctx)
                         if dberr != nil {
-                            common.HandleError(ctx, w, common.InternalError, "Database connection could not be retrieved", dberr, s.genCallback.MapError)
+                            common.HandleError(ctx, w, common.InternalError, "Database connection could not be retrieved", dberr, s.genCallback.MapError, s.genCallback.WriteError)
                             return
                         }
 
@@ -227,14 +227,14 @@ let sysl = //{./sysl};
                         ${sysl.endpoint.sqlStatements(ep) => $`
                             ${.@}Stmt, dberr := conn.PrepareContext(ctx, ``${//seq.sub('\n', '\n\t\t', '\n'++.@value)}``)
                             if dberr != nil {
-                                common.HandleError(ctx, w, common.InternalError, "could not parse the sql query with the name ${.@}", dberr, s.genCallback.MapError)
+                                common.HandleError(ctx, w, common.InternalError, "could not parse the sql query with the name ${.@}", dberr, s.genCallback.MapError, s.genCallback.WriteError)
                                 return
                             }
                         ` orderby .::\i}
 
                         tx, dberr := conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelSerializable})
                         if dberr != nil {
-                            common.HandleError(ctx, w, common.DownstreamUnavailableError, "DB Transaction could not be created", dberr, s.genCallback.MapError)
+                            common.HandleError(ctx, w, common.DownstreamUnavailableError, "DB Transaction could not be created", dberr, s.genCallback.MapError, s.genCallback.WriteError)
                             return
                         }
                     `}}
@@ -253,20 +253,20 @@ let sysl = //{./sysl};
                             default:
                                 err = fmt.Errorf("Unknown error: %v", rec)
                             }
-                            common.HandleError(ctx, w, common.InternalError, "Unexpected panic", err, s.genCallback.MapError)
+                            common.HandleError(ctx, w, common.InternalError, "Unexpected panic", err, s.genCallback.MapError, s.genCallback.WriteError)
                         }
                     }()
                     ${returnTypes >> $`${go.asVariableName(.)}, `::}err := s.serviceInterface.${method}(ctx, &req${cond {client.notEmpty(ep): `, client`}})
                     if err != nil {
                         ${cond {hasDB: $`tx.Rollback()`}}
-                        common.HandleError(ctx, w, common.InternalError, "Handler error", err, s.genCallback.MapError)
+                        common.HandleError(ctx, w, common.InternalError, "Handler error", err, s.genCallback.MapError, s.genCallback.WriteError)
                         return
                     }
 
                     ${cond {hasDB: $`
                         commitErr := tx.Commit()
                         if commitErr != nil {
-                            common.HandleError(ctx, w, common.InternalError, "Failed to commit the transaction", commitErr, s.genCallback.MapError)
+                            common.HandleError(ctx, w, common.InternalError, "Failed to commit the transaction", commitErr, s.genCallback.MapError, s.genCallback.WriteError)
                             return
                         }
                     `}}
@@ -287,7 +287,7 @@ let sysl = //{./sysl};
                                     //
                                     // App:
                                     //   ${ep('restParams')?('path')?.s?:'/foo/bar'} [~permit_invalid_response]
-                                    common.HandleError(ctx, w, common.InternalError, "Invalid response", valErr, s.genCallback.MapError)
+                                    common.HandleError(ctx, w, common.InternalError, "Invalid response", valErr, s.genCallback.MapError, s.genCallback.WriteError)
                                     return
                                     `
                             }}

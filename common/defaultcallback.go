@@ -23,8 +23,9 @@ type Callback struct {
 	DownstreamTimeout time.Duration
 	RouterBasePath    string
 	UpstreamConfig    validator.Validator
-	MapErrorFunc      func(ctx context.Context, err error) *HTTPError // MapErrorFunc may be left nil to use default behaviour.
-	AddMiddlewareFunc func(ctx context.Context, r chi.Router)         // AddMiddlewareFunc may be left nil to use default behaviour.
+	MapErrorFunc      func(ctx context.Context, err error) *HTTPError                        // MapErrorFunc may be left nil to use default behaviour.
+	WriteErrorFunc    func(ctx context.Context, w http.ResponseWriter, httpError *HTTPError) // WriteError may be left nil to use default behaviour.
+	AddMiddlewareFunc func(ctx context.Context, r chi.Router)                                // AddMiddlewareFunc may be left nil to use default behaviour.
 }
 
 type Config struct{}
@@ -67,6 +68,33 @@ func (g Callback) MapError(ctx context.Context, err error) *HTTPError {
 	return g.MapErrorFunc(ctx, err)
 }
 
+func (g Callback) WriteError(ctx context.Context, w http.ResponseWriter, httpError *HTTPError) {
+	if g.WriteErrorFunc == nil {
+		httpError.WriteError(ctx, w)
+	} else {
+		g.WriteErrorFunc(ctx, w, httpError)
+	}
+}
+
+func NewCallbackV3(
+	config *config.GenCodeConfig,
+	downstreamTimeOut time.Duration,
+	mapError func(ctx context.Context, err error) *HTTPError,
+	writeError func(ctx context.Context, w http.ResponseWriter, httpError *HTTPError),
+	addMiddleware func(ctx context.Context, r chi.Router),
+) Callback {
+	// construct the rest configuration (aka. gen callback)
+	return Callback{
+		DownstreamTimeout: downstreamTimeOut,
+		RouterBasePath:    config.Upstream.HTTP.BasePath,
+		UpstreamConfig:    &config.Upstream,
+		MapErrorFunc:      mapError,
+		WriteErrorFunc:    writeError,
+		AddMiddlewareFunc: addMiddleware,
+	}
+}
+
+// NewCallbackV2 is deprecated, prefer NewCallbackV3.
 func NewCallbackV2(
 	config *config.GenCodeConfig,
 	downstreamTimeOut time.Duration,

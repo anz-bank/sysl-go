@@ -16,7 +16,21 @@ const (
 	unknownError          = "Unknown Error"
 )
 
-func HandleError(ctx context.Context, w http.ResponseWriter, kind Kind, message string, cause error, httpErrorMapper func(context.Context, error) *HTTPError) {
+func HandleError(
+	ctx context.Context,
+	w http.ResponseWriter,
+	kind Kind,
+	message string,
+	cause error,
+	httpErrorMapper func(context.Context, error) *HTTPError,
+	httpErrorWriter func(ctx context.Context, w http.ResponseWriter, httpError *HTTPError),
+) {
+	if errorWriter, ok := cause.(ErrorWriter); ok {
+		if errorWriter.WriteError(ctx, w) {
+			return
+		}
+	}
+
 	err := CreateError(ctx, kind, message, cause)
 	log.Error(ctx, err, "error handled")
 
@@ -32,7 +46,11 @@ func HandleError(ctx context.Context, w http.ResponseWriter, kind Kind, message 
 		httpError.AddField(f.K, f.V)
 	}
 
-	httpError.WriteError(ctx, w)
+	if httpErrorWriter != nil {
+		httpErrorWriter(ctx, w, httpError)
+	} else {
+		httpError.WriteError(ctx, w)
+	}
 }
 
 func resolveErrorAsHTTPError(ctx context.Context, httpErrorMapper func(context.Context, error) *HTTPError, err error) *HTTPError {

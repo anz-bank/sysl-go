@@ -40,7 +40,7 @@ func doPingRequestResponse(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
@@ -97,7 +97,7 @@ func TestApplicationSmokeTest(t *testing.T) {
 	require.Equal(t, expected, actual)
 }
 
-func TestRestCustomMiddleware(t *testing.T) {
+func TestRestCustomMiddleware_Success(t *testing.T) {
 	t.Parallel()
 	pingpongTester := pingpong.NewTestServer(t, context.Background(), createService, "")
 	defer pingpongTester.Close()
@@ -105,5 +105,27 @@ func TestRestCustomMiddleware(t *testing.T) {
 	pingpongTester.GetPingList().
 		ExpectResponseCode(http.StatusOK).
 		ExpectResponseBody(pingpong.Pong{"once upon a time there was a rambutan"}).
+		Send()
+}
+
+func TestRestCustomMiddleware_WriteErrorCallback(t *testing.T) {
+	t.Parallel()
+	pingpongTester := pingpong.NewTestServer(t, context.Background(), createService, "")
+	defer pingpongTester.Close()
+
+	pingpongTester.GetWriteerrorcallbackList().
+		ExpectResponseCode(http.StatusTeapot).
+		ExpectResponseBody(`{"err": "once upon a time there was a rambutan"}`).
+		Send()
+}
+
+func TestRestCustomMiddleware_ErrorWriter(t *testing.T) {
+	t.Parallel()
+	pingpongTester := pingpong.NewTestServer(t, context.Background(), createService, "")
+	defer pingpongTester.Close()
+
+	pingpongTester.GetErrorwriterList().
+		ExpectResponseCode(http.StatusPaymentRequired).
+		ExpectResponseBody(`{"err": "once upon a time there was a rambutan"}`).
 		Send()
 }

@@ -49,6 +49,15 @@ type ErrorKinder interface {
 	ErrorKind() Kind
 }
 
+// If the error returned is an ErrorWriter the error handling will call the writeError method before any of the
+// regular error handling (no mapping).
+//
+// If the call returns true it means it wrote the error and will not do any more handling.
+// If it returns false it will go through the normal error writing path (via both the MapError and WriteError callbacks).
+type ErrorWriter interface {
+	WriteError(ctx context.Context, w http.ResponseWriter) bool
+}
+
 type ServerError struct {
 	Kind    Kind
 	Message string

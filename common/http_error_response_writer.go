@@ -24,6 +24,14 @@ func (httpError *HTTPError) AddField(key string, val interface{}) {
 	httpError.extraFields[key] = val
 }
 
+func (httpError *HTTPError) GetField(key string) interface{} {
+	if httpError.extraFields == nil {
+		return nil
+	}
+
+	return httpError.extraFields[key]
+}
+
 type KV struct {
 	K string
 	V interface{}
