@@ -5,12 +5,13 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/anz-bank/sysl-go/syslgo"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/metadata"
+
 	pb "grpc_custom_dial_options/internal/gen/pb/gateway"
 	"grpc_custom_dial_options/internal/gen/pkg/servers/gateway"
 	"grpc_custom_dial_options/internal/gen/pkg/servers/gateway/encoder_backend"
-
-	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/metadata"
 )
 
 func TestGrpcCustomDialOptions(t *testing.T) {
@@ -21,7 +22,7 @@ func TestGrpcCustomDialOptions(t *testing.T) {
 
 	gatewayTester.Mocks.Encoder_backend.Rot13.
 		ExpectRequest(&encoder_backend.EncodingRequest{Content: "hello world"}).
-		Mock(func(t *testing.T, ctx context.Context, _ *encoder_backend.EncodingRequest) (*encoder_backend.EncodingResponse, error) {
+		Mock(func(t syslgo.TestingT, ctx context.Context, _ *encoder_backend.EncodingRequest) (*encoder_backend.EncodingResponse, error) {
 			var md metadata.MD
 			md, ok := metadata.FromIncomingContext(ctx)
 			require.True(t, ok)

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/anz-bank/sysl-go/syslgo"
 	"google.golang.org/grpc/metadata"
 	"grpc_jwt_authorization/internal/gen/pkg/servers/gateway"
 
@@ -195,7 +196,7 @@ func TestJWTAuthorizationOfGRPCEndpoints(t *testing.T) {
 			gatewayTester.Hello().
 				WithRequest(&pb.HelloRequest{Content: "echo"}).
 				WithContext(metadata.AppendToOutgoingContext(context.Background(), "Authorization", "bearer "+scenario.rawJWT)).
-				TestResponse(func(t *testing.T, actualResponse *pb.HelloResponse, err error) {
+				TestResponse(func(t syslgo.TestingT, actualResponse *pb.HelloResponse, err error) {
 					if len(scenario.expectedError) > 0 {
 						require.Error(t, err)
 						require.Equal(t, scenario.expectedError, err.Error())

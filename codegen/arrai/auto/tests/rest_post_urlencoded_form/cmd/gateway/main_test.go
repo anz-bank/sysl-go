@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/syslgo"
 	"github.com/stretchr/testify/require"
 	"rest_post_urlencoded_form/internal/gen/pkg/servers/gateway"
 	"rest_post_urlencoded_form/internal/gen/pkg/servers/gateway/bananastand"
@@ -19,7 +20,7 @@ func TestRestPostURLEncodedForm(t *testing.T) {
 	defer gatewayTester.Close()
 
 	gatewayTester.Mocks.Bananastand.PostBanana.
-		Expect(func(t *testing.T, w http.ResponseWriter, r *http.Request) {
+		Expect(func(t syslgo.TestingT, w http.ResponseWriter, r *http.Request) {
 			err := r.ParseForm()
 			require.NoError(t, err)
 			isAuthorized := r.Form.Get("client_id") == "joke_admin" && r.Form.Get("client_secret") == "changeit"

@@ -4,11 +4,11 @@ import (
 	"context"
 	"testing"
 
-	"grpc_custom_server_options/internal/gen/pkg/servers/gateway"
+	"github.com/anz-bank/sysl-go/syslgo"
+	"github.com/stretchr/testify/require"
 
 	pb "grpc_custom_server_options/internal/gen/pb/gateway"
-
-	"github.com/stretchr/testify/require"
+	"grpc_custom_server_options/internal/gen/pkg/servers/gateway"
 )
 
 func TestGrpcCustomServerOptions(t *testing.T) {
@@ -61,7 +61,7 @@ func TestGrpcCustomServerOptions(t *testing.T) {
 
 			gatewayTester.Hello().
 				WithRequest(&pb.HelloRequest{Content: "echo"}).
-				TestResponse(func(t *testing.T, actual *pb.HelloResponse, err error) {
+				TestResponse(func(t syslgo.TestingT, actual *pb.HelloResponse, err error) {
 					require.NoError(t, err)
 					for _, expectedFragment := range scenario.expectedResponseFragments {
 						require.Contains(t, actual.Content, expectedFragment)

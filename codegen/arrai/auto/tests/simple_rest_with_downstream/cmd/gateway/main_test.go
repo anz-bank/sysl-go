@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/anz-bank/sysl-go/syslgo"
 	"github.com/stretchr/testify/require"
 	"simple_rest_with_downstream/internal/gen/pkg/servers/gateway"
 	"simple_rest_with_downstream/internal/gen/pkg/servers/gateway/encoder_backend"
@@ -53,7 +54,7 @@ func TestSimpleRestWithDownstream_Extras(t *testing.T) {
 	defer gatewayTester.Close()
 
 	called := 0
-	test := func(t *testing.T, w http.ResponseWriter, r *http.Request) {
+	test := func(t syslgo.TestingT, w http.ResponseWriter, r *http.Request) {
 		called++
 		require.Equal(t, r.URL.String(), "/rot13")
 	}
@@ -69,11 +70,11 @@ func TestSimpleRestWithDownstream_Extras(t *testing.T) {
 	gatewayTester.PostEncodeEncoder_id("rot13").
 		WithHeaders(map[string]string{"foo": "bar", "foo2": "bar"}).
 		WithBody(gateway.GatewayRequest{Content: "timeout"}).
-		TestResponseCode(func(t *testing.T, actual int) {
+		TestResponseCode(func(t syslgo.TestingT, actual int) {
 			called++
 			require.Equal(t, http.StatusGatewayTimeout, actual)
 		}).
-		TestResponseBody(func(t *testing.T, actual []byte) {
+		TestResponseBody(func(t syslgo.TestingT, actual []byte) {
 			called++
 			require.Equal(t, `{"status":{"code":"1005","description":"Time out from down stream services"}}`, string(actual))
 		}).

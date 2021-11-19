@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"sync"
-	"testing"
 	"time"
 
+	"github.com/anz-bank/sysl-go/syslgo"
 	"github.com/go-chi/chi"
 )
 
@@ -18,14 +18,14 @@ const (
 )
 
 type restDownstream struct {
-	t        *testing.T
+	t        syslgo.TestingT
 	server   *httptest.Server
 	r        chi.Router
 	hostname string
 	handlers map[string]*restOrderedHandlers
 }
 
-func newBackEnd(t *testing.T, hostname string) *restDownstream {
+func newBackEnd(t syslgo.TestingT, hostname string) *restDownstream {
 	be := &restDownstream{
 		t:        t,
 		r:        chi.NewRouter(),

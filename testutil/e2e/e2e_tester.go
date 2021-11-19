@@ -11,7 +11,6 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"strings"
-	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,6 +21,7 @@ import (
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/status"
+	"github.com/anz-bank/sysl-go/syslgo"
 )
 
 type Endpoint interface {
@@ -31,7 +31,7 @@ type Endpoint interface {
 }
 
 type Tester struct {
-	t *testing.T
+	t syslgo.TestingT
 
 	restServer      *httptest.Server
 	restDownstreams map[string]*restDownstream
@@ -64,12 +64,12 @@ func ConfigToYamlData(cfg interface{}, appCfgType reflect.Type) ([]byte, error) 
 }
 
 //nolint:golint // context.Context should be the first parameter of a function
-func NewTester(t *testing.T, ctx context.Context, yamlConfigData []byte) (*Tester, context.Context, *core.Hooks) {
+func NewTester(t syslgo.TestingT, ctx context.Context, yamlConfigData []byte) (*Tester, context.Context, *core.Hooks) {
 	return NewTesterWithBuildMetadata(t, ctx, status.BuildMetadata{}, yamlConfigData)
 }
 
 //nolint:golint // context.Context should be the first parameter of a function
-func NewTesterWithBuildMetadata(t *testing.T, ctx context.Context, bm status.BuildMetadata, yamlConfigData []byte) (*Tester, context.Context, *core.Hooks) {
+func NewTesterWithBuildMetadata(t syslgo.TestingT, ctx context.Context, bm status.BuildMetadata, yamlConfigData []byte) (*Tester, context.Context, *core.Hooks) {
 	e2eTester := &Tester{
 		t:               t,
 		restDownstreams: make(map[string]*restDownstream),
@@ -88,7 +88,7 @@ func NewTesterWithBuildMetadata(t *testing.T, ctx context.Context, bm status.Bui
 	return e2eTester, ctx, hooks
 }
 
-func (b *Tester) T() *testing.T {
+func (b *Tester) T() syslgo.TestingT {
 	return b.t
 }
 

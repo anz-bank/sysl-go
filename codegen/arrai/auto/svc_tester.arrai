@@ -28,7 +28,7 @@ let grpc = //{./grpc};
         }
 
         ${cond {grpcClientDeps: $`
-            func overrideGrpcDialOptions(t *testing.T, mocks *Mocks) func(serviceName string, cfg *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {
+            func overrideGrpcDialOptions(t syslgo.TestingT, mocks *Mocks) func(serviceName string, cfg *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {
                 return func(serviceName string, cfg *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {
                     switch serviceName {
                     ${
@@ -48,15 +48,15 @@ let grpc = //{./grpc};
             }
 
         `}}
-        func NewTestServer(t *testing.T, ctx context.Context, createService, cfg interface{}) *TestServer {
+        func NewTestServer(t syslgo.TestingT, ctx context.Context, createService, cfg interface{}) *TestServer {
             return newTestServerImp(t, ctx, createService, cfg, false)
         }
 
-        func NewIntegrationTestServer(t *testing.T, ctx context.Context, createService, cfg interface{}) *TestServer {
+        func NewIntegrationTestServer(t syslgo.TestingT, ctx context.Context, createService, cfg interface{}) *TestServer {
             return newTestServerImp(t, ctx, createService, cfg, true)
         }
 
-        func newTestServerImp(t *testing.T, ctx context.Context, createService, cfg interface{}, withActualDownstreams bool) *TestServer {
+        func newTestServerImp(t syslgo.TestingT, ctx context.Context, createService, cfg interface{}, withActualDownstreams bool) *TestServer {
             byteCfg, err := e2e.ConfigToYamlData(cfg, core.GetAppConfigType(createService))
             require.NoError(t, err, "Failed to convert cfg")
 
@@ -278,13 +278,13 @@ let grpc = //{./grpc};
                     return t
                 }
 
-                func (t *${testType}) TestResponseCode(testCodeFn func(t *testing.T, actual int)) *${testType} {
+                func (t *${testType}) TestResponseCode(testCodeFn func(t syslgo.TestingT, actual int)) *${testType} {
                     t.tc.TestCodeFn = testCodeFn
 
                     return t
                 }
 
-                func (t *${testType}) TestResponseBody(testBodyFn func(t *testing.T, actual []byte)) *${testType} {
+                func (t *${testType}) TestResponseBody(testBodyFn func(t syslgo.TestingT, actual []byte)) *${testType} {
                     t.tc.TestBodyFn = testBodyFn
 
                     return t
@@ -306,14 +306,14 @@ let grpc = //{./grpc};
 
             $`
                 type ${testType} struct {
-                    t      *testing.T
+                    t      syslgo.TestingT
                     client pb.${goAppname}Client
 
                     ctx       context.Context
                     req       *pb.${requestType}
                     res       *pb.${responseType}
                     err       error
-                    testResFn func(t *testing.T, actual *pb.${responseType}, err error)
+                    testResFn func(t syslgo.TestingT, actual *pb.${responseType}, err error)
                 }
 
                 func (t *TestServer) ${name}() *${testType} {
@@ -348,7 +348,7 @@ let grpc = //{./grpc};
                     return t
                 }
 
-                func (t *${testType}) TestResponse(testResFn func(t *testing.T, actualResponse *pb.${responseType}, err error)) *${testType} {
+                func (t *${testType}) TestResponse(testResFn func(t syslgo.TestingT, actualResponse *pb.${responseType}, err error)) *${testType} {
                     t.testResFn = testResFn
 
                     return t

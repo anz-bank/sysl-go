@@ -4,15 +4,15 @@ import (
 	"net/http"
 	"strings"
 	"sync"
-	"testing"
 
+	"github.com/anz-bank/sysl-go/syslgo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 type restOrderedHandlers struct {
 	sync.Mutex
-	t        *testing.T
+	t        syslgo.TestingT
 	handlers []http.HandlerFunc
 }
 
