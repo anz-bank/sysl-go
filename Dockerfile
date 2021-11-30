@@ -3,8 +3,8 @@ FROM golang:1.16.3-buster AS stage
 # requires git make curl
 # but this base image has all of those tools already
 
-ENV SYSL_VERSION=0.459.0
-ENV ARRAI_VERSION=0.277.0
+ENV SYSL_VERSION=0.477.0
+ENV ARRAI_VERSION=0.292.0
 
 ENV PROTOC_VERSION=3.17.3
 ENV PROTOC_GEN_GO_VERSION=1.27.1
