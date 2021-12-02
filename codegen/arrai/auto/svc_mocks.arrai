@@ -60,11 +60,12 @@ let sysl = //{./sysl};
                     return d
                 }
 
-                ${(ep('param')?.a:{}) where "body" <: sysl.patterns(.@item('type')) >> go.type(.('type')) >>
+                ${(ep('param')?.a:{}) where "body" <: sysl.patterns(.@item('type')) >> go.bodyType(app, .('type')) >>
                     $`
                         func (d *${name}) ExpectBody(body ${.}) *${name} {
                             ${
-                                let base = go.baseType(., app('types')?:{} => (@:go.name(.@), :.@value));
+                                # bodyType above already converts the type to its go name so when checking for baseType we need to check converted names
+                                let base = go.baseType(app, ., app('types')?:{} => (@:go.name(.@), :.@value));
                                 cond base || . {
                                     '[]byte': `d.tests = append(d.tests, e2e.ExpectBody(body))`,
                                     'string': `d.tests = append(d.tests, e2e.ExpectBody(([]byte)(body)))`,
@@ -93,7 +94,7 @@ let sysl = //{./sysl};
                 ${ep('restParams')?:{} -> .('urlParam')?.a:{} orderby sysl.source(.@item('type')) >>
                         let paramName = go.name(.@item('name').s);
                         let variableName = go.asVariableName(paramName);
-                        let paramType = go.type(.@item('type'));
+                        let paramType = go.type(app, .@item('type'));
                         let ext = cond paramType {'int64': 'ForInt', _:''};
                         $`
                             func (d *${name}) ExpectURLParam${paramName}(${variableName} ${paramType}) *${name} {

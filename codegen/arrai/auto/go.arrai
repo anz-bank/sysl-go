@@ -22,15 +22,31 @@ let name =
         cond {result <: restricted: result++"_", _: result};
 
 let asVariableName =
-    \x //re.compile(`[^[:word:]]`).sub('_', //str.lower(x));
+    let restricted = {
+        "type",
+    };
+    \x
+        let result = //re.compile(`[^[:word:]]`).sub('_', //str.lower(x));
+        cond {result <: restricted: result++"_", _: result};
 
 # Return a string containing the go module's main module's path. Takes
 # one argument - a string specifying the location of the go.mod file to read.
 # Ref: https://golang.org/ref/mod#go-mod-file-module
 let goMainModulePath = \goModFilename //re.compile(`(?m)^module\s+(.*)$`).match($"${//os.file(goModFilename)}")(0)(1) rank (:.@);
 
+# Return the name of the type prefixed with EXTERNAL_ if annotated as 'unmapped_openapi'
+# When Sysl encounters a type that was referenced in the openapi spec but not defined it will create an alias of that type to string.
+# In Sysl-go we do not want assume the type is string and instead just don't define it at all and allow the developer to create the type themselves.
+# By prefixing those types with EXTERNAL_ it makes it clear that this type needs to be implemented by the developer (it also has the benefit of
+# being backwards compatible as Sysl previously generated the name with EXTERNAL_)
+let asExternalised = \app \type
+    cond {
+        'unmapped_openapi' <: sysl.patterns(app('types')?(type)?:{}): 'EXTERNAL_' ++ type,
+        _: type,
+    };
+
 # Compute the Go type for a Sysl type. If leafOnly, then
-let typeImpl = \leafOnly //fn.fix(\typeImpl \t
+let typeImpl = \leafOnly //fn.fix(\typeImpl \app \t
     let ptr = cond {t('opt')?:false && !({"sequence", "set"} & (t => .@)): "*"};
     let appname = cond {!leafOnly: cond t {
         {'typeRef': {'ref': {'appname': {'part': (a: [(s: appname), ...])}, ...}, ...}, ...}: appname,
@@ -52,10 +68,10 @@ let typeImpl = \leafOnly //fn.fix(\typeImpl \t
                 _: `convert.JSONTime`,
             },
         },
-        {'sequence': sequence, ...}: $`[]${typeImpl(sequence)}`,
-        {'set': set, ...}: $`${typeImpl(set)}Set`,
-        {'typeRef': {'ref': {'path': (a: [(s: path)]), ...ref}, ...}, ...}:
-            name(//seq.join(".", [appname, path] where .@item)),
+        {'sequence': sequence, ...}: $`[]${typeImpl(app, sequence)}`,
+        {'set': set, ...}: $`${typeImpl(app, set)}Set`,
+        {'typeRef': {'ref': {'path': (a: [(s: path)]), ...}, ...}, ...}:
+            name(//seq.join(".", [appname, asExternalised(app, path)] where .@item)),
         _: name(appname),
     };
     ptr ++ typeName
@@ -63,6 +79,22 @@ let typeImpl = \leafOnly //fn.fix(\typeImpl \t
 
 let type = typeImpl(false);
 let leafType = typeImpl(true);
+
+let followAliasType = \app \t
+    cond t {
+        # Grab the type name
+        {'typeRef': {'ref': {'path': (a: [(s: typeName)]), ...}, ...}, ...}:
+            # Check if its an alias and return the base type if it is
+            let actualType = app('types')?(typeName)?:{};
+            cond {
+                # if it has typeref then its an alias and return it
+                actualType('typeRef')?:false: actualType,
+                _: t,
+            },
+        _: t,
+    };
+
+let bodyType = \app \t type(app, followAliasType(app, t));
 
 let varName = //re.compile(`_`).sub("");
 
@@ -125,7 +157,7 @@ let pbPackage = \app
 let pbImport = \app
     (alias: 'pb', package: pbPackage(app));
 
-let pbMethodInfo = \ep
+let pbMethodInfo = \app \ep
     let {'name': (s: methodName), 'param': (a: [param, ...]), 'stmt': (a: stmts), ...} = ep;
     let {'name': (s: pname), 'type': ptype, ...} = param;
     let methodName = name(methodName);
@@ -133,7 +165,7 @@ let pbMethodInfo = \ep
     let responseType = $`${stmts filter .@item {{'ret': _, ...}: .}
         >> last(//seq.split(".", last(//seq.split(" ", .("ret")("payload").s))))
     ::}`;
-    let requestType = leafType(ptype) || type(ptype); # FIXME unsure if this is correct, this failed until the fallback using type(ptype) was added.
+    let requestType = leafType(app, ptype) || type(app, ptype); # FIXME unsure if this is correct, this failed until the fallback using type(app, ptype) was added.
     (
         name: methodName,
         :pname,
@@ -221,7 +253,7 @@ let methodName =
         };
 
 let errorReturnTypes = \app
-    //rel.union(app('endpoints')?:{} => (sysl.endpoint.returns(.@value) => .@item))
+    //rel.union(app('endpoints')?:{} => (sysl.endpoint.returns(app, .@value) => .@item))
         where .var = "error" && .type != [""] => //seq.join(".")(.type) => name(.);
 
 let typeWithPackage = \(:type, :seq, ...) \package
@@ -235,10 +267,11 @@ let typeWithPackage = \(:type, :seq, ...) \package
         };
 
 # `baseType` returns the base for aliased types otherwise returns {}.
-let baseType = \t \allTypes
-    let aliases = allTypes where !({'oneOf', 'oneof', 'tuple', 'relation'} & (.@value => .@));
+# need allTypes here because svc_mocks passes in a the names already converted to go names
+let baseType = \app \t \allTypes
+    let aliases = allTypes where ({'typeRef', 'primitive', 'sequence'} & (.@value => .@));
     let nonEmpty = aliases where .@ != "Empty" && !//seq.has_prefix("EXTERNAL_", .@);
-    type(nonEmpty(t)?:{});
+    type(app, nonEmpty(t)?:{});
 
 let module = \module
     let typeWithClientPackage = \(:type, :seq, ...)
@@ -254,8 +287,8 @@ let module = \module
     let targetApp = \target
         ((module('apps') where .@value('name') = target) single).@value;
 
-    let methodReturnTypes = \ep
-        let tn = sysl.endpoint.returns(ep) => .@item where .var != "error" => \t
+    let methodReturnTypes = \app \ep
+        let tn = sysl.endpoint.returns(app, ep) => .@item where .var != "error" => \t
             # TODO: Remove double entry once cond array handling is fixed.
             cond t.type {
                 ([""], [""]): "*http.Header",
@@ -264,7 +297,7 @@ let module = \module
         (tn orderby .) ++ ["error"];
 
     let methodSignature = \app \ep
-        $`${methodName(app, ep)}(ctx context.Context, req *${methodName(app, ep)}Request) (${methodReturnTypes(ep) ::, })`;
+        $`${methodName(app, ep)}(ctx context.Context, req *${methodName(app, ep)}Request) (${methodReturnTypes(app, ep) ::, })`;
 
     let callSignature = \{'target': target, 'endpoint': ep, ...}
         let dep = targetApp(target);
@@ -273,16 +306,16 @@ let module = \module
         let method = methodName(dep, ep);
         cond {
             'gRPC' <: sysl.patterns(dep):
-                pbMethodInfo(ep) -> $`${name(package)}${.name} func${.sig(package, true)}`,
+                pbMethodInfo(dep, ep) -> $`${name(package)}${.name} func${.sig(package, true)}`,
             _:
                 $`
                     ${name(package)}${method} func(
                         ctx context.Context,
                         req *${package}.${method}Request,
                     ) (${
-                        let typed = sysl.endpoint.normalReturns(ep)
+                        let typed = sysl.endpoint.normalReturns(dep, ep)
                             >> $"${typeWithPackage(., package)}";
-                        let untyped = sysl.endpoint.untypedReturns(ep) >> `*http.Header`;
+                        let untyped = sysl.endpoint.untypedReturns(dep, ep) >> `*http.Header`;
                         typed ++ untyped ++ ["error"]
                     ::, })
                 `,
@@ -327,6 +360,7 @@ let module = \module
     :type,
     :leafType,
     :baseType,
+    :bodyType,
     :varName,
     :errorReturnTypes,
     :asVariableName,

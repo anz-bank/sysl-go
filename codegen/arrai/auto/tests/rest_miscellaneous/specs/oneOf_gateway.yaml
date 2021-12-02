@@ -15,12 +15,19 @@ paths:
               $ref: "#/components/schemas/OneOfRequest"
 
       responses:
-        '200':
+        '201':
           description: OK
+# adding these lines requires the new importer
+#          headers:
+#            Location:
+#              description: Location description
           content:
             application/json; charset = utf-8:
               schema:
                 $ref: "#/components/schemas/OneOfResponse"
+              example:
+                values:
+                  - one: true
 
 components:
   schemas:
@@ -69,3 +76,8 @@ components:
           type: integer
       required:
         - three
+
+    undefinedPropertyType:
+      properties:
+        value:
+          type: object

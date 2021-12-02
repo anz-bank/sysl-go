@@ -579,8 +579,8 @@ let returnStatementsExpectedReturns = {'AOK': 'ok', 'BOK': 'ok', 'CErr': 'error'
     endpointCallDiscovery: //test.assert.equal(demoEndpointExpectedCalls)(sysl.endpoint.calls(demoEndpoint) => .@item('endpoint').s),
     endpointWithNoStatements: //test.assert.equal(statementlessEndpointExpectedCalls)(sysl.endpoint.calls(statementlessEndpoint) => .@item('endpoint').s),
     endpointWithSourcecontext: //test.assert.equal(sourceContextdEndpointExpectedCalls)(sysl.endpoint.calls(sourceContextdEndpoint) => .@item('endpoint').s),
-    endpointReturnAnnotation: //test.assert.equal(returnAnnotationExpectedReturns)(sysl.endpoint.returns(returnAnnotation)),
-    returnStatementsTest: //test.assert.equal(returnStatementsExpectedReturns)(sysl.endpoint.returns(returnStatements) => (@:.@item.type(0), @value:.@item.var)),
+    endpointReturnAnnotation: //test.assert.equal(returnAnnotationExpectedReturns)(sysl.endpoint.returns({}, returnAnnotation)),
+    returnStatementsTest: //test.assert.equal(returnStatementsExpectedReturns)(sysl.endpoint.returns({}, returnStatements) => (@:.@item.type(0), @value:.@item.var)),
     replaceArrayElement: //test.assert.equal(['a','x','c'])(sysl.replaceArrayElement(['a','b','c'], 1, 'x')),
 
     type: (

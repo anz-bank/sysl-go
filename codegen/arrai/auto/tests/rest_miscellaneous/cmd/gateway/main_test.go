@@ -224,7 +224,8 @@ func TestMiscellaneous_OneOf(t *testing.T) {
 			{Two: &gateway.Two{"two"}},
 			{Three: &gateway.Three{3}},
 		}}).
-		ExpectResponseCode(200).
+		ExpectResponseCode(201).
+		ExpectResponseHeaders(map[string]string{"Content-Type": `application/json; charset = utf-8`}).
 		ExpectResponseBody(gateway.OneOfResponse{[]gateway.OneOfResponse_values{
 			{Three: &gateway.Three{3}},
 			{One: &gateway.One{true}},
@@ -247,7 +248,7 @@ func TestMiscellaneous_OneOfRaw(t *testing.T) {
 
 	gatewayTester.PostRotateOneOf().
 		WithBodyPlain(req).
-		ExpectResponseCode(200).
+		ExpectResponseCode(201).
 		ExpectResponseBody(res).
 		Send()
 }
@@ -268,4 +269,13 @@ func TestMiscellaneous_MultiCode(t *testing.T) {
 		ExpectResponseHeaders(map[string]string{"Content-Type": `application/json`}).
 		ExpectResponseBody(gateway.PongString{"One"}).
 		Send()
+}
+
+func TestMiscellaneous_CheckExternals(t *testing.T) {
+	var v interface{}
+	v = gateway.UndefinedPropertyType{}.Value
+
+	// Just want to confirm that it generates the type with the correct name
+	_, ok := v.(*gateway.EXTERNAL_undefinedPropertyType_value)
+	require.True(t, ok)
 }

@@ -13,8 +13,8 @@ let sysl = //{./sysl};
         type GrpcServiceInterface struct {
             ${nonRestEndpoints >> \(@value: ep, ...)
                 let name = go.methodName(app, ep);
-                let requestType = go.leafType(ep('param').a(0)('type'));
-                let returns = sysl.endpoint.normalReturns(ep);
+                let requestType = go.leafType(app, ep('param').a(0)('type'));
+                let returns = sysl.endpoint.normalReturns(app, ep);
                 let returnTypes = returns >> go.name(.type(.type count - 1));
                 let returnType = returnTypes(returnTypes count - 1);
 

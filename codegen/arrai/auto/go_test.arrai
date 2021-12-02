@@ -153,7 +153,7 @@ let errorTypes = {"Error_"};
     variableNameManglesNonIdentifierCharacters: //test.assert.equal("gastropub_raw_denim_tofu_")(go.asVariableName("gastropub-raw denim tofu!")),
 
     pbMethodInfoCanDeduceRequestType: //test.assert.equal("EncodingRequest")(
-        go.pbMethodInfo(
+        go.pbMethodInfo({},
             {
                 'name': (s: 'Rot13'),
                 'param': (a: [{'name': (s: 'EncodingRequestRequest'), 'type': {'typeRef': {'ref': {'appname': {'part': (a: [(s: 'EncodingRequest')])}}}}}]),

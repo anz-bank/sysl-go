@@ -4,11 +4,11 @@ let sysl = //{./sysl};
 \(:app, :appname, :endpoints, :module, ...)
     let (:methodSignature, :typeWithClientPackage, :methodReturnTypes, ...) = go.module(module);
 
-    let HttpMethodStatements = \appname \ep
+    let HttpMethodStatements = \ep
         let patterns = sysl.patterns(ep);
-        let returns = sysl.endpoint.returns(ep);
+        let returns = sysl.endpoint.returns(app, ep);
 
-        let nils = methodReturnTypes(ep) where .@item != "error" orderby .@ >>
+        let nils = methodReturnTypes(app, ep) where .@item != "error" orderby .@ >>
             cond { .@item = "string": '""', _ : "nil" };
 
         let declareResp = \var
@@ -184,7 +184,7 @@ let sysl = //{./sysl};
         ${endpoints where cond .@item.@value {{'restParams': _, ...}: true} >> \(@value: ep, ...) $`
             // ${go.methodName(app, ep)} ...
             func (s *Client) ${methodSignature(app, ep)} {
-                ${HttpMethodStatements(appname, ep)}
+                ${HttpMethodStatements(ep)}
             }
         `::\i}
     `

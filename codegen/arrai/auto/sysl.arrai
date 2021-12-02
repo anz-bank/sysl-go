@@ -9,6 +9,8 @@ let isPtr = \t t('opt')?:false;
 
 let statements = \x x('stmt')?.a?:[];
 
+let patterns = \node node('attrs')?('patterns')?('a')('elt').a:{} >> .('s').s => .@item;
+
 # replaceArrayElement will replace the ith element in an array with val
 let replaceArrayElement = \arr \i \val
     arr >>> \j \cur cond {j=i: val, _:cur};
@@ -48,20 +50,20 @@ let endpoint =
     let calls = \ep
         //seq.concat( statements(ep) >> flatten_statements(.)) where cond .@item {{"call":_, ...}: true} >> .('call');
 
-    # `returns(ep) -> array((var: string, type: array(string)))`
+    # `returns(app, ep) -> array((var: string, type: array(string), seq: bool))`
     #
-    # `returns` returns an array of returns from endpoint `ep`. Each return is a
-    # tuple with attribute `var` holding the  variable name and attribute `type`
-    # holding the type name as an array of the `.`-separate parts.
+    # `returns` returns an array of returns from endpoint `ep` in app `app`. Each return is a
+    # tuple with attribute `var` holding the variable name, attribute `type` holding the type name as
+    # an array of the `.`-separate parts and the attribute `seq` which says whether its a sequence.
     # Note this regex should match (or use) parseReturn in github.com/anz-bank/sysl/pkg/arrai/sysl.arrai
     # (for now it uses the current regex with the intent of refactoring more at a later stage).
     let returns =
         let splitRet = //re.compile(`(.*?)\s*<:\s*((?:sequence\s+of\s+)?)(.*?)\s*((?:\[.*\])?)$`).match;
         let numRE = //re.compile(`^(\d)\d\d$`).match;
-        let mediatype = 
+        let mediatype =
             let mTypeRE = //re.compile(`(?:^\[|,)\s*mediatype\s*=\s*(?:"([^"]*)"|'([^']*)')\s*(?:\]$|,)`).match;
             \attrs mTypeRE(attrs)(0)?:{} -> \res cond res count {2: (res where .@item rank (:.@))(1) } where .@char rank (:.@);
-        \ep
+        \app \ep
             let res = (statements(ep) where "ret" <: (.@item => .@) >>
                 let payload = .("ret")("payload").s;
                 let [_, var, seq, type, attrs] = splitRet(payload)(0)?:["", payload, "", "", ""];
@@ -70,22 +72,31 @@ let endpoint =
                     [[_, _]]: (code: var, var: "error"),
                     _: (code: {}, :var)
                 };
-                (var: var.var, seq: seq != "", type: //seq.split(".", type), mediatype: mediatype(attrs), code: var.code)
+                # if type is tagged as GeneratedOpenAPIResponse then get the type from its body
+                let thisType = app('types')?(type rank (:.@))?:{};
+                let followedType = cond {
+                    'GeneratedOpenAPIResponse' <: patterns(thisType):
+                        # the actual type is in the body param (and will be aliased)
+                        let bodyType = thisType('tuple')('attrDefs')('body')('typeRef')('ref')('path').a(0).s;
+                        app('types')(bodyType),
+                };
+                let type = followedType('typeRef')?('ref')('path').a(0).s:{} || type;
+                let mtype = followedType('attrs')?('mediatype')?('s').s:{} || mediatype(attrs);
+                (var: var.var, seq: seq != "", type: //seq.split(".", type), mediatype: mtype, code: var.code)
             ) => .@item;
             # merge mediatype and code into a single entry so that we only have a single entry for each var/seq/type
             res => (:.var, :.seq, :.type) orderby . >>
                 \v let filtered = res where (.var = v.var && .seq = v.seq && .type = v.type) => (:.code, :.mediatype);
                 v +> (codeAndMediaType: filtered);
 
-    # `normalReturns(ep)`
+    # `normalReturns(app, ep)`
     #
-    # `normalReturns` returns an array of non-error returns with a type from
-    # endpoint `ep`.
-    let normalReturns = \ep
-        returns(ep) where (.@item -> .var != "error" && .type != [""]) rank (:.@);
+    # `normalReturns` returns an array of non-error returns with a type from endpoint `ep`.
+    let normalReturns = \app \ep
+        returns(app, ep) where (.@item -> .var != "error" && .type != [""]) rank (:.@);
 
-    let untypedReturns = \ep
-        returns(ep) where (.@item -> .var = "ok" && .type = [""]) rank (:.@);
+    let untypedReturns = \app \ep
+        returns(app, ep) where (.@item -> .var = "ok" && .type = [""]) rank (:.@);
 
     let sqlStatements = \ep
         ep('attrs')?:{} where (//seq.has_prefix("sql_", .@)) => (
@@ -100,8 +111,6 @@ let endpoint =
         :sqlStatements,
         :untypedReturns,
     );
-
-let patterns = \node node('attrs')?('patterns')?('a')('elt').a:{} >> .('s').s => .@item;
 
 let source = \node node('sourceContext')('start') -> [.('line'), .('col')];
 

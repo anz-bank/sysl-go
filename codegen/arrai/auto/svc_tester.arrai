@@ -146,7 +146,7 @@ let grpc = //{./grpc};
             let args = ep('restParams')?:{}
                         -> (.('queryParam')?.a:{}) ++ (.('urlParam')?.a:{})
                         orderby sysl.source(.@item('type'))
-                        >> $`${go.asVariableName(.@item('name').s)} ${go.type(.@item('type'))}`;
+                        >> $`${go.asVariableName(.@item('name').s)} ${go.type(app, .@item('type'))}`;
             $`
                 type ${testType} struct {
                     e  *e2e.Tester
@@ -208,7 +208,7 @@ let grpc = //{./grpc};
                 }
 
                 ${
-                    (ep('param')?.a:{}) where "body" <: sysl.patterns(.@item('type')) >> go.type(.('type')) >>
+                    (ep('param')?.a:{}) where "body" <: sysl.patterns(.@item('type')) >> go.bodyType(app, .('type')) >>
                     $`
                         func (t *${testType}) WithBody(body ${.}) *${testType} {
                             ${cond . {
@@ -297,7 +297,7 @@ let grpc = //{./grpc};
         ::\i}
 
         ${nonRestEndpoints >> \(@value: ep, ...)
-            let methodInfo = go.pbMethodInfo(ep);
+            let methodInfo = go.pbMethodInfo(app, ep);
             let name = methodInfo.name;
             let requestType = methodInfo.requestType;
             let responseType = methodInfo.responseType;
