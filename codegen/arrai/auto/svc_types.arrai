@@ -16,6 +16,8 @@ let fieldJsonTag = \type \key
     let aliases = orderedTypes(app('types')?:{} where ({'typeRef', 'primitive', 'sequence'} & (.@value => .@)));
     let unions = orderedTypes(app('types')?:{} where ({'oneOf', 'oneof'} & (.@value => .@)));
     let allUnionTypes = //rel.union(unions => (.@item.@value('oneOf')('type').a >> .('typeRef')('ref')('path').a >> ((.) single).@item.s => .@item));
+    # for alias types also include the type they point to
+    let allUnionTypes = //rel.union(allUnionTypes => {., go.aliasOrType(app, .)});
     let validateApp = sysl.patterns(app) & {"validate"};
     $`
         ${go.prelude(app, {})}
@@ -194,6 +196,12 @@ let fieldJsonTag = \type \key
         ${aliases where .@item.@ != "Empty" && !//seq.has_prefix("EXTERNAL_", .@item.@) && !('unmapped_openapi' <: sysl.patterns(.@item.@value)) >> $`
             // ${.typename} ...
             type ${.typename} = ${go.type(app, .@value)}
+
+            ${cond {(.@ <: allUnionTypes): $`
+                func unmarshalJSONWithValidation${.typename}(data []byte) (*${.typename}, bool, error) {
+                    return unmarshalJSONWithValidation${go.name(go.aliasOrType(app, .@))}(data)
+                }
+            `}}
         `::\i}
         ${aliases where .@item.@ = "Empty" >> $`
             // ${.typename} ...
@@ -201,7 +209,8 @@ let fieldJsonTag = \type \key
             }
         `::\i}
         ${unions >> \(@: key, @value: value, :typename)
-            let unionTypes = value('oneOf')('type').a >> .('typeRef')('ref')('path').a >> go.name((((.) single).@item).s);
+            let unionTypesWithId = value('oneOf')('type').a >> .('typeRef')('ref')('path').a >> (((.) single).@item).s >> (id: ., typename: go.name(.));
+            let unionTypes = unionTypesWithId >> .typename;
             $`
             // ${typename} can be one of the following types at runtime:
             ${unionTypes >> $`// ${.}`::\i}
@@ -226,12 +235,12 @@ let fieldJsonTag = \type \key
             func (dst *${typename}) UnmarshalJSON(data []byte) error {
                 match := 0
 
-                ${unionTypes >> $`
-                    // try to unmarshal data into ${.}
-                    dst${.}, filled, err := unmarshalJSONWithValidation${.}(data)
+                ${unionTypesWithId >> $`
+                    // try to unmarshal data into ${.typename}
+                    dst${.typename}, filled, err := unmarshalJSONWithValidation${go.name(go.aliasOrType(app, .id))}(data)
                     if err == nil && filled {
                         match++
-                        dst.${.} = dst${.}
+                        dst.${.typename} = dst${.typename}
                     }
 
                 `::\i}

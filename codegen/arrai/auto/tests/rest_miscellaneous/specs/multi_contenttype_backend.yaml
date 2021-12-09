@@ -1,0 +1,40 @@
+openapi: '3.0.3'
+
+info:
+  title: 'Multi Content Type Backend'
+  version: '1.0'
+
+paths:
+  "/ping/multi:colon":
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json; charset = utf-8:
+            schema:
+              $ref: "#/components/schemas/pingMultiReq"
+          application/json:
+            schema:
+              $ref: "#/components/schemas/pingMultiReq"
+
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json; charset = utf-8:
+              schema:
+                $ref: "#/components/schemas/PingMultiRes"
+
+components:
+  schemas:
+    pingMultiReq:
+      type: object
+      properties:
+        val:
+          type: string
+
+    PingMultiRes:
+      type: object
+      properties:
+        val:
+          type: string

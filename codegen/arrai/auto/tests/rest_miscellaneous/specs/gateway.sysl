@@ -1,6 +1,7 @@
 import encoder_backend
 import oneOf_backend.yaml as oneof_backend
 import oneOf_gateway.yaml as Gateway
+import multi_contenttype_backend.yaml as multi_contenttype_backend
 
 Gateway [package="gateway", ~vars_in_url_name]:
     @go_package = "gateway"
@@ -9,6 +10,7 @@ Gateway [package="gateway", ~vars_in_url_name]:
     /ping/id:
         GET ?id=int:
             EncoderBackend <- GET /ping
+            multi_contenttype_backend <- POST /ping/multi:colon
             return ok <: pong
 
     # should not conflict due to ~vars_in_url_name

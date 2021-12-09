@@ -80,6 +80,20 @@ let typeImpl = \leafOnly //fn.fix(\typeImpl \app \t
 let type = typeImpl(false);
 let leafType = typeImpl(true);
 
+# Return the base type if its an alias otherwise return the same type back 
+let aliasOrType = \app \t
+    cond app('types')?(t)?:{} {
+        # Grab the type name
+        {'typeRef': {'ref': {'path': (a: [(s: typeName)]), ...}, ...}, ...}:
+            # Check if its an alias and return the base type if it is
+            let actualType = app('types')?(typeName)?:{};
+            cond {
+                actualType: typeName,
+                _: t,
+            },
+        _: t,
+    };
+
 let followAliasType = \app \t
     cond t {
         # Grab the type name
@@ -361,6 +375,7 @@ let module = \module
     :leafType,
     :baseType,
     :bodyType,
+    :aliasOrType,
     :varName,
     :errorReturnTypes,
     :asVariableName,
