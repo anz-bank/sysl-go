@@ -5,6 +5,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func ExtractGrpcServerOptions(ctx context.Context, cfg *GRPCServerConfig) ([]grpc.ServerOption, error) {
@@ -49,7 +50,7 @@ func DefaultGrpcDialOptions(ctx context.Context, cfg *CommonGRPCDownstreamData) 
 		creds := credentials.NewTLS(tlsConfig)
 		opts = append(opts, grpc.WithTransportCredentials(creds))
 	} else {
-		opts = append(opts, grpc.WithInsecure())
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
 	if cfg.WithBlock {
 		opts = append(opts, grpc.WithBlock())

@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const testPort = 8888
@@ -122,7 +123,7 @@ func Test_makeGrpcListenFuncListens(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	connectAndCheckReturn(ctx, t, grpc.WithInsecure())
+	connectAndCheckReturn(ctx, t, grpc.WithTransportCredentials(insecure.NewCredentials()))
 }
 
 func Test_encryptionConfigUsed(t *testing.T) {
@@ -167,7 +168,7 @@ func Test_serverUsesGivenLogger(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", testPort), grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", testPort), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	require.NoError(t, err)
 	defer conn.Close()
 
@@ -210,7 +211,7 @@ func Test_libMakesCorrectHandlerCalls(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	connectAndCheckReturn(ctx, t, grpc.WithInsecure())
+	connectAndCheckReturn(ctx, t, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.True(t, manager.methodsCalled["Interceptors"])
 	require.True(t, manager.methodsCalled["EnabledGrpcHandlers"])
 	require.True(t, manager.methodsCalled["GrpcPublicServerConfig"])
