@@ -15,3 +15,10 @@ EncoderBackend [package="encoder_backend", ~vars_in_url_name]:
 
     !type PongString:
         s <: string
+
+    /double_underscore:
+        POST:
+            return ok <: __double_underscore
+
+    !type __double_underscore:
+        __s <: string

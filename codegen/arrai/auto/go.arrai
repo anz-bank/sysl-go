@@ -2,7 +2,7 @@ let sysl = //{./sysl};
 
 let name =
     let wordRE = //re.compile(`[\p{L}_][\p{L}\p{N}_]*`);
-    let trimRE = //re.compile(`^_`).sub("");
+    let trimRE = //re.compile(`^_+`).sub("");
     let initialisms = {
         # https://github.com/golang/lint/blob/8f45f776aaf18cebc8d65861cc70c33c60471952/lint.go#L771
         "ACL", "API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML",

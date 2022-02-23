@@ -281,3 +281,8 @@ func TestMiscellaneous_CheckExternals(t *testing.T) {
 	_, ok := v.(*gateway.EXTERNAL_undefinedPropertyType_value)
 	require.True(t, ok)
 }
+
+func TestMiscellaneous_DoubleUnderscore(t *testing.T) {
+	// Just want to confirm that it generates a type that is accessible
+	_ = encoder_backend.Double_underscore{S: "accessible"}
+}
