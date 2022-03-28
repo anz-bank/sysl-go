@@ -3,7 +3,6 @@ let sysl = //{./sysl};
 
 let generators = {
     "app.go":              //{./svc_app},
-    "app_spec.go":         //{./app_spec},
     "grpc_client.go":      //{./grpc_client},
     "grpc_handler.go":     //{./grpc_handler},
     "grpc_interface.go":   //{./grpc_interface},
@@ -34,7 +33,7 @@ let _inferHasDB = \app hasRelationTypes(app);
         let restService = {"requestrouter.go", "service.go", "servicehandler.go", "serviceinterface.go", "tester.go", "types.go"};
         let grpcClient = {"grpc_client.go", "grpc_mocks.go"};
         let grpcService = {"grpc_handler.go", "grpc_interface.go", "tester.go"};
-        let app = {"app.go", "app_spec.go", "main.go.sample"};
+        let app = {"app.go", "main.go.sample"};
         {
             "rest-service": restService,
             "rest-app":     restService | app,

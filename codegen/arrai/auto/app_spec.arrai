@@ -1,8 +1,0 @@
-let go = //{./go};
-
-\(:app, :json, ...)
-    $'
-        ${go.prelude(app, {})}
-
-        const AppSpec = `${//seq.sub(<<'`'>>, <<'`+"`"+`'>>, json)}`
-    '
