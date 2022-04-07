@@ -1,0 +1,87 @@
+openapi: '3.1.0'
+
+info:
+  title: Ping Pong
+  version: '1.0'
+
+paths:
+  /ping-with-validate:
+    post:
+      parameters:
+        - $ref: '#/components/parameters/headerLength'
+        - $ref: '#/components/parameters/headerPattern'
+      requestBody:
+        required: true
+        content:
+          application/json; charset = utf-8:
+            schema:
+              $ref: "#/components/schemas/PingWithValidateRequest"
+      responses:
+        '200':
+          description: OK
+
+components:
+  schemas:
+    PingWithValidateRequest:
+      type: object
+      required:
+        - validSize
+      properties:
+        validLength:
+          type: string
+          minLength: 2
+          maxLength: 7
+        validSize:
+          type: integer
+          minimum: 3
+          maximum: 10
+        exclusiveSize:
+          type: integer
+          exclusiveMinimum: 3
+          exclusiveMaximum: 10
+        exclusiveSizeOld:
+          type: integer
+          minimum: 3
+          maximum: 10
+          exclusiveMinimum: true
+          exclusiveMaximum: true
+        nonExclusiveSizeOld:
+          type: integer
+          minimum: 3
+          maximum: 10
+          exclusiveMinimum: false
+          exclusiveMaximum: false
+        patternSimple:
+          type: string
+          pattern: 'aaa'
+        patternWithNegativeLookahead:
+          type: string
+          pattern: '^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)(\.(?!$)|$)){4}$'
+        enumString:
+          type: string
+          enum:
+            - Val1
+            - Val2
+            - Val3
+        enumInt:
+          type: integer
+          enum:
+            - 1
+            - 2
+            - 3
+
+  parameters:
+    headerLength:
+      name: headerLength
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 2
+        maxLength: 7
+    headerPattern:
+      name: headerPattern
+      in: header
+      schema:
+        type: string
+        pattern: '^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)(\.(?!$)|$)){4}$'

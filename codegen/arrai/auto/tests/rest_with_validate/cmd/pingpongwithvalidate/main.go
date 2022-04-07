@@ -12,22 +12,27 @@ import (
 
 type AppConfig struct{}
 
-func PostPongPong(_ context.Context, req *pingpong.PostPongPongRequest) (*pingpong.Pong, error) {
-	return &pingpong.Pong{
+func PostPingWithValidate(_ context.Context, _ *pingpongwithvalidate.PostPingWithValidateRequest) error {
+	return nil
+}
+
+func PostPongPong(_ context.Context, req *pingpongwithvalidate.PostPongPongRequest) (*pingpongwithvalidate.Pong, error) {
+	return &pingpongwithvalidate.Pong{
 		Identifier: req.Request.Identifier,
 		Value:      req.Request.Value,
 	}, nil
 }
 
+func createService(_ context.Context, _ AppConfig) (*pingpongwithvalidate.ServiceInterface, *core.Hooks, error) {
+	return &pingpongwithvalidate.ServiceInterface{
+			PostPingWithValidate: PostPingWithValidate,
+			PostPongPong:         PostPongPong,
+		}, &core.Hooks{},
+		nil
+}
+
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {
-	return pingpong.NewServer(ctx,
-		func(ctx context.Context, config AppConfig) (*pingpong.ServiceInterface, *core.Hooks, error) {
-			return &pingpong.ServiceInterface{
-					PostPongPong: PostPongPong,
-				}, &core.Hooks{},
-				nil
-		},
-	)
+	return pingpongwithvalidate.NewServer(ctx, createService)
 }
 
 func main() {

@@ -11,10 +11,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
 	"github.com/stretchr/testify/require"
 
-	"github.com/anz-bank/sysl-go/core"
+	"rest_with_validate/internal/gen/pkg/servers/pingpongwithvalidate"
 )
 
 const applicationConfig = `---
@@ -79,7 +81,7 @@ func doPingRequestResponseImpl(ctx context.Context, method string, url string, b
 	if err != nil {
 		return -1, -1, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return -1, -1, err
@@ -147,4 +149,172 @@ func TestApplicationSmokeTest(t *testing.T) {
 	// Test a request that fails due to a missing request parameter (value)
 	identifier, value, err = doPongPongRequestResponse(ctx, 1, -1)
 	require.Equal(t, 400, err.(*ResponseError).StatusCode)
+}
+
+func getPopulatedBody() pingpongwithvalidate.PingWithValidateRequest {
+	return pingpongwithvalidate.PingWithValidateRequest{
+		ValidLength: common.NewString("12"),
+		ValidSize:   3,
+	}
+}
+
+func getPopulatedHeader() map[string]string {
+	return map[string]string{
+		"headerPattern": "1.1.1.1",
+		"headerLength":  "aaa",
+	}
+}
+
+type varToSet int
+
+const (
+	validLength varToSet = iota
+	validLengthNil
+	validSize
+	exclusiveSize
+	exclusiveSizeOld
+	nonExclusiveSizeOld
+	patternSimple
+	patternWithNegativeLookahead
+	enumString
+	enumInt
+)
+
+func getBody(vts varToSet, s string, i int64) pingpongwithvalidate.PingWithValidateRequest {
+	ret := getPopulatedBody()
+
+	switch vts {
+	case validLength:
+		ret.ValidLength = &s
+	case validLengthNil:
+		ret.ValidLength = nil
+	case validSize:
+		ret.ValidSize = i
+	case exclusiveSize:
+		ret.ExclusiveSize = &i
+	case exclusiveSizeOld:
+		ret.ExclusiveSizeOld = &i
+	case nonExclusiveSizeOld:
+		ret.NonExclusiveSizeOld = &i
+	case patternSimple:
+		ret.PatternSimple = &s
+	case patternWithNegativeLookahead:
+		ret.PatternWithNegativeLookahead = &s
+	case enumString:
+		ret.EnumString = &s
+	case enumInt:
+		ret.EnumInt = &i
+	}
+
+	return ret
+}
+
+func TestValidate_BodyParams(t *testing.T) {
+	t.Parallel()
+	gatewayTester := pingpongwithvalidate.NewTestServer(t, context.Background(), createService, "")
+	defer gatewayTester.Close()
+
+	for _, test := range []struct {
+		name string
+		code int
+		body pingpongwithvalidate.PingWithValidateRequest
+	}{
+		{`allPopulated`, 200, getPopulatedBody()},
+
+		{`missingOptional`, 200, getBody(validLengthNil, "", 0)},
+
+		{`LengthTooShort`, 400, getBody(validLength, "1", 0)},
+		{`LengthSmallest`, 200, getBody(validLength, "12", 0)},
+		{`LengthLargest`, 200, getBody(validLength, "1234567", 0)},
+		{`LengthTooLong`, 400, getBody(validLength, "12345678", 0)},
+
+		{`SizeTooSmall`, 400, getBody(validSize, "", 2)},
+		{`SizeSmallest`, 200, getBody(validSize, "", 3)},
+		{`SizeLargest`, 200, getBody(validSize, "", 10)},
+		{`SizeTooBig`, 400, getBody(validSize, "", 11)},
+
+		{`ExclusiveTooSmall`, 400, getBody(exclusiveSize, "", 3)},
+		{`ExclusiveSmallest`, 200, getBody(exclusiveSize, "", 4)},
+		{`ExclusiveLargest`, 200, getBody(exclusiveSize, "", 9)},
+		{`ExclusiveTooBig`, 400, getBody(exclusiveSize, "", 10)},
+
+		{`ExclusiveOldTooSmall`, 400, getBody(exclusiveSizeOld, "", 3)},
+		{`ExclusiveOldSmallest`, 200, getBody(exclusiveSizeOld, "", 4)},
+		{`ExclusiveOldLargest`, 200, getBody(exclusiveSizeOld, "", 9)},
+		{`ExclusiveOldTooBig`, 400, getBody(exclusiveSizeOld, "", 10)},
+
+		{`NonExclusiveOldTooSmall`, 400, getBody(nonExclusiveSizeOld, "", 2)},
+		{`NonExclusiveOldSmallest`, 200, getBody(nonExclusiveSizeOld, "", 3)},
+		{`NonExclusiveOldLargest`, 200, getBody(nonExclusiveSizeOld, "", 10)},
+		{`NonExclusiveOldTooBig`, 400, getBody(nonExclusiveSizeOld, "", 11)},
+
+		{`patternSimpleSuccess`, 200, getBody(patternSimple, "aaa", 0)},
+		{`patternSimpleFail`, 400, getBody(patternSimple, "a", 0)},
+		{`patternWithNegativeLookaheadSuccess`, 200, getBody(patternWithNegativeLookahead, "1.1.1.1", 0)},
+		{`patternWithNegativeLookaheadFail`, 400, getBody(patternWithNegativeLookahead, "1", 0)},
+
+		{`enumStringSuccess`, 200, getBody(enumString, "Val1", 0)},
+		{`enumStringFail`, 400, getBody(enumString, "val1", 0)},
+
+		{`enumIntSuccess`, 200, getBody(enumInt, "", 1)},
+		{`enumIntFail`, 400, getBody(enumInt, "", 4)},
+	} {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			gatewayTester.PostPingWithValidate().
+				WithHeaders(getPopulatedHeader()).
+				WithBody(test.body).
+				ExpectResponseCode(test.code).
+				Send()
+		})
+	}
+}
+
+func getHeader(vts varToSet, s string) map[string]string {
+	ret := getPopulatedHeader()
+
+	switch vts {
+	case validLength:
+		ret["headerLength"] = s
+	case validLengthNil:
+		delete(ret, "headerLength")
+	case patternWithNegativeLookahead:
+		ret["headerPattern"] = s
+	}
+
+	return ret
+}
+
+func TestValidate_HeaderParams(t *testing.T) {
+	t.Parallel()
+	gatewayTester := pingpongwithvalidate.NewTestServer(t, context.Background(), createService, "")
+	defer gatewayTester.Close()
+
+	for _, test := range []struct {
+		name    string
+		code    int
+		headers map[string]string
+	}{
+		{`allPopulated`, 200, getPopulatedHeader()},
+
+		{`missingRequired`, 400, getHeader(validLengthNil, "")},
+
+		{`LengthTooShort`, 400, getHeader(validLength, "1")},
+		{`LengthSmallest`, 200, getHeader(validLength, "12")},
+		{`LengthLargest`, 200, getHeader(validLength, "1234567")},
+		{`LengthTooLong`, 400, getHeader(validLength, "12345678")},
+
+		{`patternWithNegativeLookaheadSuccess`, 200, getHeader(patternWithNegativeLookahead, "1.1.1.1")},
+		{`patternWithNegativeLookaheadFail`, 400, getHeader(patternWithNegativeLookahead, "1")},
+	} {
+		test := test
+		body := getPopulatedBody()
+		t.Run(test.name, func(t *testing.T) {
+			gatewayTester.PostPingWithValidate().
+				WithHeaders(test.headers).
+				WithBody(body).
+				ExpectResponseCode(test.code).
+				Send()
+		})
+	}
 }

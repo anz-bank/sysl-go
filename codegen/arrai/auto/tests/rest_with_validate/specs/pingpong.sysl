@@ -1,3 +1,5 @@
+import pingpongwithvalidate.yaml as PingPongWithValidate
+
 PingPong [package="pingpong"]:
     @go_package = "pingpong"
     @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_with_validate"
@@ -27,7 +29,7 @@ PingPong [package="pingpong"]:
         value <: int [validate="max=10"]
 
 PingPongWithValidate [package="pingpongwithvalidate", ~validate]:
-    @go_package = "pingpong"
+    @go_package = "pingpongwithvalidate"
     @go_pb_package = "github.com/anz-bank/sysl-go/codegen/auto_tests/rest_with_validate"
 
     /pong-pong:

@@ -26,6 +26,7 @@ let fieldJsonTag = \type \key
             let entity = value('tuple')?:(value('relation'));
             let patterns = sysl.patterns(value);
             let descr = cond value {{'attrs': {'description': {'s': (s: descr), ...}, ...}, ...}: descr, _: "..."};
+            let validateEntity = ({"validate"} & patterns || validateApp);
             $`
                 // ${typename} ${//seq.split('\n', //seq.trim_suffix('\n',descr))::\i // }
                 type ${typename} struct {
@@ -37,14 +38,16 @@ let fieldJsonTag = \type \key
                                 _: fieldJsonTag(attrDef, key),
                             }
                             ++
-                            (cond attrDef {
-                                {'opt': (b: true), ...}: ['omitempty'],
+                            (cond {
+                                !sysl.type.required(attrDef): ['omitempty'],
                                 _: [],
                             });
                         let validateTag =
-                            cond attrDef {
-                                {'attrs': {'validate': {'s': (s: tag), ...}, ...}, ...}: tag,
-                                _: {},
+                            # if there is a validate tag use it
+                            cond attrDef {{'attrs': {'validate': {'s': (s: tag), ...}, ...}, ...}: tag}
+                            || cond {
+                                # if this entity is marked for validation
+                                validateEntity: validation.validationTagForType(attrDef),
                             };
 
                         # Purpose: add url field tags to support scenario where we need
@@ -81,7 +84,8 @@ let fieldJsonTag = \type \key
                 `}}
                 ${
                     let reqParams = entity('attrDefs') where !sysl.isPtr(.@value);
-                    let needsUnmarshalJSON = ({"validate"} & patterns || validateApp) && reqParams;
+                    let regexParams = entity('attrDefs') where .@value('attrs')?('regex')?:{};
+                    let needsUnmarshalJSON = validateEntity && (reqParams || regexParams);
 
                     cond {needsUnmarshalJSON || (key <: allUnionTypes): $`
                         func unmarshalJSONWithValidation${typename}(data []byte) (*${typename}, bool, error) {
@@ -108,6 +112,17 @@ let fieldJsonTag = \type \key
                                 $`
                                     if inner.${go.name(key)} != nil {
                                         filled++
+                                    }
+                                `
+                            ::\i}
+
+                            ${regexParams orderby .@ >> \(@: key, @value: attrDef)
+                                $`
+                                    if inner.${go.name(key)} != nil {
+                                        re := common.RegexWithFallbackMustCompile(``${attrDef('attrs')('regex')('s').s}``)
+                                        if !re.MatchString(*inner.${go.name(key)}) {
+                                            return nil, false, errors.New("${fieldJsonTag(attrDef, key)::,} does not fit the required regex")
+                                        }
                                     }
                                 `
                             ::\i}

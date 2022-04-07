@@ -165,3 +165,28 @@ func (e *ZeroHeaderLengthError) Error() string {
 func (e *ZeroHeaderLengthError) CausedByParam(param string) bool {
 	return e.paramCanonical == http.CanonicalHeaderKey(param)
 }
+
+type InvalidHeaderError struct {
+	paramCanonical string
+	cause          error
+}
+
+func NewInvalidHeaderError(param string, cause error) error {
+	return &InvalidHeaderError{paramCanonical: http.CanonicalHeaderKey(param), cause: cause}
+}
+
+func (e *InvalidHeaderError) Error() string {
+	return fmt.Sprintf("%s header is invalid according to the spec", e.paramCanonical)
+}
+
+func (e *InvalidHeaderError) CausedByParam(param string) bool {
+	return e.paramCanonical == http.CanonicalHeaderKey(param)
+}
+
+// This may be nil (for example if the cause was a regular expression mismatch) or may be InvalidValidationError for
+// bad values passed in and nil or ValidationErrors as error otherwise.
+// You will need to assert the error if it's not nil eg. err.(validator.ValidationErrors) to access the array of errors
+// (there may be more than one).
+func (e *InvalidHeaderError) GetCause() error {
+	return e.cause
+}

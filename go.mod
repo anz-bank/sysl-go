@@ -8,6 +8,7 @@ require (
 	github.com/anz-bank/pkg v0.0.39
 	github.com/arr-ai/frozen v0.20.0 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
+	github.com/dlclark/regexp2 v1.4.0
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/go-errors/errors v1.4.1 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect

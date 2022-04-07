@@ -84,6 +84,14 @@ func Validate(v interface{}) error {
 	return DefaultValidator.Struct(v)
 }
 
+// Var validates a single string using tag style validation.
+func ValidateString(val, tag string) error {
+	if DefaultValidator == nil {
+		DefaultValidator = NewDefaultValidator()
+	}
+	return DefaultValidator.Var(val, tag)
+}
+
 // Custom validator to manage a timeout= param
 // timeout=1ms     -> 1ms max timeout, no minimum to validate
 // timeout=1ms:10s -> timeout between 1ms (inclusive) and 10s (exclusive)

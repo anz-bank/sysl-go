@@ -1,5 +1,6 @@
 let go = //{./go};
 let sysl = //{./sysl};
+let validation = //{./validation};
 
 \(:app, :appname, :basepath, :clientDeps, :goModule, :hasDB, :module, :restEndpoints, ...)
     let client = //{./client}((:app, :appname, :clientDeps, :hasDB, :module));
@@ -7,6 +8,7 @@ let sysl = //{./sysl};
     let authorizationRule = \ep cond ep {
         {'attrs': {'authorization_rule': {'s': (s: rule), ...}, ...}, ...} : rule,
     };
+    let validateApp = sysl.patterns(app) & {"validate"};
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | dbimport)}
 
@@ -95,8 +97,7 @@ let sysl = //{./sysl};
             );
             let urlParams = ep('restParams')('urlParam')?.a:[];
             let queryParams = ep('restParams')('queryParam')?.a:[];
-            let headerParams = ep('param')?.a:{} where {'header'} (<=) sysl.patterns(.@item('type'))
-                && sysl.type.required(.@item('type'));
+            let headerParams = ep('param')?.a:{} where {'header'} (<=) sysl.patterns(.@item('type'));
             let reqQueryParams =
                 queryParams where !.@item('type')('opt')?.b:false
                 >> (. | {'goType': go.type(app, .('type'))});
@@ -208,16 +209,39 @@ let sysl = //{./sysl};
                     ::\i}
                     ${headerParams >> \{'name': (s: name), 'type': type, ...}
                         let name = type('attrs')?('name')('s').s:name;
-                        $`${go.name(name)} := restlib.GetHeaderParam(r, "${name}")`
-                    ::\i:\n}
-                    ${headerParams >> \{'name': (s: name), 'type': type, ...}
-                        let name = type('attrs')?('name')('s').s:name;
-                        cond {sysl.type.required(type): $`
+                        let required = sysl.type.required(type);
+                        let regex = type('attrs')?('regex')?('s').s:{};
+                        let validateTag = validation.validationTagForType(type);
+                        let validate = validateApp && (regex || validateTag);
+                        $`${cond {required || validate: $`${go.name(name)} := restlib.GetHeaderParam(r, "${name}")`}}
+                        ${cond {required: $`
                             if ${go.name(name)} == "" {
                                 common.HandleError(ctx, w, common.BadRequestError, "${name} header length is zero", common.NewZeroHeaderLengthError("${name}"), s.genCallback.MapError, s.genCallback.WriteError)
                                 return
+                            ${cond {!validate: $`}`}}
+                        `}}${
+                        cond {validate: $`
+                            ${cond {
+                                required: $`} else {`,
+                                _: $`if ${go.name(name)} != "" {`,
+                            }}${cond {
+                                regex: $`
+                                    re := common.RegexWithFallbackMustCompile(``${regex}``)
+                                    if !re.MatchString(${go.name(name)}) {
+                                        common.HandleError(ctx, w, common.BadRequestError, "${name} header does not fit the required regex", common.NewInvalidHeaderError("${name}", nil), s.genCallback.MapError, s.genCallback.WriteError)
+                                        return
+                                    }
+                                `,
+                                _: $`
+                                    errs := validator.ValidateString(${go.name(name)}, ``${validateTag}``)
+                                    if errs != nil {
+                                        common.HandleError(ctx, w, common.BadRequestError, "${name} header does not fit the required validations", common.NewInvalidHeaderError("${name}", errs), s.genCallback.MapError, s.genCallback.WriteError)
+                                        return
+                                    }
+                                `,
+                            }}
                             }
-                        `}
+                        `}}`
                     ::\i:\n}
                     ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
                     defer cancel()

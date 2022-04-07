@@ -1,4 +1,5 @@
 let fatal = //{./fatal};
+let sysl = //{./sysl};
 
 # `paramValidateTags` returns a mapping of an endpoint parameter name to the `validate` struct tags
 # set against the endpoint. Endpoints support the encoding of `validate` tags either in the form 
@@ -19,6 +20,47 @@ let paramValidateTags = \ep
         {'a':{'elt':(a:a)}, ...}: a => let {'s':(s:s), ...} = .@item; tags(s),
     };
 
+
+let validationTagForType = \type 
+    let tags =
+        cond type {
+            {'constraint': c, ...}:
+                //rel.union(c.a => cond .@item {
+                    {'length': l, ...}:
+                        l => cond . {
+                            (@: 'max', @value: m): $`max=${m.s}`,
+                            (@: 'min', @value: m): $`min=${m.s}`,
+                        } where .
+                })
+        } | cond type {
+            {'attrs': a, ...}:
+                (
+                    # first check openapi 3.0.3
+                    cond a {{'min':m, 'exclusiveMin':{'s':(s: '(b: {})'), ...}, ...}: {$`min=${m('s').s}`}}
+                    | cond a {{'min':m, 'exclusiveMin':{'s':(s: '(b: true)'), ...}, ...}: {$`gt=${m('s').s}`}}
+                    || #otherwise check openapi 3.1.0
+                    cond a {{'min':m, ...}: {$`min=${m('s').s}`}}
+                    | cond a {{'exclusiveMin':m, ...}: {$`gt=${m('s').s}`}}
+                )
+                |
+                (
+                    # first check openapi 3.0.3
+                    cond a {{'max':m, 'exclusiveMax':{'s':(s: '(b: {})'), ...}, ...}: {$`max=${m('s').s}`}}
+                    | cond a {{'max':m, 'exclusiveMax':{'s':(s: '(b: true)'), ...}, ...}: {$`lt=${m('s').s}`}}
+                    || #otherwise check openapi 3.1.0
+                    cond a {{'max':m, ...}: {$`max=${m('s').s}`}}
+                    | cond a {{'exclusiveMax':m, ...}: {$`lt=${m('s').s}`}}
+                )
+                |
+                (
+                    cond a {{'openapi_enum': {'a': {'elt': (a: e, ...), ...}, ...}, ...}: {$`oneof=${e >> .('s').s:: }`}}
+                )
+        };
+    cond {tags:
+        //seq.join(',', cond { !sysl.type.required(type): ['omitempty']} ++ (tags orderby .))
+    };
+
 (
     :paramValidateTags,
+    :validationTagForType,
 )
