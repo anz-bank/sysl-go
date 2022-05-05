@@ -78,7 +78,7 @@ func RespHeaderAndStatusFromContext(ctx context.Context) (header http.Header, st
 	return
 }
 
-// AppendToRespHeader will add custom fields to the response header
+// AppendToRespHeader will add custom fields to the response header.
 func AppendToRespHeader(ctx context.Context, key string, value string) {
 	respHeaderAndStatus := getRespHeaderAndStatusContext(ctx)
 	if respHeaderAndStatus != nil {
