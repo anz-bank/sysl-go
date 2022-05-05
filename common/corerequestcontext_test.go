@@ -124,3 +124,13 @@ func TestUpdateResponseStatus(t *testing.T) {
 	_, outStatus = RespHeaderAndStatusFromContext(ctx)
 	require.Equal(t, http.StatusAccepted, outStatus)
 }
+
+func TestAppendToRespHeader(t *testing.T) {
+	inHeader := make(http.Header)
+	inHeader["Accept-Header"] = []string{"b"}
+	inStatus := http.StatusOK
+	ctx := RespHeaderAndStatusToContext(context.Background(), inHeader, inStatus)
+	AppendToRespHeader(ctx, "test-header-1", "test-value-1")
+	respHeader, _ := RespHeaderAndStatusFromContext(ctx)
+	require.Equal(t, "test-value-1", respHeader.Get("test-header-1"))
+}
