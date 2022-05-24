@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	vv9 "gopkg.in/go-playground/validator.v9"
+	vv10 "github.com/go-playground/validator/v10"
 )
 
 // Validator values have a Validate() method returning nil iff the value is
@@ -14,8 +14,8 @@ type Validator interface {
 	Validate() error
 }
 
-func NewDefaultValidator() *vv9.Validate {
-	v := vv9.New()
+func NewDefaultValidator() *vv10.Validate {
+	v := vv10.New()
 
 	v.RegisterAlias("nonnil", "required")
 	_ = v.RegisterValidation("timeout", timeoutValidatorFunc)
@@ -29,22 +29,22 @@ func NewDefaultValidator() *vv9.Validate {
 }
 
 var (
-	DefaultValidator *vv9.Validate
+	DefaultValidator *vv10.Validate
 
 	registeredTypes       []registrationData
 	registeredStructLevel []registrationStructLevelData
 )
 
 type registrationData struct {
-	fn    vv9.CustomTypeFunc
+	fn    vv10.CustomTypeFunc
 	types []interface{}
 }
 type registrationStructLevelData struct {
-	fn    vv9.StructLevelFunc
+	fn    vv10.StructLevelFunc
 	types []interface{}
 }
 
-func RegisterCustomValidator(fn vv9.CustomTypeFunc, types ...interface{}) {
+func RegisterCustomValidator(fn vv10.CustomTypeFunc, types ...interface{}) {
 	if DefaultValidator != nil {
 		panic("attempting to add a new validator after init()")
 	}
@@ -54,7 +54,7 @@ func RegisterCustomValidator(fn vv9.CustomTypeFunc, types ...interface{}) {
 	})
 }
 
-func RegisterStructLevel(fn vv9.StructLevelFunc, types ...interface{}) {
+func RegisterStructLevel(fn vv10.StructLevelFunc, types ...interface{}) {
 	if DefaultValidator != nil {
 		panic("attempting to add a new validator after init()")
 	}
@@ -96,7 +96,7 @@ func ValidateString(val, tag string) error {
 // timeout=1ms     -> 1ms max timeout, no minimum to validate
 // timeout=1ms:10s -> timeout between 1ms (inclusive) and 10s (exclusive)
 // timeout=5s:     -> 5s min timeout, no maximum.
-func timeoutValidatorFunc(fl vv9.FieldLevel) bool {
+func timeoutValidatorFunc(fl vv10.FieldLevel) bool {
 	parts := strings.Split(fl.Param(), ":")
 
 	val, ok := fl.Field().Interface().(time.Duration)

@@ -4,17 +4,16 @@ import (
 	"testing"
 
 	"github.com/anz-bank/sysl-go/log"
-
 	"github.com/anz-bank/sysl-go/validator"
 
+	vv10 "github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	vv9 "gopkg.in/go-playground/validator.v9"
 )
 
 func ErrorDueToFields(t assert.TestingT, err error, field ...string) {
 	found := map[string]bool{}
-	for _, e := range err.(vv9.ValidationErrors) {
+	for _, e := range err.(vv10.ValidationErrors) {
 		found[e.StructField()] = true
 	}
 

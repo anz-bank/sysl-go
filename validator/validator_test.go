@@ -5,10 +5,9 @@ import (
 	"testing"
 	"time"
 
+	vv10 "github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
-
 	"github.com/stretchr/testify/require"
-	vv9 "gopkg.in/go-playground/validator.v9"
 )
 
 func TestObjectWithNilPointerFieldTaggedAsNonNilIsInvalid(t *testing.T) {
@@ -27,7 +26,7 @@ func TestObjectWithNilPointerFieldTaggedAsNonNilIsInvalid(t *testing.T) {
 
 	err := v.Struct(obj)
 	req.NotNil(err)
-	req.IsType(vv9.ValidationErrors{}, err)
+	req.IsType(vv10.ValidationErrors{}, err)
 }
 
 func TestObjectWithNonNilPointerFieldTaggedAsNonNilIsValid(t *testing.T) {
@@ -66,7 +65,7 @@ func TestObjectWithNilSliceFieldTaggedAsNonNilIsInvalid(t *testing.T) {
 
 	err := v.Struct(obj)
 	req.NotNil(err)
-	req.IsType(vv9.ValidationErrors{}, err)
+	req.IsType(vv10.ValidationErrors{}, err)
 }
 
 func TestObjectWithEmptySliceFieldTaggedAsNonNilIsValid(t *testing.T) {
@@ -159,7 +158,7 @@ type durationValidation struct {
 
 func errorDueToFields(t assert.TestingT, err error, field ...string) {
 	found := map[string]bool{}
-	for _, e := range err.(vv9.ValidationErrors) {
+	for _, e := range err.(vv10.ValidationErrors) {
 		found[e.StructField()] = true
 	}
 

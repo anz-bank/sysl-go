@@ -53,7 +53,7 @@ clean: $(ALL_TESTS)
 
 ALL_GRPC_TESTS = $(sort $(dir $(wildcard codegen/arrai/auto/tests/*grpc*/Makefile)))
 
-update-auto-test-proto-pb: $(ALL_GRPC_TESTS) ## Update go.mod and go.sum files within auto tests
+update-auto-test-proto-pb: $(ALL_GRPC_TESTS) ## Update protos within auto tests
 	$(foreach dir,$^,pushd $(dir) && $(MAKE) -B protos && popd;)
 
 CHECK_COVERAGE = awk -F '[ \t%]+' '/^total:/ && $$3 < $(COVERAGE) {exit 1}'

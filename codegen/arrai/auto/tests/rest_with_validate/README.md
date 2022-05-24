@@ -39,11 +39,11 @@ type Person struct {
 
 ### Validation
 
-Internally, Sysl-go uses [validate](https://godoc.org/gopkg.in/go-playground/validator.v9) struct tags set against the generated types.
+Internally, Sysl-go uses [validate](https://godoc.org/github.com/go-playground/validator/v10) struct tags set against the generated types.
 
 ### Request parameters
 
-To validate REST request parameters, the `validate` annotation on the endpoint contains a string in the form `name:tags` where `name` is the name of the request parameter and `tags` is the value of the [validate](https://godoc.org/gopkg.in/go-playground/validator.v9) struct tag:
+To validate REST request parameters, the `validate` annotation on the endpoint contains a string in the form `name:tags` where `name` is the name of the request parameter and `tags` is the value of the [validate](https://godoc.org/github.com/go-playground/validator/v10) struct tag:
 
 ```sysl
 /query/{age <: int} [validate="age:min=0,max=100"]
@@ -63,7 +63,7 @@ In the event that the tag itself contains a space, the `validate` annotation can
 
 ### Request and response objects
 
-To validate request and response objects, the `validate` annotation on the corresponding property contains the value of the [validate](https://godoc.org/gopkg.in/go-playground/validator.v9) struct tag:
+To validate request and response objects, the `validate` annotation on the corresponding property contains the value of the [validate](https://godoc.org/github.com/go-playground/validator/v10) struct tag:
 
 ```sysl
 type GetQueryRequest struct {
