@@ -21,6 +21,10 @@ let paramValidateTags = \ep
     };
 
 
+let quoteSpaced = 
+    let hasSpace = //re.compile('\\s').match;
+    \s cond {hasSpace(s): $`'${s}'`, _: s};
+
 let validationTagForType = \type 
     let tags =
         cond type {
@@ -53,7 +57,7 @@ let validationTagForType = \type
                 )
                 |
                 (
-                    cond a {{'openapi_enum': {'a': {'elt': (a: e, ...), ...}, ...}, ...}: {$`oneof=${e >> .('s').s:: }`}}
+                    cond a {{'openapi_enum': {'a': {'elt': (a: e, ...), ...}, ...}, ...}: {$`oneof=${e >> quoteSpaced(.('s').s):: }`}}
                 )
         };
     cond {tags:

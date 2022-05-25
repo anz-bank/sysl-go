@@ -63,6 +63,8 @@ components:
             - Val1
             - Val2
             - Val3
+            - Val With Spaces
+            - Val	With	Tabs
         enumInt:
           type: integer
           enum:

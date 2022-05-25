@@ -254,6 +254,8 @@ func TestValidate_BodyParams(t *testing.T) {
 		{`patternWithNegativeLookaheadFail`, 400, getBody(patternWithNegativeLookahead, "1", 0)},
 
 		{`enumStringSuccess`, 200, getBody(enumString, "Val1", 0)},
+		{`enumStringSuccessWithSpace`, 200, getBody(enumString, "Val With Spaces", 0)},
+		{`enumStringSuccessWithTabs`, 200, getBody(enumString, "Val\tWith\tTabs", 0)},
 		{`enumStringFail`, 400, getBody(enumString, "val1", 0)},
 
 		{`enumIntSuccess`, 200, getBody(enumInt, "", 1)},
