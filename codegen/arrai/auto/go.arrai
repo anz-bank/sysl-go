@@ -34,14 +34,15 @@ let asVariableName =
 # Ref: https://golang.org/ref/mod#go-mod-file-module
 let goMainModulePath = \goModFilename //re.compile(`(?m)^module\s+(.*)$`).match($"${//os.file(goModFilename)}")(0)(1) rank (:.@);
 
-# Return the name of the type prefixed with EXTERNAL_ if annotated as 'unmapped_openapi'
+# Return the name of the type prefixed with EXTERNAL_ if a type is completely missing, or is annotated as 'unmapped_openapi'
 # When Sysl encounters a type that was referenced in the openapi spec but not defined it will create an alias of that type to string.
 # In Sysl-go we do not want assume the type is string and instead just don't define it at all and allow the developer to create the type themselves.
 # By prefixing those types with EXTERNAL_ it makes it clear that this type needs to be implemented by the developer (it also has the benefit of
 # being backwards compatible as Sysl previously generated the name with EXTERNAL_)
 let asExternalised = \app \type
+    let t = app('types')?(type)?:'missing';
     cond {
-        'unmapped_openapi' <: sysl.patterns(app('types')?(type)?:{}): 'EXTERNAL_' ++ type,
+        t = 'missing' || ('unmapped_openapi' <: sysl.patterns(t)): 'EXTERNAL_' ++ type,
         _: type,
     };
 
@@ -379,4 +380,5 @@ let module = \module
     :varName,
     :errorReturnTypes,
     :asVariableName,
+    :asExternalised,
 )

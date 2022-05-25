@@ -34,6 +34,7 @@ components:
               - $ref: '#/components/schemas/One'
               - $ref: '#/components/schemas/Two'
               - $ref: '#/components/schemas/Three'
+              - $ref: '#/components/schemas/EmptyType'
 
     OneOfResponse:
       type: object
@@ -45,6 +46,7 @@ components:
               - $ref: '#/components/schemas/One'
               - $ref: '#/components/schemas/Two'
               - $ref: '#/components/schemas/Three'
+              - $ref: '#/components/schemas/EmptyType'
 
     One:
       type: object
@@ -69,3 +71,6 @@ components:
           type: integer
       required:
         - three
+
+    EmptyType:
+      type: object

@@ -1,8 +1,8 @@
 FROM golang:1.16.3-buster
 
 
-ENV SYSL_VERSION=0.540.0
-ENV ARRAI_VERSION=0.303.0
+ENV SYSL_VERSION=0.547.0
+ENV ARRAI_VERSION=0.307.0
 
 WORKDIR /temp-deps/sysl
 RUN curl -LJO https://github.com/anz-bank/sysl/releases/download/v"$SYSL_VERSION"/sysl_"$SYSL_VERSION"_linux-amd64.tar.gz && tar -xvf sysl_"$SYSL_VERSION"_linux-amd64.tar.gz && mv sysl /bin/sysl

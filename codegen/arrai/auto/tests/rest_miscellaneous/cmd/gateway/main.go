@@ -67,6 +67,8 @@ func PostRotateOneOf(ctx context.Context, req *gateway.PostRotateOneOfRequest, c
 			proor.Request.Values = append(proor.Request.Values, oneof_backend.OneOfRequest_values{Two: &oneof_backend.Two{v.Two.Two}})
 		case v.Three != nil:
 			proor.Request.Values = append(proor.Request.Values, oneof_backend.OneOfRequest_values{Three: &oneof_backend.Three{v.Three.Three}})
+		case v.EmptyType != nil:
+			proor.Request.Values = append(proor.Request.Values, oneof_backend.OneOfRequest_values{EmptyType: &oneof_backend.EmptyType{}})
 		}
 	}
 
@@ -84,6 +86,8 @@ func PostRotateOneOf(ctx context.Context, req *gateway.PostRotateOneOfRequest, c
 			goor.Values = append(goor.Values, gateway.OneOfResponse_values{Two: &gateway.Two{v.Two.Two}})
 		case v.Three != nil:
 			goor.Values = append(goor.Values, gateway.OneOfResponse_values{Three: &gateway.Three{v.Three.Three}})
+		case v.EmptyType != nil:
+			goor.Values = append(goor.Values, gateway.OneOfResponse_values{EmptyType: &gateway.EmptyType{}})
 		}
 	}
 

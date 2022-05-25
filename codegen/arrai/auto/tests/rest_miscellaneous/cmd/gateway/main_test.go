@@ -213,11 +213,13 @@ func TestMiscellaneous_OneOf(t *testing.T) {
 			{One: &oneof_backend.One{true}},
 			{Two: &oneof_backend.Two{"two"}},
 			{Three: &oneof_backend.Three{3}},
+			{EmptyType: &oneof_backend.EmptyType{}},
 		}}).
 		MockResponse(200, nil, oneof_backend.OneOfResponse{[]oneof_backend.OneOfResponse_values{
 			{Three: &oneof_backend.Three{3}},
 			{One: &oneof_backend.One{true}},
 			{Two: &oneof_backend.Two{"two"}},
+			{EmptyType: &oneof_backend.EmptyType{}},
 		}})
 
 	gatewayTester.PostRotateOneOf().
@@ -225,6 +227,7 @@ func TestMiscellaneous_OneOf(t *testing.T) {
 			{One: &gateway.One{true}},
 			{Two: &gateway.Two{"two"}},
 			{Three: &gateway.Three{3}},
+			{EmptyType: &gateway.EmptyType{}},
 		}}).
 		ExpectResponseCode(201).
 		ExpectResponseHeaders(map[string]string{"Content-Type": `application/json; charset = utf-8`}).
@@ -232,6 +235,7 @@ func TestMiscellaneous_OneOf(t *testing.T) {
 			{Three: &gateway.Three{3}},
 			{One: &gateway.One{true}},
 			{Two: &gateway.Two{"two"}},
+			{EmptyType: &gateway.EmptyType{}},
 		}}).
 		Send()
 }
@@ -278,7 +282,7 @@ func TestMiscellaneous_CheckExternals(t *testing.T) {
 	v = gateway.UndefinedPropertyType{}.Value
 
 	// Just want to confirm that it generates the type with the correct name
-	_, ok := v.(*gateway.EXTERNAL_undefinedPropertyType_value)
+	_, ok := v.(*gateway.EXTERNAL_MissingType)
 	require.True(t, ok)
 }
 

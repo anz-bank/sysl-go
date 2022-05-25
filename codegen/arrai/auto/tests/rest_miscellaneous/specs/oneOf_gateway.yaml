@@ -41,6 +41,8 @@ components:
               - $ref: '#/components/schemas/One'
               - $ref: '#/components/schemas/Two'
               - $ref: '#/components/schemas/Three'
+              - $ref: '#/components/schemas/EmptyType'
+              - $ref: '#/components/schemas/MissingType'
 
     OneOfResponse:
       type: object
@@ -52,6 +54,8 @@ components:
               - $ref: '#/components/schemas/One'
               - $ref: '#/components/schemas/Two'
               - $ref: '#/components/schemas/Three'
+              - $ref: '#/components/schemas/EmptyType'
+              - $ref: '#/components/schemas/MissingType'
 
     One:
       type: object
@@ -80,4 +84,7 @@ components:
     undefinedPropertyType:
       properties:
         value:
-          type: object
+          $ref: '#/components/schemas/MissingType'
+
+    EmptyType:
+      type: object
