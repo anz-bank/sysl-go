@@ -186,6 +186,18 @@ func TestMiscellaneous_DownstreamQuery(t *testing.T) {
 		ExpectResponseCode(200).
 		ExpectResponseBody(gateway.PongString{S: expectString}).
 		Send()
+
+	gatewayTester.Mocks.Encoder_backend.GetPingList.
+		ExpectQueryParams(map[string][]string{"id": {fmt.Sprint(expectId)}}).
+		MockResponse(200, map[string]string{"Content-Type": `application/json`}, encoder_backend.Pong{Identifier: expectId})
+
+	gatewayTester.Mocks.Multi_contenttype_backend.PostPingMultiColon.
+		MockResponse(200, nil, nil)
+
+	gatewayTester.GetPingAsyncdownstreamsList(expectId).
+		ExpectResponseCode(200).
+		ExpectResponseBody(gateway.Pong{Identifier: expectId}).
+		Send()
 }
 
 func TestMiscellaneous_Patch(t *testing.T) {

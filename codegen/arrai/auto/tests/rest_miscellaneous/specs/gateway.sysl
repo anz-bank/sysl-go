@@ -62,6 +62,12 @@ Gateway [package="gateway", ~vars_in_url_name]:
         POST:
             oneof_backend <- POST /rotate-one-of
 
+    /ping/asyncDownstreams:
+        GET ?id=int:
+            EncoderBackend <- GET /ping
+            multi_contenttype_backend <- POST /ping/multi:colon
+            return ok <: pong
+
 GatewayWithBff [package="gatewayWithBff"]:
     @basePath = "bff"
     @go_package = "gatewayWithBff"

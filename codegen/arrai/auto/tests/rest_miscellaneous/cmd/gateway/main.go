@@ -3,14 +3,17 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 
+	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/log"
-	"rest_miscellaneous/internal/gen/pkg/servers/gateway/oneof_backend"
 
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/encoder_backend"
+	"rest_miscellaneous/internal/gen/pkg/servers/gateway/multi_contenttype_backend"
+	"rest_miscellaneous/internal/gen/pkg/servers/gateway/oneof_backend"
 )
 
 type AppConfig struct{}
@@ -104,14 +107,50 @@ func GetPingMultiCode(_ context.Context, req *gateway.GetPingMultiCodeRequest) (
 	return nil, nil, fmt.Errorf("Code can only be 0 or 1")
 }
 
+func GetPingAsync(ctx context.Context, req *gateway.GetPingAsyncdownstreamsListRequest, client gateway.GetPingAsyncdownstreamsListClient) (*gateway.Pong, error) {
+	backend1Req := &encoder_backend.GetPingListRequest{
+		ID: req.ID,
+	}
+	backend2Req := &multi_contenttype_backend.PostPingMultiColonRequest{}
+
+	ctx1 := common.RespHeaderAndStatusToContext(ctx, make(http.Header), 0)
+	ctx2 := common.RespHeaderAndStatusToContext(ctx, make(http.Header), 0)
+
+	backend1Future := common.Async(ctx1, func(ctxInt context.Context) (interface{}, error) {
+		return client.Encoder_backendGetPingList(ctxInt, backend1Req)
+	})
+	backend2Future := common.Async(ctx2, func(ctxInt context.Context) (interface{}, error) {
+		return client.Multi_contenttype_backendPostPingMultiColon(ctxInt, backend2Req)
+	})
+
+	// above 2 calls have been made asynchronously, lets get their results
+	encoderResponseInterface, err := backend1Future.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	// for this test I am ignoring the value of the second result, as long as it's not an error
+	_, err = backend2Future.Get()
+	if err != nil {
+		return nil, err
+	}
+
+	encoderResponse := encoderResponseInterface.(*encoder_backend.Pong)
+
+	return &gateway.Pong{
+		Identifier: encoderResponse.Identifier,
+	}, nil
+}
+
 func createService(_ context.Context, _ AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
 	return &gateway.ServiceInterface{
-		PostRotateOneOf:  PostRotateOneOf,
-		GetPingIdList:    GetPingList,
-		GetPingStringS:   GetPingString,
-		PatchPing:        PatchPing,
-		PostPingBinary:   PostPingBinary,
-		GetPingMultiCode: GetPingMultiCode,
+		PostRotateOneOf:             PostRotateOneOf,
+		GetPingIdList:               GetPingList,
+		GetPingStringS:              GetPingString,
+		PatchPing:                   PatchPing,
+		PostPingBinary:              PostPingBinary,
+		GetPingMultiCode:            GetPingMultiCode,
+		GetPingAsyncdownstreamsList: GetPingAsync,
 	}, nil, nil
 }
 
