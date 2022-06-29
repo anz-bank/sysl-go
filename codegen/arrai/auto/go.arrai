@@ -50,7 +50,9 @@ let asExternalised = \app \type
 let typeImpl = \leafOnly //fn.fix(\typeImpl \app \t
     let ptr = cond {t('opt')?:false && !({"sequence", "set"} & (t => .@)): "*"};
     let appname = cond {!leafOnly: cond t {
-        {'typeRef': {'ref': {'appname': {'part': (a: [(s: appname), ...])}, ...}, ...}, ...}: appname,
+        {'typeRef': {'ref': {'appname': {'part': (a: [(s: appname), ...])}, ...}, ...}, ...}: 
+            # if the appname is this app then don't add it
+            cond { t('typeRef')('ref')('appname') = app('name')?:{}: "", _: appname},
         _: "",
     }};
     let typeName = cond t {
