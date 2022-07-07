@@ -22,6 +22,10 @@ paths:
 
 components:
   schemas:
+    toRefWithLength:
+      type: string
+      minLength: 1
+      maxLength: 2
     PingWithValidateRequest:
       type: object
       required:
@@ -71,6 +75,8 @@ components:
             - 1
             - 2
             - 3
+        refWithLength:
+          $ref: '#/components/schemas/toRefWithLength'
 
   parameters:
     headerLength:
