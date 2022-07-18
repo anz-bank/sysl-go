@@ -75,8 +75,8 @@ github.com/armon/go-metrics v0.3.10/go.mod h1:4O98XIr/9W0sxpJ8UaYkvjk10Iff7SnFrb
 github.com/armon/go-radix v0.0.0-20180808171621-7fddfc383310/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/armon/go-radix v1.0.0/go.mod h1:ufUuZ+zHj4x4TnLV4JWEpy2hxWSpsRywHrMgIH9cCH8=
 github.com/arr-ai/frozen v0.16.0/go.mod h1:0gBYCxEOPUg7+YjLnuUKlB0wei9bhOrmywoFXpYNh40=
-github.com/arr-ai/frozen v0.20.0 h1:zrLitqrMQpeTAvcupeS7y3f4FtP58RBe9xczVFB/cW0=
-github.com/arr-ai/frozen v0.20.0/go.mod h1:cxMBMvycEemXmbAk4DS61947fR5TGBEKtomp2+SDFjk=
+github.com/arr-ai/frozen v0.20.1 h1:WTW3JJzBIpeOwXeacD1hO6YzKAaeFam1b3CO7vQBq6U=
+github.com/arr-ai/frozen v0.20.1/go.mod h1:cxMBMvycEemXmbAk4DS61947fR5TGBEKtomp2+SDFjk=
 github.com/arr-ai/hash v0.8.0 h1:Nbax1FE4qa7ejhx+CTCjUAyEPADhYDrRjn/L6y03rMI=
 github.com/arr-ai/hash v0.8.0/go.mod h1:2fLB6qpmZbH+dpvNooTW2m9o5z1pEsUQxfGmZs6Z8QQ=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
