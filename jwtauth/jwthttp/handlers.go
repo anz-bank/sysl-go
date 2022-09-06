@@ -8,7 +8,7 @@ import "net/http"
 // DefaultUnauthHandler is used when a middleware is created without a custom
 // unauth handler
 //
-// If error defines its own http status, use that, otherwise respond 403 forbidden
+// If error defines its own http status, use that, otherwise respond 403 forbidden.
 //
 // Does not attach a body to the response.
 func DefaultUnauthHandler(w http.ResponseWriter, r *http.Request, err error) {

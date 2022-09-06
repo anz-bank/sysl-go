@@ -1,7 +1,7 @@
 package config
 
 // ConfigReader lists the methods exposed by ConfigReaderImpl.
-type ConfigReader interface { // nolint:golint
+type ConfigReader interface { //nolint:revive
 	// Get returns an interface{}.
 	// For a specific value use one of the Get____ methods.
 	Get(key string) (interface{}, error)

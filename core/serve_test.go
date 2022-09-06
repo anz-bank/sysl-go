@@ -139,7 +139,7 @@ func TestNewServerInitialisesLogger_externalLogrusLogger(t *testing.T) {
 	buf := &bytes.Buffer{}
 	l := logrus.New()
 	l.Out = buf
-	ctx := common.LoggerToContext(context.Background(), l, nil) // nolint:staticcheck
+	ctx := common.LoggerToContext(context.Background(), l, nil) //nolint:staticcheck
 	ctx, err := newServerContextWithHooks(ctx, &Hooks{
 		Logger: func() log.Logger {
 			t.Fatal("hook should not be called")

@@ -1,4 +1,4 @@
-FROM golang:1.16.3-buster AS stage
+FROM golang:1.18-buster AS stage
 
 # requires git make curl
 # but this base image has all of those tools already
@@ -21,7 +21,7 @@ RUN curl -LJO https://github.com/arr-ai/arrai/releases/download/v"$ARRAI_VERSION
 RUN chown root:root /bin/arrai
 
 # install goimports
-RUN go get golang.org/x/tools/cmd/goimports
+RUN go install golang.org/x/tools/cmd/goimports@latest
 
 #install unzip
 RUN apt-get update \
@@ -35,7 +35,7 @@ RUN curl -LJO https://github.com/protocolbuffers/protobuf/releases/download/v${P
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v$PROTOC_GEN_GO_VERSION
 RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v$PROTOC_GEN_GO_GRPC_VERSION
 
-FROM golang:1.16.3-buster
+FROM golang:1.18-buster
 COPY --from=stage /bin/arrai /bin
 COPY --from=stage /bin/sysl /bin
 COPY --from=stage /go/bin/goimports /bin

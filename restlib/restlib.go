@@ -144,6 +144,7 @@ type HTTPRequest struct {
 }
 
 // DoHTTPRequest returns HTTPResult.
+//
 //nolint:funlen // TODO: Refactor this function to be shorter.
 func DoHTTPRequest2(ctx context.Context, config *HTTPRequest) (*HTTPResult, error) {
 	var reader io.Reader

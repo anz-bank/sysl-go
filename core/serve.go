@@ -60,6 +60,7 @@ func Serve(
 }
 
 // NewServer returns an auto-generated service.
+//
 //nolint:funlen
 func NewServer(
 	ctx context.Context,
@@ -698,7 +699,7 @@ func getExternalLogger(ctx context.Context) (context.Context, log.Logger) {
 	if logger != nil {
 		return ctx, logger
 	}
-	logrus := log.GetLogrusLoggerFromContext(ctx) // nolint:staticcheck
+	logrus := log.GetLogrusLoggerFromContext(ctx) //nolint:staticcheck
 	if logrus != nil {
 		lgr := log.NewLogrusLogger(logrus)
 		lgr.Debug("legacy logrus logger configuration detected, use Hooks.Logger instead")

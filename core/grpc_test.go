@@ -173,7 +173,7 @@ func Test_serverUsesGivenLogger(t *testing.T) {
 	defer conn.Close()
 
 	var connecting bool
-	cre := regexp.MustCompile(`ClientConn switching balancer`)
+	cre := regexp.MustCompile(`Channel switches to new LB policy`)
 	for _, entry := range logger.Entries() {
 		if connecting {
 			break

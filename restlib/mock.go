@@ -7,7 +7,7 @@ import (
 )
 
 // ResponseWriter returns a mock ResponseWriter implementing http.ResponseWriter.
-func ResponseWriter() *responseWriter { //nolint:golint
+func ResponseWriter() *responseWriter {
 	return &responseWriter{}
 }
 
@@ -62,6 +62,6 @@ func (r *readCloser) Err(err error) *readCloser {
 // ReadCloser returns a mock io.ReadCloser that can be set to return
 // an err when Read is called on it and do nothing when Close is called
 // on it.
-func ReadCloser() *readCloser { //nolint:golint
+func ReadCloser() *readCloser {
 	return &readCloser{}
 }

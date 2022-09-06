@@ -63,12 +63,12 @@ func ConfigToYamlData(cfg interface{}, appCfgType reflect.Type) ([]byte, error) 
 	}
 }
 
-//nolint:golint // context.Context should be the first parameter of a function
+//nolint:revive // context.Context should be the first parameter of a function
 func NewTester(t syslgo.TestingT, ctx context.Context, yamlConfigData []byte) (*Tester, context.Context, *core.Hooks) {
 	return NewTesterWithBuildMetadata(t, ctx, status.BuildMetadata{}, yamlConfigData)
 }
 
-//nolint:golint // context.Context should be the first parameter of a function
+//nolint:revive // context.Context should be the first parameter of a function
 func NewTesterWithBuildMetadata(t syslgo.TestingT, ctx context.Context, bm status.BuildMetadata, yamlConfigData []byte) (*Tester, context.Context, *core.Hooks) {
 	e2eTester := &Tester{
 		t:               t,
@@ -134,7 +134,7 @@ func (b *Tester) Do(tc TestCall) {
 	req, err := http.NewRequestWithContext(context.Background(), tc.Method, b.EndpointURL(tc.URL), reqBody)
 	require.NoError(b.t, err)
 	req.Header = makeHeader(tc.Headers)
-	// nolint: bodyclose // helper calls close()
+	//nolint: bodyclose // helper calls close()
 	resp, err := b.restServer.Client().Do(req)
 	require.NoError(b.t, err)
 	if tc.TestCodeFn != nil {
@@ -158,7 +158,7 @@ func (b *Tester) Do2(tc TestCall2) {
 	req, err := http.NewRequestWithContext(context.Background(), tc.Method, b.EndpointURL(tc.URL), reqBody)
 	require.NoError(b.t, err)
 	req.Header = makeHeader(tc.Headers)
-	// nolint: bodyclose // helper calls close()
+	//nolint: bodyclose // helper calls close()
 	resp, err := b.restServer.Client().Do(req)
 	require.NoError(b.t, err)
 	require.NotNil(b.t, resp)

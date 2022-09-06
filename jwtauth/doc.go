@@ -12,18 +12,18 @@ following needs
 3. You need fine-grained control over the endpoints that get auth'n/o, and what
 gets checked
 
-Authentication
+# Authentication
 
 Authentication in the JWT world refers to the action of verifying a jwt comes
 from a trusted source. This occurs via the Authenticator interface...
 
-    type Authenticator interface {
-		Authenticate(string token) (*Claims, error)
-	}
+	    type Authenticator interface {
+			Authenticate(string token) (*Claims, error)
+		}
 
 TODO(cantosd): document configuration when done
 
-Authorization
+# Authorization
 
 Authorization in the JWT world refers to verifying the claims have sufficient
 permissions to execute the request. This always happens after authentication,
@@ -33,9 +33,9 @@ permissions for a customer).
 
 Authorization is handled by the Authorizor interface...
 
-    type Authorizor interface {
-		Authorize(claims *Claims) error
-	}
+	    type Authorizor interface {
+			Authorize(claims *Claims) error
+		}
 
 It is up to the application to implement this interface. To do this, first
 define what valid permissions are for any given request, then implement this

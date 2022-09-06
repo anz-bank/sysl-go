@@ -50,6 +50,5 @@ Marshalling a json request/response:
 	}
 	marshalled, _ := json.Marshal(requestBody)
 	resp, err := http.Do(url, method, bytes.NewBuffer(marshalled))
-
 */
 package jsontime

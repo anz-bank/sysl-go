@@ -11,7 +11,7 @@ import (
 // ConfigReaderBuilder exposes the builder api for configReaderImpl.
 // Use NewConfigReaderBuilder() and AttachEnvPrefix() to Build a ConfigReaderBuilder. Follow it up one or more calls
 // to WithConfigFile() and/or WithConfigName() and finally use Build() to Build the configReaderImpl.
-type ConfigReaderBuilder struct { // nolint:golint
+type ConfigReaderBuilder struct { //nolint:revive
 	evarReader configReaderImpl
 }
 

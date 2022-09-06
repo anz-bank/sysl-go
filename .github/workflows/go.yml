@@ -53,7 +53,7 @@ jobs:
   downstream_test:
     name: Test against downstream repos
     runs-on: ubuntu-latest
-    container: golang:1.16-stretch
+    container: golang:1.18-stretch
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2

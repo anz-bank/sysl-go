@@ -30,8 +30,8 @@ See [sysl-template](https://github.com/anz-bank/sysl-template) for more examples
 
 Ensure your environment provides:
 
-- [go 1.16](https://golang.org/doc/install)
-- [golangci-lint 1.29.0](https://github.com/golangci/golangci-lint/releases/tag/v1.29.0)
+- [go 1.18](https://golang.org/doc/install)
+- [golangci-lint 1.48.0](https://github.com/golangci/golangci-lint/releases/tag/v1.48.0)
 - [protobuf 3.11.4](https://github.com/protocolbuffers/protobuf/)
 - `make`
 - proto3 and gRPC
@@ -44,7 +44,7 @@ Ensure your environment provides:
 - [`goimports`](https://pkg.go.dev/golang.org/x/tools/cmd/goimports) tool available on PATH
 
 
-On OSX, after installing [go 1.16](https://golang.org/doc/install) run
+On OSX, after installing [go 1.18](https://golang.org/doc/install) run
 
     brew install golangci/tap/golangci-lint make curl protoc-gen-go grpc
 

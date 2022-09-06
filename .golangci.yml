@@ -1,5 +1,5 @@
 service:
-  golangci-lint-version: 1.29.0
+  golangci-lint-version: 1.48.0
 
 linters-settings:
   lll:
@@ -23,22 +23,19 @@ linters:
     - godot
     - gofmt
     - goimports
-    - golint
+    - revive
     - gomodguard
     - goprintffuncname
     - gosimple
     - govet
     - ineffassign
-    - interfacer
-    - maligned
+    - govet
     - misspell
     - nakedret
     - nolintlint
     - prealloc
-    - rowserrcheck
-    - scopelint
+    - exportloopref
     - staticcheck
-    - structcheck
     - typecheck
     - unconvert
     - unparam
