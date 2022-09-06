@@ -25,7 +25,7 @@ genCode:
       %s
       common:
         hostName: "localhost"
-        port: 9021 # FIXME no guarantee this port is free
+        port: 9022 # FIXME no guarantee this port is free
   downstream:
     contextTimeout: "1s"
 `
@@ -48,7 +48,7 @@ func doGatewayRequestResponse(ctx context.Context, basePath, content string) (st
 		return "", err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", "http://localhost:9021"+basePath+"/ping/binary", bytes.NewReader(requestData))
+	req, err := http.NewRequestWithContext(ctx, "POST", "http://localhost:9022"+basePath+"/ping/binary", bytes.NewReader(requestData))
 	if err != nil {
 		return "", err
 	}
