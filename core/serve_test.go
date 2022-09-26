@@ -35,7 +35,7 @@ func TestNewServerReturnsErrorIfNewManagerReturnsError(t *testing.T) {
 
 	srv, err := NewServer(
 		ctx,
-		struct{}{},
+		&struct{}{},
 		func(ctx context.Context, config TestAppConfig) (*TestServiceInterface, *Hooks, error) {
 			return &TestServiceInterface{}, nil, nil
 		},
@@ -60,7 +60,7 @@ func TestNewServerReturnsErrorIfValidateConfigReturnsError(t *testing.T) {
 
 	srv, err := NewServer(
 		ctx,
-		struct{}{},
+		&struct{}{},
 		func(ctx context.Context, config TestAppConfig) (*TestServiceInterface, *Hooks, error) {
 			return &TestServiceInterface{}, hooks, nil
 		},
@@ -191,7 +191,7 @@ func newServerContextWithCreateService(ctx context.Context,
 	if cfg == nil {
 		ctx = WithConfigFile(ctx, []byte(""))
 	}
-	srv, err := NewServer(ctx, struct{}{}, createService,
+	srv, err := NewServer(ctx, &struct{}{}, createService,
 		&TestServiceInterface{},
 		func(ctx context.Context, serviceIntf interface{}, _ *Hooks) (Manager, *GrpcServerManager, error) {
 			return nil, nil, nil

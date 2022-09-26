@@ -105,7 +105,15 @@ func NewServer(
 	development := customConfigValue.FieldByName("Development").Interface().(*config.DevelopmentConfig)
 	appConfig := customConfigValue.FieldByName("App")
 	upstream := genCodeValue.FieldByName("Upstream").Interface().(config.UpstreamConfig)
-	downstream := genCodeValue.FieldByName("Downstream").Interface()
+	downstreamValue := genCodeValue.FieldByName("Downstream")
+
+	// ensure `downstream` is not nil so that ValidateHooks can use its type
+	var downstream any
+	if downstreamValue.IsNil() {
+		downstream = downstreamConfig
+	} else {
+		downstream = downstreamValue.Interface()
+	}
 
 	defaultConfig := &config.DefaultConfig{
 		Library:     library,
