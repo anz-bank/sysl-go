@@ -63,7 +63,7 @@ let grpc = //{./grpc};
         }
 
         ${nonRestEndpoints >> \(@value: ep, ...)
-            let methodInfo = go.pbMethodInfo(app, ep);
+            let methodInfo = go.pbMethodInfo(module, app, ep);
             let name = methodInfo.name;
             let requestType = methodInfo.requestType;
             let responseType = methodInfo.responseType;

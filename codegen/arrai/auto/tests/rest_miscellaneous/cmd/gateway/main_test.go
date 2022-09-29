@@ -11,12 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anz-bank/sysl-go/core"
-	"github.com/sethvargo/go-retry"
-	"github.com/stretchr/testify/require"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/encoder_backend"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/oneof_backend"
+	"rest_miscellaneous/internal/gen/pkg/servers/gateway/types"
+
+	"github.com/anz-bank/sysl-go/core"
+	"github.com/sethvargo/go-retry"
+	"github.com/stretchr/testify/require"
 )
 
 const applicationConfig = `---
@@ -35,6 +37,8 @@ genCode:
     oneof_backend:
       clientTimeout: 1s
     multi_contenttype_backend:
+      clientTimeout: 1s
+    Types:
       clientTimeout: 1s
 `
 
@@ -301,4 +305,8 @@ func TestMiscellaneous_CheckExternals(t *testing.T) {
 func TestMiscellaneous_DoubleUnderscore(t *testing.T) {
 	// Just want to confirm that it generates a type that is accessible
 	_ = encoder_backend.Double_underscore{S: "accessible"}
+}
+
+func TestMiscellaneous_TypesSomethingExternal(t *testing.T) {
+	_ = types.SomethingExternal{}
 }

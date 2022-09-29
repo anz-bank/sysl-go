@@ -13,7 +13,7 @@ let fieldJsonTag = \type \key
 
 \(:app, :endpoints, :module, ...)
     let entities = orderedTypes(
-        app('types')?:{} where 
+        app('types')?:{} where
             !({"error", "unmapped_openapi"} & sysl.patterns(.@value)) &&
             (
                 {"tuple", "relation"} & (.@value => .@) ||
@@ -79,7 +79,7 @@ let fieldJsonTag = \type \key
                             ++ [$`url:"${urlTag::,}"`]
                             ++ cond { validateTag: [$`validate:"${validateTag}"`] };
                         $'
-                        ${fieldName} ${go.type(app, attrDef)} `${//seq.join(' ', structTags)}`'
+                        ${fieldName} ${go.type(module, app, attrDef)} `${//seq.join(' ', structTags)}`'
                     ::\i}
                 }
                 ${cond {typename <: go.errorReturnTypes(app): $`
@@ -98,7 +98,7 @@ let fieldJsonTag = \type \key
                         func unmarshalJSONWithValidation${typename}(data []byte) (*${typename}, bool, error) {
                             inner := struct {
                                 ${attrDefs orderby .@ >> \(@: key, @value: attrDef)
-                                    $'${go.name(key)} ${cond { !sysl.isPtr(attrDef) : '*', _ : ''}}${go.type(app, attrDef)} `json:"${fieldJsonTag(attrDef, key)::,},omitempty"`'
+                                    $'${go.name(key)} ${cond { !sysl.isPtr(attrDef) : '*', _ : ''}}${go.type(module, app, attrDef)} `json:"${fieldJsonTag(attrDef, key)::,},omitempty"`'
                                 ::\i}
                             }{}
                             err := json.Unmarshal(data, &inner)
@@ -175,13 +175,13 @@ let fieldJsonTag = \type \key
                 type ${typename} struct {
                     ${
                         (ep('param')?.a:{}) where "body" <: sysl.patterns(.@item('type')) >>
-                            $`Request ${go.bodyType(app, .('type'))}`
+                            $`Request ${go.bodyType(module, app, .('type'))}`
                     ::\i}
                     ${ep('restParams')?:{}
                         -> (.('queryParam')?.a:{}) ++ (.('urlParam')?.a:{})
                         orderby sysl.source(.@item('type'))
                         >>  let tags = paramTags(.@item('name').s)?:{};
-                            $`${go.name(.@item('name').s)} ${go.type(app, .@item('type'))} ${tags}`
+                            $`${go.name(.@item('name').s)} ${go.type(module, app, .@item('type'))} ${tags}`
                     ::\i}
                 }
             `
@@ -217,7 +217,7 @@ let fieldJsonTag = \type \key
         }
         ${aliases where .@item.@ != "Empty" && !//seq.has_prefix("EXTERNAL_", .@item.@) && !('unmapped_openapi' <: sysl.patterns(.@item.@value)) >> $`
             // ${.typename} ...
-            type ${.typename} = ${go.type(app, .@value)}
+            type ${.typename} = ${go.type(module, app, .@value)}
 
             ${cond {(.@ <: allUnionTypes): $`
                 func unmarshalJSONWithValidation${.typename}(data []byte) (*${.typename}, bool, error) {
@@ -231,7 +231,9 @@ let fieldJsonTag = \type \key
             }
         `::\i}
         ${unions >> \(@: key, @value: value, :typename)
-            let unionTypesWithId = value('oneOf')('type').a >> .('typeRef')('ref')('path').a >> (((.) single).@item).s >> go.asExternalised(app, .) >> (id: ., typename: go.name(.));
+            let unionTypesWithId = (value('oneOf')('type').a >>  go.asExternalised(module, app, .)) >>
+                (id: ., typename: go.name(.))
+            ;
             let unionTypes = unionTypesWithId >> .typename;
             $`
             // ${typename} can be one of the following types at runtime:

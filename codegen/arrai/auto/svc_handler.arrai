@@ -85,7 +85,7 @@ let validation = //{./validation};
                 #     return 201 <: Pong [mediatype="application/json;charset=UTF-8"]
                 #     return 202 <: Pong [mediatype="application/json"]
                 let codeAndMediaType = (.codeAndMediaType orderby .)(0);
-                let respContentType = codeAndMediaType.mediatype || cond go.baseType(app, returnType, app('types')?:{}) || returnType {
+                let respContentType = codeAndMediaType.mediatype || cond go.baseType(module, app, returnType, app('types')?:{}) || returnType {
                     'bytes': 'application/octet-stream',
                     '[]byte': 'application/octet-stream',
                     'string': 'text/plain',
@@ -100,7 +100,7 @@ let validation = //{./validation};
             let headerParams = ep('param')?.a:{} where {'header'} (<=) sysl.patterns(.@item('type'));
             let reqQueryParams =
                 queryParams where !.@item('type')('opt')?.b:false
-                >> (. | {'goType': go.type(app, .('type'))});
+                >> (. | {'goType': go.type(module, app, .('type'))});
             let optQueryParams =
                 queryParams where .@item('type')('opt')?.b:false
                     orderby sysl.source(.@item('type'))
@@ -137,7 +137,7 @@ let validation = //{./validation};
                     ${cond ep('restParams')('method').s {('POST', 'PUT', 'PATCH'):
                         let body = ep('param')?.a:{} where "body" <: sysl.patterns(.@item('type'));
                         let _ = cond {!body: //error($`POST, PUT and PATCH require a body, ${method} doesn't have a body!`)};
-                        let goBodyType = body single -> go.bodyType(app, .@item('type'));
+                        let goBodyType = body single -> go.bodyType(module, app, .@item('type'));
                         cond goBodyType {
                             '[]byte': $`
                                 decodeBytes, decodeErr := ioutil.ReadAll(r.Body)
@@ -193,7 +193,7 @@ let validation = //{./validation};
                     ${cond {optQueryParams: 'var convErr error'}}
                     ${optQueryParams >> $`${.var} = restlib.GetQueryParam(r, "${.name}")`::\i}
                     ${optQueryParams >>
-                        let type = cond go.type(app, .type) {
+                        let type = cond go.type(module, app, .type) {
                             "*bool": "BoolPtr",
                             "*int64": "IntPtr",
                             "*convert.JSONTime": "TimePtr",

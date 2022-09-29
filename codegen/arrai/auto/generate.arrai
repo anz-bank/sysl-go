@@ -45,7 +45,7 @@ let _inferHasDB = \app hasRelationTypes(app);
 
     config: \(:app, :basepath, :module, ...extra)
         let goModule = go.module(module);
-        let endpoints = app("endpoints") where .@ != "..." orderby .@;
+        let endpoints = app("endpoints")?:{} where .@ != "..." orderby .@;
         let restEndpoints = endpoints where .@item.@value('restParams')?:();
         let nonRestEndpoints = endpoints where !.@item.@value('restParams')?:() && .@item.@value('param')?:();
         extra +> (
@@ -58,7 +58,7 @@ let _inferHasDB = \app hasRelationTypes(app);
             :nonRestEndpoints,
             :goModule,
             appname:       sysl.app.name(app),
-            clientDeps:    goModule.clientDeps(endpoints),
+            clientDeps:    goModule.clientDeps(app),
             hasDB:         _inferHasDB(app),
         ),
 

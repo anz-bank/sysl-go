@@ -18,6 +18,10 @@ Gateway [package="gateway", ~vars_in_url_name]:
         GET:
             return ok <: pong
 
+    /something/external:
+        GET:
+            return ok <: Types.SomethingExternal
+
     !type Pong:
         identifier <: int
 
@@ -82,3 +86,7 @@ GatewayWithBff [package="gatewayWithBff"]:
 
     !type GatewayBinaryResponse:
         content <: bytes
+
+Types:
+    !type SomethingExternal:
+        data <: string

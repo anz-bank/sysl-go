@@ -1,11 +1,23 @@
-EncoderBackend [package="encoder_backend", ~gRPC]:
-    @go_package = "simple_grpc_with_downstream/internal/gen/pb/encoder_backend"
+EncoderBackend [~gRPC]:
+    @package = "encoder_backend"
+    @source_path = "encoder_backend.proto"
+    @go_package = "simple_grpc_with_downstream/internal/gen/pb/encoder_backend;encoder_backend"
 
-    Rot13(EncodingRequestRequest <: EncodingRequest):
-        return ok <: EncodingResponse
+    Rot13 (input <: encoder_backend.EncodingRequest) [~gRPC]:
+        @source_path = "encoder_backend.proto"
+        return ok <: encoder_backend.EncodingResponse
+
+encoder_backend:
+    @package = "encoder_backend"
 
     !type EncodingRequest:
-        content <: string
+        @source_path = "encoder_backend.proto"
+        content <: string:
+            @json_tag = "content"
+            @rpcId = "1"
 
     !type EncodingResponse:
-        content <: string
+        @source_path = "encoder_backend.proto"
+        content <: string:
+            @json_tag = "content"
+            @rpcId = "1"

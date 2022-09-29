@@ -4,7 +4,7 @@ FROM golang:1.18-buster AS stage
 # but this base image has all of those tools already
 
 ENV SYSL_VERSION=0.554.0
-ENV ARRAI_VERSION=0.307.0
+ENV ARRAI_VERSION=0.312.0
 
 ENV PROTOC_VERSION=3.17.3
 ENV PROTOC_GEN_GO_VERSION=1.27.1

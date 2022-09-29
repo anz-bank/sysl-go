@@ -1,10 +1,3 @@
-let app = (
-    name: \app
-        $`${app('name')('part').a >> .s::}`,
-    endpoint: \app \epname
-        ((app('endpoints') where .@value('name').s = epname) single).@value,
-);
-
 let isPtr = \t t('opt')?:false;
 
 let statements = \x x('stmt')?.a?:[];
@@ -103,13 +96,14 @@ let endpoint =
             @: //seq.trim_prefix("sql_", .@),
             @value: .@value('s').s,
         );
-
+    let params = \ep ep('param')?.a:[];
     (
         :calls,
         :returns,
         :normalReturns,
         :sqlStatements,
         :untypedReturns,
+        :params,
     );
 
 let source = \node node('sourceContext')('start') -> [.('line'), .('col')];
@@ -133,6 +127,28 @@ let type =
         :required
     );
 
+let splitAppName = \name //seq.split('::', //re.compile(`\s*::\s*`).sub('::', name));
+
+let app = (
+    name: \app $`${app('name')('part').a >> .s::}`,
+    endpoint: \app \epname ((app('endpoints') where .@value('name').s = epname) single).@value,
+    # TODO: find more dependencies from other location e.g. types.
+    dependencies: \app
+        let name = app('name', 'part');
+        let fromEndpoints = app('endpoints')?:{} => \(@value: ep, ...)
+            let fromCalls = (endpoint.calls(ep) => .@item('target')?:'') where .('part') != name;
+            # repack into {'part': (a: [(s: _), ...])} because this structure is used
+            let fromReturns = (endpoint.returns(app, ep) where ((.@item.type?:[] count) = 2)) => {
+                'part': (a: splitAppName(.@item.type(0)) >> (s: .)),
+            };
+            let fromParams = endpoint.params(ep) filter .@item {
+                {'typeRef': {'ref': {'appname': appname, ...}, ...}, ...}: appname
+            };
+            fromCalls | fromReturns | fromParams
+        ;
+        //rel.union(fromEndpoints),
+);
+
 (
     :app,
     :endpoint,
@@ -141,4 +157,5 @@ let type =
     :isPtr,
     :type,
     :replaceArrayElement,
+    :splitAppName,
 )

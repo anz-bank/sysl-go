@@ -1,10 +1,10 @@
 let go = //{./go};
 let grpc = //{./grpc};
 
-\(:app, :appname, :basepath, :clientDeps, :endpoints, :fixPBPath, ...)
+\(:app, :appname, :basepath, :clientDeps, :endpoints, :fixPBPath, :module, ...)
 
     # These are old definitions used prior to deb7738294f04d6628c07db08d5ba92367186c38
-    let methodInfos = endpoints => \(@:_, @item: (@:_, @value: ep)) go.pbMethodInfo(app, ep);
+    let methodInfos = endpoints => \(@:_, @item: (@:_, @value: ep)) go.pbMethodInfo(module, app, ep);
     let appname = go.name(grpc.app.name(app));
 
     # FIXME this methodSig definition added in deb7738294f04d6628c07db08d5ba92367186c38 is unused
