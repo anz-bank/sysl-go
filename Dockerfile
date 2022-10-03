@@ -1,10 +1,12 @@
-FROM golang:1.18-buster AS stage
+FROM --platform=$BUILDPLATFORM golang:1.18-buster AS stage
 
+ARG TARGETARCH
+ARG TARGETOS
 # requires git make curl
 # but this base image has all of those tools already
 
-ENV SYSL_VERSION=0.589.0
-ENV ARRAI_VERSION=0.312.0
+ENV SYSL_VERSION=0.590.0
+ENV ARRAI_VERSION=0.313.0
 
 ENV PROTOC_VERSION=3.17.3
 ENV PROTOC_GEN_GO_VERSION=1.27.1
@@ -13,11 +15,11 @@ ENV PROTOC_GEN_GO_GRPC_VERSION=1.1
 # install sysl. sysl's build process added a dependency on docker, which
 # is an obstacle to building from source, so instead install the binary
 WORKDIR /temp-deps/sysl
-RUN curl -LJO https://github.com/anz-bank/sysl/releases/download/v"$SYSL_VERSION"/sysl_"$SYSL_VERSION"_linux-amd64.tar.gz && tar -xvf sysl_"$SYSL_VERSION"_linux-amd64.tar.gz && mv sysl /bin/sysl
+RUN curl -LJO https://github.com/anz-bank/sysl/releases/download/v"$SYSL_VERSION"/sysl_"$SYSL_VERSION"_${TARGETOS}-${TARGETARCH}.tar.gz && tar -xvf sysl_"$SYSL_VERSION"_${TARGETOS}-${TARGETARCH}.tar.gz && mv sysl /bin/sysl
 RUN chown root:root /bin/sysl
 
 # install arrai
-RUN curl -LJO https://github.com/arr-ai/arrai/releases/download/v"$ARRAI_VERSION"/arrai_v"$ARRAI_VERSION"_linux-amd64.tar.gz && tar -xvf arrai_v"$ARRAI_VERSION"_linux-amd64.tar.gz && mv arrai /bin/arrai
+RUN curl -LJO https://github.com/arr-ai/arrai/releases/download/v"$ARRAI_VERSION"/arrai_v"$ARRAI_VERSION"_${TARGETOS}-${TARGETARCH}.tar.gz && tar -xvf arrai_v"$ARRAI_VERSION"_${TARGETOS}-${TARGETARCH}.tar.gz && mv arrai /bin/arrai
 RUN chown root:root /bin/arrai
 
 # install goimports
@@ -31,11 +33,18 @@ RUN apt-get update \
       netcat-openbsd
 
 #install protoc compiler and plugins
-RUN curl -LJO https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip && unzip protoc-${PROTOC_VERSION}-linux-x86_64.zip -d /
+RUN if [ "${TARGETARCH}" = "arm64" ]; \
+  then export PROTOC_ARCH="aarch_64"; \
+  elif [ "${TARGETARCH}" = "amd64" ]; \
+  then export PROTOC_ARCH="x86_64"; \
+  else export PROTOC_ARCH="${TARGETARCH}"; \
+  fi && \
+  curl -LJO https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-${TARGETOS}-"$PROTOC_ARCH".zip && unzip protoc-${PROTOC_VERSION}-${TARGETOS}-"$PROTOC_ARCH".zip -d /
+
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v$PROTOC_GEN_GO_VERSION
 RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v$PROTOC_GEN_GO_GRPC_VERSION
 
-FROM golang:1.18-buster
+FROM --platform=$BUILDPLATFORM golang:1.18-buster
 COPY --from=stage /bin/arrai /bin
 COPY --from=stage /bin/sysl /bin
 COPY --from=stage /go/bin/goimports /bin
