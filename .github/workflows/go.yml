@@ -2,10 +2,8 @@ name: Test
 on:
   push:
     branches:
-      - "*"
+      - master
   pull_request:
-    branches:
-      - "*"
 
 jobs:
   test:
@@ -37,12 +35,6 @@ jobs:
         # https://github.com/actions/checkout/issues/211
         run: |
           sudo chown -R $USER:$USER $GITHUB_WORKSPACE
-
-      - name: "make auto-test"
-        uses: ./.github/actions/builder
-        with:
-          entrypoint: /usr/bin/make
-          args: auto-test
 
       - name: "make check-tidy"
         uses: ./.github/actions/builder
