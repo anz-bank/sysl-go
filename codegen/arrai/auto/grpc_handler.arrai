@@ -19,6 +19,7 @@ let grpc = //{./grpc};
     let authorizationRule = \ep cond ep {
         {'attrs': {'authorization_rule': {'s': (s: rule), ...}, ...}, ...} : rule,
     };
+    let serviceDeps = clientDeps where .isService;
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | {go.pbImport(app)})}
 
@@ -28,7 +29,7 @@ let grpc = //{./grpc};
             genCallback         core.GrpcGenCallback
             serviceInterface    *GrpcServiceInterface
             authorizationRules  map[string]authrules.Rule
-            ${clientDeps orderby . >> (goModule.depField(.) -> $`${.name} ${.type}`)::\i}
+            ${serviceDeps orderby . >> (goModule.depField(.) -> $`${.name} ${.type}`)::\i}
         }
 
         // NewGrpcServiceHandler for ${appname}
@@ -37,7 +38,7 @@ let grpc = //{./grpc};
             hooks *core.Hooks,
             genCallback core.GrpcGenCallback,
             serviceInterface *GrpcServiceInterface,
-            ${clientDeps orderby . >> (goModule.depField(.) -> $`${.name} ${.type},`)::\i}
+            ${serviceDeps orderby . >> (goModule.depField(.) -> $`${.name} ${.type},`)::\i}
         ) (*GrpcServiceHandler, error) {
             ${cond {hasDB: $`
                 db, dberr := database.GetDBHandle()
@@ -63,7 +64,7 @@ let grpc = //{./grpc};
                 genCallback: genCallback,
                 serviceInterface: serviceInterface,
                 authorizationRules: authorizationRules,
-                ${clientDeps orderby . >> (goModule.depField(.) -> $`${.name}: ${.name},`)::\i}
+                ${serviceDeps orderby . >> (goModule.depField(.) -> $`${.name}: ${.name},`)::\i}
             }, nil
         }
 

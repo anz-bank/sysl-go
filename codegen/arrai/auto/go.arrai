@@ -351,11 +351,15 @@ let module = \module
         };
 
     let clientDeps = \app
-        sysl.app.dependencies(app) => (
-            target: .,
-            import: package(targetApp(.)),
-            app: (name: targetApp(., 'name')),
-        );
+        sysl.app.dependencies(app) =>
+            let dep = targetApp(.);
+            (
+                target: .,
+                import: package(dep),
+                app: (name: dep('name')),
+                isService: dep('endpoints')?:false,
+            )
+    ;
 
     let depField = \(:import, :target, ...)
         let grpc = 'gRPC' <: sysl.patterns(targetApp(target));

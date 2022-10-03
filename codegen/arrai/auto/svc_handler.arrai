@@ -9,6 +9,7 @@ let validation = //{./validation};
         {'attrs': {'authorization_rule': {'s': (s: rule), ...}, ...}, ...} : rule,
     };
     let validateApp = sysl.patterns(app) & {"validate"};
+    let serviceDeps = clientDeps where .isService;
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | dbimport)}
 
@@ -34,7 +35,7 @@ let validation = //{./validation};
             serviceInterface *ServiceInterface
             authorizationRules  map[string]authrules.Rule
             ${cond {hasDB: $`DB *sql.DB`}}
-            ${clientDeps orderby . >> (goModule.depField(.) -> $`${.name} ${.type}`)::\i}
+            ${serviceDeps orderby . >> (goModule.depField(.) -> $`${.name} ${.type}`)::\i}
         }
 
         // NewServiceHandler for ${appname}
@@ -43,7 +44,7 @@ let validation = //{./validation};
             hooks *core.Hooks,
             genCallback core.RestGenCallback,
             serviceInterface *ServiceInterface,
-            ${clientDeps orderby . >> $`${.import}${go.name(.import)}Service ${.import}.Service,`::\i}
+            ${serviceDeps orderby . >> $`${.import}${go.name(.import)}Service ${.import}.Service,`::\i}
         ) (*ServiceHandler, error) {
             ${cond {hasDB: $`
                 db, dberr := database.GetDBHandle()
@@ -70,7 +71,7 @@ let validation = //{./validation};
                 serviceInterface,
                 authorizationRules,
                 ${cond {hasDB: $`db,`}}
-                ${clientDeps orderby . >> $`${.import}${go.name(.import)}Service,`::\i}
+                ${serviceDeps orderby . >> $`${.import}${go.name(.import)}Service,`::\i}
             }, nil
         }
 

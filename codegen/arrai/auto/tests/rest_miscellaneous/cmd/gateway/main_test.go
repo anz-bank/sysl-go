@@ -38,8 +38,6 @@ genCode:
       clientTimeout: 1s
     multi_contenttype_backend:
       clientTimeout: 1s
-    Types:
-      clientTimeout: 1s
 `
 
 type Payload struct {

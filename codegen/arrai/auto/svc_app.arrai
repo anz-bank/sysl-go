@@ -7,12 +7,13 @@ let sysl = //{./sysl};
     let serviceInterface = $`${grpc}ServiceInterface`;
     let newServiceHandler = $`New${grpc}ServiceHandler`;
     let package = go.package(app);
+    let serviceDeps = clientDeps where .isService;
     $`
         ${go.prelude(app, clientDeps => $`${basepath}/${.import}`)}
 
         // DownstreamClients for ${appname}
         type DownstreamClients struct {
-            ${clientDeps orderby . >> $`${.import}Client *${.import}.Client`::\i}
+            ${serviceDeps orderby . >> $`${.import}Client *${.import}.Client`::\i}
         }
 
         // BuildDownstreamClients ...
@@ -23,7 +24,7 @@ let sysl = //{./sysl};
                 downstreamConfig = &DownstreamConfig{}
             }
             var err error
-            ${clientDeps orderby . >> $`
+            ${serviceDeps orderby . >> $`
                 ${cond {
                     goModule.depField(.).grpc:
                         $`
@@ -58,7 +59,7 @@ let sysl = //{./sysl};
                 }}
             `::\i\n:\n}
             return &DownstreamClients{
-                ${clientDeps orderby . >> $`${.import}Client: ${.import}Client,`::\i}
+                ${serviceDeps orderby . >> $`${.import}Client: ${.import}Client,`::\i}
             }, err
         }
 
@@ -151,7 +152,7 @@ let sysl = //{./sysl};
                         hooks.AddHTTPMiddleware,
                     )
 
-                    ${cond {clientDeps: $`
+                    ${cond {serviceDeps: $`
                         clients, err := BuildDownstreamClients(ctx, hooks)
                         if err != nil {
                             return nil, nil, err
@@ -162,7 +163,7 @@ let sysl = //{./sysl};
                         hooks,
                         genCallbacks,
                         serviceInterface,
-                        ${clientDeps orderby . >> $`clients.${.import}Client,`::\i}
+                        ${serviceDeps orderby . >> $`clients.${.import}Client,`::\i}
                     )
                     if err != nil {
                         return nil, nil, err

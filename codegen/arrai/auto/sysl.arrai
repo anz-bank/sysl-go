@@ -129,11 +129,11 @@ let type =
 
 let splitAppName = \name //seq.split('::', //re.compile(`\s*::\s*`).sub('::', name));
 
-let app = (
+let rec app = (
     name: \app $`${app('name')('part').a >> .s::}`,
     endpoint: \app \epname ((app('endpoints') where .@value('name').s = epname) single).@value,
     # TODO: find more dependencies from other location e.g. types.
-    dependencies: \app
+    dependenciesWithSource: \app
         let name = app('name', 'part');
         let fromEndpoints = app('endpoints')?:{} => \(@value: ep, ...)
             let fromCalls = (endpoint.calls(ep) => .@item('target')?:'') where .('part') != name;
@@ -144,9 +144,12 @@ let app = (
             let fromParams = endpoint.params(ep) filter .@item {
                 {'typeRef': {'ref': {'appname': appname, ...}, ...}, ...}: appname
             };
-            fromCalls | fromReturns | fromParams
+            (fromCalls   => (src: 'call',   app: .)) |
+            (fromReturns => (src: 'return', app: .)) |
+            (fromParams  => (src: 'param',  app: .))
         ;
         //rel.union(fromEndpoints),
+    dependencies: \appConfig app.dependenciesWithSource(appConfig) => .app,
 );
 
 (

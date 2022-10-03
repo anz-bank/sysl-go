@@ -47,7 +47,7 @@ let sysl = //{./sysl};
             // DownstreamConfig for ${appname}
             type DownstreamConfig struct {
                 ContextTimeout time.Duration ``mapstructure:"contextTimeout" yaml:"contextTimeout"``
-                ${clientDeps orderby . >>
+                ${clientDeps where .isService orderby . >>
                     let config = cond {
                         goModule.depField(.).grpc: `config.CommonGRPCDownstreamData`,
                         _: `config.CommonDownstreamData`,

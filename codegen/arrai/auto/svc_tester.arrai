@@ -6,8 +6,9 @@ let grpc = //{./grpc};
     let package = go.package(app);
     let gRPC = "gRPC" <: sysl.patterns(app);
     let goAppname = cond {gRPC: go.name(grpc.app.name(app)), _:""};
-    let grpcClientDeps = clientDeps where goModule.depField(.).grpc;
-    let restClientDeps = clientDeps where !goModule.depField(.).grpc;
+    let serviceDeps = clientDeps where .isService;
+    let grpcClientDeps = serviceDeps where goModule.depField(.).grpc;
+    let restClientDeps = serviceDeps where !goModule.depField(.).grpc;
 
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | cond {gRPC: {go.pbImport(app)}})}
@@ -24,7 +25,7 @@ let grpc = //{./grpc};
         }
 
         type Mocks struct {
-            ${clientDeps orderby . >> $`${go.name(.import)} *${.import}.DownstreamMocks`::\i}
+            ${serviceDeps orderby . >> $`${go.name(.import)} *${.import}.DownstreamMocks`::\i}
         }
 
         ${cond {grpcClientDeps: $`
