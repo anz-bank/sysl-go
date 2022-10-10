@@ -1,0 +1,5 @@
+.gitattributes
+.github
+Dockerfile
+*/internal/gen/pkg
+README.md

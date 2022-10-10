@@ -1,0 +1,6 @@
+import ./proto.proto
+
+REST_Subdir:
+    /:
+        GET:
+            ...

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+option go_package = "subdir_tests/subdir";
+
+package subdir;
+
+
+service GRPC_Subdir {
+  rpc Sub (SubdirRequest) returns (SubdirReply) {}
+}
+
+
+message SubdirRequest {
+  string name = 1;
+}
+
+
+message SubdirReply {
+  string message = 1;
+}

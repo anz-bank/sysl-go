@@ -1,7 +1,7 @@
 let validate = //{./validate};
 
-let generate = \(:outDir, :json, :repo, :path, :appname, :pbbase) \template
-    let basepath = $`${repo}/${path}`;
+let generate = \(:outDir, :json, :repo, :path, :appname, :subDir, :pbbase) \template
+    let basepath = $`${repo}/${subDir}${path}`;
     let module = //encoding.json.decode(json);
     let app = module("apps")(appname);
 
@@ -17,29 +17,41 @@ let generate = \(:outDir, :json, :repo, :path, :appname, :pbbase) \template
         //re.compile($`^${from}(.*)/[^/]+${'$'}`).sub(to++`$1`);
 
     # internal/gen/pkg/servers is required in all generated code and codegen.mk, the location of server code shouldn't be editable
-    template((:repo, :outDir, :config, :apps)) +> {
+    template((:repo, :outDir, :config, :apps, :subDir)) +> {
         'gen': (ifExists: 'remove'),
-        'internal': {'gen': {'pkg': {'servers': {outDir: //{./servers}(fixPBPath, config, apps)}}}},
+        # FIXME: subDir +>: {'internal': ...} did not work.
+        $'${subDir}internal': {'gen': {'pkg': {'servers': {outDir: //{./servers}(fixPBPath, config, apps)}}}},
     }
 ;
 
-let defaultTemplate = \(:repo, :outDir, :config, ...)
+let defaultTemplate = \(:repo, :outDir, :config, :subDir, ...)
     {
+        # this should be in the repo root
         '.github': {'workflows': {
-            'test.yml': (ifExists: 'ignore', file: //{./workflows/test}(repo, outDir)),
+            'test.yml': (ifExists: 'ignore', file: //{./workflows/test}(repo, outDir, subDir)),
         }},
-        'Dockerfile': (ifExists: 'ignore', file: //{./dockerfile}(outDir)),
-        'README.md': (ifExists: 'ignore', file: //{./readme}(config, outDir)),
-        'cmd': {outDir: {'main.go': (
-            ifExists: 'ignore',
-            file: //{./main}(config, outDir),
-        )}},
-        '.gitignore': (ifExists: 'ignore', file: //{./gitignore}),
-        '.gitattributes': (ifExists: 'ignore', file: //{./gitattributes}),
+        subDir || '.': {
+                'Dockerfile': (ifExists: 'ignore', file: //{./dockerfile}(outDir)),
+                'README.md': (ifExists: 'ignore', file: //{./readme}(config, outDir)),
+                'cmd': {outDir: {'main.go': (
+                    ifExists: 'ignore',
+                    file: //{./main}(config, (:outDir, :subDir)),
+                )}},
+                '.gitignore': (ifExists: 'ignore', file: //{./gitignore}),
+                '.gitattributes': (ifExists: 'ignore', file: //{./gitattributes}),
+            },
     }
 ;
 
-let tuplifiedArgs = \[outDir, repo, path, json, appname, pbbase]
+let cleanPath =
+    let prefix = //re.compile(`^(\.?/)+`).sub('');
+    let middle = //re.compile(`(/\./)+`).sub('/');
+    let suffix = //re.compile(`/+$`).sub('');
+    \path
+        path != '.' && (prefix(path) -> middle(.) -> suffix(.) ++ '/')
+;
+
+let tuplifiedArgs = \[outDir, repo, path, json, appname, subDir, pbbase]
     let json = cond json {"-": //os.stdin, _: //os.file(json)};
     (
         :outDir,
@@ -47,6 +59,7 @@ let tuplifiedArgs = \[outDir, repo, path, json, appname, pbbase]
         :path,
         :json,
         :appname,
+        subDir: cleanPath(subDir),
         :pbbase,
     )
 ;

@@ -101,9 +101,9 @@ model.json: $(SYSLGO_SYSL)
 	$(SYSL) pb --mode json --root . $< --output $@ || (rm $@ && false)
 
 $(SERVERS_ROOT)/%: model.json codegen.mk
-	$(AUTOGEN) $* $(PKGPATH) $@ $< $(or $(SYSLGO_APP.$*),$*) =
-	find $@ -type d | xargs $(GOIMPORTS) -w
-	touch $@
+	$(AUTOGEN) $* $(PKGPATH) $@ $< $(or $(SYSLGO_APP.$*),$*) $(or $(SYSLGO_SUBDIR.$*),.) =
+	find $(or $(SYSLGO_SUBDIR.$*),.)/$@ -type d | xargs $(GOIMPORTS) -w
+	touch $(or $(SYSLGO_SUBDIR.$*),.)/$@
 
 .PHONY: docker.%
 docker.%:
