@@ -19,7 +19,9 @@ import (
 
 const testPort = 8888
 
-type TestServer struct{}
+type TestServer struct {
+	test.UnimplementedTestServiceServer
+}
 
 func (*TestServer) Test(ctx context.Context, req *test.TestRequest) (*test.TestReply, error) {
 	return &test.TestReply{Field1: req.GetField1()}, nil

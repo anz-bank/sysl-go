@@ -4,15 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 	"time"
 
+	"rest_custom_middleware/internal/gen/pkg/servers/pingpong"
+
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
 	"github.com/stretchr/testify/require"
-	"rest_custom_middleware/internal/gen/pkg/servers/pingpong"
 )
 
 const serverPort = 9021 // no guarantee this port is free
@@ -41,7 +42,7 @@ func doPingRequestResponse(ctx context.Context) (string, error) {
 		return "", err
 	}
 	defer func() { _ = resp.Body.Close() }()
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}

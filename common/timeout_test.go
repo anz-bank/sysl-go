@@ -1,7 +1,7 @@
 package common
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"testing"
@@ -42,7 +42,7 @@ func TestTimeoutHandler_NoCallbackCalledIfNotTimeout(t *testing.T) {
 
 	resp, err := http.Get(ts.URL)
 	req.NoError(err)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	req.NoError(err)
 	req.Equal("OK", string(body))
 	req.Equal(200, resp.StatusCode)
@@ -68,7 +68,7 @@ func TestTimeoutHandler_CallbackCalledIfTimeout(t *testing.T) {
 	resp, err := http.Get(ts.URL)
 	doneChan <- true
 	req.NoError(err)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	req.NoError(err)
 	req.Equal("hello", string(body))
 	req.Equal(500, resp.StatusCode)
@@ -154,7 +154,7 @@ func TestTimeoutHandler_ContextTimoutLessThanWriteTimeout(t *testing.T) {
 
 	resp, err := http.Get(ts.URL)
 	req.NoError(err)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	req.NoError(err)
 	req.Equal(500, resp.StatusCode)
 	req.Equal("hello", string(body))
@@ -183,7 +183,7 @@ func TestTimeoutHandler_ContextTimoutAndWriteTimeoutTooShort(t *testing.T) {
 
 	resp, err := http.Get(ts.URL)
 	req.NoError(err)
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	req.NoError(err)
 	req.Equal("Timeout", string(body))
 	req.Equal(504, resp.StatusCode)

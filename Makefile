@@ -7,7 +7,7 @@
 # fail in a way that is not noticed by make.
 SHELL=/bin/bash -o pipefail -o errexit
 
-all: test-arrai test check-coverage lint check-tidy auto-test ## Tests, lints and checks coverage
+all: test-arrai test check-coverage lint auto-test ## Tests, lints and checks coverage
 
 .PHONY: all clean
 
@@ -16,7 +16,7 @@ lint: ## Lint Go Source Code
 	golangci-lint run
 
 check-tidy: ## Check go.mod and go.sum is tidy
-	go mod tidy && go mod tidy && git diff --exit-code HEAD -- ":(top)go.mod" ":(top)go.sum"
+	go mod tidy && git diff --exit-code HEAD -- ":(top)go.mod" ":(top)go.sum"
 
 .PHONY: lint check-tidy
 
@@ -45,7 +45,10 @@ auto-test: $(ALL_TESTS)
 	$(foreach dir,$^,$(MAKE) -C $(dir);)
 
 update-auto-test-go-mod: $(ALL_TESTS) ## Update go.mod and go.sum files within auto tests
-	$(foreach dir,$^,pushd $(dir) && go mod download && go mod tidy && popd;)
+
+.PHONY: $(ALL_TESTS)
+codegen/arrai/auto/tests/%:
+	cd $@ && go mod download && go mod tidy
 
 clean: $(ALL_TESTS)
 	rm -f $(COVERFILE)
@@ -75,3 +78,12 @@ help:
 docker:
 	docker build . -t sysl-go
 .PHONY: docker
+
+protos: core/testdata/proto/test.pb.go
+.PHONY: protos
+
+%.pb.go: %.proto
+	protoc \
+		--go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		$^

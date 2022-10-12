@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -70,7 +70,7 @@ func doGatewayRequestResponse(ctx context.Context, basePath, content string) (st
 	if resp.StatusCode >= 400 {
 		return "", fmt.Errorf("got response with http status %d >= 400", resp.StatusCode)
 	}
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}

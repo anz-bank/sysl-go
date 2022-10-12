@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"sync"
@@ -112,7 +112,7 @@ func (r *RemoteJWKSIssuer) refreshCache() (*jose.JSONWebKeySet, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("jwks fetch error: Received status %d from issuer", resp.StatusCode)
 	}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "Error reading jwks response")
 	}

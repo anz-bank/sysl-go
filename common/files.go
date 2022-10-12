@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -22,7 +21,7 @@ func FindConfigFilename(cfgDir, prefix string) string {
 }
 
 func LoadAndValidateFromYAMLFileName(filename string, out validator.Validator) error {
-	cfgBytes, err := ioutil.ReadFile(filename)
+	cfgBytes, err := os.ReadFile(filename)
 	if err != nil {
 		return err
 	}

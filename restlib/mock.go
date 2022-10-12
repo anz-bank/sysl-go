@@ -3,11 +3,12 @@
 package restlib
 
 import (
+	"io"
 	"net/http"
 )
 
 // ResponseWriter returns a mock ResponseWriter implementing http.ResponseWriter.
-func ResponseWriter() *responseWriter {
+func ResponseWriter() http.ResponseWriter {
 	return &responseWriter{}
 }
 
@@ -62,6 +63,6 @@ func (r *readCloser) Err(err error) *readCloser {
 // ReadCloser returns a mock io.ReadCloser that can be set to return
 // an err when Read is called on it and do nothing when Close is called
 // on it.
-func ReadCloser() *readCloser {
+func ReadCloser() io.ReadCloser {
 	return &readCloser{}
 }

@@ -16,6 +16,7 @@ test: $(ACTUAL_FILES) $(EXPECTED_FILES)
 	$(MAKE) clean
 
 $(ACTUAL_FILES) &: internal/gen/pkg/servers/template
+	:
 
 .PHONY: test clean
 

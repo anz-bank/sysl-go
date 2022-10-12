@@ -3,14 +3,13 @@ package internal
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 
-	"github.com/anz-bank/sysl-go/log"
+	"github.com/go-chi/chi/middleware"
 
 	"github.com/anz-bank/sysl-go/config"
-
-	"github.com/go-chi/chi/middleware"
+	"github.com/anz-bank/sysl-go/log"
 )
 
 type RequestLogger interface {
@@ -36,9 +35,9 @@ type requestLogger struct {
 
 func (r *requestLogger) LogResponse(resp *http.Response) {
 	if resp != nil {
-		b, _ := ioutil.ReadAll(resp.Body)
+		b, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+		resp.Body = io.NopCloser(bytes.NewBuffer(b))
 		r.resp.body.Write(b)
 		r.resp.header = resp.Header
 	}
@@ -90,9 +89,9 @@ func NewRequestLogger(ctx context.Context, req *http.Request) (RequestLogger, co
 		}
 		l.req.header = req.Header.Clone()
 		if req.Body != nil && req.Method != http.MethodGet {
-			b, _ := ioutil.ReadAll(req.Body)
+			b, _ := io.ReadAll(req.Body)
 			_ = req.Body.Close()
-			req.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			req.Body = io.NopCloser(bytes.NewBuffer(b))
 			l.req.body.Write(b)
 		}
 		return l, l.ctx

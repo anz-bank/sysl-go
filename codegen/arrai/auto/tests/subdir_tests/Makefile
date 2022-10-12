@@ -12,5 +12,5 @@ subdir/proto.pb.go: specs/proto.proto
 	(cd specs && protoc --go_out=../subdir --go-grpc_out=../subdir --go-grpc_opt=paths=source_relative --go_opt=paths=source_relative proto.proto)
 
 test: gen-all-servers subdir/proto.pb.go
-	go run ./rest/cmd/rest/main.go --help 
-	go run ./grpc/cmd/grpc/main.go --help
+	go run ./rest/cmd/rest/main.go --help > /dev/null
+	go run ./grpc/cmd/grpc/main.go --help > /dev/null

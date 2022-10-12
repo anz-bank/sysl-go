@@ -49,7 +49,7 @@ genCode:
       serviceURL: https://foo.example.com
       clientTimeout: 10s
       readTimeout: 5.1
-      creationTime: 2020-12-14T21:59:43.10-05:00
+      creationTime: "2020-12-14T21:59:43.10-05:00"
     bar:
       serviceURL: https://bar.example.com
       clientTimeout: 10s

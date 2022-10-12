@@ -2,7 +2,7 @@ package internal
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -22,7 +22,7 @@ func TestCheckForUnclosedResponses(t *testing.T) {
 	require.NoError(t, err)
 	resp := &http.Response{
 		Request: req,
-		Body:    ioutil.NopCloser(body),
+		Body:    io.NopCloser(body),
 	}
 	AddResponseToMonitor(ctx, resp)
 
@@ -45,7 +45,7 @@ func TestCheckForUnclosedResponses_AllClosed(t *testing.T) {
 	require.NoError(t, err)
 	resp := &http.Response{
 		Request: req,
-		Body:    ioutil.NopCloser(body),
+		Body:    io.NopCloser(body),
 	}
 	AddResponseToMonitor(ctx, resp)
 

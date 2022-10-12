@@ -2,7 +2,7 @@ package common
 
 import (
 	"context"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -58,7 +58,7 @@ func TestHttpError_WriteError(t *testing.T) {
 			tt.err.WriteError(ctx, w)
 			resp := w.Result()
 			defer resp.Body.Close()
-			b, _ := ioutil.ReadAll(resp.Body)
+			b, _ := io.ReadAll(resp.Body)
 
 			require.Equal(t, tt.statusCode, resp.StatusCode)
 			require.Equal(t, tt.body, string(b))
@@ -84,7 +84,7 @@ func TestHttpError_WriteErrorWithExtraFields(t *testing.T) {
 	err.WriteError(ctx, w)
 	resp := w.Result()
 	defer resp.Body.Close()
-	b, _ := ioutil.ReadAll(resp.Body)
+	b, _ := io.ReadAll(resp.Body)
 
 	require.Equal(t, statusCode, resp.StatusCode)
 	require.Equal(t, body, string(b))
@@ -106,7 +106,7 @@ func TestHttpError_WriteErrorWithoutCodeAndWithExtraFields(t *testing.T) {
 	err.WriteError(ctx, w)
 	resp := w.Result()
 	defer resp.Body.Close()
-	b, _ := ioutil.ReadAll(resp.Body)
+	b, _ := io.ReadAll(resp.Body)
 
 	require.Equal(t, statusCode, resp.StatusCode)
 	require.Equal(t, body, string(b))

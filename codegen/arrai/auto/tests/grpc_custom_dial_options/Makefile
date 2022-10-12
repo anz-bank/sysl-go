@@ -8,7 +8,7 @@ PROTOS = encoder_backend gateway
 include ../common.mk
 
 test: gen-all-servers cmd/gateway/main.go cmd/gateway/main_test.go
-	go test -v ./...
+	go test $(GO_TEST_FLAGS) ./...
 PHONY: .test
 
 # n.b. commented out these deps as the CI build doesnt have protoc installed yet

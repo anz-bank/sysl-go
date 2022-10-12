@@ -11,7 +11,6 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"net"
 	"os"
@@ -21,9 +20,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anz-bank/sysl-go/log"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/anz-bank/sysl-go/log"
 )
 
 var ctx = log.PutLogger(context.Background(), log.NewDefaultLogger())
@@ -173,7 +173,7 @@ func TestConfigureTLSInvalidConfig(t *testing.T) {
 func TestConfigureTLS(t *testing.T) {
 	req := require.New(t)
 
-	dir, err := ioutil.TempDir("", "TestConfigureTLS")
+	dir, err := os.MkdirTemp("", "TestConfigureTLS")
 	req.NoError(err, "error during test setup: failed to create temp dir")
 	defer func() {
 		err = os.RemoveAll(dir)
@@ -217,9 +217,9 @@ func TestConfigureTLS(t *testing.T) {
 
 	// x509.CertPool contains a lazyCert which contains a function pointer, which is not comparable
 	// just compare the subjects and then nil them out
-	req.Equal(expectedTLS.RootCAs.Subjects(), tlsCfg.RootCAs.Subjects()) //nolint:staticcheck
+	req.Equal(expectedTLS.RootCAs.Subjects(), tlsCfg.RootCAs.Subjects())
 	expectedTLS.RootCAs, tlsCfg.RootCAs = nil, nil
-	req.Equal(expectedTLS.ClientCAs.Subjects(), tlsCfg.ClientCAs.Subjects()) //nolint:staticcheck
+	req.Equal(expectedTLS.ClientCAs.Subjects(), tlsCfg.ClientCAs.Subjects())
 	expectedTLS.ClientCAs, tlsCfg.ClientCAs = nil, nil
 
 	req.Equal(expectedTLS, tlsCfg)
@@ -478,7 +478,7 @@ func generateSelfSignedCert(hosts []string, organisation string, certFilename, k
 }
 
 func TestGetTrustedCAsFromPEMByDir(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "TestGetTrustedCAsByDir")
+	tmpDir, err := os.MkdirTemp("", "TestGetTrustedCAsByDir")
 	require.NoError(t, err, "error during test setup: failed to create temp dir")
 	defer func() {
 		err = os.RemoveAll(tmpDir)
@@ -525,7 +525,7 @@ var tlsGetTrustedCAsByFileTests = []struct {
 }
 
 func TestGetTrustedCAsByFile(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "TestGetTrustedCAsByFile")
+	tmpDir, err := os.MkdirTemp("", "TestGetTrustedCAsByFile")
 	require.NoError(t, err, "error during test setup: failed to create temp dir")
 	defer func() {
 		err = os.RemoveAll(tmpDir)
@@ -835,7 +835,7 @@ func TestInsecureSkipVerify(t *testing.T) {
 }
 
 func TestSelfSignedTLSConfig(t *testing.T) {
-	dir, err := ioutil.TempDir("", "TestConfigureTLS")
+	dir, err := os.MkdirTemp("", "TestConfigureTLS")
 	assert.NoError(t, err, "error during test setup: failed to create temp dir")
 	defer func() {
 		err = os.RemoveAll(dir)

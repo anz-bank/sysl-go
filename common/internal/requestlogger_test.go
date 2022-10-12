@@ -2,7 +2,7 @@ package internal
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -30,7 +30,7 @@ func TestLogger_FlushLog(t *testing.T) {
 		ProtoMajor:       0,
 		ProtoMinor:       0,
 		Header:           http.Header{},
-		Body:             ioutil.NopCloser(&bytes.Buffer{}),
+		Body:             io.NopCloser(&bytes.Buffer{}),
 		ContentLength:    0,
 		TransferEncoding: nil,
 		Close:            false,

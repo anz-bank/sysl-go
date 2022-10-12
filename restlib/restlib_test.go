@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"sync"
@@ -104,7 +103,7 @@ func TestUnmarshalRawBytesContent(t *testing.T) {
 		"Content-Type": {"application/octet-stream"},
 	}
 	var image = []byte{1, 2}
-	var response []byte = nil
+	var response []byte
 	result, err := unmarshal(&http.Response{Header: header}, image, &response)
 	require.NoError(t, err)
 	require.NotNil(t, result)
@@ -258,7 +257,7 @@ func TestDoHTTPRequestSendStructAsUrlEncodedBody(t *testing.T) {
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
-		data, err := ioutil.ReadAll(r.Body)
+		data, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(errorJSON))
@@ -304,7 +303,7 @@ func TestDoHTTPRequestSendStructAsUrlEncodedBodyWithCharset(t *testing.T) {
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
-		data, err := ioutil.ReadAll(r.Body)
+		data, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(errorJSON))
@@ -353,7 +352,7 @@ func TestDoHTTPRequestSendStructWithCustomUrlFieldTagsAsUrlEncodedBody(t *testin
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
-		data, err := ioutil.ReadAll(r.Body)
+		data, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = w.Write([]byte(errorJSON))
@@ -400,7 +399,7 @@ func TestSendHTTPResponseJSONBody(t *testing.T) {
 	result := recorder.Result()
 	require.NotNil(t, result)
 	require.Equal(t, 200, result.StatusCode)
-	b, err := ioutil.ReadAll(result.Body)
+	b, err := io.ReadAll(result.Body)
 	defer result.Body.Close()
 	require.NoError(t, err)
 	require.Equal(t, "{\"jdata\":\"test\"}\n", string(b))
@@ -420,7 +419,7 @@ func TestSendHTTPResponseXMLBody(t *testing.T) {
 	result := recorder.Result()
 	require.NotNil(t, result)
 	require.Equal(t, 200, result.StatusCode)
-	b, err := ioutil.ReadAll(result.Body)
+	b, err := io.ReadAll(result.Body)
 	defer result.Body.Close()
 	require.NoError(t, err)
 	require.Equal(t, "<testResp><xdata>test</xdata></testResp>", string(b))
@@ -439,7 +438,7 @@ func TestSendHTTPResponseBinaryBody(t *testing.T) {
 	result := recorder.Result()
 	require.NotNil(t, result)
 	require.Equal(t, 200, result.StatusCode)
-	b, err := ioutil.ReadAll(result.Body)
+	b, err := io.ReadAll(result.Body)
 	defer result.Body.Close()
 	require.NoError(t, err)
 	require.Equal(t, data, b)
@@ -460,7 +459,7 @@ func TestSendHTTPResponseBinaryBody2(t *testing.T) {
 	result := recorder.Result()
 	require.NotNil(t, result)
 	require.Equal(t, 200, result.StatusCode)
-	b, err := ioutil.ReadAll(result.Body)
+	b, err := io.ReadAll(result.Body)
 	defer result.Body.Close()
 	require.NoError(t, err)
 	require.Equal(t, ([]byte)(data), b)
@@ -479,7 +478,7 @@ func TestSendHTTPResponseContentTypeImage(t *testing.T) {
 	result := recorder.Result()
 	require.NotNil(t, result)
 	require.Equal(t, 200, result.StatusCode)
-	b, err := ioutil.ReadAll(result.Body)
+	b, err := io.ReadAll(result.Body)
 	defer result.Body.Close()
 	require.NoError(t, err)
 	require.Equal(t, []byte{1, 2}, b)
@@ -495,7 +494,7 @@ func TestSendHTTPResponseContentTypeTextPlain(t *testing.T) {
 	result := recorder.Result()
 	require.NotNil(t, result)
 	require.Equal(t, 200, result.StatusCode)
-	b, err := ioutil.ReadAll(result.Body)
+	b, err := io.ReadAll(result.Body)
 	defer result.Body.Close()
 	require.NoError(t, err)
 	require.Equal(t, []byte(data), b)
@@ -511,7 +510,7 @@ func TestSendHTTPResponseContentTypeTextHtml(t *testing.T) {
 	result := recorder.Result()
 	require.NotNil(t, result)
 	require.Equal(t, 200, result.StatusCode)
-	b, err := ioutil.ReadAll(result.Body)
+	b, err := io.ReadAll(result.Body)
 	defer result.Body.Close()
 	require.NoError(t, err)
 	require.Equal(t, []byte(data), b)
@@ -527,7 +526,7 @@ func TestSendHTTPResponseContentTypeOctetStream(t *testing.T) {
 	result := recorder.Result()
 	require.NotNil(t, result)
 	require.Equal(t, 200, result.StatusCode)
-	b, err := ioutil.ReadAll(result.Body)
+	b, err := io.ReadAll(result.Body)
 	defer result.Body.Close()
 	require.NoError(t, err)
 	require.Equal(t, data, b)
@@ -592,7 +591,7 @@ func TestMarshalRequestBodyTextPlain(t *testing.T) {
 	reader, err := marshalRequestBody("text/plain", content)
 	require.Nil(t, err)
 	require.NotNil(t, reader)
-	marshalled, err := ioutil.ReadAll(reader)
+	marshalled, err := io.ReadAll(reader)
 	require.Nil(t, err)
 	require.Equal(t, content, string(marshalled))
 }
@@ -602,7 +601,7 @@ func TestMarshalRequestBodyTextHtml(t *testing.T) {
 	reader, err := marshalRequestBody("text/html", content)
 	require.Nil(t, err)
 	require.NotNil(t, reader)
-	marshalled, err := ioutil.ReadAll(reader)
+	marshalled, err := io.ReadAll(reader)
 	require.Nil(t, err)
 	require.Equal(t, content, string(marshalled))
 }
@@ -612,7 +611,7 @@ func TestMarshalRequestBodyOctetStream(t *testing.T) {
 	reader, err := marshalRequestBody("application/octet-stream", content)
 	require.Nil(t, err)
 	require.NotNil(t, reader)
-	marshalled, err := ioutil.ReadAll(reader)
+	marshalled, err := io.ReadAll(reader)
 	require.Nil(t, err)
 	require.Equal(t, content, marshalled)
 }

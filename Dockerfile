@@ -8,9 +8,9 @@ ARG TARGETOS
 ENV SYSL_VERSION=0.596.0
 ENV ARRAI_VERSION=0.313.0
 
-ENV PROTOC_VERSION=3.17.3
-ENV PROTOC_GEN_GO_VERSION=1.27.1
-ENV PROTOC_GEN_GO_GRPC_VERSION=1.1
+ENV PROTOC_VERSION=21.7
+ENV PROTOC_GEN_GO_VERSION=1.28.1
+ENV PROTOC_GEN_GO_GRPC_VERSION=1.1.0
 
 # install sysl. sysl's build process added a dependency on docker, which
 # is an obstacle to building from source, so instead install the binary

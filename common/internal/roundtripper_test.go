@@ -2,7 +2,7 @@ package internal
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"testing"
@@ -24,7 +24,7 @@ func (m *mockRountTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 
 	rsp := args.Get(0).(*http.Response)
 	rsp.Request = req
-	rsp.Body = ioutil.NopCloser(bytes.NewBufferString("test"))
+	rsp.Body = io.NopCloser(bytes.NewBufferString("test"))
 	return rsp, args.Error(1)
 }
 
@@ -60,7 +60,7 @@ func (r *testRoundtripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	rsp := http.Response{
 		StatusCode: r.statusCode,
 		Request:    req,
-		Body:       ioutil.NopCloser(bytes.NewBufferString("resp body")),
+		Body:       io.NopCloser(bytes.NewBufferString("resp body")),
 	}
 
 	return &rsp, nil

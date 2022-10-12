@@ -10,7 +10,7 @@ include ../common.mk
 # internal/gen/pkg/servers/app. But, if we add those detailed rules,
 # it is not compatible with how codegen.mk is structured.
 test:	cmd/app/main_test.go cmd/app/main.go internal/gen/pkg/servers/app
-	go test -v ./...
+	go test $(GO_TEST_FLAGS) ./...
 PHONY: .test
 
 include codegen.mk

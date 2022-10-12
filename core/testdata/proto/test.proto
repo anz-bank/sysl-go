@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package test;
 
+option go_package = "github.com/anz-bank/sysl-go/core/testdata/proto;test";
+
 service TestService {
   rpc Test (TestRequest) returns (TestReply) {}
 }

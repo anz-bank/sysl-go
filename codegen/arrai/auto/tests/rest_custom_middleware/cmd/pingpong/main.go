@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/anz-bank/sysl-go/common"
 	"rest_custom_middleware/internal/gen/pkg/servers/pingpong"
 
+	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/log"
 

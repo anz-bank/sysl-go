@@ -58,7 +58,7 @@ func TestGetStringFromFile(t *testing.T) {
 	b := NewConfigReaderBuilder()
 	reader := b.AttachEnvPrefix("simpleApp").WithConfigFile("testdata/config.yaml").Build()
 	fooURL, err := reader.GetString("genCode.downstream.foo.serviceURL")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "https://foo.example.com", fooURL)
 }
 
@@ -79,7 +79,7 @@ func TestGetStringFromEnv(t *testing.T) {
 	reader := b.AttachEnvPrefix("simple").WithConfigFile("testdata/config.yaml").Build()
 	os.Setenv("SIMPLE_GENCODE_DOWNSTREAM_FOO_SERVICEURL", "https://env.foo.example.com")
 	fooURL, err := reader.GetString("genCode.downstream.foo.serviceURL")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "https://env.foo.example.com", fooURL)
 }
 
@@ -90,7 +90,7 @@ func TestGetStringFrom2ndSource(t *testing.T) {
 	reader := b.AttachEnvPrefix("simple").WithConfigFile("testdata/config.yaml").Build()
 	os.Setenv("SIMPLE_GENCODE_DOWNSTREAM_BAR_SERVICEURL", "")
 	barURL, err := reader.GetString("genCode.downstream.bar.serviceURL")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "https://bar.example.com", barURL)
 }
 
@@ -101,7 +101,7 @@ func TestGetMultipleConfigFiles(t *testing.T) {
 	reader := b.AttachEnvPrefix("simple").WithConfigFile("testdata/config.yaml").WithConfigName(
 		"config_log", "./", "testdata").Build()
 	calleeLog, err := reader.GetString("library.log.callee")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "true", calleeLog)
 }
 
@@ -111,13 +111,13 @@ func TestUnmarshalFromFileWithPrefix(t *testing.T) {
 	conf := config{}
 	b := NewConfigReaderBuilder().WithFs(afero.NewOsFs()).WithConfigFile("testdata/config.yaml")
 	fooURL, err := b.Build().GetString("genCode.downstream.foo.serviceURL")
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "https://foo.example.com", fooURL)
 	os.Setenv("ENV_GENCODE_DOWNSTREAM_FOO_SERVICEURL", "https://env.foo.example.com")
 	os.Setenv("ENV_GENCODE_DOWNSTREAM_BAR_SERVICEURL", "https://env.bar.example.com")
 	b.AttachEnvPrefix("env")
 	err = b.Build().Unmarshal(&conf)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "https://env.foo.example.com", conf.Gencode.Downstream.Foo.ServiceURL)
 	assert.Equal(t, "https://env.bar.example.com", conf.Gencode.Downstream.Bar.ServiceURL)
 }
@@ -129,7 +129,7 @@ func TestUnmarshalFromFile(t *testing.T) {
 	b := NewConfigReaderBuilder()
 	reader := b.WithFs(afero.NewOsFs()).WithConfigFile("testdata/config.yaml").Build()
 	err := reader.Unmarshal(&conf)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "https://foo.example.com", conf.Gencode.Downstream.Foo.ServiceURL)
 	assert.Equal(t, "https://bar.example.com", conf.Gencode.Downstream.Bar.ServiceURL)
 }
@@ -147,11 +147,11 @@ func TestUnmarshalSensitiveStringFromFile(t *testing.T) {
 	err := afero.WriteFile(fs,
 		"sensitive_string_config.yaml",
 		[]byte("path: testdata\npassword1: pwd1\npassword2: pwd2"), 0644)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	b := NewConfigReaderBuilder()
 	reader := b.WithFs(fs).WithConfigFile("sensitive_string_config.yaml").Build()
 	err = reader.Unmarshal(&conf)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "testdata", *conf.Path)
 	assert.Equal(t, "pwd1", *conf.Password1)
 	assert.Equal(t, "****************", conf.Password2.String())

@@ -20,7 +20,7 @@ func SetLogger(l Logger) {
 // protoc-gen-go-jwtauth.
 //
 // DO NOT use this to get the logger yourself.
-func XXX_GetLogger() Logger { //nolint
+func XXX_GetLogger() Logger { //nolint:revive
 	return pkgLogger
 }
 

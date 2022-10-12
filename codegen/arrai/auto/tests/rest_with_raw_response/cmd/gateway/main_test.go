@@ -4,16 +4,17 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 	"time"
 
+	"rest_with_raw_response/internal/gen/pkg/servers/gateway"
+	"rest_with_raw_response/internal/gen/pkg/servers/gateway/encoder_backend"
+
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
 	"github.com/stretchr/testify/require"
-	"rest_with_raw_response/internal/gen/pkg/servers/gateway"
-	"rest_with_raw_response/internal/gen/pkg/servers/gateway/encoder_backend"
 )
 
 const applicationConfig = `---
@@ -48,7 +49,7 @@ func doReverseBytesRequestResponse(ctx context.Context, b []byte, count int) ([]
 	if resp.StatusCode >= 400 {
 		return nil, fmt.Errorf("got response with http status %d >= 400", resp.StatusCode)
 	}
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +74,7 @@ func doReverseStringRequestResponse(ctx context.Context, s string, count int) (s
 	if resp.StatusCode >= 400 {
 		return "", fmt.Errorf("got response with http status %d >= 400", resp.StatusCode)
 	}
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -92,7 +93,7 @@ func startDummyEncoderBackendServer(addr string) (stopServer func() error) {
 		complain := func(err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
-		data, err := ioutil.ReadAll(req.Body)
+		data, err := io.ReadAll(req.Body)
 		if err != nil {
 			complain(err)
 			return
@@ -111,7 +112,7 @@ func startDummyEncoderBackendServer(addr string) (stopServer func() error) {
 		complain := func(err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
-		data, err := ioutil.ReadAll(req.Body)
+		data, err := io.ReadAll(req.Body)
 		if err != nil {
 			complain(err)
 			return

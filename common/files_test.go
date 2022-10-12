@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -33,17 +32,17 @@ func TestFindConfigFilename(t *testing.T) {
 		},
 	}
 
-	dir, err := ioutil.TempDir("", "TestDirectoryConfigProvider")
+	dir, err := os.MkdirTemp("", "TestDirectoryConfigProvider")
 	require.NoError(t, err, "error during test setup: failed to create temp dir")
 	defer func() {
 		if err = os.RemoveAll(dir); err != nil {
 			fmt.Printf("warning: failed to remove temp dir: %+v", err)
 		}
 	}()
-	require.NoError(t, ioutil.WriteFile(filepath.Join(dir, "foo.json"), []byte(""), 0644))
-	require.NoError(t, ioutil.WriteFile(filepath.Join(dir, "bar.yaml"), []byte(""), 0644))
-	require.NoError(t, ioutil.WriteFile(filepath.Join(dir, "beef.yaml"), []byte(""), 0644))
-	require.NoError(t, ioutil.WriteFile(filepath.Join(dir, "blarg.json"), []byte(""), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "foo.json"), []byte(""), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "bar.yaml"), []byte(""), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "beef.yaml"), []byte(""), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "blarg.json"), []byte(""), 0644))
 
 	for _, tt := range tests {
 		var tt = tt

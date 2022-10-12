@@ -141,11 +141,11 @@ let validation = //{./validation};
                         let goBodyType = body single -> go.bodyType(module, app, .@item('type'));
                         cond goBodyType {
                             '[]byte': $`
-                                decodeBytes, decodeErr := ioutil.ReadAll(r.Body)
+                                decodeBytes, decodeErr := io.ReadAll(r.Body)
                                 req.Request = decodeBytes
                             `,
                             'string': $`
-                                decodeBytes, decodeErr := ioutil.ReadAll(r.Body)
+                                decodeBytes, decodeErr := io.ReadAll(r.Body)
                                 req.Request = string(decodeBytes)
                             `,
                             _: $`

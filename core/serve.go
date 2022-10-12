@@ -12,6 +12,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/spf13/afero"
+
 	pkgHealth "github.com/anz-bank/pkg/health"
 	pkg "github.com/anz-bank/pkg/log"
 	zero "github.com/anz-bank/pkg/logging"
@@ -19,8 +22,6 @@ import (
 	"github.com/anz-bank/sysl-go/health"
 	"github.com/anz-bank/sysl-go/log"
 	"github.com/anz-bank/sysl-go/validator"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/spf13/afero"
 )
 
 type serveContextKey int
@@ -465,7 +466,7 @@ func (s *autogenServer) Start() error {
 	mWare := prepareMiddleware(s.name, s.prometheusRegistry, contextTimeout)
 
 	// load health server
-	var healthServer *health.Server = nil
+	var healthServer *health.Server
 	var err error
 	if s.restManager != nil && s.restManager.LibraryConfig() != nil && s.restManager.LibraryConfig().Health {
 		healthServer, err = health.NewServer()
@@ -707,7 +708,7 @@ func getExternalLogger(ctx context.Context) (context.Context, log.Logger) {
 	if logger != nil {
 		return ctx, logger
 	}
-	logrus := log.GetLogrusLoggerFromContext(ctx) //nolint:staticcheck
+	logrus := log.GetLogrusLoggerFromContext(ctx)
 	if logrus != nil {
 		lgr := log.NewLogrusLogger(logrus)
 		lgr.Debug("legacy logrus logger configuration detected, use Hooks.Logger instead")

@@ -6,7 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -214,7 +214,7 @@ func OurIdentityCertificates(cfg *TLSConfig) ([]tls.Certificate, error) {
 
 			tlsCert := tls.Certificate{}
 
-			p12bytes, err := ioutil.ReadFile(*identity.PKCS12Store.Path)
+			p12bytes, err := os.ReadFile(*identity.PKCS12Store.Path)
 			if err != nil {
 				return nil, err
 			}
@@ -243,7 +243,7 @@ func findCertsFromPath(cfg *TrustedCertPoolConfig) ([]string, error) {
 	switch strings.ToLower(*cfg.Mode) {
 	case DIRMODE:
 		var err error
-		fileInfo, err := ioutil.ReadDir(*cfg.Path)
+		fileInfo, err := os.ReadDir(*cfg.Path)
 		if err != nil {
 			return nil, err
 		}
@@ -274,7 +274,7 @@ func buildPoolFromPEM(ctx context.Context, cfg *TrustedCertPoolConfig) (*x509.Ce
 	var failedCerts []string
 	addedCerts := false
 	for _, file := range files {
-		cert, err := ioutil.ReadFile(file)
+		cert, err := os.ReadFile(file)
 		if err != nil {
 			failedCerts = append(failedCerts, file)
 			continue
@@ -315,7 +315,7 @@ func buildPoolFromPKCS12(ctx context.Context, cfg *TrustedCertPoolConfig) (*x509
 	var failedCerts []string
 	addedCerts := false
 	for _, file := range files {
-		p12bytes, err := ioutil.ReadFile(file)
+		p12bytes, err := os.ReadFile(file)
 		if err != nil {
 			failedCerts = append(failedCerts, file)
 

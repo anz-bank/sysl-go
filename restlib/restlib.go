@@ -7,14 +7,14 @@ import (
 	"encoding/json"
 	"encoding/xml"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"reflect"
 	"regexp"
 	"strings"
 
-	"github.com/anz-bank/sysl-go/common"
 	"github.com/pkg/errors"
+
+	"github.com/anz-bank/sysl-go/common"
 )
 
 // HTTPResult is the result return by the library.
@@ -202,7 +202,7 @@ func DoHTTPRequest2(ctx context.Context, config *HTTPRequest) (*HTTPResult, erro
 		bodyReader = httpResponse.Body
 	}
 
-	respBody, err := ioutil.ReadAll(bodyReader)
+	respBody, err := io.ReadAll(bodyReader)
 	if err != nil {
 		return nil, err
 	}

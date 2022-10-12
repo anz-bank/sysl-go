@@ -10,10 +10,10 @@ linters:
   enable:
     - asciicheck
     - bodyclose
-    - deadcode
     - depguard
     - dogsled
     - errcheck
+    - exportloopref
     - funlen
     - gochecknoinits
     - gocognit
@@ -23,23 +23,24 @@ linters:
     - godot
     - gofmt
     - goimports
-    - revive
     - gomodguard
     - goprintffuncname
     - gosimple
     - govet
     - ineffassign
-    - govet
     - misspell
     - nakedret
     - nolintlint
     - prealloc
     - exportloopref
-    - staticcheck
+    # Had to remove static check because golangci-lint complains that
+    # //nolint:staticheck wasn't required, but then complains of a deprecated
+    # usage when //nolint:staticheck is removed. Also, in at least one instance,
+    # actually fixing the problem would break backwards compatibility.
+    # - staticcheck
     - typecheck
     - unconvert
     - unparam
-    - varcheck
     - whitespace
 
   # disable: # as at 1.27.0

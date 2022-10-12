@@ -16,6 +16,6 @@ $`
 
     .PHONY: test
     test: gen-all-servers
-    	go test -v ./...
+    	go test $(GO_TEST_FLAGS) ./...
 
 `

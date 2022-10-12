@@ -146,7 +146,7 @@ func (i Issuer) HTTPAuth() *jwthttp.Auth {
 // //
 // // Request body should be a json payload with the claims the requestor wants in their jwt
 // func (i Issuer) ServeToken(w http.ResponseWriter, r *http.Request) {
-// 	body, err := ioutil.ReadAll(r.Body)
+// 	body, err := io.ReadAll(r.Body)
 // 	if err != nil {
 // 		w.WriteHeader(http.StatusBadRequest)
 // 		w.Write([]byte("Failed to read body"))

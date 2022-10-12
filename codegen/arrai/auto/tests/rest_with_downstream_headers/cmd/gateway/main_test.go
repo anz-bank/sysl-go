@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -75,7 +75,7 @@ func doGatewayRequestResponse_impl(ctx context.Context, content string, missingR
 	if resp.StatusCode >= 400 {
 		return "", fmt.Errorf("got response with http status %d >= 400", resp.StatusCode)
 	}
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
@@ -117,7 +117,7 @@ func startDummyEncoderBackendServer(addr string) (stopServer func() error) {
 		complain := func(err error) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 		}
-		data, err := ioutil.ReadAll(req.Body)
+		data, err := io.ReadAll(req.Body)
 		if err != nil {
 			complain(err)
 			return
