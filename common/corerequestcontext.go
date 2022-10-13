@@ -47,7 +47,16 @@ func LoggerToContext(ctx context.Context, logger *logrus.Logger, entry *logrus.E
 
 // RequestHeaderToContext creates a new context containing the request header.
 func RequestHeaderToContext(ctx context.Context, header http.Header) context.Context {
-	return context.WithValue(ctx, reqHeaderContextKey{}, &reqHeaderContext{header.Clone()})
+	var canonicalizedHeader http.Header
+	if header != nil {
+		canonicalizedHeader = make(http.Header, len(header))
+		for h, vv := range header {
+			for _, v := range vv {
+				canonicalizedHeader.Add(h, v)
+			}
+		}
+	}
+	return context.WithValue(ctx, reqHeaderContextKey{}, &reqHeaderContext{canonicalizedHeader})
 }
 
 // RequestHeaderFromContext retrieves the request header from the context.
