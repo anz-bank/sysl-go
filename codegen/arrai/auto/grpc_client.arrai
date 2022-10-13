@@ -22,13 +22,7 @@ let grpc = //{./grpc};
     # let pbPath = fixPBPath(app('attrs')('source_path').@value.s);
 
     # TODO: sysl automapping between sysl types and protobuf types
-    $`
-        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | {go.pbImport(app)})}
-
-        ${(methodInfos => .requestType) | (methodInfos => .responseType) | (typeAliases => .@) => $`
-            type ${.} = pb.${.}
-        ` orderby .::\i:\n}
-
+    let client = methodInfos && $`
         // Service interface for ${appname}.
         type Service interface {
             ${methodInfos => $`${.name}${.sig('pb', true)}` orderby .::\i}
@@ -50,4 +44,13 @@ let grpc = //{./grpc};
                 return s.client.${.name}(ctx, ${.pname}, opts...)
             }
         ` orderby .:::}
+    `;
+    $`
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | {go.pbImport(app)})}
+
+        ${(methodInfos => .requestType) | (methodInfos => .responseType) | (typeAliases => .@) => $`
+            type ${.} = pb.${.}
+        ` orderby .::\i:\n}
+
+        ${client}
     `

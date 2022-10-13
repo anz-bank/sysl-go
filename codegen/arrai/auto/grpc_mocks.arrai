@@ -4,6 +4,7 @@ let grpc = //{./grpc};
 \(:app, :appname, :basepath, :clientDeps, :module, :goModule, :nonRestEndpoints, ...)
     let package = go.package(app);
     let goAppname = go.name(grpc.app.name(app));
+    nonRestEndpoints &&
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | {go.pbImport(app)})}
 
