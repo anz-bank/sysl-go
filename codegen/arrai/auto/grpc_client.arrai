@@ -6,6 +6,7 @@ let grpc = //{./grpc};
     # These are old definitions used prior to deb7738294f04d6628c07db08d5ba92367186c38
     let methodInfos = endpoints => \(@:_, @item: (@:_, @value: ep)) go.pbMethodInfo(module, app, ep);
     let appname = go.name(grpc.app.name(app));
+    let typeAliases = app('types')?:{} where .@value('tuple')?:false;
 
     # FIXME this methodSig definition added in deb7738294f04d6628c07db08d5ba92367186c38 is unused
     # let methodSig = \ep
@@ -24,7 +25,7 @@ let grpc = //{./grpc};
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | {go.pbImport(app)})}
 
-        ${(methodInfos => .requestType) | (methodInfos => .responseType) => $`
+        ${(methodInfos => .requestType) | (methodInfos => .responseType) | (typeAliases => .@) => $`
             type ${.} = pb.${.}
         ` orderby .::\i:\n}
 

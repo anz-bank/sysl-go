@@ -1,0 +1,43 @@
+let go = //{./go};
+let grpc = //{./grpc};
+let sysl = //{./sysl};
+
+\(:app, :appname, :basepath, :clientDeps, :endpoints, :fixPBPath, :module, ...)
+    # These are old definitions used prior to deb7738294f04d6628c07db08d5ba92367186c38
+    let methodInfos = endpoints where ('workflow' <: sysl.patterns(.@item.@value)) => \(@:_, @item: (@:_, @value: ep)) go.temporalMethodInfo(module, app, ep);
+    let appname = go.name(grpc.app.name(app));
+
+    $`
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`))}
+
+        // Task Queue names for ${appname}.
+        const ${appname}TaskQueue = ${appname:q}
+
+        // Service interface for ${appname}.
+        type Service interface {
+            ${methodInfos => $`${.name}${.sig(false)}` orderby .::\i}
+        }
+
+        // Client implements a client for ${appname}.
+        type Client struct {
+            Client client.Client
+        }
+
+        // NewClient creates a new Client.
+        func NewClient(c client.Client) *Client {
+            return &Client{c}
+        }
+
+        ${methodInfos => $`
+            // ${.name} ...
+            func (s *Client) ${.name}${.sig(false)} {
+                return core.ExecuteWorkflow[${.responseType.leaf}](
+                    ctx,
+                    s.Client,
+                    ${appname}TaskQueue,
+                    ${.name:q},
+                    ${.requestType >> .name::,\n:,}
+                )
+            }
+        ` orderby .::\n\n:}
+    `

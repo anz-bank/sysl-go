@@ -1,0 +1,10 @@
+genCode:
+    upstream:
+        grpc:
+            enableReflection: true
+            hostName: "localhost"
+            port: 10000
+    downstream:
+        temporalworker:
+            hostPort: "localhost:7233"
+            namespace: "default"

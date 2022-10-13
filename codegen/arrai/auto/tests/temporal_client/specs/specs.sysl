@@ -1,0 +1,39 @@
+import ./specs.proto
+Frontdoor:
+    Executor:
+        TemporalWorker <- WorkflowWithoutParam
+        TemporalWorker <- WorkflowWithOneParam
+        TemporalWorker <- WorkflowWithMultipleParams
+        TemporalWorker <- WorkflowWithParamAndReturn
+        TemporalWorker <- ProtoReqAndResp
+
+TemporalWorker [~temporal]:
+    !type Param1:
+        msg <: string
+
+    !type Param2:
+        msg2 <: string
+
+    !type Param3:
+        msg3 <: string
+
+    WorkflowWithoutParam [~workflow]:
+        ...
+
+    WorkflowWithOneParam(req <: Param1) [~workflow]:
+        ...
+
+    WorkflowWithMultipleParams(req1 <: Param1, req2 <: Param2, req3 <: Param3) [~workflow]:
+        ...
+
+    WorkflowWithParamAndReturn(req <: Param1) [~workflow]:
+        return ok <: Param2
+
+    ProtoReqAndResp(req <: frontdoor.Req) [~workflow]:
+        return ok <: frontdoor.Resp
+
+    Activity1 [~activity]:
+        ...
+
+    Activity2 [~activity]:
+        ...

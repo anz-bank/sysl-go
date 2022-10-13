@@ -9,6 +9,7 @@ EncoderBackend [~gRPC]:
 
 encoder_backend:
     @package = "encoder_backend"
+    @go_package = "simple_grpc_with_downstream/internal/gen/pb/encoder_backend;encoder_backend"
 
     !type EncodingRequest:
         @source_path = "encoder_backend.proto"

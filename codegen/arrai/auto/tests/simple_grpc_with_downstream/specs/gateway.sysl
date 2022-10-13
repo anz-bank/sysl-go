@@ -12,6 +12,7 @@ Gateway [~gRPC]:
 
 gateway:
     @package = "gateway"
+    @go_package = "simple_grpc_with_downstream/internal/gen/pb/gateway;gateway"
 
     !type EncodeRequest:
         @source_path = "gateway.proto"

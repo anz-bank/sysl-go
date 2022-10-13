@@ -5,13 +5,16 @@
     let (:patterns, app: appUtil, ...) = //{./sysl};
     let type                                      = cond {'gRPC' <: patterns(mainApp): 'grpc-app', _: 'rest-app'};
 
-    let isGRPCClient =
-        let appsUsedByMainApp =
-            appUtil.dependenciesWithSource(mainApp) where (.src <: {'param', 'return'}) => .app('part');
+    let clientType =
+        let dependencies = appUtil.dependenciesWithSource(mainApp) => .app('part');
         \client
-            ('gRPC' <: patterns(client)) ||
-            # if main app is gRPC and the client app's type is used by main app in endpoints, then treat client as gRPC
-            (type = 'grpc-app' && client('name', 'part') <: appsUsedByMainApp)
+            let patterns = patterns(client);
+            cond {
+                'temporal' <: patterns: 'temporal-client',
+                # if main app is gRPC and the client app's type is used by main app in endpoints, then treat client as gRPC
+                'gRPC' <: patterns || (type = 'grpc-app' && client('name', 'part') <: dependencies): 'grpc-client',
+                _: 'rest-client'
+            }
     ;
 
     (
@@ -21,9 +24,10 @@
             +> ((
                 apps => \(@: _, @value: app)
                     let config = generate.config((:basepath, :module, :app, :fixPBPath));
-                    let type = cond { isGRPCClient(app): 'grpc-client', _: 'rest-client' };
+                    let type = clientType(app);
                     # if app is grpc client and it does not have endpoints, do not generate.
-                    let shouldGenerate = cond type {'grpc-client': app('endpoints')?:false, _: true};
-                    shouldGenerate && (@: package(app), @value: generate.generate(config, generate.groups(type)))
+                    # let shouldGenerate = cond type {'grpc-client': app('endpoints')?:false, _: true};
+                    # shouldGenerate &&
+                    (@: package(app), @value: generate.generate(config, generate.groups(type)))
             ) where .),
     )

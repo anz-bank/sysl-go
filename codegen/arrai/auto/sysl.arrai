@@ -108,6 +108,8 @@ let endpoint =
 
 let source = \node node('sourceContext')('start') -> [.('line'), .('col')];
 
+let splitAppName = \name //seq.split('::', //re.compile(`\s*::\s*`).sub('::', name));
+
 let type =
 
     # `required` returns whether or not the given type is required (true) or optional (false).
@@ -123,11 +125,47 @@ let type =
             'optional' <: patterns(type): false,
             _: true
         };
-    (
-        :required
-    );
 
-let splitAppName = \name //seq.split('::', //re.compile(`\s*::\s*`).sub('::', name));
+    let primitives = {
+        'decimal',
+        'int',
+        'float',
+        'string',
+        'string_8',
+        'bool',
+        'bytes',
+        'date',
+        'datetime',
+    };
+
+    # `guessType` returns a sysl type from a string representing a type.
+    # This is mainly used for return types as returns are not parsed well usually.
+    # It will try to detect primitives.
+    # If it does not match any primitives, it will convert it into a typeRef.
+    # If the type has has `.`, it is a full definition.
+    # If not, it will assume that the provided app is the app where the type is referenced and will use the app as the path.
+    let rec guessType = \app \typeStr
+        cond {
+            //str.lower(typeStr) <: primitives: {'primitive': (s: //str.upper(typeStr))},
+            //seq.has_prefix('sequence of ', typeStr): {'sequence': guessType(//seq.trim_prefix('sequence of ', typeStr))},
+            //seq.has_prefix('set of ', typeStr): {'set': guessType(//seq.trim_prefix('set of ', typeStr))},
+            _:
+                let splitted = //seq.split('.', typeStr);
+                cond splitted count {
+                    1: {'typeRef': {'ref': {'appname': {'part': app('name')('part')}, 'path': (a: [(s: splitted(0))])}}},
+                    2: {'typeRef': {'ref': {
+                        'appname': {'part': (a: splitAppName(splitted(0)) >> (s: .))},
+                        'path': (a: [(s: splitted(1))])},
+                    }},
+                    _: //error($`invalid type: ${typeStr}`),
+                }
+        }
+    ;
+    (
+        :required,
+        :primitives,
+        :guessType,
+    );
 
 let rec app = (
     name: \app $`${app('name')('part').a >> .s::}`,

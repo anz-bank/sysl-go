@@ -3,7 +3,9 @@ let sysl = //{./sysl};
 
 \(:app, ...) \(:outDir, :subDir)
     let package = go.package(app);
-    let grpc = cond {"gRPC" <: sysl.patterns(app): `Grpc`};
+    let type =
+        let patterns = sysl.patterns(app);
+        cond {'temporal' <: patterns: 'Temporal', 'gRPC' <: patterns: 'Grpc'};
     let goModFileName = "go.mod"; # go.mod is assumed to exist in current working directory.
 
     $'
@@ -23,9 +25,9 @@ let sysl = //{./sysl};
 
         func main() {
             ${package}.Serve(context.Background(),
-                func(ctx context.Context, config AppConfig) (*${package}.${grpc}ServiceInterface, *core.Hooks, error) {
+                func(ctx context.Context, config AppConfig) (*${package}.${type}ServiceInterface, *core.Hooks, error) {
                     // Perform one-time setup based on config here.
-                    return &${package}.${grpc}ServiceInterface{
+                    return &${package}.${type}ServiceInterface{
                         // Add handlers here.
                     }, nil, nil
                 },

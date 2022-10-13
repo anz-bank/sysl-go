@@ -14,6 +14,7 @@ let generators = {
     "serviceinterface.go": //{./svc_interface},
     "tester.go":           //{./svc_tester},
     "types.go":            //{./svc_types},
+    "temporal_client.go":  //{./temporal_client},
 };
 
 let hasRelationTypes = \app
@@ -34,6 +35,8 @@ let _inferHasDB = \app hasRelationTypes(app);
         let grpcClient = {"grpc_client.go", "grpc_mocks.go"};
         let grpcService = {"grpc_handler.go", "grpc_interface.go", "tester.go"};
         let app = {"app.go", "main.go.sample"};
+        let temporalService = {"temporal_handler.go", "temporal_interface.go"};
+        let temporalClient = {"temporal_client.go", "types.go"};
         {
             "rest-service": restService,
             "rest-app":     restService | app,
@@ -41,6 +44,8 @@ let _inferHasDB = \app hasRelationTypes(app);
             "grpc-service": grpcService,
             "grpc-app":     grpcService | app,
             "grpc-client":  grpcClient,
+            "temporal-app": temporalService | app,
+            "temporal-client": temporalClient,
         },
 
     config: \(:app, :basepath, :module, ...extra)

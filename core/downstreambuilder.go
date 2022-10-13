@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"go.temporal.io/sdk/client"
 	"google.golang.org/grpc"
 
 	"github.com/anz-bank/sysl-go/common"
@@ -41,4 +42,27 @@ func BuildDownstreamGRPCClient(ctx context.Context, serviceName string, hooks *H
 		return nil, err
 	}
 	return grpc.Dial(cfg.ServiceAddress, opts...)
+}
+
+// BuildDownstreamTemporalClient creates a temporal client connection to the target indicated by cfg.HostPort.
+// The client options can be customised by cfg or by hooks. The serviceName is used as the namespace by default
+// if the cfg.Namespace is empty.
+func BuildDownstreamTemporalClient(
+	ctx context.Context,
+	serviceName string,
+	hooks *Hooks,
+	cfg *config.CommonTemporalDownstreamData,
+) (client.Client, error) {
+	ns := cfg.Namespace
+	if ns == "" {
+		ns = serviceName
+	}
+	return client.Dial(client.Options{
+		HostPort:  cfg.HostPort,
+		Namespace: ns,
+		Identity:  cfg.Identity,
+
+		// TODO: add sysl-go logging solution
+		// Logger:             nil,
+	})
 }

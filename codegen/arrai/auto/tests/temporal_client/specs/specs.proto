@@ -1,0 +1,19 @@
+syntax  = "proto3";
+
+package frontdoor;
+
+option go_package = "temporal_client/protos;frontdoor";
+
+message Resp {
+    string content = 1;
+}
+
+message Req {
+    string encoder_id = 1;
+    string content = 2;
+}
+
+service Frontdoor {
+    rpc Executor (Req) returns (Resp);
+}
+

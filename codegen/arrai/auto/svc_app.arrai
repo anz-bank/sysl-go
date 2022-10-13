@@ -2,8 +2,15 @@ let go = //{./go};
 let sysl = //{./sysl};
 
 \(:app, :appname, :basepath, :clientDeps, :module, :goModule, :restEndpoints, ...)
-    let prefix = \dep cond {goModule.depField(dep).grpc: `GRPC`, _: `HTTP`};
-    let grpc = cond {"gRPC" <: sysl.patterns(app): `Grpc`};
+    let prefix = \dep
+        let depModule = goModule.depField(dep);
+        cond {
+            depModule.temporal: `Temporal`,
+            depModule.grpc: `GRPC`,
+            _: `HTTP`,
+        }
+    ;
+    let grpc = cond {{"gRPC", "temporal"} & sysl.patterns(app): `Grpc`};
     let serviceInterface = $`${grpc}ServiceInterface`;
     let newServiceHandler = $`New${grpc}ServiceHandler`;
     let package = go.package(app);
@@ -24,17 +31,22 @@ let sysl = //{./sysl};
                 downstreamConfig = &DownstreamConfig{}
             }
             var err error
-            ${serviceDeps orderby . >> $`
-                ${cond {
-                    goModule.depField(.).grpc:
-                        $`
-                            ${.import}${prefix(.)}Client, err := core.BuildDownstream${prefix(.)}Client(
-                        `,
-                    _:
-                        $`
-                            ${.import}${prefix(.)}Client, ${.import}${prefix(.)}URL, err := core.BuildDownstream${prefix(.)}Client(
-                        `,
-                }}
+            ${serviceDeps orderby . >>
+
+            let depField = goModule.depField(.);
+            $`
+                ${
+                    cond {
+                        depField.grpc || depField.temporal:
+                            $`
+                                ${.import}${prefix(.)}Client, err := core.BuildDownstream${prefix(.)}Client(
+                            `,
+                        _:
+                            $`
+                                ${.import}${prefix(.)}Client, ${.import}${prefix(.)}URL, err := core.BuildDownstream${prefix(.)}Client(
+                            `,
+                    }
+                }
                     ctx,
                     ${.import:q},
                     hooks,
@@ -43,20 +55,22 @@ let sysl = //{./sysl};
                 if err != nil {
                     return nil, err
                 }
-                ${cond {
-                    goModule.depField(.).grpc:
-                        $`
-                            ${.import}Client := ${.import}.NewClient(${.import}${prefix(.)}Client)
-                        `,
-                    _:
-                        $`
-                            ${.import}Client := &${.import}.Client{
-                                Client:  ${.import}${prefix(.)}Client,
-                                URL:     ${.import}${prefix(.)}URL,
-                                Headers: downstreamConfig.${go.name(.import)}.Headers,
-                            }
-                        `,
-                }}
+                ${
+                    cond {
+                        depField.grpc || depField.temporal:
+                            $`
+                                ${.import}Client := ${.import}.NewClient(${.import}${prefix(.)}Client)
+                            `,
+                        _:
+                            $`
+                                ${.import}Client := &${.import}.Client{
+                                    Client:  ${.import}${prefix(.)}Client,
+                                    URL:     ${.import}${prefix(.)}URL,
+                                    Headers: downstreamConfig.${go.name(.import)}.Headers,
+                                }
+                            `,
+                    }
+                }
             `::\i\n:\n}
             return &DownstreamClients{
                 ${serviceDeps orderby . >> $`${.import}Client: ${.import}Client,`::\i}
@@ -139,9 +153,10 @@ let sysl = //{./sysl};
                     var downstream *DownstreamConfig
                     var is bool
                     if downstream, is = cfg.GenCode.Downstream.(*DownstreamConfig); !is || downstream == nil {
-                        downstream = &DownstreamConfig{
-                            ContextTimeout: 30 * time.Second,
-                        }
+                        downstream = &DownstreamConfig{}
+                    }
+                    if downstream.ContextTimeout == 0 {
+                        downstream.ContextTimeout = 30 * time.Second
                     }
 
                     genCallbacks := common.NewCallbackV3(
