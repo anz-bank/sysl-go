@@ -714,7 +714,7 @@ func TestIdentityCertificatesWithNilServerIdentity(t *testing.T) {
 	}
 	res, err := OurIdentityCertificates(cfg)
 	assert.Nil(t, res)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
 func TestIdentityCertificatesWithNilServerIdentityCertKeyPairAndPKCS12Store(t *testing.T) {
@@ -729,7 +729,7 @@ func TestIdentityCertificatesWithNilServerIdentityCertKeyPairAndPKCS12Store(t *t
 	}
 	res, err := OurIdentityCertificates(cfg)
 	assert.Equal(t, []tls.Certificate{}, res)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 }
 
 var ourIdentityCertificatesFromCertTestsLoadError = []struct {

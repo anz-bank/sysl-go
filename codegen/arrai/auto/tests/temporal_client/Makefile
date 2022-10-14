@@ -6,4 +6,4 @@ include ../common.mk
 include codegen.mk
 
 test: gen-all-servers
-	go run ./cmd/temporal_client/ --help
+	go run ./cmd/temporal_client/ --help > /dev/null

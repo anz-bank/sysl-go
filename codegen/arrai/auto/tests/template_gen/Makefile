@@ -16,7 +16,7 @@ test: $(ACTUAL_FILES) $(EXPECTED_FILES)
 	$(MAKE) clean
 
 $(ACTUAL_FILES) &: internal/gen/pkg/servers/template
-	:
+	[ -f cmd/template/main.go_ ] || mv cmd/template/main.go cmd/template/main.go_
 
 .PHONY: test clean
 

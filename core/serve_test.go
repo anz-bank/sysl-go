@@ -9,7 +9,6 @@ import (
 
 	pkg "github.com/anz-bank/pkg/log"
 
-	"github.com/anz-bank/sysl-go/common"
 	"github.com/sirupsen/logrus"
 
 	"github.com/anz-bank/sysl-go/log"
@@ -76,7 +75,7 @@ func TestNewServerReturnsErrorIfValidateConfigReturnsError(t *testing.T) {
 // Test a new server initialises a logger.
 func TestNewServerInitialisesLogger(t *testing.T) {
 	ctx, err := newServerContext(context.Background())
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	logger := log.GetLogger(ctx)
 	assert.NotNil(t, logger)
 }
@@ -94,7 +93,7 @@ func TestNewServerInitialisesLogger_bootstrap(t *testing.T) {
 			}, nil
 		})
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	logger := log.GetLogger(ctx)
 	assert.NotNil(t, logger)
 	logger.Info("hello")
@@ -109,7 +108,7 @@ func TestNewServerInitialisesLogger_logLevel(t *testing.T) {
 	ctx = WithConfigFile(ctx, []byte("library:\n  log:\n    level: error"))
 	ctx, err := newServerContext(ctx)
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	logger := log.GetLogger(ctx)
 	assert.NotNil(t, logger)
 	logger.Debug("hello")
@@ -127,7 +126,7 @@ func TestNewServerInitialisesLogger_hooks(t *testing.T) {
 		},
 	})
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	logger := log.GetLogger(ctx)
 	assert.NotNil(t, logger)
 	logger.Info("hello")
@@ -139,7 +138,7 @@ func TestNewServerInitialisesLogger_externalLogrusLogger(t *testing.T) {
 	buf := &bytes.Buffer{}
 	l := logrus.New()
 	l.Out = buf
-	ctx := common.LoggerToContext(context.Background(), l, nil) //nolint:staticcheck
+	ctx := log.PutLogger(context.Background(), log.NewLogrusLogger(l))
 	ctx, err := newServerContextWithHooks(ctx, &Hooks{
 		Logger: func() log.Logger {
 			t.Fatal("hook should not be called")
@@ -147,7 +146,7 @@ func TestNewServerInitialisesLogger_externalLogrusLogger(t *testing.T) {
 		},
 	})
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	logger := log.GetLogger(ctx)
 	assert.NotNil(t, logger)
 	logger.Info("hello")
@@ -165,7 +164,7 @@ func TestNewServerInitialisesLogger_externalPkgLogger(t *testing.T) {
 		},
 	})
 
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	logger := log.GetLogger(ctx)
 	assert.NotNil(t, logger)
 	logger.Info("hello")
@@ -252,11 +251,10 @@ func (s testStoppableServer) GetName() string {
 func TestMultiStoppableServer_Start_WithPanic(t *testing.T) {
 	server := &testStoppableServer{start: func() error {
 		panic("panic")
-		return nil
 	}}
 
 	ctx, err := newServerContext(ctx)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 
 	mServer := NewMultiStoppableServer(ctx, []StoppableServer{server})
 	assert.NotPanics(t, func() {

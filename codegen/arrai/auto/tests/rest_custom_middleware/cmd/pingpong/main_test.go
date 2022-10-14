@@ -105,7 +105,7 @@ func TestRestCustomMiddleware_Success(t *testing.T) {
 
 	pingpongTester.GetPingList().
 		ExpectResponseCode(http.StatusOK).
-		ExpectResponseBody(pingpong.Pong{"once upon a time there was a rambutan"}).
+		ExpectResponseBody(pingpong.Pong{Data: "once upon a time there was a rambutan"}).
 		Send()
 }
 

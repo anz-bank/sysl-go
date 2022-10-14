@@ -19,11 +19,11 @@ import (
 
 const testPort = 8888
 
-type TestServer struct {
+type testServer struct {
 	test.UnimplementedTestServiceServer
 }
 
-func (*TestServer) Test(ctx context.Context, req *test.TestRequest) (*test.TestReply, error) {
+func (*testServer) Test(ctx context.Context, req *test.TestRequest) (*test.TestReply, error) {
 	return &test.TestReply{Field1: req.GetField1()}, nil
 }
 
@@ -36,68 +36,40 @@ func localServer() config.GRPCServerConfig {
 	}
 }
 
-func localSecureServer() config.GRPCServerConfig {
-	minVer := "1.2"
-	maxVer := "1.3"
-	certPath := "testdata/creds/server1.pem"
-	keyPath := "testdata/creds/server1.key"
-	clientAuth := "NoClientCert"
-	ciphers := []string{"TLS_RSA_WITH_AES_256_CBC_SHA"}
-	return config.GRPCServerConfig{
-		CommonServerConfig: config.CommonServerConfig{
-			HostName: "localhost",
-			Port:     testPort,
-			TLS: &config.TLSConfig{
-				MinVersion: &minVer,
-				MaxVersion: &maxVer,
-				ClientAuth: &clientAuth,
-				Ciphers:    ciphers,
-				ServerIdentities: []*config.ServerIdentityConfig{
-					{
-						CertKeyPair: &config.CertKeyPair{
-							CertPath: &certPath,
-							KeyPath:  &keyPath,
-						},
-					},
-				},
-			},
-		}}
-}
-
-type ServerReg struct {
-	svr           TestServer
+type serverReg struct {
+	svr           testServer
 	methodsCalled map[string]bool
 }
 
-func (r *ServerReg) RegisterServer(ctx context.Context, server *grpc.Server) {
+func (r *serverReg) RegisterServer(ctx context.Context, server *grpc.Server) {
 	r.methodsCalled["RegisterServer"] = true
 	test.RegisterTestServiceServer(server, &r.svr)
 }
 
-type GrpcHandler struct {
+type grpcHandler struct {
 	cfg           config.GRPCServerConfig
-	reg           ServerReg
+	reg           serverReg
 	methodsCalled map[string]bool
 }
 
-func (h *GrpcHandler) Interceptors() []grpc.UnaryServerInterceptor {
+func (h *grpcHandler) Interceptors() []grpc.UnaryServerInterceptor {
 	h.methodsCalled["Interceptors"] = true
 
 	return []grpc.UnaryServerInterceptor{}
 }
 
-func (h *GrpcHandler) EnabledGrpcHandlers() []handlerinitialiser.GrpcHandlerInitialiser {
+func (h *grpcHandler) EnabledGrpcHandlers() []handlerinitialiser.GrpcHandlerInitialiser {
 	h.methodsCalled["EnabledGrpcHandlers"] = true
 
 	return []handlerinitialiser.GrpcHandlerInitialiser{&h.reg}
 }
 
-func (h *GrpcHandler) GrpcAdminServerConfig() *config.CommonServerConfig {
+func (h *grpcHandler) GrpcAdminServerConfig() *config.CommonServerConfig {
 	h.methodsCalled["GrpcAdminServerConfig"] = true
 	return &h.cfg.CommonServerConfig
 }
 
-func (h *GrpcHandler) GrpcPublicServerConfig() *config.GRPCServerConfig {
+func (h *grpcHandler) GrpcPublicServerConfig() *config.GRPCServerConfig {
 	h.methodsCalled["GrpcPublicServerConfig"] = true
 	return &h.cfg
 }
@@ -117,7 +89,7 @@ func Test_makeGrpcListenFuncListens(t *testing.T) {
 
 	s := grpc.NewServer()
 	defer s.GracefulStop()
-	test.RegisterTestServiceServer(s, &TestServer{})
+	test.RegisterTestServiceServer(s, &testServer{})
 
 	srv := grpcServer{ctx: ctx, cfg: localServer(), server: s}
 	go func() {
@@ -128,15 +100,38 @@ func Test_makeGrpcListenFuncListens(t *testing.T) {
 	connectAndCheckReturn(ctx, t, grpc.WithTransportCredentials(insecure.NewCredentials()))
 }
 
+func ptr[T any](t T) *T { return &t }
+
+// Suppress erroneous unused function linter warning.
+var _ = ptr[int]
+
 func Test_encryptionConfigUsed(t *testing.T) {
 	t.Skip("Skipping as required certs not present")
 	ctx, logger := testutil.NewTestContextWithLogger()
 
-	cfg := localSecureServer()
+	cfg := config.GRPCServerConfig{
+		CommonServerConfig: config.CommonServerConfig{
+			HostName: "localhost",
+			Port:     testPort,
+			TLS: &config.TLSConfig{
+				MinVersion: ptr("1.2"),
+				MaxVersion: ptr("1.3"),
+				ClientAuth: ptr("NoClientCert"),
+				Ciphers:    []string{"TLS_RSA_WITH_AES_256_CBC_SHA"},
+				ServerIdentities: []*config.ServerIdentityConfig{
+					{
+						CertKeyPair: &config.CertKeyPair{
+							CertPath: ptr("testdata/creds/server1.pem"),
+							KeyPath:  ptr("testdata/creds/server1.key"),
+						},
+					},
+				},
+			},
+		}}
 
 	s := grpc.NewServer()
 	defer s.GracefulStop()
-	test.RegisterTestServiceServer(s, &TestServer{})
+	test.RegisterTestServiceServer(s, &testServer{})
 
 	srv := grpcServer{ctx: ctx, cfg: cfg, server: s}
 	go func() {
@@ -160,7 +155,7 @@ func Test_serverUsesGivenLogger(t *testing.T) {
 
 	s := grpc.NewServer()
 	defer s.GracefulStop()
-	test.RegisterTestServiceServer(s, &TestServer{})
+	test.RegisterTestServiceServer(s, &testServer{})
 
 	setLogger(ctx)
 
@@ -188,10 +183,10 @@ func Test_serverUsesGivenLogger(t *testing.T) {
 func Test_libMakesCorrectHandlerCalls(t *testing.T) {
 	ctx, _ := testutil.NewTestContextWithLogger()
 
-	manager := &GrpcHandler{
+	manager := &grpcHandler{
 		cfg: localServer(),
-		reg: ServerReg{
-			svr:           TestServer{},
+		reg: serverReg{
+			svr:           testServer{},
 			methodsCalled: make(map[string]bool),
 		},
 		methodsCalled: make(map[string]bool),

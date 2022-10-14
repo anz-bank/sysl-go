@@ -18,6 +18,7 @@ import (
 
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -82,7 +83,7 @@ func doGatewayRequestResponse(ctx context.Context, basePath, content string) (st
 	return obj.Content, nil
 }
 
-func startAndTestServer(t *testing.T, applicationConfig, basePath string) {
+func startAndTestServer(t *testing.T, applicationConfig, basePath string) bool {
 	// Override sysl-go app command line interface to directly pass in app config
 	ctx := core.WithConfigFile(context.Background(), []byte(applicationConfig))
 
@@ -107,13 +108,15 @@ func startAndTestServer(t *testing.T, applicationConfig, basePath string) {
 	backoff, err := retry.NewFibonacci(20 * time.Millisecond)
 	require.Nil(t, err)
 	backoff = retry.WithMaxDuration(5*time.Second, backoff)
-	err = retry.Do(ctx, backoff, func(ctx context.Context) error {
+	if !assert.NoError(t, retry.Do(ctx, backoff, func(ctx context.Context) error {
 		_, err := doGatewayRequestResponse(ctx, basePath, "")
 		if err != nil {
 			return retry.RetryableError(err)
 		}
 		return nil
-	})
+	})) {
+		return false
+	}
 
 	// Test if the endpoint of our gateway application server works
 	inputbytes := make([]byte, 256)
@@ -123,8 +126,7 @@ func startAndTestServer(t *testing.T, applicationConfig, basePath string) {
 	input := base64.StdEncoding.EncodeToString(inputbytes)
 	expected := input
 	actual, err := doGatewayRequestResponse(ctx, basePath, input)
-	require.Nil(t, err)
-	require.Equal(t, expected, actual)
+	return assert.NoError(t, err) && assert.Equal(t, expected, actual)
 }
 
 func TestMiscellaneousSmokeTest(t *testing.T) {
@@ -155,9 +157,9 @@ func TestMiscellaneous(t *testing.T) {
 			defer gatewayTester.Close()
 
 			gatewayTester.PostPingBinary().
-				WithBody(gateway.GatewayBinaryRequest{inputBytes}).
+				WithBody(gateway.GatewayBinaryRequest{Content: inputBytes}).
 				ExpectResponseCode(200).
-				ExpectResponseBody(gateway.GatewayBinaryResponse{inputBytes}).
+				ExpectResponseBody(gateway.GatewayBinaryResponse{Content: inputBytes}).
 				Send()
 		})
 	}
@@ -210,10 +212,10 @@ func TestMiscellaneous_Patch(t *testing.T) {
 	const expectString = "Foo"
 
 	gatewayTester.PatchPing().
-		WithBody(gateway.GatewayPatchRequest{expectString}).
+		WithBody(gateway.GatewayPatchRequest{Content: expectString}).
 		ExpectResponseCode(202).
 		ExpectResponseHeaders(map[string]string{"Content-Type": `application/json;charset=UTF-8`}).
-		ExpectResponseBody(gateway.GatewayPatchResponse{expectString}).
+		ExpectResponseBody(gateway.GatewayPatchResponse{Content: expectString}).
 		Send()
 }
 
@@ -223,32 +225,32 @@ func TestMiscellaneous_OneOf(t *testing.T) {
 	defer gatewayTester.Close()
 
 	gatewayTester.Mocks.Oneof_backend.PostRotateOneOf.
-		ExpectBody(oneof_backend.OneOfRequest{[]oneof_backend.OneOfRequest_values{
-			{One: &oneof_backend.One{true}},
-			{Two: &oneof_backend.Two{"two"}},
-			{Three: &oneof_backend.Three{3}},
+		ExpectBody(oneof_backend.OneOfRequest{Values: []oneof_backend.OneOfRequest_values{
+			{One: &oneof_backend.One{One: true}},
+			{Two: &oneof_backend.Two{Two: "two"}},
+			{Three: &oneof_backend.Three{Three: 3}},
 			{EmptyType: &oneof_backend.EmptyType{}},
 		}}).
-		MockResponse(200, nil, oneof_backend.OneOfResponse{[]oneof_backend.OneOfResponse_values{
-			{Three: &oneof_backend.Three{3}},
-			{One: &oneof_backend.One{true}},
-			{Two: &oneof_backend.Two{"two"}},
+		MockResponse(200, nil, oneof_backend.OneOfResponse{Values: []oneof_backend.OneOfResponse_values{
+			{Three: &oneof_backend.Three{Three: 3}},
+			{One: &oneof_backend.One{One: true}},
+			{Two: &oneof_backend.Two{Two: "two"}},
 			{EmptyType: &oneof_backend.EmptyType{}},
 		}})
 
 	gatewayTester.PostRotateOneOf().
-		WithBody(gateway.OneOfRequest{[]gateway.OneOfRequest_values{
-			{One: &gateway.One{true}},
-			{Two: &gateway.Two{"two"}},
-			{Three: &gateway.Three{3}},
+		WithBody(gateway.OneOfRequest{Values: []gateway.OneOfRequest_values{
+			{One: &gateway.One{One: true}},
+			{Two: &gateway.Two{Two: "two"}},
+			{Three: &gateway.Three{Three: 3}},
 			{EmptyType: &gateway.EmptyType{}},
 		}}).
 		ExpectResponseCode(201).
 		ExpectResponseHeaders(map[string]string{"Content-Type": `application/json; charset = utf-8`}).
-		ExpectResponseBody(gateway.OneOfResponse{[]gateway.OneOfResponse_values{
-			{Three: &gateway.Three{3}},
-			{One: &gateway.One{true}},
-			{Two: &gateway.Two{"two"}},
+		ExpectResponseBody(gateway.OneOfResponse{Values: []gateway.OneOfResponse_values{
+			{Three: &gateway.Three{Three: 3}},
+			{One: &gateway.One{One: true}},
+			{Two: &gateway.Two{Two: "two"}},
 			{EmptyType: &gateway.EmptyType{}},
 		}}).
 		Send()
@@ -281,23 +283,20 @@ func TestMiscellaneous_MultiCode(t *testing.T) {
 	gatewayTester.GetPingMultiCode(0).
 		ExpectResponseCode(200).
 		ExpectResponseHeaders(map[string]string{"Content-Type": `application/json;charset=UTF-8`}).
-		ExpectResponseBody(gateway.Pong{0}).
+		ExpectResponseBody(gateway.Pong{Identifier: 0}).
 		Send()
 
 	gatewayTester.GetPingMultiCode(1).
 		ExpectResponseCode(201).
 		ExpectResponseHeaders(map[string]string{"Content-Type": `application/json`}).
-		ExpectResponseBody(gateway.PongString{"One"}).
+		ExpectResponseBody(gateway.PongString{S: "One"}).
 		Send()
 }
 
 func TestMiscellaneous_CheckExternals(t *testing.T) {
-	var v interface{}
-	v = gateway.UndefinedPropertyType{}.Value
-
+	t.Parallel()
 	// Just want to confirm that it generates the type with the correct name
-	_, ok := v.(*gateway.EXTERNAL_MissingType)
-	require.True(t, ok)
+	var _ *gateway.EXTERNAL_MissingType = gateway.UndefinedPropertyType{}.Value
 }
 
 func TestMiscellaneous_DoubleUnderscore(t *testing.T) {

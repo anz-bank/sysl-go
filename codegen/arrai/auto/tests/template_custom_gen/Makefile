@@ -25,7 +25,7 @@ test: template.arraiz go.mod internal/gen/pkg/servers/template
 include codegen.mk
 
 $(ACTUAL_FILES) &: internal/gen/pkg/servers/template
-	:
+	tree
 
 template.arraiz: template.arrai
 	arrai bundle -o template.arraiz template.arrai

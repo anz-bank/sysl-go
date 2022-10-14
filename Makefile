@@ -39,16 +39,17 @@ check-coverage: test  ## Check that test coverage meets the required level
 coverage: test  ## Show test coverage in your browser
 	go tool cover -html=$(COVERFILE)
 
-ALL_TESTS = $(sort $(dir $(wildcard codegen/arrai/auto/tests/*/Makefile)))
+ALL_TESTS = $(patsubst %,auto-test-%,$(sort $(dir $(wildcard codegen/arrai/auto/tests/*/Makefile))))
 
 auto-test: $(ALL_TESTS)
-	$(foreach dir,$^,$(MAKE) -C $(dir);)
 
 update-auto-test-go-mod: $(ALL_TESTS) ## Update go.mod and go.sum files within auto tests
 
-.PHONY: $(ALL_TESTS)
-codegen/arrai/auto/tests/%:
-	cd $@ && go mod download && go mod tidy
+auto-test-%/: go-mod-%/
+	$(MAKE) -C $*
+
+go-mod-%/:
+	cd $* && go mod download && go mod tidy
 
 clean: $(ALL_TESTS)
 	rm -f $(COVERFILE)
@@ -87,3 +88,8 @@ protos: core/testdata/proto/test.pb.go
 		--go_out=. --go_opt=paths=source_relative \
 		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
 		$^
+
+go-work:
+	if [ ! -f go.work ]; then go work init; fi
+	find . -name go.mod -execdir go work use . \;
+.PHONY: go-work

@@ -13,6 +13,12 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v2
 
+      - name: "go work"
+        uses: ./.github/actions/builder
+        with:
+          entrypoint: /usr/bin/make
+          args: go-work
+
       - name: "make all"
         uses: ./.github/actions/builder
         with:

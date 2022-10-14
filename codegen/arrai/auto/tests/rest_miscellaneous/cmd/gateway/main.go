@@ -65,11 +65,11 @@ func PostRotateOneOf(ctx context.Context, req *gateway.PostRotateOneOfRequest, c
 	for _, v := range req.Request.Values {
 		switch {
 		case v.One != nil:
-			proor.Request.Values = append(proor.Request.Values, oneof_backend.OneOfRequest_values{One: &oneof_backend.One{v.One.One}})
+			proor.Request.Values = append(proor.Request.Values, oneof_backend.OneOfRequest_values{One: &oneof_backend.One{One: v.One.One}})
 		case v.Two != nil:
-			proor.Request.Values = append(proor.Request.Values, oneof_backend.OneOfRequest_values{Two: &oneof_backend.Two{v.Two.Two}})
+			proor.Request.Values = append(proor.Request.Values, oneof_backend.OneOfRequest_values{Two: &oneof_backend.Two{Two: v.Two.Two}})
 		case v.Three != nil:
-			proor.Request.Values = append(proor.Request.Values, oneof_backend.OneOfRequest_values{Three: &oneof_backend.Three{v.Three.Three}})
+			proor.Request.Values = append(proor.Request.Values, oneof_backend.OneOfRequest_values{Three: &oneof_backend.Three{Three: v.Three.Three}})
 		case v.EmptyType != nil:
 			proor.Request.Values = append(proor.Request.Values, oneof_backend.OneOfRequest_values{EmptyType: &oneof_backend.EmptyType{}})
 		}
@@ -84,11 +84,11 @@ func PostRotateOneOf(ctx context.Context, req *gateway.PostRotateOneOfRequest, c
 	for _, v := range resp.Values {
 		switch {
 		case v.One != nil:
-			goor.Values = append(goor.Values, gateway.OneOfResponse_values{One: &gateway.One{v.One.One}})
+			goor.Values = append(goor.Values, gateway.OneOfResponse_values{One: &gateway.One{One: v.One.One}})
 		case v.Two != nil:
-			goor.Values = append(goor.Values, gateway.OneOfResponse_values{Two: &gateway.Two{v.Two.Two}})
+			goor.Values = append(goor.Values, gateway.OneOfResponse_values{Two: &gateway.Two{Two: v.Two.Two}})
 		case v.Three != nil:
-			goor.Values = append(goor.Values, gateway.OneOfResponse_values{Three: &gateway.Three{v.Three.Three}})
+			goor.Values = append(goor.Values, gateway.OneOfResponse_values{Three: &gateway.Three{Three: v.Three.Three}})
 		case v.EmptyType != nil:
 			goor.Values = append(goor.Values, gateway.OneOfResponse_values{EmptyType: &gateway.EmptyType{}})
 		}
@@ -99,12 +99,12 @@ func PostRotateOneOf(ctx context.Context, req *gateway.PostRotateOneOfRequest, c
 
 func GetPingMultiCode(_ context.Context, req *gateway.GetPingMultiCodeRequest) (*gateway.Pong, *gateway.PongString, error) {
 	if req.Code == 0 {
-		return &gateway.Pong{0}, nil, nil
+		return &gateway.Pong{Identifier: 0}, nil, nil
 	} else if req.Code == 1 {
-		return nil, &gateway.PongString{"One"}, nil
+		return nil, &gateway.PongString{S: "One"}, nil
 	}
 
-	return nil, nil, fmt.Errorf("Code can only be 0 or 1")
+	return nil, nil, fmt.Errorf("code can only be 0 or 1")
 }
 
 func GetPingAsync(ctx context.Context, req *gateway.GetPingAsyncdownstreamsListRequest, client gateway.GetPingAsyncdownstreamsListClient) (*gateway.Pong, error) {

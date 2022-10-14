@@ -216,7 +216,7 @@ func LoadCustomConfig(ctx context.Context, customConfig interface{}) (interface{
 	} else {
 		fs = afero.NewOsFs()
 		if len(os.Args) != 2 {
-			return nil, fmt.Errorf("Wrong number of arguments (usage: %s (config | -h | --help | -v | --version))", os.Args[0])
+			return nil, fmt.Errorf("wrong number of arguments (usage: %s (config | -h | --help | -v | --version))", os.Args[0])
 		}
 		switch os.Args[1] {
 		case "--help", "-h":
@@ -603,13 +603,13 @@ func (s *multiStoppableServer) Start() error {
 			log.Infof(ctx, "starting sub-server %d of %d (%s)", i+1, len(s.servers), server.GetName())
 			defer func() {
 				if r := recover(); r != nil {
-					errChan <- fmt.Errorf("Server %d (%s) panicked: %v", i+1, server.GetName(), r)
+					errChan <- fmt.Errorf("server %d (%s) panicked: %v", i+1, server.GetName(), r)
 				}
 			}()
 
 			err := server.Start()
 			if err != nil {
-				err = fmt.Errorf("Server %d (%s) returned an error: %v", i+1, server.GetName(), err)
+				err = fmt.Errorf("server %d (%s) returned an error: %v", i+1, server.GetName(), err)
 			}
 			errChan <- err
 		}()
