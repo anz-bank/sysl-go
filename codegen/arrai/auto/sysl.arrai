@@ -4,6 +4,12 @@ let statements = \x x('stmt')?.a?:[];
 
 let patterns = \node node('attrs')?('patterns')?('a')('elt').a:{} >> .('s').s => .@item;
 
+let splitAppName =
+    let sub = //re.compile(`\s*::\s*`).sub('::');
+    let split = //seq.split('::');
+    \name split(sub(name))
+;
+
 # replaceArrayElement will replace the ith element in an array with val
 let replaceArrayElement = \arr \i \val
     arr >>> \j \cur cond {j=i: val, _:cur};
@@ -91,6 +97,17 @@ let endpoint =
     let untypedReturns = \app \ep
         returns(app, ep) where (.@item -> .var = "ok" && .type = [""]) rank (:.@);
 
+    # `returnPayload` takes the tuple structure of return and recreate the string payload.
+    let returnPayload = \(:seq, :type, ...)
+        (seq && `sequence of `) ++ (
+            cond type count {
+                2: $`${//seq.join(' :: ', splitAppName(type(0)))}.${type(1)}`,
+                1: type(0),
+                _: //error(type),
+            }
+        )
+    ;
+
     let sqlStatements = \ep
         ep('attrs')?:{} where (//seq.has_prefix("sql_", .@)) => (
             @: //seq.trim_prefix("sql_", .@),
@@ -101,14 +118,13 @@ let endpoint =
         :calls,
         :returns,
         :normalReturns,
+        :returnPayload,
         :sqlStatements,
         :untypedReturns,
         :params,
     );
 
 let source = \node node('sourceContext')('start') -> [.('line'), .('col')];
-
-let splitAppName = \name //seq.split('::', //re.compile(`\s*::\s*`).sub('::', name));
 
 let type =
 
@@ -174,7 +190,7 @@ let rec app = (
     dependenciesWithSource: \app
         let name = app('name', 'part');
         let fromEndpoints = app('endpoints')?:{} => \(@value: ep, ...)
-            let fromCalls = (endpoint.calls(ep) => .@item('target')?:'') where .('part') != name;
+            let fromCalls = (endpoint.calls(ep) => .@item('target')?:'');
             # repack into {'part': (a: [(s: _), ...])} because this structure is used
             let fromReturns = (endpoint.returns(app, ep) where ((.@item.type?:[] count) = 2)) => {
                 'part': (a: splitAppName(.@item.type(0)) >> (s: .)),
@@ -186,7 +202,7 @@ let rec app = (
             (fromReturns => (src: 'return', app: .)) |
             (fromParams  => (src: 'param',  app: .))
         ;
-        //rel.union(fromEndpoints),
+        //rel.union(fromEndpoints) where .app('part') != name,
     dependencies: \appConfig app.dependenciesWithSource(appConfig) => .app,
 );
 

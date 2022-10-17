@@ -42,15 +42,15 @@ let goMainModulePath = \goModFilename //re.compile(`(?m)^module\s+(.*)$`).match(
 let asExternalised = \mod \app \type
     let inMod = \app \t mod('apps', //seq.join(' :: ', app), 'types', t)?:false;
     let typeRef = type('typeRef', 'ref')?:{};
-    (!typeRef && //error($`asExternalised is only for type refereces: ${type}`)) ||
+    (!typeRef && //error($`asExternalised is only for type references: ${type}`)) ||
     let {'path': (a: [(s: path)]), ...} = typeRef;
     cond typeRef {
-        {'appname': {'part': (a: appname), ...}, ...}: inMod(appname >> .s, path) &&
-            path,
+        {'appname': {'part': (a: appname), ...}, ...}: inMod(appname >> .s, path) && path,
     } ||
     cond {
         app('types', path)?:false && ('unmapped_openapi' !<: sysl.patterns(type)): path
     } ||
+    # cond {path = 'PingMultiRes': //error(''), _: 1} &&
     $`EXTERNAL_${path}`
 ;
 
@@ -121,6 +121,14 @@ let typeImpl = \leafOnly \mod //fn.fix(\typeImpl \app \t
 
 let type = typeImpl(false);
 let leafType = typeImpl(true);
+let leafOrFullType = \mod \app \t
+    let appname = app('name');
+    let typeAppName = cond t {
+        {'typeRef': {'ref': {'appname': appname, ...}, ...}, ...}: appname,
+        _: appname,
+    };
+    typeImpl(appname = typeAppName, mod, app, t)
+;
 
 # Return the base type if its an alias otherwise return the same type back
 let aliasOrType = \app \t
@@ -336,15 +344,34 @@ let errorReturnTypes = \app
     //rel.union(app('endpoints')?:{} => (sysl.endpoint.returns(app, .@value) => .@item))
         where .var = "error" && .type != [""] => //seq.join(".")(.type) => name(.);
 
-let typeWithPackage = \(:type, :seq, ...) \package
-        cond {
-            type = ["ok"]: "",
-            type = ['bytes']: '[]byte',
-            type = ['string']: 'string',
-            _: let result = $`${cond{seq: `[]`}}`
-                ++ $`${cond { package: $`${package}.`}}`
-                ++ name(//seq.concat(type)); cond { result: '*' ++ result },
-        };
+let typeWithPackage = \mod \app \return \package
+        # FIXME: this processing shouldn't be necessary
+        # it is currently done out of convenience.
+        # maybe sysl.endpoint.returns should always return guessed type?
+        cond return {
+            (type: [""], ...): "",
+            _:
+                let syslType = sysl.type.guessType(app, sysl.endpoint.returnPayload(return));
+
+                # FIXME: this is a shortcut. sysl.type.guessType isn't called correctly here as sometimes
+                # the type do not belong in the app. If package exists, it assumes that the callers knows
+                # what the correct package is and it will remove the EXTERNAL_ prefix. If there is no
+                # package, it is assumed that it is a missing type.
+                let fixExternal = \t
+                    cond {
+                        //seq.has_prefix('EXTERNAL_', t) && package: //str.title(//seq.trim_prefix('EXTERNAL_', t)),
+                        _: t
+                    }
+                ;
+                cond syslType {
+                    {'sequence': {'typeRef': _, ...}, ...}:
+                        $`[]*${package && package ++ '.'}${fixExternal(leafType(mod, app, syslType('sequence')))}`,
+                    {'typeRef': _, ...}:
+                        $`*${package && package ++ '.'}${fixExternal(leafType(mod, app, syslType))}`,
+                    _: leafType(mod, app, syslType),
+                }
+        }
+;
 
 # `baseType` returns the base for aliased types otherwise returns {}.
 # need allTypes here because svc_mocks passes in a the names already converted to go names
@@ -354,15 +381,11 @@ let baseType = \mod \app \t \allTypes
     type(mod, app, nonEmpty(t)?:{});
 
 let module = \module
-    let typeWithClientPackage = \(:type, :seq, ...)
-        # it checks if a return type is from a different app and checks if the app exists.
-        let pkgName = (type count = 2) && //seq.join(' :: ', sysl.splitAppName(type(0)));
-        let appName = module('apps', pkgName)?:'';
-        cond {
-            appName: $`${cond {seq: "[]"}}*${package(appName)}.${name(type(1))}`,
-            _: typeWithPackage((:type, :seq), {}),
-        };
-
+    let typeWithClientPackage = \app \t
+        let package = (t.type count = 2) && sysl.splitAppName(t.type(0));
+        let appname = app('name')('part').a >> .s;
+        typeWithPackage(module, app, t, (package != appname) && //str.lower(//seq.join('', package)))
+    ;
     let targetApp = \target
         ((module('apps') where .@value('name') = target) single).@value;
 
@@ -371,14 +394,14 @@ let module = \module
             # TODO: Remove double entry once cond array handling is fixed.
             cond t.type {
                 ([""], [""]): "*http.Header",
-                _: $"${typeWithClientPackage(t)}",
+                _: $"${typeWithClientPackage(app, t)}",
             };
         (tn orderby .) ++ ["error"];
 
     let methodSignature = \app \ep
         $`${methodName(app, ep)}(ctx context.Context, req *${methodName(app, ep)}Request) (${methodReturnTypes(app, ep) ::, })`;
 
-    let callSignature = \{'target': target, 'endpoint': ep, ...}
+    let callSignature = \app \{'target': target, 'endpoint': ep, ...}
         let dep = targetApp(target);
         let package = package(dep);
         let ep = sysl.app.endpoint(dep, ep.s);
@@ -397,7 +420,7 @@ let module = \module
                         req *${package}.${method}Request,
                     ) (${
                         let typed = sysl.endpoint.normalReturns(dep, ep)
-                            >> $"${typeWithPackage(., package)}";
+                            >> $"${typeWithPackage(module, app, ., package)}";
                         let untyped = sysl.endpoint.untypedReturns(dep, ep) >> `*http.Header`;
                         typed ++ untyped ++ ["error"]
                     ::, })
@@ -448,6 +471,7 @@ let module = \module
     :prelude,
     :type,
     :leafType,
+    :leafOrFullType,
     :baseType,
     :bodyType,
     :aliasOrType,

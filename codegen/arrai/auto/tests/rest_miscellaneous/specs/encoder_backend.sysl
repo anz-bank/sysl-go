@@ -4,7 +4,7 @@ EncoderBackend [package="encoder_backend", ~vars_in_url_name]:
 
     /ping:
         GET ?id=int:
-            return ok <: pong
+            return ok <: Pong
 
     !type Pong:
         identifier <: int

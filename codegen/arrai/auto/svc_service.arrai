@@ -1,7 +1,7 @@
 let go = //{./go};
 let sysl = //{./sysl};
 
-\(:app, :appname, :endpoints, :module, ...)
+\(:app, :appname, :endpoints, :clientDeps, :module, :basepath, ...)
     let (:methodSignature, :typeWithClientPackage, :methodReturnTypes, ...) = go.module(module);
 
     let HttpMethodStatements = \ep
@@ -12,8 +12,8 @@ let sysl = //{./sysl};
             cond { .@item = "string": '""', _ : "nil" };
 
         let declareResp = \var
-            let r = returns where .@item.var = var && typeWithClientPackage(.@item) >>
-                $`var ${var}Response ${//seq.trim_prefix('*', typeWithClientPackage(.))}`
+            let r = returns where .@item.var = var && typeWithClientPackage(app, .@item) >>
+                $`var ${var}Response ${//seq.trim_prefix('*', typeWithClientPackage(app, .))}`
                 rank(@:.@item);
             # just the first type for now, todo: remove where .@ < 1
             r where .@ < 1;
@@ -112,9 +112,9 @@ let sysl = //{./sysl};
                         _: go.name(input),
                     };
 
-                (returns where (.@item -> .var != "error" && .type != [""]) rank(@: typeWithClientPackage(.@item))) >>> \i \.
+                (returns where (.@item -> .var != "error" && .type != [""]) rank(@: typeWithClientPackage(app, .@item))) >>> \i \.
                     let responseVar = $`${makeType(.var)}${go.name(//seq.concat(.type))}Response`;
-                    let responseType = typeWithClientPackage(.);
+                    let responseType = typeWithClientPackage(app, .);
 
                     # The current implementation of restlib#unmarshal returns pointer references for raw string
                     # and byte responses in order to handle aliased string and byte responses also. For this reason,
@@ -154,7 +154,7 @@ let sysl = //{./sysl};
         `;
 
     $`
-        ${go.prelude(app, {})}
+        ${go.prelude(app, clientDeps => $`${basepath}/${.import}`)}
         ${"app.union" where false >> let f = $`Is${.key}`; $`
             // ${f} ...
             type ${go.name(.key)} interface {

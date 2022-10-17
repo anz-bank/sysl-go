@@ -11,12 +11,12 @@ Gateway [package="gateway", ~vars_in_url_name]:
         GET ?id=int:
             EncoderBackend <- GET /ping
             multi_contenttype_backend <- POST /ping/multi:colon
-            return ok <: pong
+            return ok <: Pong
 
     # should not conflict due to ~vars_in_url_name
     /ping/{id <: int}/id:
         GET:
-            return ok <: pong
+            return ok <: Pong
 
     /something/external:
         GET:
@@ -34,6 +34,13 @@ Gateway [package="gateway", ~vars_in_url_name]:
 
     !type GatewayBinaryResponse:
         content <: bytes
+
+    !type TypeWithFullReference:
+        content <: Gateway.PongString
+
+    /fullreference:
+        GET:
+            return ok <: Gateway.TypeWithFullReference
 
     /ping-string/{s <: string}:
         GET:
@@ -70,7 +77,7 @@ Gateway [package="gateway", ~vars_in_url_name]:
         GET ?id=int:
             EncoderBackend <- GET /ping
             multi_contenttype_backend <- POST /ping/multi:colon
-            return ok <: pong
+            return ok <: Pong
 
 GatewayWithBff [package="gatewayWithBff"]:
     @basePath = "bff"

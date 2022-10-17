@@ -39,7 +39,7 @@ let sysl = //{./sysl};
                         Conn *sql.Conn
                         ${sysl.endpoint.sqlStatements(ep) => $`${//str.title(.@)} *sql.Stmt` orderby .::\i}
                     `}}
-                    ${calls >> goModule.callSignature(.)::\i\n}
+                    ${calls >> goModule.callSignature(app, .)::\i\n}
                 }
             `},
 

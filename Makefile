@@ -39,16 +39,16 @@ check-coverage: test  ## Check that test coverage meets the required level
 coverage: test  ## Show test coverage in your browser
 	go tool cover -html=$(COVERFILE)
 
-ALL_TESTS = $(patsubst %,auto-test-%,$(sort $(dir $(wildcard codegen/arrai/auto/tests/*/Makefile))))
+ALL_TESTS = $(patsubst %,auto-test-%.dummy,$(sort $(dir $(wildcard codegen/arrai/auto/tests/*/Makefile))))
 
 auto-test: $(ALL_TESTS)
 
 update-auto-test-go-mod: $(ALL_TESTS) ## Update go.mod and go.sum files within auto tests
 
-auto-test-%/: go-mod-%/
+auto-test-%/.dummy: go-mod-%/.dummy
 	$(MAKE) -C $*
 
-go-mod-%/:
+go-mod-%/.dummy:
 	cd $* && go mod download && go mod tidy
 
 clean: $(ALL_TESTS)

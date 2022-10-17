@@ -79,7 +79,7 @@ let fieldJsonTag = \type \key
                             ++ [$`url:"${urlTag::,}"`]
                             ++ cond { validateTag: [$`validate:"${validateTag}"`] };
                         $'
-                        ${fieldName} ${go.type(module, app, attrDef)} `${//seq.join(' ', structTags)}`'
+                        ${fieldName} ${go.leafOrFullType(module, app, attrDef)} `${//seq.join(' ', structTags)}`'
                     ::\i}
                 }
                 ${cond {typename <: go.errorReturnTypes(app): $`
