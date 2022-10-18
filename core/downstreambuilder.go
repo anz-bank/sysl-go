@@ -45,21 +45,16 @@ func BuildDownstreamGRPCClient(ctx context.Context, serviceName string, hooks *H
 }
 
 // BuildDownstreamTemporalClient creates a temporal client connection to the target indicated by cfg.HostPort.
-// The client options can be customised by cfg or by hooks. The serviceName is used as the namespace by default
-// if the cfg.Namespace is empty.
+// The client options can be customised by cfg or by hooks.
 func BuildDownstreamTemporalClient(
 	ctx context.Context,
 	serviceName string,
 	hooks *Hooks,
 	cfg *config.CommonTemporalDownstreamData,
 ) (client.Client, error) {
-	ns := cfg.Namespace
-	if ns == "" {
-		ns = serviceName
-	}
 	return client.Dial(client.Options{
 		HostPort:  cfg.HostPort,
-		Namespace: ns,
+		Namespace: cfg.Namespace,
 		Identity:  cfg.Identity,
 
 		// TODO: add sysl-go logging solution
