@@ -307,3 +307,21 @@ func TestMiscellaneous_DoubleUnderscore(t *testing.T) {
 func TestMiscellaneous_TypesSomethingExternal(t *testing.T) {
 	_ = types.SomethingExternal{}
 }
+
+func TestMiscellaneous_EmptyResponse(t *testing.T) {
+	t.Parallel()
+	gatewayTester := gateway.NewTestServer(t, context.Background(), createService, "")
+	defer gatewayTester.Close()
+
+	gatewayTester.GetEmptyResponseList().
+		ExpectResponseCode(200).
+		ExpectResponseHeaders(map[string]string{"Content-Type": `application/json`}).
+		ExpectResponseBody("{}").
+		Send()
+
+	gatewayTester.GetWithHeaderList().
+		ExpectResponseCode(200).
+		ExpectResponseHeaders(map[string]string{"Content-Type": `application/json`}).
+		ExpectResponseBody("{}").
+		Send()
+}

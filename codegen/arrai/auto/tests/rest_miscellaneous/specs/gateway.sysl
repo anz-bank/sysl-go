@@ -1,6 +1,7 @@
 import encoder_backend
 import oneOf_backend.yaml as oneof_backend
 import oneOf_gateway.yaml as Gateway
+import empty_response.yaml as Gateway
 import multi_contenttype_backend.yaml as multi_contenttype_backend
 
 Gateway [package="gateway", ~vars_in_url_name]:

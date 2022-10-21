@@ -75,11 +75,10 @@ let endpoint =
                 let thisType = app('types')?(type rank (:.@))?:{};
                 let followedType = cond {
                     'GeneratedOpenAPIResponse' <: patterns(thisType):
-                        # the actual type is in the body param (and will be aliased)
-                        let bodyType = thisType('tuple')('attrDefs')('body')('typeRef')('ref')('path').a(0).s;
-                        app('types')(bodyType),
+                        # the actual type is in the body param
+                        thisType('tuple')('attrDefs')('body')('typeRef')('ref')('path').a(0).s
                 };
-                let type = followedType('typeRef')?('ref')('path').a(0).s:{} || type;
+                let type = app('types')?(followedType)?('typeRef')?('ref')('path').a(0).s:{} || followedType ||type;
                 let mtype = followedType('attrs')?('mediatype')?('s').s:{} || mediatype(attrs);
                 (var: var.var, seq: seq != "", type: //seq.split(".", type), mediatype: mtype, code: var.code)
             ) => .@item;

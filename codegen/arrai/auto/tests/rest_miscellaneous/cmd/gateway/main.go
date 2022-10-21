@@ -142,6 +142,14 @@ func GetPingAsync(ctx context.Context, req *gateway.GetPingAsyncdownstreamsListR
 	}, nil
 }
 
+func GetEmptyResponse(_ context.Context, _ *gateway.GetEmptyResponseListRequest) (*gateway.Get_emptyResponse_200_resp_type_body, error) {
+	return &gateway.Get_emptyResponse_200_resp_type_body{}, nil
+}
+
+func GetWithHeader(_ context.Context, _ *gateway.GetWithHeaderListRequest) (*gateway.WithHeaderResponse, error) {
+	return &gateway.WithHeaderResponse{}, nil
+}
+
 func createService(_ context.Context, _ AppConfig) (*gateway.ServiceInterface, *core.Hooks, error) {
 	return &gateway.ServiceInterface{
 		PostRotateOneOf:             PostRotateOneOf,
@@ -151,6 +159,8 @@ func createService(_ context.Context, _ AppConfig) (*gateway.ServiceInterface, *
 		PostPingBinary:              PostPingBinary,
 		GetPingMultiCode:            GetPingMultiCode,
 		GetPingAsyncdownstreamsList: GetPingAsync,
+		GetEmptyResponseList:        GetEmptyResponse,
+		GetWithHeaderList:           GetWithHeader,
 	}, nil, nil
 }
 

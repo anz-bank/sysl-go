@@ -1,0 +1,36 @@
+openapi: "3.0.3"
+
+info:
+  title: Empty Response Test
+  version: "1.0"
+
+paths:
+  /empty-response:
+    get:
+      responses:
+        "200":
+          description: Empty Object
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /with-header:
+    get:
+      responses:
+        "200":
+          description: OK
+          headers:
+            Location:
+              description: Location description
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WithHeaderResponse"
+
+components:
+  schemas:
+    WithHeaderResponse:
+      type: object

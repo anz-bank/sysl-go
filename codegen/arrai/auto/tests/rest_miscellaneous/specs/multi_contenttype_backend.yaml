@@ -1,8 +1,8 @@
-openapi: '3.0.3'
+openapi: "3.0.3"
 
 info:
-  title: 'Multi Content Type Backend'
-  version: '1.0'
+  title: "Multi Content Type Backend"
+  version: "1.0"
 
 paths:
   "/ping/multi:colon":
@@ -18,7 +18,7 @@ paths:
               $ref: "#/components/schemas/pingMultiReq"
 
       responses:
-        '200':
+        "200":
           description: OK
           content:
             application/json; charset = utf-8:
