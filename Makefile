@@ -39,26 +39,26 @@ check-coverage: test  ## Check that test coverage meets the required level
 coverage: test  ## Show test coverage in your browser
 	go tool cover -html=$(COVERFILE)
 
-ALL_TESTS = $(patsubst %,auto-test-%.dummy,$(sort $(dir $(wildcard codegen/arrai/auto/tests/*/Makefile))))
+ALL_TESTS = $(sort $(dir $(wildcard codegen/arrai/auto/tests/*/Makefile)))
 
-auto-test: $(ALL_TESTS)
-
-update-auto-test-go-mod: $(ALL_TESTS) ## Update go.mod and go.sum files within auto tests
-
-auto-test-%/.dummy: go-mod-%/.dummy
+auto-test: $(patsubst %,auto-test-%.dummy,$(ALL_TESTS))
+auto-test-%/.dummy:
 	$(MAKE) -C $*
 
+update-auto-test-go-mod: $(patsubst %,go-mod-%.dummy,$(ALL_TESTS)) ## Update go.mod and go.sum files within auto tests
 go-mod-%/.dummy:
 	cd $* && go mod download && go mod tidy
 
-clean: $(ALL_TESTS)
+clean: $(patsubst %,clean-%.dummy,$(ALL_TESTS))
 	rm -f $(COVERFILE)
-	@$(foreach dir,$^,$(MAKE) -C $(dir) clean;)
+clean-%/.dummy:
+	$(MAKE) -C $* clean
 
 ALL_GRPC_TESTS = $(sort $(dir $(wildcard codegen/arrai/auto/tests/*grpc*/Makefile)))
 
-update-auto-test-proto-pb: $(ALL_GRPC_TESTS) ## Update protos within auto tests
-	$(foreach dir,$^,pushd $(dir) && $(MAKE) -B protos && popd;)
+update-auto-test-proto-pb: $(patsubst %,proto-pb-%.dummy,$(ALL_GRPC_TESTS)) ## Update protos within auto tests
+proto-pb-%/.dummy:
+	$(MAKE) -C $* -B protos
 
 CHECK_COVERAGE = awk -F '[ \t%]+' '/^total:/ && $$3 < $(COVERAGE) {exit 1}'
 FAIL_COVERAGE = { echo '$(COLOUR_RED)FAIL - Coverage below $(COVERAGE)%$(COLOUR_NORMAL)'; exit 1; }
