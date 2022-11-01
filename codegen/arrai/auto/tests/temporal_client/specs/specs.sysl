@@ -6,6 +6,10 @@ Frontdoor:
         TemporalWorker <- WorkflowWithMultipleParams
         TemporalWorker <- WorkflowWithParamAndReturn
         TemporalWorker <- ProtoReqAndResp
+        TemporalWorker <- WorkflowWithActivities
+
+    Rest:
+        SomeDownstream <- POST /
 
 TemporalWorker [~temporal]:
     !type Param1:
@@ -32,8 +36,34 @@ TemporalWorker [~temporal]:
     ProtoReqAndResp(req <: frontdoor.Req) [~workflow]:
         return ok <: frontdoor.Resp
 
-    Activity1 [~activity]:
-        ...
+    WorkflowWithActivities(req <: Param1) [~workflow]:
+        SomeDownstream <- POST /
+        . <- Activity
+        . <- ActivityWithParam
+        . <- ActivityWithMultipleParams
+        . <- ActivityWithParamAndReturn
+        return ok <: Param2
 
-    Activity2 [~activity]:
-        ...
+    Activity:
+        SomeDownstream <- POST /
+
+    ActivityWithParam(req <: Param1):
+        SomeDownstream <- POST /
+
+    ActivityWithMultipleParams(req <: Param1, req2 <: Param2, req3 <: Param3):
+        SomeDownstream <- POST /
+
+    ActivityWithParamAndReturn(req <: Param1):
+        SomeDownstream <- POST /
+        return ok <: Param2
+
+SomeDownstream:
+    !type SomeReq:
+        msg <: string
+
+    !type SomeResp:
+        msg <: string
+
+    /:
+        POST(req <: SomeReq [~body, mediatype="application/json"]):
+            return ok <: SomeResp

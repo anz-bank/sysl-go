@@ -7,4 +7,6 @@ genCode:
     downstream:
         temporalworker:
             hostPort: "localhost:7233"
-            namespace: "default"
+        somedownstream:
+            clientTimeout: 30s
+            serviceURL: "http://localhost:8080"

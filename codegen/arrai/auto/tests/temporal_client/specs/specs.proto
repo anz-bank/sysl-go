@@ -15,5 +15,6 @@ message Req {
 
 service Frontdoor {
     rpc Executor (Req) returns (Resp);
+    rpc Rest (Req) returns (Resp);
 }
 

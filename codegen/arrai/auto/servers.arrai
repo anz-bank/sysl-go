@@ -2,8 +2,16 @@
     let (:basepath, :module, app: mainApp, ...)   = config;
     let generate                                  = //{./generate};
     let (:package, ...)                           = //{./go};
-    let (:patterns, app: appUtil, ...) = //{./sysl};
-    let type                                      = cond {'gRPC' <: patterns(mainApp): 'grpc-app', _: 'rest-app'};
+    let (:patterns, app: appUtil, ...)            = //{./sysl};
+
+    let type =
+        let patterns = patterns(mainApp);
+        cond {
+            'temporal' <: patterns: 'temporal-app',
+            'gRPC' <: patterns    : 'grpc-app',
+            _                     : 'rest-app',
+        }
+    ;
 
     let clientType =
         let dependencies = appUtil.dependenciesWithSource(mainApp) => .app('part');
@@ -11,8 +19,13 @@
             let patterns = patterns(client);
             cond {
                 'temporal' <: patterns: 'temporal-client',
-                # if main app is gRPC and the client app's type is used by main app in endpoints, then treat client as gRPC
-                'gRPC' <: patterns || (type = 'grpc-app' && client('name', 'part') <: dependencies): 'grpc-client',
+                # if main app is gRPC and the client app only has types and it is used by main app in endpoints,
+                # then treat client as gRPC
+                'gRPC' <: patterns || (
+                    type = 'grpc-app' &&
+                    client('name', 'part') <: dependencies &&
+                    !(client('endpoints')?:false)
+                ): 'grpc-client',
                 _: 'rest-client'
             }
     ;

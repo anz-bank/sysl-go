@@ -7,6 +7,8 @@ import (
 	"net/http"
 
 	"github.com/anz-bank/sysl-go/log"
+	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/worker"
 
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/config"
@@ -148,6 +150,14 @@ type Hooks struct {
 	// StoppableGrpcServerBuilder can be used to add a function which will be used to create the public gRPC listener
 	// instead of the normal net.Listen. This can be used to create custom test gRPC listeners.
 	StoppableGrpcServerBuilder func(ctx context.Context, server *grpc.Server, commonConfig config.GRPCServerConfig, name string) StoppableServer
+
+	// ExperimentalValidateTemporalClientOptions can be used to validate (or override) client options to connect to a
+	// temporal instance with.
+	ExperimentalValidateTemporalClientOptions func(context.Context, *client.Options) error
+
+	// ExperimentalValidateTemporalWorkerOptions can be used to validate (or override) worker options to connect to a
+	// temporal instance with.
+	ExperimentalValidateTemporalWorkerOptions func(context.Context, *worker.Options) error
 }
 
 func ResolveGrpcDialOptions(ctx context.Context, serviceName string, h *Hooks, grpcDownstreamConfig *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {

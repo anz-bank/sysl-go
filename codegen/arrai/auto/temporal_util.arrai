@@ -1,0 +1,5 @@
+let sysl = //{./sysl};
+
+let workflowName = \app \epName $`${sysl.app.delimitedName(app)} <- ${epName}`;
+
+(:workflowName)

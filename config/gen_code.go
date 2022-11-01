@@ -15,6 +15,7 @@ type UpstreamConfig struct {
 	ContextTimeout time.Duration          `yaml:"contextTimeout" mapstructure:"contextTimeout" validate:"nonnil"`
 	HTTP           CommonHTTPServerConfig `yaml:"http" mapstructure:"http"`
 	GRPC           GRPCServerConfig       `yaml:"grpc" mapstructure:"grpc"`
+	Temporal       TemporalServerConfig   `yaml:"temporal" mapstructure:"temporal"`
 }
 
 func (c *UpstreamConfig) Validate() error {

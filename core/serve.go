@@ -14,6 +14,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/afero"
+	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/worker"
 
 	pkgHealth "github.com/anz-bank/pkg/health"
 	pkg "github.com/anz-bank/pkg/log"
@@ -60,6 +62,156 @@ func Serve(
 	return srv.Start()
 }
 
+func validateConfig(ctx context.Context, hooks *Hooks, conf *config.DefaultConfig) error {
+	// Validate the hooks returned from service creation.
+	if hooks != nil && hooks.ValidateConfig != nil {
+		if err := hooks.ValidateConfig(ctx, conf); err != nil {
+			return err
+		}
+	}
+	return validator.Validate(conf)
+}
+
+func withLogLevel(ctx context.Context, defaultConfig *config.DefaultConfig) context.Context {
+	// Set the level against the logger. The level will be either the value found within the
+	// configuration or the default value (info).
+	level := log.InfoLevel
+	if defaultConfig.Library.Log.Level != 0 {
+		level = defaultConfig.Library.Log.Level
+	}
+	return log.WithLevel(ctx, level)
+}
+
+// NewTemporalWorker creates a Temporal Worker that implements StoppableServer. This is meant to be
+// called by a generated temporal worker.
+//
+// `ctx` is a context created by user.
+// `taskQueueName` is a generated task queue name for temporal worker.
+// `downstreamConfig` is a generated configuration for downstream.
+// `createService` is user-provided function that creates a struct of handlers.
+// `buildDownstreamsClients` is a generated function that creates clients for each downstream.
+// `buildServiceHandler` is a generated function that creates temporal service handler.
+// temporal service handler itself is a generated struct that wraps downstreams and user handlers.
+//
+//nolint:funlen
+func NewTemporalWorker[
+	DownstreamConfig, AppConfig, ServiceIntf, Clients any,
+	Spec TemporalServiceSpec,
+](
+	ctx context.Context,
+	taskQueueName string,
+	downstreamConfig DownstreamConfig,
+	createService func(context.Context, AppConfig) (ServiceIntf, *Hooks, error),
+	buildDownstreamsClients func(context.Context, *Hooks) (Clients, error),
+	buildServiceHandler func(client.Client, worker.Worker, ServiceIntf, Clients) Spec,
+) (StoppableServer, error) {
+	// This mirrors what NewServer does
+	var externalLogger log.Logger
+	ctx, externalLogger = getExternalLogger(ctx)
+	if externalLogger == nil {
+		ctx = log.PutLogger(ctx, log.NewZeroPkgLogger(zero.New(os.Stdout)).WithStr("bootstrap",
+			"logging called before bootstrapping complete, to centralise these logs call "+
+				"log.PutLogger before core.NewServer"))
+	}
+
+	defaultConfig, appConfig, err := createDefaultConfig(ctx, downstreamConfig, createService)
+	if err != nil {
+		return nil, err
+	}
+	ctx = config.PutDefaultConfig(ctx, defaultConfig)
+
+	serviceIntf, hooks, err := createService(ctx, *appConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = validateConfig(ctx, hooks, defaultConfig); err != nil {
+		return nil, err
+	}
+
+	clientOptions := client.Options{
+		HostPort:  defaultConfig.GenCode.Upstream.Temporal.HostPort,
+		Namespace: defaultConfig.GenCode.Upstream.Temporal.Namespace,
+	}
+
+	if hooks.ExperimentalValidateTemporalClientOptions != nil {
+		if err = hooks.ExperimentalValidateTemporalClientOptions(ctx, &clientOptions); err != nil {
+			return nil, err
+		}
+	}
+
+	temporalClient, err := client.Dial(clientOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	downstreamClients, err := buildDownstreamsClients(ctx, hooks)
+	if err != nil {
+		return nil, err
+	}
+
+	workerOptions := worker.Options{
+		BackgroundActivityContext: ctx,
+	}
+
+	if hooks.ExperimentalValidateTemporalWorkerOptions != nil {
+		if err = hooks.ExperimentalValidateTemporalWorkerOptions(ctx, &workerOptions); err != nil {
+			return nil, err
+		}
+	}
+
+	return &TemporalServer{buildServiceHandler(
+		temporalClient,
+		worker.New(temporalClient, taskQueueName, workerOptions),
+		serviceIntf,
+		downstreamClients,
+	)}, nil
+}
+
+func createDefaultConfig[DownstreamConfig, AppConfig, Handlers any](
+	ctx context.Context,
+	downstreamConfig DownstreamConfig,
+	createService func(context.Context, AppConfig) (Handlers, *Hooks, error),
+) (*config.DefaultConfig, *AppConfig, error) {
+	// Load the custom configuration.
+	customConfig := NewZeroCustomConfig(reflect.TypeOf(downstreamConfig), GetAppConfigType(createService))
+	customConfig, err := LoadCustomConfig(ctx, customConfig)
+	if err != nil {
+		return nil, nil, err
+	}
+	if customConfig == nil {
+		return nil, nil, fmt.Errorf("configuration is empty")
+	}
+
+	customConfigValue := reflect.ValueOf(customConfig).Elem()
+	library := customConfigValue.FieldByName("Library").Interface().(config.LibraryConfig)
+	admin := customConfigValue.FieldByName("Admin").Interface().(*config.AdminConfig)
+	genCodeValue := customConfigValue.FieldByName("GenCode")
+	development := customConfigValue.FieldByName("Development").Interface().(*config.DevelopmentConfig)
+	upstream := genCodeValue.FieldByName("Upstream").Interface().(config.UpstreamConfig)
+	downstreamValue := genCodeValue.FieldByName("Downstream")
+
+	// ensure `downstream` is not nil so that ValidateHooks can use its type
+	var downstream any
+	if downstreamValue.IsNil() {
+		downstream = downstreamConfig
+	} else {
+		downstream = downstreamValue.Interface()
+	}
+
+	appConfigValue := customConfigValue.FieldByName("App").Interface().(AppConfig)
+
+	return &config.DefaultConfig{
+		Library:     library,
+		Admin:       admin,
+		Development: development,
+		GenCode: config.GenCodeConfig{
+			Upstream:   upstream,
+			Downstream: downstream,
+		},
+	}, &appConfigValue, nil
+}
+
 // NewServer returns an auto-generated service.
 //
 //nolint:funlen
@@ -87,11 +239,11 @@ func NewServer(
 				"log.PutLogger before core.NewServer"))
 	}
 
+	// TODO: use the generic config loading function
 	// Load the custom configuration.
 	MustTypeCheckCreateService(createService, serviceInterface)
 	customConfig := NewZeroCustomConfig(reflect.TypeOf(downstreamConfig), GetAppConfigType(createService))
 	customConfig, err := LoadCustomConfig(ctx, customConfig)
-
 	if err != nil {
 		return nil, err
 	}
@@ -139,17 +291,8 @@ func NewServer(
 	serviceIntf := createServiceResult[0].Interface()
 	hooksIntf := createServiceResult[1].Interface()
 
-	// Validate the hooks returned from service creation.
 	hooks := hooksIntf.(*Hooks)
-	if hooks != nil && hooks.ValidateConfig != nil {
-		err = hooks.ValidateConfig(ctx, defaultConfig)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	err = validator.Validate(defaultConfig)
-	if err != nil {
+	if err = validateConfig(ctx, hooks, defaultConfig); err != nil {
 		return nil, err
 	}
 
@@ -166,15 +309,7 @@ func NewServer(
 		ctx = log.PutLogger(ctx, logger)
 	}
 
-	// Set the level against the logger. The level will be either the value found within the
-	// configuration or the default value (info).
-	var level log.Level
-	if defaultConfig.Library.Log.Level != 0 {
-		level = defaultConfig.Library.Log.Level
-	} else {
-		level = log.InfoLevel
-	}
-	ctx = log.WithLevel(ctx, level)
+	ctx = withLogLevel(ctx, defaultConfig)
 
 	// Collect prometheus metrics if the admin server is enabled.
 	var promRegistry *prometheus.Registry
@@ -723,3 +858,5 @@ func getExternalLogger(ctx context.Context) (context.Context, log.Logger) {
 	}
 	return ctx, nil
 }
+
+// func createDefaultConfig()

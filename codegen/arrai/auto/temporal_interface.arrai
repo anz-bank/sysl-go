@@ -1,0 +1,62 @@
+let go = //{./go};
+let sysl = //{./sysl};
+let temporal = //{./temporal};
+
+let clientStruct = \mod \ep $`
+    type
+`;
+
+\(:app, :appname, :clientDeps, :endpoints, :goModule, :hasDB, :basepath, :module, :nonRestEndpoints, ...)
+    let client = //{./client}((:app, :appname, :clientDeps, :hasDB, :module));
+    let hasPb =
+        let annotations = app('attrs')?:{};
+        annotations('go_package')?:false || annotations('go_pb_package')?:false
+    ;
+    let appnameObj = app('name')?:{};
+    let workflows = temporal.workflows(app);
+    let mainActs = temporal.activitiesOfMainApp(module, app);
+    let intfSignature = \isWorkflow \eps
+        eps orderby .name >> \(:ep, ...)
+                let name = go.methodName(app, ep);
+                let (:requestType, :responseType, ...) = go.temporalMethodInfo(module, app, app, ep);
+                let args = (([
+                    isWorkflow && `ctx workflow.Context`,
+                    !isWorkflow && `ctx context.Context`,
+                    isWorkflow && client.notEmpty(ep) && $`activities ${temporal.activityStructNameFromEp(app, ep)}`,
+                    !isWorkflow && client.notEmpty(ep) && $`client ${name}Client`,
+                ] where .@item) rank (:.@)) ++ (requestType >> $`${.name} ${.leaf}`);
+
+                $`${name} func(
+                    ${args::,\i:,}
+                ) ${(responseType.leaf && $`(${responseType.leaf}, error)`) || `error`}`
+    ;
+    $`
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | (hasPb && {go.pbImport(app)}))}
+
+        ${(mainActs => sysl.endpoint.epFromCall(module, .)) orderby . >> client.clientStruct(.)::\i}
+
+        ${
+            workflows where client.notEmpty(.ep) orderby . >> \(:ep, ...)
+                let (:name, :fields, ...) = temporal.activityStructFromEp(module, app, ep);
+                $`
+                    type ${name} struct {
+                        ${fields orderby .name >> $`${.name} func${.sig}`::\i}
+                    }
+                `
+        ::\i}
+
+        // TemporalServiceInterface for ${appname}
+        type TemporalServiceInterface struct {
+            // Workflows
+            ${intfSignature(true, workflows)::\n}
+
+            // Activities
+            ${
+                # only define activities that are calls to its own temporal worker
+                let activities = mainActs => (name: .('endpoint'), ep: sysl.endpoint.epFromCall(module, .));
+                intfSignature(false, activities)
+            ::\n}
+        }
+
+        ${client.config}
+    `

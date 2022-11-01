@@ -2,9 +2,18 @@ package core
 
 import (
 	"context"
+	"time"
 
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/worker"
+	"go.temporal.io/sdk/workflow"
 )
+
+type TemporalServiceSpec interface {
+	worker.Worker
+	client.Client
+	Register()
+}
 
 type Run[T any] struct {
 	client.WorkflowRun
@@ -32,4 +41,23 @@ func ExecuteWorkflow[T any](ctx context.Context, c client.Client, tq, name strin
 		return nil, err
 	}
 	return &Run[T]{w}, nil
+}
+
+type Future[T any] struct {
+	workflow.Future
+}
+
+func (f *Future[T]) Get(ctx workflow.Context) (T, error) {
+	var t T
+	// FIXME: should this wait until it's ready?
+	err := f.Future.Get(ctx, &t)
+	return t, err
+}
+
+func ExecuteActivity[T any](ctx workflow.Context, tq, name string, args ...any) *Future[T] {
+	ctx = workflow.WithTaskQueue(ctx, tq)
+	if workflow.GetActivityOptions(ctx).StartToCloseTimeout == 0 {
+		ctx = workflow.WithStartToCloseTimeout(ctx, 5*time.Second)
+	}
+	return &Future[T]{workflow.ExecuteActivity(ctx, name, args...)}
 }

@@ -1,4 +1,5 @@
 let sysl = //{./sysl};
+let temporal_util = //{./temporal_util};
 
 let name =
     let wordRE = //re.compile(`[\p{L}_][\p{L}\p{N}_]*`);
@@ -219,35 +220,39 @@ let pbMethodInfo = \mod \app \ep
             `,
     );
 
-let temporalMethodInfo = \mod \app \ep
+# Creates signature information from an endpoint
+# mod is the sysl module
+# app is the main application that is being generated
+# epApp is the application that owns ep
+# ep is the endpoint
+let temporalMethodInfo = \mod \app \epApp \ep
     let param = ep('param')?.a:[];
-    let appname = app('name')('part').a;
     let methodName = ep('name').s;
+    let epAppName = epApp('name');
 
-    # when the type references another type in a different app, it should always use full type reference
-    # instead of leaf.
-    let leafOrFull = \t
-        cond t {
-            {'typeRef': {'ref': {'appname': {'part': (a: typeAppName), ...}, ...}, ...}, ...}:
-                (typeAppName != appname) && type(mod, app, t)
-        } || leafType(mod, app, t)
-    ;
+    # leaf is always relative to main app
     let requestType = param >> \{'name': (s: pname), 'type': ptype, ...}
+        let ptype = cond ptype {
+            {'typeRef': {'ref': {'path': _}, ...}, ...}: ptype +> {
+                'typeRef' +>: {'ref' +>: {'appname': epAppName}}
+            },
+            _: ptype,
+        };
         (
             name: pname,
-            leaf: leafOrFull(ptype),
+            leaf: leafOrFullType(mod, app, ptype),
             type: type(mod, app, ptype),
         )
     ;
     let responseType =
         let returns = sysl.endpoint.normalReturns(app, ep);
         cond returns count {
-            0: (leaf: 'any', type: 'any'),
+            0: (leaf: '', type: ''),
             1:
                 let returnTypeStr = //seq.join('.', (returns single).@item.type);
-                let guessedType = sysl.type.guessType(app, returnTypeStr);
+                let guessedType = sysl.type.guessType(epApp, returnTypeStr);
                 (
-                    leaf: leafOrFull(guessedType),
+                    leaf: leafOrFullType(mod, app, guessedType),
                     type: type(mod, app, guessedType),
                 ),
             _: //error($`multiple returns for temporal client is not allowed: ${methodName}`),
@@ -255,14 +260,21 @@ let temporalMethodInfo = \mod \app \ep
     ;
     (
         name: name(methodName),
+        workflowName: temporal_util.workflowName(epApp, methodName),
         :requestType,
         :responseType,
-        sig: \withPkg $`
+        sig: \alwaysWithPkg $`
             (
                 ctx context.Context,
-                ${requestType >> \(:name, :type, :leaf, ...) $`${name} ${(withPkg && type) || leaf}`::,\n:,}
-            ) (*core.Run[${(withPkg && responseType.type) || responseType.leaf}], error)
-        `
+                ${requestType >> \(:name, :type, :leaf, ...) $`${name} ${(alwaysWithPkg && type) || leaf}`::,\n:,}
+            ) (*core.Run[${(alwaysWithPkg && responseType.type) || responseType.leaf || `any`}], error)
+        `,
+        activitySig: \alwaysWithPkg $`
+            (
+                ctx workflow.Context,
+                ${requestType >> \(:name, :type, :leaf, ...) $`${name} ${(alwaysWithPkg && type) || leaf}`::,\n:,}
+            ) *core.Future[${(alwaysWithPkg && responseType.type) || responseType.leaf || `any`}]
+        `,
     )
 ;
 
@@ -317,6 +329,7 @@ let prelude = \app \imports $`
         "go.temporal.io/sdk/client"
         "go.temporal.io/sdk/worker"
         "go.temporal.io/sdk/workflow"
+        "go.temporal.io/sdk/activity"
     )`;
 
 let methodName =
@@ -408,9 +421,8 @@ let module = \module
         let method = methodName(dep, ep);
         let patterns = sysl.patterns(dep);
         cond {
-            # TODO: handle temporal workflow activity
             'temporal' <: patterns:
-                temporalMethodInfo(module, dep, ep) -> $`${name(package)}${.name} func${.sig(true)}`,
+                temporalMethodInfo(module, app, dep, ep) -> $`${name(package)}${.name} func${.sig(true)}`,
             'gRPC' <: patterns:
                 pbMethodInfo(module, dep, ep) -> $`${name(package)}${.name} func${.sig(package, true)}`,
             _:

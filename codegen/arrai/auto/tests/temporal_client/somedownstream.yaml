@@ -1,0 +1,6 @@
+genCode:
+  upstream:
+    http:
+      common:
+        hostName: "localhost"
+        port: 8080

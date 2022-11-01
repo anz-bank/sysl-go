@@ -1,0 +1,83 @@
+let sysl = //{./sysl};
+let go = //{./go};
+let temporal_util = //{./temporal_util};
+
+let isTemporalWorkflow = \ep 'workflow' <: sysl.patterns(ep);
+
+# any endpoints with workflow tag in an application with temporal tags are workflows.
+let workflows = \app
+    ('temporal' <: sysl.patterns(app)) &&
+    (
+        (app('endpoints')?:{} => \(@: name, @value: ep) (:name, :ep, workflowName: temporal_util.workflowName(app, name))
+    ) where (isTemporalWorkflow(.ep)))
+;
+
+# child workflows are any endpoint calls from a workflow endpoint and the called endpoint must also have
+# the workflow tag.
+let childWorkflows = \mod \app
+    let workflows = workflows(app);
+    workflows => (
+        :.name,
+        child: (sysl.endpoint.calls(.ep) => .@item) where isTemporalWorkflow(sysl.endpoint.epFromCall(mod, .)),
+    )
+;
+
+# any endpoint calls in a workflow are considered activities as long as the endpoint itself do not
+# have the workflow tag
+let activities = \mod \app
+    let workflows = workflows(app);
+    let childWorkflows = childWorkflows(mod, app);
+    (workflows <&> childWorkflows) => \(:name, :ep, :child, ...) (:name, activities: (sysl.endpoint.calls(ep) => .@item) &~ child)
+;
+
+# activitiesOfMainApp only finds endpoint calls where the endpoint is defined in the main App
+# it is a set of sysl call objects.
+let activitiesOfMainApp = \mod \app
+    let activities = activities(mod, app);
+    let appnameObj = app('name')?:{};
+    //rel.union(activities => .activities) filter . {{'target': (appnameObj), ...}: .}
+;
+
+let activityFromCall = \mod \app \call
+    let {'target': target, 'endpoint': (s: epName), ...} = call;
+    let ep = sysl.endpoint.epFromCall(mod, call);
+    let dep = sysl.app.fromAppName(mod, target);
+    let info = go.temporalMethodInfo(mod, app, dep, ep);
+    let name =
+        let appname = cond {
+            target = app('name'): '',
+            _: go.name(//seq.join('', target('part').a >> //str.title(.s))),
+        };
+        $`${appname}${info.name}`
+    ;
+    (
+        :epName,
+        target: dep,
+        activityName: $`${sysl.app.name(dep)} <- ${epName}`,
+        :info.responseType,
+        :info.requestType,
+        :name,
+        :ep,
+        sig: info.activitySig(false)
+    )
+;
+
+let activityStructNameFromEp = \app \ep $`${go.methodName(app, ep)}Activities`;
+
+let activityStructFromEp = \mod \app \ep
+    let calls = sysl.endpoint.calls(ep) => .@item;
+    (
+        name: activityStructNameFromEp(app, ep),
+        fields: calls => activityFromCall(mod, app, .),
+    )
+;
+(
+    :isTemporalWorkflow,
+    :workflows,
+    :childWorkflows,
+    :activities,
+    :activitiesOfMainApp,
+    :activityFromCall,
+    :activityStructNameFromEp,
+    :activityStructFromEp,
+)

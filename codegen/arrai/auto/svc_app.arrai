@@ -10,9 +10,12 @@ let sysl = //{./sysl};
             _: `HTTP`,
         }
     ;
-    let grpc = cond {{"gRPC", "temporal"} & sysl.patterns(app): `Grpc`};
-    let serviceInterface = $`${grpc}ServiceInterface`;
-    let newServiceHandler = $`New${grpc}ServiceHandler`;
+    let serverType =
+        let patterns = sysl.patterns(app);
+        cond {`temporal` <: patterns: `Temporal`, "gRPC" <: patterns: `Grpc`}
+    ;
+    let serviceInterface = $`${serverType}ServiceInterface`;
+    let newServiceHandler = $`New${serverType}ServiceHandler`;
     let package = go.package(app);
     let serviceDeps = clientDeps where .isService;
     $`
@@ -88,11 +91,31 @@ let sysl = //{./sysl};
         //
         // For a quick start, copy main.go.sample from the same directory as this
         // file into its own package directory, rename it to main.go, and run it.
-        func Serve(
+        func Serve${serverType = `Temporal` && `[T any]`}(
             ctx context.Context,
-            createService interface{},
+            createService ${
+                cond serverType {
+                    'Temporal': `func(context.Context, T) (*TemporalServiceInterface, *core.Hooks, error)`,
+                    _: 'interface{}',
+                }
+            },
         ) {
-            srv, err := NewServer(ctx, createService)
+            srv, err := ${
+                cond serverType {
+                    `Temporal`:
+                        $`
+                            core.NewTemporalWorker(
+                                ctx,
+                                TaskQueueName,
+                                &DownstreamConfig{},
+                                createService,
+                                BuildDownstreamClients,
+                                NewTemporalServiceHandler,
+                            )
+                        `,
+                    _: 'NewServer(ctx, createService)'
+                }
+            }
             switch err.(type) {
                 case core.ErrDisplayHelp:
                     return
@@ -123,117 +146,120 @@ let sysl = //{./sysl};
             }
         }
 
-        // NewServer creates a new application server.
-        //
-        // createService must be a function with the following signature:
-        //
-        //    func(ctx context.Context, config AppConfig) (*${package}.ServiceInterface, *core.Hooks, error)
-        //
-        // where AppConfig is a type defined by the application programmer to
-        // hold application-level configuration.
-        func NewServer(
-            ctx context.Context,
-            createService interface{},
-        ) (core.StoppableServer, error) {
-            return core.NewServer(
-                ctx,
-                &DownstreamConfig{}, createService, &${serviceInterface}{},
-                func(
-                    ctx context.Context,
-                    serviceIntf interface{},
-                    hooks *core.Hooks,
-                ) (core.Manager, *core.GrpcServerManager, error) {
-                    serviceInterface := serviceIntf.(*${serviceInterface})
-                    cfg := config.GetDefaultConfig(ctx)
+        ${serverType != 'Temporal' && $`
+            // NewServer creates a new application server.
+            //
+            // createService must be a function with the following signature:
+            //
+            //    func(ctx context.Context, config AppConfig) (*${package}.ServiceInterface, *core.Hooks, error)
+            //
+            // where AppConfig is a type defined by the application programmer to
+            // hold application-level configuration.
+            func NewServer(
+                ctx context.Context,
+                createService interface{},
+            ) (core.StoppableServer, error) {
+                return core.NewServer(
+                    ctx,
+                    &DownstreamConfig{}, createService, &${serviceInterface}{},
+                    func(
+                        ctx context.Context,
+                        serviceIntf interface{},
+                        hooks *core.Hooks,
+                    ) (core.Manager, *core.GrpcServerManager, error) {
+                        serviceInterface := serviceIntf.(*${serviceInterface})
+                        cfg := config.GetDefaultConfig(ctx)
 
-                    if hooks == nil {
-                        hooks = &core.Hooks{}
-                    }
+                        if hooks == nil {
+                            hooks = &core.Hooks{}
+                        }
 
-                    var downstream *DownstreamConfig
-                    var is bool
-                    if downstream, is = cfg.GenCode.Downstream.(*DownstreamConfig); !is || downstream == nil {
-                        downstream = &DownstreamConfig{}
-                    }
-                    if downstream.ContextTimeout == 0 {
-                        downstream.ContextTimeout = 30 * time.Second
-                    }
+                        var downstream *DownstreamConfig
+                        var is bool
+                        if downstream, is = cfg.GenCode.Downstream.(*DownstreamConfig); !is || downstream == nil {
+                            downstream = &DownstreamConfig{}
+                        }
+                        if downstream.ContextTimeout == 0 {
+                            downstream.ContextTimeout = 30 * time.Second
+                        }
 
-                    genCallbacks := common.NewCallbackV3(
-                        &cfg.GenCode,
-                        downstream.ContextTimeout,
-                        hooks.MapError,
-                        hooks.WriteError,
-                        hooks.AddHTTPMiddleware,
-                    )
+                        genCallbacks := common.NewCallbackV3(
+                            &cfg.GenCode,
+                            downstream.ContextTimeout,
+                            hooks.MapError,
+                            hooks.WriteError,
+                            hooks.AddHTTPMiddleware,
+                        )
 
-                    ${cond {serviceDeps: $`
-                        clients, err := BuildDownstreamClients(ctx, hooks)
+                        ${cond {serviceDeps: $`
+                            clients, err := BuildDownstreamClients(ctx, hooks)
+                            if err != nil {
+                                return nil, nil, err
+                            }
+                        `}}
+                        serviceHandler, err := ${newServiceHandler}(
+                            ctx,
+                            hooks,
+                            genCallbacks,
+                            serviceInterface,
+                            ${serviceDeps orderby . >> $`clients.${.import}Client,`::\i}
+                        )
                         if err != nil {
                             return nil, nil, err
                         }
-                    `}}
-                    serviceHandler, err := ${newServiceHandler}(
-                        ctx,
-                        hooks,
-                        genCallbacks,
-                        serviceInterface,
-                        ${serviceDeps orderby . >> $`clients.${.import}Client,`::\i}
-                    )
-                    if err != nil {
-                        return nil, nil, err
-                    }
 
-                    // Construct a GrpcServerManager to wrap our serviceHandler.
-                    var grpcPublicServerConfig *config.GRPCServerConfig = &cfg.GenCode.Upstream.GRPC
+                        // Construct a GrpcServerManager to wrap our serviceHandler.
+                        var grpcPublicServerConfig *config.GRPCServerConfig = &cfg.GenCode.Upstream.GRPC
 
-                    // Here we allow the grpc.ServerOption configuration to be optionally extended or overridden.
-                    // See the documentation of core.Hooks for more information.
-                    grpcServerOptions, err := core.ResolveGrpcServerOptions(ctx, hooks, grpcPublicServerConfig)
-                    if err != nil {
-                        return nil, nil, err
-                    }
+                        // Here we allow the grpc.ServerOption configuration to be optionally extended or overridden.
+                        // See the documentation of core.Hooks for more information.
+                        grpcServerOptions, err := core.ResolveGrpcServerOptions(ctx, hooks, grpcPublicServerConfig)
+                        if err != nil {
+                            return nil, nil, err
+                        }
 
-                    // TODO make it possible to disable handlers through configuration.
-                    enabledGrpcHandlers := []handlerinitialiser.GrpcHandlerInitialiser{}
+                        // TODO make it possible to disable handlers through configuration.
+                        enabledGrpcHandlers := []handlerinitialiser.GrpcHandlerInitialiser{}
 
-                    ${cond {
-                        grpc: $`
-                            enabledGrpcHandlers = append(enabledGrpcHandlers, serviceHandler)
-                        `,
-                        _: $`
-                        `,
-                    }}
+                        ${cond serverType {
+                            `Grpc`: $`
+                                enabledGrpcHandlers = append(enabledGrpcHandlers, serviceHandler)
+                            `,
+                            _: $`
+                            `,
+                        }}
 
-                    grpcManager := core.GrpcServerManager{
-                        GrpcServerOptions:      grpcServerOptions,
-                        EnabledGrpcHandlers:    enabledGrpcHandlers,
-                        GrpcPublicServerConfig: grpcPublicServerConfig,
-                    }
+                        grpcManager := core.GrpcServerManager{
+                            GrpcServerOptions:      grpcServerOptions,
+                            EnabledGrpcHandlers:    enabledGrpcHandlers,
+                            GrpcPublicServerConfig: grpcPublicServerConfig,
+                        }
 
-                    libraryConfig := &(cfg.Library)
-                    var adminServerConfig *config.CommonHTTPServerConfig = nil
-                    if cfg.Admin != nil {
-                        adminServerConfig = &cfg.Admin.HTTP
-                    }
-                    var publicServerConfig *config.UpstreamConfig = nil
-                    // TODO make it possible to disable handlers through configuration.
-                    enabledHandlers := []handlerinitialiser.HandlerInitialiser{}
+                        libraryConfig := &(cfg.Library)
+                        var adminServerConfig *config.CommonHTTPServerConfig = nil
+                        if cfg.Admin != nil {
+                            adminServerConfig = &cfg.Admin.HTTP
+                        }
+                        var publicServerConfig *config.UpstreamConfig = nil
+                        // TODO make it possible to disable handlers through configuration.
+                        enabledHandlers := []handlerinitialiser.HandlerInitialiser{}
 
-                   ${cond {
-                        grpc: $`
-                        `,
-                        _: $`
-                            // Construct a HTTPManager to wrap our HandlerInitialiser AKA ServiceRouter.
-                            // TODO standardise terminology / generally refactor.
-                            handlerInitialiser := NewServiceRouter(genCallbacks, serviceHandler)
-                            enabledHandlers = append(enabledHandlers, handlerInitialiser)
-                            publicServerConfig = &(cfg.GenCode.Upstream)
-                        `,
-                    }}
-                    restManager := core.NewHTTPManagerShim(libraryConfig, adminServerConfig, publicServerConfig, enabledHandlers, hooks.AddAdminHTTPMiddleware)
-                    return restManager, &grpcManager, nil
-                },
-            )
-        }
+                    ${cond serverType {
+                            `Grpc`: $`
+                            `,
+                            _: $`
+                                // Construct a HTTPManager to wrap our HandlerInitialiser AKA ServiceRouter.
+                                // TODO standardise terminology / generally refactor.
+                                handlerInitialiser := NewServiceRouter(genCallbacks, serviceHandler)
+                                enabledHandlers = append(enabledHandlers, handlerInitialiser)
+                                publicServerConfig = &(cfg.GenCode.Upstream)
+                            `,
+                        }}
+                        restManager := core.NewHTTPManagerShim(libraryConfig, adminServerConfig, publicServerConfig, enabledHandlers, hooks.AddAdminHTTPMiddleware)
+                        return restManager, &grpcManager, nil
+                    },
+                )
+            }
+        `}
+
     `

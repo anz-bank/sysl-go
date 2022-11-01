@@ -1,0 +1,9 @@
+genCode:
+  upstream:
+    temporal:
+      hostPort: "localhost:7233"
+
+  downstream:
+    somedownstream:
+      serviceURL: "http://localhost:8080"
+      clientTimeout: 30s

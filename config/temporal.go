@@ -5,3 +5,8 @@ type CommonTemporalDownstreamData struct {
 	Identity  string `yaml:"identity" mapstructure:"identity"`
 	Namespace string `yaml:"namespace" mapstructure:"namespace"`
 }
+
+type TemporalServerConfig struct {
+	HostPort  string `yaml:"hostPort" mapstructure:"hostPort"`
+	Namespace string `yaml:"namespace" mapstructure:"namespace"`
+}

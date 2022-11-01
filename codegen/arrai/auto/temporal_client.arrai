@@ -3,19 +3,27 @@ let grpc = //{./grpc};
 let sysl = //{./sysl};
 
 \(:app, :appname, :basepath, :clientDeps, :endpoints, :fixPBPath, :module, ...)
-    # These are old definitions used prior to deb7738294f04d6628c07db08d5ba92367186c38
-    let methodInfos = endpoints where ('workflow' <: sysl.patterns(.@item.@value)) => \(@:_, @item: (@:_, @value: ep)) go.temporalMethodInfo(module, app, ep);
+    let methodInfos = endpoints where ('workflow' <: sysl.patterns(.@item.@value)) =>
+        \(@:_, @item: (@:_, @value: ep))
+            go.temporalMethodInfo(module, app, app, ep)
+    ;
+    let methodInfos = methodInfos orderby .name;
     let appname = go.name(grpc.app.name(app));
 
     $`
         ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`))}
 
-        // Task Queue names for ${appname}.
-        const ${appname}TaskQueue = ${appname:q}
+        const (
+            // Task Queue name for ${appname}.
+            ${appname}TaskQueue = ${appname:q}
+
+            // Workflow names
+            ${methodInfos >> $`${.name}Name = ${.workflowName:q}`::\n}
+        )
 
         // Service interface for ${appname}.
         type Service interface {
-            ${methodInfos => $`${.name}${.sig(false)}` orderby .::\i}
+            ${methodInfos >> $`${.name}${.sig(false)}`::\i}
         }
 
         // Client implements a client for ${appname}.
@@ -28,16 +36,16 @@ let sysl = //{./sysl};
             return &Client{c}
         }
 
-        ${methodInfos => $`
+        ${methodInfos >> $`
             // ${.name} ...
             func (s *Client) ${.name}${.sig(false)} {
-                return core.ExecuteWorkflow[${.responseType.leaf}](
+                return core.ExecuteWorkflow[${.responseType.leaf || `any`}](
                     ctx,
                     s.Client,
                     ${appname}TaskQueue,
-                    ${.name:q},
+                    ${.name}Name,
                     ${.requestType >> .name::,\n:,}
                 )
             }
-        ` orderby .::\n\n:}
+        `::\n\n:}
     `

@@ -1,0 +1,150 @@
+let go = //{./go};
+let sysl = //{./sysl};
+let temporal = //{./temporal};
+
+\(:app, :appname, :clientDeps, :endpoints, :goModule, :hasDB, :basepath, :module, :nonRestEndpoints, ...)
+    let client = //{./client}((:app, :appname, :clientDeps, :hasDB, :module));
+    let workflows = temporal.workflows(app) orderby .name;
+    let hasPb =
+        let annotations = app('attrs')?:{};
+        annotations('go_package')?:false || annotations('go_pb_package')?:false
+    ;
+
+    let activities = temporal.activities(module, app);
+    let activitiesData = (
+        //rel.union(
+            activities => .activities
+        ) => temporal.activityFromCall(module, app, .)
+    ) orderby .name;
+
+    let mainActs = (
+            temporal.activitiesOfMainApp(module, app) => (
+                epName: .('endpoint').s, ep: sysl.endpoint.epFromCall(module, .)
+            )
+        ) => (name: go.methodName(app, .ep), :.epName, :.ep)
+    ;
+
+    let downstreamFields = (clientDeps where .isService) orderby . >> (
+        goModule.depField(.) +> (clientField: $`${.import}Client`)
+    );
+
+    $`
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | (hasPb && {go.pbImport(app)}))}
+
+        const (
+            // Task Queue name for ${appname}.
+            TaskQueueName = ${appname:q}
+
+            // Activity names.
+            ${activitiesData >> \(:name, :activityName, ...) $`${name}Name = ${activityName:q}`::\i}
+
+            // Workflow names.
+            ${workflows >> \(:name, :workflowName, ...) $`${name}Name = ${workflowName:q}`::\i}
+        )
+
+        type TemporalServiceHandler struct {
+            worker.Worker
+            client.Client
+            Intf *TemporalServiceInterface
+            ${downstreamFields >> $`${.name} ${.type}`::\i}
+        }
+
+        func NewTemporalServiceHandler(
+            c client.Client,
+            w worker.Worker,
+            intf *TemporalServiceInterface,
+            dc *DownstreamClients,
+        ) *TemporalServiceHandler {
+            return &TemporalServiceHandler{
+                Worker: w,
+                Client: c,
+                Intf: intf,
+                ${downstreamFields >> $`${.name}: dc.${.clientField}`::,\i:,}
+            }
+        }
+
+        // activity executor
+        ${
+            activitiesData >> \(:name, :sig, :responseType, :requestType, :epName, ...)
+                $`
+                    func ${name}${sig} {
+                        return core.ExecuteActivity[${responseType.leaf || 'any'}](
+                            ctx,
+                            TaskQueueName,
+                            ${name}Name,
+                            ${requestType >> .name ::,\i:,}
+                        )
+                    }
+                `
+        ::\i\i}
+
+        // wrap user provided workflows into a temporal workflow
+        ${
+            workflows >> \(:ep, :name, ...)
+                let goName = go.methodName(app, ep);
+                let (:requestType, :responseType, ...) = go.temporalMethodInfo(module, app, app, ep);
+                let args = [`ctx workflow.Context`] ++ (requestType >> $`${.name} ${.leaf}`);
+                let activities = (({(:name)} <&> activities) single).activities;
+                $`
+                    func (s *TemporalServiceHandler) ${name}(
+                        ${args::,\i:,}
+                    ) ${(responseType.leaf && $`(${responseType.leaf}, error)`) || `error`} {
+                        ${
+                            activities &&
+                                $`
+                                    activities := ${temporal.activityStructNameFromEp(app, ep)}{
+                                        ${
+                                            let (:fields, ...) = temporal.activityStructFromEp(module, app, ep);
+                                            fields orderby .name >> $`${.name}: ${.name}`
+                                        ::,\i:,}
+                                    }
+                                `
+                        }
+                        return s.Intf.${name}(
+                            ${['ctx'] ++ (activities && ['activities']) ++ (requestType >> .name)::,\i:,}
+                        )
+                    }
+                `
+        ::\i\i}
+
+        // wrap user provided activities into a temporal activities
+        ${
+            mainActs orderby .name >>
+                let info = go.temporalMethodInfo(module, app, app, .ep);
+                let hasCalls = client.notEmpty(.ep);
+                $`
+                    func (s *TemporalServiceHandler) ${.name}(
+                        ctx context.Context,
+                        ${info.requestType >> $`${.name} ${.leaf}`::,\i:,}
+                    ) ${(info.responseType.leaf && $`(${info.responseType.leaf}, error)`) || `error`} {
+                        ${cond {hasCalls: $`client := ${client.new(.ep)}`}}
+                        return s.Intf.${.name}(
+                            ctx,
+                            ${
+                                (hasCalls && [`client`]) ++ (info.requestType >> .name)
+                            ::,\i:,}
+                        )
+                    }
+                `
+        ::\i\i}
+
+        func (s *TemporalServiceHandler) Register() {
+            // register workflows
+            ${
+                workflows >> \(:ep, :name, ...)
+                    let goName = go.methodName(app, ep);
+                    $`s.Worker.RegisterWorkflowWithOptions(s.${goName}, workflow.RegisterOptions{Name: ${name}Name})`
+            ::\i}
+
+            // register activities
+            ${
+                activitiesData >>
+                    let actName = $`${.name}Name`;
+                    let varName = cond {
+                        sysl.endpoint.isRest(.ep): $`${go.package(.target)}Service.${go.methodName(.target, .ep)}`,
+                        _: .name,
+                    };
+                    $`s.Worker.RegisterActivityWithOptions(s.${varName}, activity.RegisterOptions{Name: ${actName}})`
+            ::\i}
+        }
+    `

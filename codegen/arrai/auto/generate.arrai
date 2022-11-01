@@ -2,19 +2,21 @@ let go = //{./go};
 let sysl = //{./sysl};
 
 let generators = {
-    "app.go":              //{./svc_app},
-    "grpc_client.go":      //{./grpc_client},
-    "grpc_handler.go":     //{./grpc_handler},
-    "grpc_interface.go":   //{./grpc_interface},
-    "grpc_mocks.go":       //{./grpc_mocks},
-    "mocks.go":            //{./svc_mocks},
-    "requestrouter.go":    //{./svc_router},
-    "service.go":          //{./svc_service},
-    "servicehandler.go":   //{./svc_handler},
-    "serviceinterface.go": //{./svc_interface},
-    "tester.go":           //{./svc_tester},
-    "types.go":            //{./svc_types},
-    "temporal_client.go":  //{./temporal_client},
+    "app.go":                //{./svc_app},
+    "grpc_client.go":        //{./grpc_client},
+    "grpc_handler.go":       //{./grpc_handler},
+    "grpc_interface.go":     //{./grpc_interface},
+    "grpc_mocks.go":         //{./grpc_mocks},
+    "mocks.go":              //{./svc_mocks},
+    "requestrouter.go":      //{./svc_router},
+    "service.go":            //{./svc_service},
+    "servicehandler.go":     //{./svc_handler},
+    "serviceinterface.go":   //{./svc_interface},
+    "tester.go":             //{./svc_tester},
+    "types.go":              //{./svc_types},
+    "temporal_client.go":    //{./temporal_client},
+    "temporal_interface.go": //{./temporal_interface},
+    "temporal_handler.go":   //{./temporal_handler},
 };
 
 let hasRelationTypes = \app
@@ -35,7 +37,7 @@ let _inferHasDB = \app hasRelationTypes(app);
         let grpcClient = {"grpc_client.go", "grpc_mocks.go"};
         let grpcService = {"grpc_handler.go", "grpc_interface.go", "tester.go"};
         let app = {"app.go", "main.go.sample"};
-        let temporalService = {"temporal_handler.go", "temporal_interface.go"};
+        let temporalService = { "temporal_interface.go", "temporal_handler.go", "types.go", "app.go"};
         let temporalClient = {"temporal_client.go", "types.go"};
         {
             "rest-service": restService,
@@ -44,7 +46,7 @@ let _inferHasDB = \app hasRelationTypes(app);
             "grpc-service": grpcService,
             "grpc-app":     grpcService | app,
             "grpc-client":  grpcClient,
-            "temporal-app": temporalService | app,
+            "temporal-app": temporalService,
             "temporal-client": temporalClient,
         },
 

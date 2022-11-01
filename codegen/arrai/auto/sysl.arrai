@@ -14,6 +14,8 @@ let splitAppName =
 let replaceArrayElement = \arr \i \val
     arr >>> \j \cur cond {j=i: val, _:cur};
 
+let concatAppName = \name //seq.join(' :: ', name);
+
 # flatten_statements(s : Statement) -> [Statement]
 # flatten_statements performs a deep traversal of all trees of Statement discoverable
 # inside the given Statement s, and returns a flattened array containing all of those
@@ -113,6 +115,14 @@ let endpoint =
             @value: .@value('s').s,
         );
     let params = \ep ep('param')?.a:[];
+
+    let epFromCall = \mod \{'target': {'part': (a: appname), ...}, 'endpoint': (s: epName), ...}
+        let appname = concatAppName(appname >> .s);
+        mod('apps', appname, 'endpoints', epName)?:{}
+    ;
+
+    let isRest = \ep ep('restParams')?:false;
+
     (
         :calls,
         :returns,
@@ -121,6 +131,8 @@ let endpoint =
         :sqlStatements,
         :untypedReturns,
         :params,
+        :epFromCall,
+        :isRest,
     );
 
 let source = \node node('sourceContext')('start') -> [.('line'), .('col')];
@@ -184,6 +196,7 @@ let type =
 
 let rec app = (
     name: \app $`${app('name')('part').a >> .s::}`,
+    delimitedName: \app concatAppName(app('name')('part').a >> .s),
     endpoint: \app \epname ((app('endpoints') where .@value('name').s = epname) single).@value,
     # TODO: find more dependencies from other location e.g. types.
     dependenciesWithSource: \app
@@ -203,6 +216,7 @@ let rec app = (
         ;
         //rel.union(fromEndpoints) where .app('part') != name,
     dependencies: \appConfig app.dependenciesWithSource(appConfig) => .app,
+    fromAppName: \mod \{'part': (a: name), ...} mod('apps')(concatAppName(name >> .s))?:{},
 );
 
 (
