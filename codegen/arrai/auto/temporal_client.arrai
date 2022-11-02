@@ -18,7 +18,7 @@ let sysl = //{./sysl};
             ${appname}TaskQueue = ${appname:q}
 
             // Workflow names
-            ${methodInfos >> $`${.name}Name = ${.workflowName:q}`::\n}
+            ${methodInfos >> $`${.name}Name = ${.name:q}`::\n}
         )
 
         // Service interface for ${appname}.

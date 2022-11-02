@@ -1,6 +1,5 @@
 let sysl = //{./sysl};
 let go = //{./go};
-let temporal_util = //{./temporal_util};
 
 let isTemporalWorkflow = \ep 'workflow' <: sysl.patterns(ep);
 
@@ -8,7 +7,7 @@ let isTemporalWorkflow = \ep 'workflow' <: sysl.patterns(ep);
 let workflows = \app
     ('temporal' <: sysl.patterns(app)) &&
     (
-        (app('endpoints')?:{} => \(@: name, @value: ep) (:name, :ep, workflowName: temporal_util.workflowName(app, name))
+        (app('endpoints')?:{} => \(@: name, @value: ep) (:name, :ep)
     ) where (isTemporalWorkflow(.ep)))
 ;
 
@@ -48,12 +47,15 @@ let activityFromCall = \mod \app \call
             target = app('name'): '',
             _: go.name(//seq.join('', target('part').a >> //str.title(.s))),
         };
-        $`${appname}${info.name}`
-    ;
+        $`${appname}${info.name}`;
+    let prefixActName = cond {
+        target = app('name'): '',
+        _: sysl.concatAppName(target('part').a >> .s),
+    };
     (
         :epName,
         target: dep,
-        activityName: $`${sysl.app.name(dep)} <- ${epName}`,
+        activityName: $`${prefixActName && $`${prefixActName} <- `}${epName}`,
         :info.responseType,
         :info.requestType,
         :name,

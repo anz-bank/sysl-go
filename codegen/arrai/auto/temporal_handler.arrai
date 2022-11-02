@@ -39,7 +39,7 @@ let temporal = //{./temporal};
             ${activitiesData >> \(:name, :activityName, ...) $`${name}Name = ${activityName:q}`::\i}
 
             // Workflow names.
-            ${workflows >> \(:name, :workflowName, ...) $`${name}Name = ${workflowName:q}`::\i}
+            ${workflows >> \(:name, ...) $`${name}Name = ${name:q}`::\i}
         )
 
         type TemporalServiceHandler struct {

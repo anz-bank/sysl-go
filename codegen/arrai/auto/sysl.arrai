@@ -228,4 +228,5 @@ let rec app = (
     :type,
     :replaceArrayElement,
     :splitAppName,
+    :concatAppName,
 )

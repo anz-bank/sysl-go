@@ -1,5 +1,4 @@
 let sysl = //{./sysl};
-let temporal_util = //{./temporal_util};
 
 let name =
     let wordRE = //re.compile(`[\p{L}_][\p{L}\p{N}_]*`);
@@ -260,7 +259,6 @@ let temporalMethodInfo = \mod \app \epApp \ep
     ;
     (
         name: name(methodName),
-        workflowName: temporal_util.workflowName(epApp, methodName),
         :requestType,
         :responseType,
         sig: \alwaysWithPkg $`
