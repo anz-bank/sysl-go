@@ -52,12 +52,20 @@ func BuildDownstreamTemporalClient(
 	hooks *Hooks,
 	cfg *config.CommonTemporalDownstreamData,
 ) (client.Client, error) {
-	return client.Dial(client.Options{
+	clientOptions := client.Options{
 		HostPort:  cfg.HostPort,
 		Namespace: cfg.Namespace,
 		Identity:  cfg.Identity,
 
 		// TODO: add sysl-go logging solution
 		// Logger:             nil,
-	})
+	}
+
+	if hooks.ExperimentalValidateTemporalClientOptions != nil {
+		if err := hooks.ExperimentalValidateTemporalClientOptions(ctx, &clientOptions); err != nil {
+			return nil, err
+		}
+	}
+
+	return client.Dial(clientOptions)
 }
