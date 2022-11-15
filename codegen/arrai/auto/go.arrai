@@ -265,6 +265,7 @@ let temporalMethodInfo = \mod \app \epApp \ep
             (
                 ctx context.Context,
                 ${requestType >> \(:name, :type, :leaf, ...) $`${name} ${(alwaysWithPkg && type) || leaf}`::,\n:,}
+                option ...client.StartWorkflowOptions,
             ) (*core.Run[${(alwaysWithPkg && responseType.type) || responseType.leaf || `any`}], error)
         `,
         activitySig: \alwaysWithPkg $`

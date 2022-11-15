@@ -41,6 +41,7 @@ let sysl = //{./sysl};
             func (s *Client) ${.name}${.sig(false)} {
                 return core.ExecuteWorkflow[${.responseType.leaf || `any`}](
                     ctx,
+                    core.GetOptionFromClientIntf(option),
                     s.Client,
                     ${appname}TaskQueue,
                     ${.name}Name,

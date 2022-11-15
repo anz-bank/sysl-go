@@ -31,16 +31,26 @@ func (r *Run[T]) GetWithOptions(ctx context.Context, options client.WorkflowRunG
 	return t, err
 }
 
-func ExecuteWorkflow[T any](ctx context.Context, c client.Client, tq, name string, args ...any) (*Run[T], error) {
-	// TaskQueue name must be App-Endpoint while name is just Endpoint name
-	option := client.StartWorkflowOptions{
-		TaskQueue: tq,
-	}
+func ExecuteWorkflow[T any](ctx context.Context, option client.StartWorkflowOptions, c client.Client, tq, name string, args ...any) (*Run[T], error) {
+	// TaskQueue name must be App while name is just Endpoint name
+	option.TaskQueue = tq
 	w, err := c.ExecuteWorkflow(ctx, option, name, args...)
 	if err != nil {
 		return nil, err
 	}
 	return &Run[T]{w}, nil
+}
+
+// GetOptionFromClientIntf takes in the user provided options which is an array, check for length,
+// and return an option.
+func GetOptionFromClientIntf(options []client.StartWorkflowOptions) client.StartWorkflowOptions {
+	switch len(options) {
+	case 1:
+		return options[0]
+	case 0:
+		return client.StartWorkflowOptions{}
+	}
+	panic("more than one option is defined")
 }
 
 type Future[T any] struct {
