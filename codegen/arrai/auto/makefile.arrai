@@ -1,11 +1,15 @@
+let sysl = //{./sysl};
 let [_, template, spec, ...apps] = //os.args;
-let apps = apps >> //seq.split(':', .);
+let quoteSpaced = 
+    let hasSpace = //re.compile('\\s').match;
+    \s cond {hasSpace(s): $`'${s}'`, _: s};
+let apps = apps >> sysl.splitAppAndPkgName(.);
 $`
     SYSLGO_SYSL=${spec}
-    SYSLGO_PACKAGES=${//seq.join(' ', apps >> .(1))}
+    SYSLGO_PACKAGES=${//seq.join(' ', apps >> .pkg)}
     ${cond {(template != ''): $`TEMPLATE=${template}`}}
     ${
-        apps >> \[app, pkg] $`SYSLGO_APP.${pkg} = ${app}`
+        apps >> $`SYSLGO_APP.${.pkg} = ${quoteSpaced(.app)}`
     ::\i:\n}
     -include local.mk
     include codegen.mk

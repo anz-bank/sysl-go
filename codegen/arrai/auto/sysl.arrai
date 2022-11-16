@@ -16,6 +16,10 @@ let replaceArrayElement = \arr \i \val
 
 let concatAppName = \name //seq.join(' :: ', name);
 
+let splitAppAndPkgName = \name
+    let splitRE = //re.compile(`(.*?[^:])\s*:\s*([^:]+)`);
+    splitRE.match(name)(0) -> (app: concatAppName(splitAppName(.(1))), pkg: .(2) rank (:.@));
+
 # flatten_statements(s : Statement) -> [Statement]
 # flatten_statements performs a deep traversal of all trees of Statement discoverable
 # inside the given Statement s, and returns a flattened array containing all of those
@@ -229,4 +233,5 @@ let rec app = (
     :replaceArrayElement,
     :splitAppName,
     :concatAppName,
+    :splitAppAndPkgName,
 )

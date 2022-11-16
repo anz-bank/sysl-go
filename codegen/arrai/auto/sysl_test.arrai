@@ -574,6 +574,15 @@ let returnStatementsJSON = <<(`{
 }`)>>;
 let returnStatements = //encoding.json.decode(returnStatementsJSON);
 let returnStatementsExpectedReturns = {'AOK': 'ok', 'BOK': 'ok', 'CErr': 'error', 'DErr': 'error'};
+let splitAppAndPkgNameTests = [
+    (in: 'Normal:normal', out: (app: 'Normal', pkg: 'normal')),
+    # single chars
+    (in: 'A:a', out: (app: 'A', pkg: 'a')),
+    (in: 'A : a', out: (app: 'A', pkg: 'a')),
+    # with namespace and random spacing
+    (in: 'Aa::Bb :: Cc::Dd:a', out: (app: 'Aa :: Bb :: Cc :: Dd', pkg: 'a')),
+    (in: 'Aa  ::Bb :: Cc ::Dd   :a', out: (app: 'Aa :: Bb :: Cc :: Dd', pkg: 'a')),
+];
 
 (
     endpointCallDiscovery: //test.assert.equal(demoEndpointExpectedCalls)(sysl.endpoint.calls(demoEndpoint) => .@item('endpoint').s),
@@ -582,6 +591,7 @@ let returnStatementsExpectedReturns = {'AOK': 'ok', 'BOK': 'ok', 'CErr': 'error'
     endpointReturnAnnotation: //test.assert.equal(returnAnnotationExpectedReturns)(sysl.endpoint.returns({}, returnAnnotation)),
     returnStatementsTest: //test.assert.equal(returnStatementsExpectedReturns)(sysl.endpoint.returns({}, returnStatements) => (@:.@item.type(0), @value:.@item.var)),
     replaceArrayElement: //test.assert.equal(['a','x','c'])(sysl.replaceArrayElement(['a','b','c'], 1, 'x')),
+    splitAppAndPkgName: splitAppAndPkgNameTests >> //test.assert.equal(.out)(sysl.splitAppAndPkgName(.in)),
 
     type: (
         required: (a:true,
