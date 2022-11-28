@@ -1,0 +1,97 @@
+let go = //{./go};
+let grpc = //{./grpc};
+let temporal = //{./temporal};
+let service_method = //{./service_method};
+
+\(:app, :appname, :basepath, :clientDeps, :module, :goModule, :nonRestEndpoints, ...)
+    let package = go.package(app);
+    let workflows = (
+        temporal.workflows(app) => (go.temporalMethodInfo(module, app, app, .ep))
+    ) orderby .name;
+    let goAppname = go.name(grpc.app.name(app));
+    let hasPb =
+        let annotations = app('attrs')?:{};
+        annotations('go_package')?:false || annotations('go_pb_package')?:false
+    ;
+    workflows &&
+    $`
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`) | (hasPb && {go.pbImport(app)}))}
+
+        type DownstreamMocks struct {
+            ${workflows >> $`${.name} *${.name}Mock` ::\i}
+        }
+
+        ${
+            workflows >> \(:name, :responseType, ...)
+                $`
+                    type ${name}Mock struct {
+                        base *temporal_tester.MockBase[${responseType.leaf || `any`}]
+                    }
+                `
+        ::\i\i}
+
+        func NewDownstreamMocks(t syslgo.TestingT) *DownstreamMocks {
+            return &DownstreamMocks {
+                ${
+                    workflows >> \(:name, :responseType, ...)
+                        $`
+                            ${name}: &${name}Mock{temporal_tester.NewMockWorkflowBase[${responseType.leaf || `any`}](t)}
+                        `
+                ::,\i:,}
+            }
+        }
+
+        // Use package name because that is the identifier given when building downstream
+        func (d *DownstreamMocks) GetName() string {
+            return ${package:q}
+        }
+
+        func (d *DownstreamMocks) GetWorkflows() []temporal_tester.MockWorkflow {
+            return []temporal_tester.MockWorkflow{
+                ${
+                    workflows >> $`
+                        {
+                            Workflow: d.${.name}.workflow,
+                            Option: workflow.RegisterOptions{Name: ${.name}Name},
+                        }
+                    `
+                ::,\i:,}
+            }
+        }
+
+        ${
+            workflows >> \(:responseType, :requestType, :name, ...)
+                $`
+                    ${
+                        requestType && $`
+                            func (m *${name}Mock) ExpectRequest(
+                                ${requestType >> \(:name, :leaf, ...) $`${name} ${leaf}`::,\n:,}
+                            ) *${name}Mock {
+                                m.base.ExpectRequest(${requestType >> .name::, })
+                                return m
+                            }
+                        `
+                    }
+
+                    func (m *${name}Mock) MockResponse(
+                        ${responseType.leaf && $`resp ${responseType.leaf},`}
+                        err error,
+                    ) *${name}Mock {
+                        m.base.Mock${
+                            (responseType.leaf && `Response(resp, err)`) ||
+                            `ErrorOnlyResponse(err)`
+                        }
+                        return m
+                    }
+
+                    func (m *${name}Mock) workflow${service_method.renderSignatureWithNewlinesParams(
+                        (
+                            params: [(name: 'ctx', type: 'workflow.Context')] ++ (requestType >> (:.name, type: .leaf)),
+                            returns: [(type: responseType.leaf), (type: 'error')]
+                        )
+                    )} {
+                        return m.base.BuildMockWorkflow${!responseType.leaf && $`WithoutReturn`}()(ctx, ${requestType >> .name::, })
+                    }
+                `
+        ::\i\i:\n}
+    `

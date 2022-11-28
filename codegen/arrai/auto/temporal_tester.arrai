@@ -1,0 +1,317 @@
+let go = //{./go};
+let sysl = //{./sysl};
+let grpc = //{./grpc};
+let temporal = //{./temporal};
+let service_method = //{./service_method};
+
+\(:app, :appname, :basepath, :clientDeps, :module, :goModule, :restEndpoints, :nonRestEndpoints, ...)
+    let package = go.package(app);
+    let serviceDeps = clientDeps where .isService && !goModule.depField(.).temporal;
+    let grpcClientDeps = serviceDeps where goModule.depField(.).grpc;
+    let restClientDeps = serviceDeps where let d = goModule.depField(.); !d.grpc && !d.temporal;
+
+    let mainActs = (
+        temporal.activitiesOfMainApp(module, app) =>
+            let act = temporal.activityFromCall(module, app, .);
+            (
+                name: go.methodName(app, act.ep),
+                :act,
+            )
+    ) orderby .name;
+
+    let workflows = temporal.workflows(app) orderby .name >>
+        (. +>  go.temporalMethodInfo(module, app, app, .ep).|requestType, responseType|)
+    ;
+
+    $`
+        ${go.prelude(app, (clientDeps => $`${basepath}/${.import}`))}
+
+        // TestServer for ${appname}
+        type TestServer struct {
+            h                     *TemporalServiceHandler
+            e                     *e2e.Tester
+            Mocks                 Mocks
+            withActualDownstreams bool
+        }
+
+        type Mocks struct {
+            ${serviceDeps orderby . >> $`${go.name(.import)} *${.import}.DownstreamMocks`::\i}
+
+            Self *SelfMocks
+        }
+
+        type SelfMocks struct {
+            // Only allows mocking of activities
+            ${
+                mainActs >> $`${.name} *${.name}Mock`
+            ::\i}
+        }
+
+        ${
+            mainActs >>
+                let (:responseType, :requestType, ...) = .act;
+                let params = [(name: 'ctx', type: 'context.Context')] ++ (requestType >> (:.name, type: .leaf));
+                let returns = ([(type: responseType.leaf), (type: 'error')] where .@item) rank (:.@);
+                $`
+                    type ${.name}Mock struct {
+                        base *temporal_tester.MockBase[${responseType.leaf || `any`}]
+                        ${service_method.renderSignatureAsFieldWithNewlinesParams('realFn', (:params, :returns))}
+                    }
+
+                    ${
+                        requestType && $`
+                            func (m *${.name}Mock) ExpectRequest(
+                                ${requestType >> \(:name, :leaf, ...) $`${name} ${leaf}`::,\n:,}
+                            ) *${.name}Mock {
+                                m.base.ExpectRequest(${requestType >> .name::, })
+                                return m
+                            }
+                        `
+                    }
+
+                    func (m *${.name}Mock) MockResponse(
+                        ${responseType.leaf && $`resp ${responseType.leaf},`}
+                        err error,
+                    ) *${.name}Mock {
+                        m.base.Mock${
+                            (responseType.leaf && `Response(resp, err)`) ||
+                            `ErrorOnlyResponse(err)`
+                        }
+                        return m
+                    }
+
+                    func (m *${.name}Mock) activity${service_method.renderSignatureWithNewlinesParams((:params, :returns))} {
+                        if !m.base.IsMocked() {
+                            m.base.CheckExpectations(${(params where .@ != 0) >> .name::, :})
+                            return m.realFn(${params >> .name::, :})
+                        }
+                        return m.base.BuildMockActivity${!responseType.leaf && $`WithoutReturn`}()(ctx, ${requestType >> .name::, })
+                    }
+                `
+        ::\i\i}
+
+        ${cond {grpcClientDeps: $`
+            func overrideGrpcDialOptions(t syslgo.TestingT, mocks *Mocks) func(serviceName string, cfg *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {
+                return func(serviceName string, cfg *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {
+                    switch serviceName {
+                    ${
+                        grpcClientDeps orderby . >>
+                        let upperName = go.name(.import);
+                        $`
+                            case "${.import}":
+                                cfg.ServiceAddress = "mock${upperName}"
+                                mocks.${upperName} = ${.import}.NewDownstreamMocks(t)
+                                return mocks.${upperName}.GetDialOption(), nil
+                        `
+                    ::\i}
+                    }
+
+                    return nil, errors.New("Unknown service name?")
+                }
+            }
+
+        `}}
+
+        // NewTestServer creates a server based on your service definition and config with Mocked downstreams.
+        func NewTestServer[AppConfig any](
+            t syslgo.TestingT,
+            ctx context.Context,
+            createService core.ServiceDefinition[AppConfig, *TemporalServiceInterface],
+            cfg any,
+        ) *TestServer {
+            return newTestServerImp[AppConfig](t, ctx, createService, cfg, false)
+        }
+
+        // TODO: Only make it available when integration tests is designed
+        // func NewIntegrationTestServer[AppConfig any](
+        //     t syslgo.TestingT,
+        //     ctx context.Context,
+        //     createService core.ServiceDefinition[AppConfig, *TemporalServiceInterface],
+        //     cfg any,
+        // ) *TestServer {
+        //     return newTestServerImp[AppConfig](t, ctx, createService, cfg, true)
+        // }
+
+        func newTestServerImp[AppConfig any](
+            t syslgo.TestingT,
+            ctx context.Context,
+            createService core.ServiceDefinition[AppConfig, *TemporalServiceInterface],
+            cfg any,
+            withActualDownstreams bool,
+        ) *TestServer {
+            byteCfg, err := e2e.ConfigToYamlData(cfg, core.GetAppConfigType(createService))
+            require.NoError(t, err, "Failed to convert cfg")
+
+            testServer, ctx, testHooks := e2e.NewTester(t, ctx, byteCfg)
+
+            var mocks Mocks
+            if withActualDownstreams {
+                testHooks.HTTPClientBuilder = nil
+            } ${cond {grpcClientDeps: $`
+                    else {
+                        testHooks.OverrideGrpcDialOptions = overrideGrpcDialOptions(t, &mocks)
+                    }
+                `}}
+
+            // Force ContextTimeout
+            testHooks.ValidateConfig = func(_ context.Context, cfg *config.DefaultConfig) error {
+                var downstream *DownstreamConfig
+                var is bool
+                if downstream, is = cfg.GenCode.Downstream.(*DownstreamConfig); !is || downstream == nil {
+                    downstream = &DownstreamConfig{}
+                    cfg.GenCode.Downstream = downstream
+                }
+                if downstream.ContextTimeout == 0 {
+                    downstream.ContextTimeout = e2e.DownstreamTimeout
+                }
+                ${restClientDeps orderby . >> $`
+                    if downstream.${go.name(.import)}.ClientTimeout == 0 {
+                        downstream.${go.name(.import)}.ClientTimeout = e2e.DownstreamTimeout
+                    }
+                `::\i}
+
+                return nil
+            }
+
+            srv, err := core.NewTemporalWorker[*TemporalServiceHandler](
+                ctx,
+                TaskQueueName,
+                &DownstreamConfig{},
+                temporal_tester.PatchedService(t, createService, testHooks, withActualDownstreams),
+                BuildDownstreamClients,
+                NewTemporalServiceHandler,
+            )
+            require.NoError(t, err)
+
+            srvSpec := srv.(*core.TemporalServer[*TemporalServiceHandler]).GetSpec().GetService()
+            ts := &TestServer{
+                e:                     testServer,
+                h:                     srvSpec,
+                Mocks:                 mocks,
+                withActualDownstreams: withActualDownstreams,
+            }
+
+            if !withActualDownstreams {
+                ${restClientDeps && $`
+                    ${
+                        restClientDeps orderby . >> $`
+                            ts.Mocks.${go.name(.import)} = ${.import}.NewDownstreamMocks(testServer)
+                    `::\i}
+                `}
+
+                ts.Mocks.Self = &SelfMocks{
+                    ${
+                        mainActs >>
+                            let (:responseType, ...) = .act;
+                            $`
+                                ${.name}: &${.name}Mock{
+                                    base: temporal_tester.NewMockWorkflowBase[${responseType.leaf || 'any'}](t),
+                                    realFn: srvSpec.${.name},
+                                }
+                            `
+                    ::,\i:,}
+                }
+            }
+
+            ts.Register()
+	        require.NoError(t, ts.h.Start())
+
+            return ts
+        }
+
+        func (t *TestServer) Register() {
+            if t.withActualDownstreams {
+                t.h.Register()
+            }
+
+            // register workflows
+            ${
+                workflows >> $`
+                    t.h.RegisterWorkflowWithOptions(t.h.${.name}, workflow.RegisterOptions{Name: ${.name}Name})
+                `
+            ::\i\i}
+
+            // register the mock activities that workflows execute
+            ${
+                mainActs >>
+                    $`
+                        t.h.RegisterActivityWithOptions(t.Mocks.Self.${.name}.activity, activity.RegisterOptions{
+		                    Name: ${.name}Name,
+	                    })
+                    `
+            ::\i\i}
+
+            // register the activities that are called by activities tests
+            ${
+                mainActs >>
+                    $`
+                        t.h.RegisterActivityWithOptions(t.h.${.name}, activity.RegisterOptions{
+		                    Name: ${.name}Name + "-Test",
+	                    })
+                    `
+            ::\i\i}
+        }
+
+        func (t *TestServer) GetE2eTester() *e2e.Tester {
+            return t.e
+        }
+
+        func (t *TestServer) Close() {
+            t.e.Close()
+            ${grpcClientDeps orderby . >> $`
+                if t.Mocks.${go.name(.import)} != nil {
+                    t.Mocks.${go.name(.import)}.Stop()
+                }
+            `::\i}
+            t.h.Close()
+        }
+
+        // Allow users to modify the testing environments
+        func (t *TestServer) GetTestActivityEnv() *testsuite.TestActivityEnvironment {
+            return t.h.GetWorker().(*temporal_tester.MockWorker).GetTestActivityEnv()
+        }
+
+        func (t *TestServer) GetTestWorkflowEnv() *testsuite.TestWorkflowEnvironment {
+            return t.h.GetClient().(*temporal_tester.MockClient).GetEnv()
+        }
+
+        ${
+            workflows >> $`
+                func (t *TestServer) ${.name}${service_method.renderSignatureWithNewlinesParams((
+                    params: [(name: 'ctx', type: 'context.Context')] ++
+                            (.requestType >> (:.name, type: .leaf)) ++
+                            [(name: 'options', type: '...client.StartWorkflowOptions')],
+                    returns: [(type: $`*core.Run[${.responseType.leaf || 'any'}]`), (type: 'error')],
+                ))} {
+                    return core.ExecuteWorkflow[${.responseType.leaf || 'any'}](
+                        ctx,
+                        core.GetOptionFromClientIntf(options),
+                        t.h,
+                        TaskQueueName,
+                        ${.name}Name,
+                        ${.requestType >> .name::,\i:,}
+                    )
+                }
+            `
+        ::\i\i}
+
+        ${
+            mainActs >>
+                let (:responseType, :requestType, ...) = .act;
+                $`
+                    func (t *TestServer) ${.name}${service_method.renderSignatureWithNewlinesParams((
+                        params: [(name: 'ctx', type: 'context.Context')] ++ (requestType >> (:.name, type: .leaf)),
+                        returns: [(type: $`*temporal_tester.TestFuture[${responseType.leaf || `any`}]`), (type: 'error')],
+                    ))} {
+                        	if t.withActualDownstreams {
+                                panic("testing activities in integration test is not yet supported")
+                            }
+                            return temporal_tester.ExecuteTestActivity[${responseType.leaf || 'any'}](
+                                t.GetTestActivityEnv(),
+                                ${.name}Name+"-Test",
+                                ${requestType >> .name ::,\i:,}
+                            )
+                    }
+                `
+        ::\i\i:\i}
+    `

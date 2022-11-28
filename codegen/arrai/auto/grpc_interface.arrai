@@ -1,5 +1,6 @@
 let go = //{./go};
 let sysl = //{./sysl};
+let (:gRPCServiceSignature, :renderSignatureAsField, ...) = //{./service_method};
 
 \(:app, :appname, :clientDeps, :endpoints, :goModule, :hasDB, :basepath, :module, :nonRestEndpoints, ...)
     let client = //{./client}((:app, :appname, :clientDeps, :hasDB, :module));
@@ -11,14 +12,12 @@ let sysl = //{./sysl};
 
         // GrpcServiceInterface for ${appname}
         type GrpcServiceInterface struct {
-            ${nonRestEndpoints >> \(@value: ep, ...)
-                let name = go.methodName(app, ep);
-                let requestType = go.leafType(module, app, ep('param').a(0)('type'));
-                let returns = sysl.endpoint.normalReturns(app, ep);
-                let returnTypes = returns >> go.name(.type(.type count - 1));
-                let returnType = returnTypes(returnTypes count - 1);
-
-                $`${name} func(ctx context.Context, req *pb.${requestType}${cond {client.notEmpty(ep): $`, client ${name}Client`}}) (*pb.${returnType}, error)`
+            ${
+                nonRestEndpoints >> \(@value: ep, ...)
+                    renderSignatureAsField(
+                        go.methodName(app, ep),
+                        gRPCServiceSignature(module, client, app, ep),
+                    )
             ::\i}
         }
 

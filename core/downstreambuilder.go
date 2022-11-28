@@ -67,5 +67,8 @@ func BuildDownstreamTemporalClient(
 		}
 	}
 
+	if hooks.ExperimentalTemporalClientBuilder != nil {
+		return hooks.ExperimentalTemporalClientBuilder(ctx, serviceName, &clientOptions)
+	}
 	return client.Dial(clientOptions)
 }

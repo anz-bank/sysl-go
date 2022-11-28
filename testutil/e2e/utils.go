@@ -206,6 +206,8 @@ func CreateServiceWithTestHooksPatched(createService interface{}, testHooks *cor
 		if h == nil {
 			h = testHooks
 		} else {
+			h.ExperimentalTemporalClientBuilder = testHooks.ExperimentalTemporalClientBuilder
+			h.ExperimentalTemporalWorkerBuilder = testHooks.ExperimentalTemporalWorkerBuilder
 			h.HTTPClientBuilder = testHooks.HTTPClientBuilder
 			h.StoppableServerBuilder = testHooks.StoppableServerBuilder
 			if testHooks.OverrideGrpcDialOptions != nil {
@@ -230,10 +232,11 @@ func CreateServiceWithTestHooksPatched(createService interface{}, testHooks *cor
 			if h.ValidateConfig == nil {
 				h.ValidateConfig = testHooks.ValidateConfig
 			} else {
+				usersValidateConfig := h.ValidateConfig
 				h.ValidateConfig = func(ctx context.Context, cfg *config.DefaultConfig) error {
 					_ = testHooks.ValidateConfig(ctx, cfg)
 
-					return h.ValidateConfig(ctx, cfg)
+					return usersValidateConfig(ctx, cfg)
 				}
 			}
 			// Prefer the app set func over the test default

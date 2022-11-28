@@ -89,6 +89,10 @@ let temporal = //{./temporal};
                     func (s *TemporalServiceHandler) ${name}(
                         ${args::,\i:,}
                     ) ${(responseType.leaf && $`(${responseType.leaf}, error)`) || `error`} {
+                        if s.Intf.${name} == nil {
+                            panic("${name} unimplemented")
+                        }
+
                         ${
                             activities &&
                                 $`
@@ -117,6 +121,9 @@ let temporal = //{./temporal};
                         ctx context.Context,
                         ${info.requestType >> $`${.name} ${.leaf}`::,\i:,}
                     ) ${(info.responseType.leaf && $`(${info.responseType.leaf}, error)`) || `error`} {
+                        if s.Intf.${.name} == nil {
+                            panic("${.name} unimplemented")
+                        }
                         ${cond {hasCalls: $`client := ${client.new(.ep)}`}}
                         return s.Intf.${.name}(
                             ctx,
@@ -147,4 +154,17 @@ let temporal = //{./temporal};
                     $`s.Worker.RegisterActivityWithOptions(s.${varName}, activity.RegisterOptions{Name: ${actName}})`
             ::\i}
         }
+
+        func (s *TemporalServiceHandler) GetClient() client.Client {
+            return s.Client
+        }
+
+        func (s *TemporalServiceHandler) GetWorker() worker.Worker {
+            return s.Worker
+        }
+
+        func (s *TemporalServiceHandler) GetService() *TemporalServiceHandler {
+            return s
+        }
+
     `

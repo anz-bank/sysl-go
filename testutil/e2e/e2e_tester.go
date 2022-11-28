@@ -22,6 +22,7 @@ import (
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/status"
 	"github.com/anz-bank/sysl-go/syslgo"
+	"github.com/anz-bank/sysl-go/testutil/temporal_tester"
 )
 
 type Endpoint interface {
@@ -79,10 +80,12 @@ func NewTesterWithBuildMetadata(t syslgo.TestingT, ctx context.Context, bm statu
 	ctx = core.WithConfigFile(ctx, yamlConfigData)
 
 	hooks := &core.Hooks{
-		ShouldSetGrpcGlobalLogger:  func() bool { return false },
-		HTTPClientBuilder:          e2eTester.HTTPClientGetter,
-		StoppableServerBuilder:     e2eTester.prepareServerListener,
-		StoppableGrpcServerBuilder: e2eTester.prepareGrpcServerListener,
+		ShouldSetGrpcGlobalLogger:         func() bool { return false },
+		HTTPClientBuilder:                 e2eTester.HTTPClientGetter,
+		StoppableServerBuilder:            e2eTester.prepareServerListener,
+		StoppableGrpcServerBuilder:        e2eTester.prepareGrpcServerListener,
+		ExperimentalTemporalWorkerBuilder: temporal_tester.MockWorkerBuilder,
+		ExperimentalTemporalClientBuilder: temporal_tester.EmptyClientsBuilder,
 	}
 
 	return e2eTester, ctx, hooks

@@ -1,8 +1,8 @@
 let go = //{./go};
+let (:RESTServiceSignature, :renderSignatureAsField, ...) = //{./service_method};
 
 \(:app, :appname, :clientDeps, :endpoints, :goModule, :hasDB, :basepath, :module, :restEndpoints, ...)
     let client = //{./client}((:app, :appname, :clientDeps, :hasDB, :module));
-    let signature = //{./service_method}.signature(module, client, app);
     let structName = $`Default${go.name(appname)}Impl`;
     $`
         ${go.prelude(app, clientDeps => $`${basepath}/${.import}`)}
@@ -20,9 +20,11 @@ let go = //{./go};
 
         // ServiceInterface for ${appname}
         type ServiceInterface struct {
-            ${endpoints >> \(@:_, @value: ep)
-                let method = go.methodName(app, ep);
-                $`${method} func${signature(ep)}`
+            ${
+                endpoints >> \(@:_, @value: ep) renderSignatureAsField(
+                    go.methodName(app, ep),
+                    RESTServiceSignature(module, client, app, ep),
+                )
             ::\i}
         }
 

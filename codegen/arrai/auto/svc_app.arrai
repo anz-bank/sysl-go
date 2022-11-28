@@ -104,7 +104,7 @@ let sysl = //{./sysl};
                 cond serverType {
                     `Temporal`:
                         $`
-                            core.NewTemporalWorker(
+                            core.NewTemporalWorker[*TemporalServiceHandler](
                                 ctx,
                                 TaskQueueName,
                                 &DownstreamConfig{},

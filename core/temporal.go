@@ -9,10 +9,15 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-type TemporalServiceSpec interface {
+type TemporalServiceSpec[T any] interface {
 	worker.Worker
 	client.Client
+
 	Register()
+	GetWorker() worker.Worker
+	GetClient() client.Client
+	GetService() T
+	Close()
 }
 
 type Run[T any] struct {

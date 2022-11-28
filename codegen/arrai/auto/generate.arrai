@@ -17,6 +17,8 @@ let generators = {
     "temporal_client.go":    //{./temporal_client},
     "temporal_interface.go": //{./temporal_interface},
     "temporal_handler.go":   //{./temporal_handler},
+    "temporal_mocks.go":     //{./temporal_mocks},
+    "temporal_tester.go":    //{./temporal_tester},
 };
 
 let hasRelationTypes = \app
@@ -37,8 +39,8 @@ let _inferHasDB = \app hasRelationTypes(app);
         let grpcClient = {"grpc_client.go", "grpc_mocks.go"};
         let grpcService = {"grpc_handler.go", "grpc_interface.go", "tester.go"};
         let app = {"app.go", "main.go.sample"};
-        let temporalService = { "temporal_interface.go", "temporal_handler.go", "types.go", "app.go"};
-        let temporalClient = {"temporal_client.go", "types.go"};
+        let temporalService = { "temporal_interface.go", "temporal_handler.go", "types.go", "app.go", "temporal_tester.go"};
+        let temporalClient = {"temporal_client.go", "types.go", "temporal_mocks.go"};
         {
             "rest-service": restService,
             "rest-app":     restService | app,

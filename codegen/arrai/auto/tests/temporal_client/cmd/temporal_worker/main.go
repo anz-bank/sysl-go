@@ -18,15 +18,15 @@ type AppConfig struct {
 // FIXME: expose client.Options and worker.Options
 
 func main() {
-	temporalworker.Serve(context.Background(),
-		func(ctx context.Context, config AppConfig) (*temporalworker.TemporalServiceInterface, *core.Hooks, error) {
-			// Perform one-time setup based on config here.
-			return &temporalworker.TemporalServiceInterface{
-				WorkflowWithActivities:     WorkflowWithActivities,
-				ActivityWithParamAndReturn: ActivityWithParamAndReturn,
-			}, &core.Hooks{}, nil
-		},
-	)
+	temporalworker.Serve(context.Background(), createService)
+}
+
+func createService(ctx context.Context, config AppConfig) (*temporalworker.TemporalServiceInterface, *core.Hooks, error) {
+	// Perform one-time setup based on config here.
+	return &temporalworker.TemporalServiceInterface{
+		WorkflowWithActivities:     WorkflowWithActivities,
+		ActivityWithParamAndReturn: ActivityWithParamAndReturn,
+	}, &core.Hooks{}, nil
 }
 
 func WorkflowWithActivities(
@@ -42,7 +42,7 @@ func WorkflowWithActivities(
 		return temporalworker.Param2{}, nil
 	}
 	return temporalworker.Param2{
-		Msg2: fmt.Sprintf("%s | Activity Executed", s),
+		Msg2: fmt.Sprintf("%s | Activity Executed", s.Msg2),
 	}, nil
 }
 
@@ -53,7 +53,7 @@ func ActivityWithParamAndReturn(
 ) (temporalworker.Param2, error) {
 	x, err := client.SomedownstreamPost(ctx, &somedownstream.PostRequest{
 		Request: somedownstream.SomeReq{
-			Msg: "HIIII",
+			Msg: req.Msg,
 		},
 	})
 	if err != nil {

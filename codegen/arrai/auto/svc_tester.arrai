@@ -6,8 +6,9 @@ let grpc = //{./grpc};
     let package = go.package(app);
     let gRPC = "gRPC" <: sysl.patterns(app);
     let goAppname = cond {gRPC: go.name(grpc.app.name(app)), _:""};
-    let serviceDeps = clientDeps where .isService && !goModule.depField(.).temporal;
+    let serviceDeps = clientDeps where .isService;
     let grpcClientDeps = serviceDeps where goModule.depField(.).grpc;
+    let temporalClientDeps = serviceDeps where goModule.depField(.).temporal;
     let restClientDeps = serviceDeps where let d = goModule.depField(.); !d.grpc && !d.temporal;
 
     $`
@@ -66,11 +67,27 @@ let grpc = //{./grpc};
             var mocks Mocks
             if withActualDownstreams {
                 testHooks.HTTPClientBuilder = nil
-            } ${cond {grpcClientDeps: $`
+            } ${
+                (grpcClientDeps || temporalClientDeps) && $`
                     else {
-                        testHooks.OverrideGrpcDialOptions = overrideGrpcDialOptions(t, &mocks)
+                        ${grpcClientDeps && $`testHooks.OverrideGrpcDialOptions = overrideGrpcDialOptions(t, &mocks)`}
+
+                        ${
+                            temporalClientDeps && $`
+                                // setting up temporal mocks and putting in the mock client
+                                ${
+                                    temporalClientDeps orderby . >> $`mocks.${go.name(.import)} = ${.import}.NewDownstreamMocks(t)`
+                                ::\i}
+
+                                testHooks.ExperimentalTemporalClientBuilder = temporal_tester.MockClientsBuilder(
+                                    ${temporalClientDeps orderby . >> $`mocks.${go.name(.import)}`::,\i:,}
+                                )
+                            `
+                        }
                     }
-                `}}
+                `
+            }
+
 
             // Force ContextTimeout
             testHooks.ValidateConfig = func(_ context.Context, cfg *config.DefaultConfig) error {
@@ -297,7 +314,7 @@ let grpc = //{./grpc};
             `
         ::\i}
 
-        ${nonRestEndpoints >> \(@value: ep, ...)
+        ${gRPC && nonRestEndpoints >> \(@value: ep, ...)
             let methodInfo = go.pbMethodInfo(module, app, ep);
             let name = methodInfo.name;
             let requestType = methodInfo.requestType;

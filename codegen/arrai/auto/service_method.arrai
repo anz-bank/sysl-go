@@ -1,14 +1,97 @@
 let go = //{./go};
 let sysl = //{./sysl};
+let temporal = //{./temporal};
 
-let signature = \module \client \app \ep
+let ctx = (name: 'ctx', type: 'context.Context');
+let error = (type: 'error');
+let clientParam = \client \ep \cName client.notEmpty(ep) && [(name: 'client', type: $`${cName}Client`)];
+
+let RESTServiceSignature = \module \client \app \ep
     let method = go.methodName(app, ep);
-    let needClient = client.notEmpty(ep);
     let goModule = go.module(module);
-    $`(ctx context.Context, req *${method}Request${cond {needClient: $`, client ${method}Client`}}) (${
-        (sysl.endpoint.normalReturns(app, ep) >> $"${goModule.typeWithClientPackage(app, .)}") ++ ["error"]
-    ::, })`;
+    (
+        params: [ctx, (name: 'req', type: $`*${method}Request`)] ++ clientParam(client, ep, method),
+        returns: (sysl.endpoint.normalReturns(app, ep) >> (type: $`${goModule.typeWithClientPackage(app, .)}`)) ++ [error]
+    )
+;
+
+let gRPCServiceSignature = \module \client \app \ep
+    let name = go.methodName(app, ep);
+    let requestType = go.leafType(module, app, ep('param').a(0)('type'));
+    let returns = sysl.endpoint.normalReturns(app, ep);
+    let returnTypes = returns >> go.name(.type(.type count - 1));
+    let returnType = returnTypes(returnTypes count - 1);
+
+    (
+        params: [
+            ctx,
+            (name: 'req', type: $`*pb.${requestType}`),
+        ] ++ clientParam(client, ep, name),
+        returns: [
+            (type: $`*pb.${returnType}`),
+            error,
+        ]
+    )
+;
+
+let temporalServiceSignature = \module \client \app \ep
+    let name = go.methodName(app, ep);
+    let (:requestType, :responseType, ...) = go.temporalMethodInfo(module, app, app, ep);
+    let hasCalls = client.notEmpty(ep);
+    let isWorkflow = 'workflow' <: sysl.patterns(ep);
+    let params =
+        [(isWorkflow && (name: 'ctx', type: 'workflow.Context')) || ctx] ++
+        (hasCalls && [(
+            name: (isWorkflow && 'activities') || 'client',
+            type: (isWorkflow && temporal.activityStructNameFromEp(app, ep)) || $`${name}Client`,
+        )]) ++
+        (requestType >> (:.name, type: .leaf))
+    ;
+    let returns = (responseType.leaf && [(type: responseType.leaf)]) ++ [error];
+    (:params, :returns)
+;
+
+let renderSignature = \(:params, :returns, ...)
+    let returns = (returns where .@item.type) rank (:.@);
+    $`(${params >> $`${.name} ${.type}`::,:}) ${(returns count > 1 && $`(${returns >> .type::,})`) || returns(0).type}`
+;
+
+let renderSignatureWithNewlinesParams = \(:params, :returns, ...)
+    let returns = (returns where .@item.type) rank (:.@);
+    $`
+        (
+            ${params >> $`${.name} ${.type}`::,\i:,}
+        ) ${(returns count > 1 && $`(${returns >> .type::,})`) || returns(0).type}
+    `
+;
+
+let renderSignatureAsFunction = \fName \(:params, :returns, ...)
+    $`func${fName && ' ' ++ fName}${renderSignature((:params, :returns))}`
+;
+
+let renderSignatureAsFunctionWithNewlinesParams = \fName \(:params, :returns, ...)
+    $`
+        func${fName && ' ' ++ fName}${renderSignatureWithNewlinesParams((:params, :returns))}
+    `
+;
+
+let renderSignatureAsType = renderSignatureAsFunction('');
+let renderSignatureAsTypeWithNewlinesParams = renderSignatureAsFunctionWithNewlinesParams('');
+
+let renderSignatureAsField = \name \sig $`${name} ${renderSignatureAsFunction('', sig)}`;
+let renderSignatureAsFieldWithNewlinesParams = \name \sig $`${name} ${renderSignatureAsFunctionWithNewlinesParams('', sig)}`;
+
 
 (
-    :signature,
+    :RESTServiceSignature,
+    :gRPCServiceSignature,
+    :temporalServiceSignature,
+    :renderSignature,
+    :renderSignatureWithNewlinesParams,
+    :renderSignatureAsFunction,
+    :renderSignatureAsFunctionWithNewlinesParams,
+    :renderSignatureAsType,
+    :renderSignatureAsTypeWithNewlinesParams,
+    :renderSignatureAsField,
+    :renderSignatureAsFieldWithNewlinesParams,
 )

@@ -95,13 +95,13 @@ func withLogLevel(ctx context.Context, defaultConfig *config.DefaultConfig) cont
 //
 //nolint:funlen
 func NewTemporalWorker[
-	DownstreamConfig, AppConfig, ServiceIntf, Clients any,
-	Spec TemporalServiceSpec,
+	TemporalServiceHandler, DownstreamConfig, AppConfig, ServiceIntf, Clients any,
+	Spec TemporalServiceSpec[TemporalServiceHandler],
 ](
 	ctx context.Context,
 	taskQueueName string,
 	downstreamConfig DownstreamConfig,
-	createService func(context.Context, AppConfig) (ServiceIntf, *Hooks, error),
+	createService ServiceDefinition[AppConfig, ServiceIntf],
 	buildDownstreamsClients func(context.Context, *Hooks) (Clients, error),
 	buildServiceHandler func(client.Client, worker.Worker, ServiceIntf, Clients) Spec,
 ) (StoppableServer, error) {
@@ -140,7 +140,12 @@ func NewTemporalWorker[
 		}
 	}
 
-	temporalClient, err := client.Dial(clientOptions)
+	var temporalClient client.Client
+	if hooks.ExperimentalTemporalClientBuilder != nil {
+		temporalClient, err = hooks.ExperimentalTemporalClientBuilder(ctx, taskQueueName, &clientOptions)
+	} else {
+		temporalClient, err = client.Dial(clientOptions)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -160,12 +165,19 @@ func NewTemporalWorker[
 		}
 	}
 
-	return &TemporalServer{buildServiceHandler(
-		temporalClient,
-		worker.New(temporalClient, taskQueueName, workerOptions),
-		serviceIntf,
-		downstreamClients,
-	)}, nil
+	buildWorker := worker.New
+	if hooks.ExperimentalTemporalWorkerBuilder != nil {
+		buildWorker = hooks.ExperimentalTemporalWorkerBuilder
+	}
+
+	return &TemporalServer[TemporalServiceHandler]{
+		Spec: buildServiceHandler(
+			temporalClient,
+			buildWorker(temporalClient, taskQueueName, workerOptions),
+			serviceIntf,
+			downstreamClients,
+		),
+	}, nil
 }
 
 func createDefaultConfig[DownstreamConfig, AppConfig, Handlers any](

@@ -158,6 +158,12 @@ type Hooks struct {
 	// ExperimentalValidateTemporalWorkerOptions can be used to validate (or override) worker options to connect to a
 	// temporal instance with.
 	ExperimentalValidateTemporalWorkerOptions func(context.Context, *worker.Options) error
+
+	// ExperimentalTemporalClientBuilder can be used to build a custom temporal client.
+	ExperimentalTemporalClientBuilder func(context.Context, string, *client.Options) (client.Client, error)
+
+	// ExperimentalTemporalWorkerBuilder can be used to build a custom temporal worker.
+	ExperimentalTemporalWorkerBuilder func(client client.Client, taskQueue string, options worker.Options) worker.Worker
 }
 
 func ResolveGrpcDialOptions(ctx context.Context, serviceName string, h *Hooks, grpcDownstreamConfig *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {
