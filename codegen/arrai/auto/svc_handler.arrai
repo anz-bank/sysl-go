@@ -1,6 +1,7 @@
 let go = //{./go};
 let sysl = //{./sysl};
 let validation = //{./validation};
+let temporal = //{./temporal};
 
 \(:app, :appname, :basepath, :clientDeps, :goModule, :hasDB, :module, :restEndpoints, ...)
     let client = //{./client}((:app, :appname, :clientDeps, :hasDB, :module));
@@ -274,7 +275,19 @@ let validation = //{./validation};
                             return
                         }
                     `}}
-                    ${cond {client.notEmpty(ep): $`client := ${client.new(ep)}`}}
+                    ${
+                        cond {
+                            client.notEmpty(ep): $`
+                                ${
+                                    let clientMapCall = temporal.ctxWithClientMap(module, ep);
+                                    clientMapCall && $`
+                                        ctx = ${clientMapCall}
+                                    `
+                                }
+                                client := ${client.new(ep)}
+                            `
+                        }
+                    }
 
                     defer func() {
                         if rec := recover(); rec != nil {

@@ -73,6 +73,39 @@ let activityStructFromEp = \mod \app \ep
         fields: calls => activityFromCall(mod, app, .),
     )
 ;
+
+let workflowCallsFromEp = \module \ep
+    let goModule = go.module(module);
+    let calls = sysl.endpoint.calls(ep);
+    (calls where \(@item: ., ...)
+        let dep = goModule.targetApp(.('target'));
+        let ep = sysl.app.endpoint(dep, .('endpoint').s);
+        'temporal' <: sysl.patterns(dep) && 'workflow' <: sysl.patterns(ep)) => .@item
+;
+
+let clientMap = \module \workflowCalls
+    let goModule = go.module(module);
+    workflowCalls =>
+        let package = go.package(goModule.targetApp(.('target')));
+        (
+            key: $`${package}.TaskQueue`,
+            value: $`s.${package}Service.GetClient()`
+        )
+;
+
+# TODO: create a generic map rendering function
+let ctxWithClientMap = \module \ep
+    let workflows = workflowCallsFromEp(module, ep);
+    let clientMap = clientMap(module, workflows);
+    clientMap && $`
+        common.WithTemporalClientMap(ctx, map[string]client.Client{
+            ${
+                clientMap orderby .key >> $`${.key}: ${.value}`
+            ::\i,:,}
+        })
+    `
+;
+
 (
     :isTemporalWorkflow,
     :workflows,
@@ -82,4 +115,7 @@ let activityStructFromEp = \mod \app \ep
     :activityFromCall,
     :activityStructNameFromEp,
     :activityStructFromEp,
+    :workflowCallsFromEp,
+    :clientMap,
+    :ctxWithClientMap,
 )

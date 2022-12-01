@@ -15,7 +15,7 @@ let sysl = //{./sysl};
 
         const (
             // Task Queue name for ${appname}.
-            ${appname}TaskQueue = ${appname:q}
+            TaskQueue = ${appname:q}
 
             // Workflow names
             ${methodInfos >> $`${.name}Name = ${.name:q}`::\n}
@@ -24,6 +24,9 @@ let sysl = //{./sysl};
         // Service interface for ${appname}.
         type Service interface {
             ${methodInfos >> $`${.name}${.sig(false)}`::\i}
+
+            // Expose client to user
+            GetClient() client.Client
         }
 
         // Client implements a client for ${appname}.
@@ -36,6 +39,10 @@ let sysl = //{./sysl};
             return &Client{c}
         }
 
+        func (s *Client) GetClient() client.Client {
+            return s.Client
+        }
+
         ${methodInfos >> $`
             // ${.name} ...
             func (s *Client) ${.name}${.sig(false)} {
@@ -43,7 +50,7 @@ let sysl = //{./sysl};
                     ctx,
                     core.GetOptionFromClientIntf(option),
                     s.Client,
-                    ${appname}TaskQueue,
+                    TaskQueue,
                     ${.name}Name,
                     ${.requestType >> .name::,\n:,}
                 )

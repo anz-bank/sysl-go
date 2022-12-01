@@ -9,6 +9,7 @@ import (
 	"temporal_client/internal/gen/pkg/servers/temporal_client/temporalworker"
 	pb "temporal_client/protos"
 
+	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/core"
 	"go.temporal.io/sdk/client"
 )
@@ -43,6 +44,12 @@ func createService(ctx context.Context, config AppConfig) (*frontdoor.GrpcServic
 				return nil, err
 			}
 			r2, err := r.Get(ctx)
+			if err != nil {
+				return nil, err
+			}
+
+			// How to get client for TemporalWorker
+			_, err = common.TemporalClientFrom(ctx, temporalworker.TaskQueue)
 			if err != nil {
 				return nil, err
 			}

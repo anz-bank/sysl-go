@@ -1,6 +1,7 @@
 let go = //{./go};
 let sysl = //{./sysl};
 let grpc = //{./grpc};
+let temporal = //{./temporal};
 
 \(
     :app,
@@ -98,7 +99,19 @@ let grpc = //{./grpc};
                             return nil, err
                         }
                     `}}
-                    ${cond {client.notEmpty(ep): $`client := ${client.new(ep)}`}}
+                    ${
+                        cond {
+                            client.notEmpty(ep): $`
+                                ${
+                                    let clientMapCall = temporal.ctxWithClientMap(module, ep);
+                                    clientMapCall && $`
+                                        ctx = ${clientMapCall}
+                                    `
+                                }
+                                client := ${client.new(ep)}
+                            `
+                        }
+                    }
                     return s.serviceInterface.${method}(ctx, req${cond {client.notEmpty(ep): `, client`}})
                 }
             `
