@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestWorkflow(t *testing.T) {
+func TestWorkflowWithRealActivity(t *testing.T) {
 	t.Parallel()
 
 	// Create a test service from your service definition
@@ -24,18 +24,39 @@ func TestWorkflow(t *testing.T) {
 	})
 
 	// adding assertions to the activity ActivityWithParamAndReturn but still using the actual activity
-	testServer.Mocks.Self.ActivityWithParamAndReturn.ExpectRequest(temporalworker.Param1{Msg: "hi | Executing Activity"})
+	testServer.Mocks.Self.ActivityWithParamAndReturn.
+		ExpectRequest(temporalworker.Param1{Msg: "hi | Executing Activity"})
 
 	// execute workflows that you want to test
-	resp, err := testServer.WorkflowWithActivities(context.Background(), temporalworker.Param1{
-		Msg: "hi",
-	})
+	resp, err := testServer.WorkflowWithActivities(context.Background(), temporalworker.Param1{Msg: "hi"})
 	require.NoError(t, err)
 
 	// resp is just a wrapper, you can get ID and RunID from there. resp2 is the actual payload.
 	resp2, err := resp.Get(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, "hi | Activity Executed", resp2.Msg2)
+}
+
+func TestWorkflowWithMockedActivity(t *testing.T) {
+	t.Parallel()
+
+	// Create a test service from your service definition
+	testServer := temporalworker.NewTestServer(t, context.Background(), createService, ``)
+	defer testServer.Close()
+
+	// adding assertions to the activity ActivityWithParamAndReturn but still using the actual activity
+	testServer.Mocks.Self.ActivityWithParamAndReturn.
+		ExpectRequest(temporalworker.Param1{Msg: "hi | Executing Activity"}).
+		MockResponse(temporalworker.Param2{Msg2: "hiii"}, nil)
+
+	// execute workflows that you want to test
+	resp, err := testServer.WorkflowWithActivities(context.Background(), temporalworker.Param1{Msg: "hi"})
+	require.NoError(t, err)
+
+	// resp is just a wrapper, you can get ID and RunID from there. resp2 is the actual payload.
+	resp2, err := resp.Get(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, "hiii | Activity Executed", resp2.Msg2)
 }
 
 func TestActivity(t *testing.T) {

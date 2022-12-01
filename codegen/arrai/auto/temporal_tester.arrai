@@ -245,7 +245,7 @@ let service_method = //{./service_method};
             ${
                 mainActs >>
                     $`
-                        t.h.RegisterActivityWithOptions(t.h.${.name}, activity.RegisterOptions{
+                        t.GetTestActivityEnv().RegisterActivityWithOptions(t.h.${.name}, activity.RegisterOptions{
 		                    Name: ${.name}Name + "-Test",
 	                    })
                     `

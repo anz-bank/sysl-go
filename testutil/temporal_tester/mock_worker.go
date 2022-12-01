@@ -43,12 +43,10 @@ func (mw *MockWorker) RegisterWorkflowWithOptions(w interface{}, options workflo
 }
 
 func (mw *MockWorker) RegisterActivity(a interface{}) {
-	mw.actEnv.RegisterActivity(a)
 	mw.mockClient.Env.RegisterActivity(a)
 }
 
 func (mw *MockWorker) RegisterActivityWithOptions(a interface{}, options activity.RegisterOptions) {
-	mw.actEnv.RegisterActivityWithOptions(a, options)
 	mw.mockClient.Env.RegisterActivityWithOptions(a, options)
 }
 
