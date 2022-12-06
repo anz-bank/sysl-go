@@ -270,4 +270,8 @@ func (m *MockClient) OperatorService() operatorservice.OperatorServiceClient {
 	return nil
 }
 
+func (m *MockClient) ScheduleClient() client.ScheduleClient {
+	return nil
+}
+
 func (m *MockClient) Close() {}
