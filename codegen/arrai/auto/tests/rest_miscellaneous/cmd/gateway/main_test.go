@@ -13,12 +13,13 @@ import (
 
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/encoder_backend"
+	"rest_miscellaneous/internal/gen/pkg/servers/gateway/multi_contenttype_backend"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/oneof_backend"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/types"
 
+	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -83,7 +84,7 @@ func doGatewayRequestResponse(ctx context.Context, basePath, content string) (st
 	return obj.Content, nil
 }
 
-func startAndTestServer(t *testing.T, applicationConfig, basePath string) bool {
+func startAndTestServer(t *testing.T, applicationConfig, basePath string) {
 	// Override sysl-go app command line interface to directly pass in app config
 	ctx := core.WithConfigFile(context.Background(), []byte(applicationConfig))
 
@@ -108,15 +109,13 @@ func startAndTestServer(t *testing.T, applicationConfig, basePath string) bool {
 	backoff, err := retry.NewFibonacci(20 * time.Millisecond)
 	require.Nil(t, err)
 	backoff = retry.WithMaxDuration(5*time.Second, backoff)
-	if !assert.NoError(t, retry.Do(ctx, backoff, func(ctx context.Context) error {
+	require.NoError(t, retry.Do(ctx, backoff, func(ctx context.Context) error {
 		_, err := doGatewayRequestResponse(ctx, basePath, "")
 		if err != nil {
 			return retry.RetryableError(err)
 		}
 		return nil
-	})) {
-		return false
-	}
+	}))
 
 	// Test if the endpoint of our gateway application server works
 	inputbytes := make([]byte, 256)
@@ -126,7 +125,8 @@ func startAndTestServer(t *testing.T, applicationConfig, basePath string) bool {
 	input := base64.StdEncoding.EncodeToString(inputbytes)
 	expected := input
 	actual, err := doGatewayRequestResponse(ctx, basePath, input)
-	return assert.NoError(t, err) && assert.Equal(t, expected, actual)
+	require.NoError(t, err)
+	require.Equal(t, expected, actual)
 }
 
 func TestMiscellaneousSmokeTest(t *testing.T) {
@@ -201,6 +201,35 @@ func TestMiscellaneous_DownstreamQuery(t *testing.T) {
 	gatewayTester.GetPingAsyncdownstreamsList(expectId).
 		ExpectResponseCode(200).
 		ExpectResponseBody(gateway.Pong{Identifier: expectId}).
+		Send()
+}
+
+func TestMiscellaneous_DownstreamMultipleContentType(t *testing.T) {
+	t.Parallel()
+	gatewayTester := gateway.NewTestServer(t, context.Background(), createService, "")
+	defer gatewayTester.Close()
+
+	const expectString = "Foo"
+
+	gatewayTester.Mocks.Multi_contenttype_backend.PostPingMultiColon.
+		ExpectBodyPlain(([]byte)(`{"val":"`+expectString+`"}`)).
+		MockResponse(200, map[string]string{"Content-Type": `application/json`}, multi_contenttype_backend.PingMultiRes{Val: common.NewString(expectString)})
+
+	gatewayTester.Mocks.Multi_contenttype_backend.PostPingMultiColon.
+		ExpectBodyPlain(([]byte)(`{"val":"`+expectString+`"}`)).
+		MockResponse(200, map[string]string{"Content-Type": `application/json; charset = utf-8`}, multi_contenttype_backend.PingMultiRes{Val: common.NewString(expectString)})
+
+	gatewayTester.Mocks.Multi_contenttype_backend.PostPingMultiUrlencoded.
+		ExpectBodyPlain(([]byte)(`val=`+expectString)).
+		MockResponse(200, map[string]string{"Content-Type": `application/json`}, multi_contenttype_backend.PingMultiRes{Val: common.NewString(expectString)})
+
+	gatewayTester.Mocks.Multi_contenttype_backend.PostPingMultiUrlencoded.
+		ExpectBodyPlain(([]byte)(`val=`+expectString)).
+		MockResponse(200, map[string]string{"Content-Type": `application/json; charset = utf-8`}, multi_contenttype_backend.PingMultiRes{Val: common.NewString(expectString)})
+
+	gatewayTester.GetPingMultiContentBackendS(expectString).
+		ExpectResponseCode(200).
+		ExpectResponseBody(gateway.PongString{S: expectString}).
 		Send()
 }
 
@@ -300,11 +329,14 @@ func TestMiscellaneous_CheckExternals(t *testing.T) {
 }
 
 func TestMiscellaneous_DoubleUnderscore(t *testing.T) {
+	t.Parallel()
 	// Just want to confirm that it generates a type that is accessible
 	_ = encoder_backend.Double_underscore{S: "accessible"}
 }
 
 func TestMiscellaneous_TypesSomethingExternal(t *testing.T) {
+	t.Parallel()
+
 	_ = types.SomethingExternal{}
 }
 

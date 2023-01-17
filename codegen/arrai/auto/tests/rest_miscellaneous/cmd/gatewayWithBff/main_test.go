@@ -15,7 +15,6 @@ import (
 
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -74,7 +73,7 @@ func doGatewayRequestResponse(ctx context.Context, basePath, content string) (st
 	return obj.Content, nil
 }
 
-func startAndTestServer(t *testing.T, applicationConfig, basePath string) bool {
+func startAndTestServer(t *testing.T, applicationConfig, basePath string) {
 	// Override sysl-go app command line interface to directly pass in app config
 	ctx := core.WithConfigFile(context.Background(), []byte(applicationConfig))
 
@@ -99,15 +98,13 @@ func startAndTestServer(t *testing.T, applicationConfig, basePath string) bool {
 	backoff, err := retry.NewFibonacci(20 * time.Millisecond)
 	require.Nil(t, err)
 	backoff = retry.WithMaxDuration(5*time.Second, backoff)
-	if !assert.NoError(t, retry.Do(ctx, backoff, func(ctx context.Context) error {
+	require.NoError(t, retry.Do(ctx, backoff, func(ctx context.Context) error {
 		_, err := doGatewayRequestResponse(ctx, basePath, "")
 		if err != nil {
 			return retry.RetryableError(err)
 		}
 		return nil
-	})) {
-		return false
-	}
+	}))
 
 	// Test if the endpoint of our gateway application server works
 	inputbytes := make([]byte, 256)
@@ -117,7 +114,8 @@ func startAndTestServer(t *testing.T, applicationConfig, basePath string) bool {
 	input := base64.StdEncoding.EncodeToString(inputbytes)
 	expected := input
 	actual, err := doGatewayRequestResponse(ctx, basePath, input)
-	return assert.NoError(t, err) && assert.Equal(t, expected, actual)
+	require.NoError(t, err)
+	require.Equal(t, expected, actual)
 }
 
 func TestMiscellaniousSmokeTest(t *testing.T) {

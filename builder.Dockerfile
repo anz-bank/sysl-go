@@ -1,4 +1,4 @@
-FROM golang:1.18-buster
+FROM golang:1.18.8-buster
 
 
 ENV SYSL_VERSION=0.604.0

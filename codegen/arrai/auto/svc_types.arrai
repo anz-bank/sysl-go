@@ -240,19 +240,19 @@ let fieldJsonTag = \type \key
             ${unionTypes >> $`// ${.}`::\i}
             type ${typename} struct {
                 ${unionTypes >> $`
-                    *${.}
+                    *${.} ``url:",omitempty"``
                     `::\i}
             }
 
             // Marshal data from the first non-nil pointer in the struct to JSON
-            func (dst *${typename}) MarshalJSON() ([]byte, error) {
+            func (dst ${typename}) MarshalJSON() ([]byte, error) {
                 ${unionTypes >> $`
                     if dst.${.} != nil {
                         return json.Marshal(dst.${.})
                     }
                 `::\i}
 
-                return nil, nil // no data in oneOf schema
+                return []byte("{}"), nil // no data in oneOf schema
             }
 
             // Unmarshal JSON data into one of the pointers in the struct

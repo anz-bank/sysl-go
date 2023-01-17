@@ -11,7 +11,6 @@ Gateway [package="gateway", ~vars_in_url_name]:
     /ping/id:
         GET ?id=int:
             EncoderBackend <- GET /ping
-            multi_contenttype_backend <- POST /ping/multi:colon
             return ok <: Pong
 
     # should not conflict due to ~vars_in_url_name
@@ -79,6 +78,13 @@ Gateway [package="gateway", ~vars_in_url_name]:
             EncoderBackend <- GET /ping
             multi_contenttype_backend <- POST /ping/multi:colon
             return ok <: Pong
+
+    # test sending a body to a backend with multiple content types
+    /ping-multi-content-backend/{s <: string}:
+        GET:
+            multi_contenttype_backend <- POST /ping/multi:colon
+            multi_contenttype_backend <- POST /ping/multi:urlEncoded
+            return ok <: PongString
 
 GatewayWithBff [package="gatewayWithBff"]:
     @basePath = "bff"

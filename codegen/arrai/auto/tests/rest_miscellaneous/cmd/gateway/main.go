@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -107,6 +108,79 @@ func GetPingMultiCode(_ context.Context, req *gateway.GetPingMultiCodeRequest) (
 	return nil, nil, fmt.Errorf("code can only be 0 or 1")
 }
 
+//nolint:funlen
+func GetPingMultiContentBackend(ctx context.Context, req *gateway.GetPingMultiContentBackendSRequest, client gateway.GetPingMultiContentBackendSClient) (*gateway.PongString, error) {
+	backendReq1 := &multi_contenttype_backend.PostPingMultiColonRequest{
+		Request: multi_contenttype_backend.Post_ping_multiColon_req_body_type{
+			Post_ping_multiColon_req_body_type_application_json: &multi_contenttype_backend.Post_ping_multiColon_req_body_type_application_json{
+				Val: &req.S,
+			},
+		},
+	}
+	backendReq2 := &multi_contenttype_backend.PostPingMultiColonRequest{
+		Request: multi_contenttype_backend.Post_ping_multiColon_req_body_type{
+			Post_ping_multiColon_req_body_type_application_json_Charset__Utf: &multi_contenttype_backend.Post_ping_multiColon_req_body_type_application_json_Charset__Utf{
+				Val: &req.S,
+			},
+		},
+	}
+	backendReq3 := &multi_contenttype_backend.PostPingMultiUrlencodedRequest{
+		Request: multi_contenttype_backend.Post_ping_multiUrlEncoded_req_body_type{
+			Post_ping_multiUrlEncoded_req_body_type_application_xWwwFormUrlencoded: &multi_contenttype_backend.Post_ping_multiUrlEncoded_req_body_type_application_xWwwFormUrlencoded{
+				Val: &req.S,
+			},
+		},
+	}
+	backendReq4 := &multi_contenttype_backend.PostPingMultiUrlencodedRequest{
+		Request: multi_contenttype_backend.Post_ping_multiUrlEncoded_req_body_type{
+			Post_ping_multiUrlEncoded_req_body_type_application_xWwwFormUrlencoded_CharsetUtf: &multi_contenttype_backend.Post_ping_multiUrlEncoded_req_body_type_application_xWwwFormUrlencoded_CharsetUtf{
+				Val: &req.S,
+			},
+		},
+	}
+
+	encoderResponse1, err := client.Multi_contenttype_backendPostPingMultiColon(ctx, backendReq1)
+	if err != nil {
+		return nil, err
+	}
+
+	encoderResponse2, err := client.Multi_contenttype_backendPostPingMultiColon(ctx, backendReq2)
+	if err != nil {
+		return nil, err
+	}
+
+	headers := http.Header{}
+	headers.Set("Content-Type", "application/x-www-form-urlencoded")
+	urlEncodedCtx := common.RequestHeaderToContext(ctx, headers)
+
+	encoderResponse3, err := client.Multi_contenttype_backendPostPingMultiUrlencoded(urlEncodedCtx, backendReq3)
+	if err != nil {
+		return nil, err
+	}
+
+	headers.Set("Content-Type", "application/x-www-form-urlencoded; charset = utf-8")
+	urlEncodedCtx = common.RequestHeaderToContext(ctx, headers)
+
+	encoderResponse4, err := client.Multi_contenttype_backendPostPingMultiUrlencoded(urlEncodedCtx, backendReq4)
+	if err != nil {
+		return nil, err
+	}
+
+	if encoderResponse1.Val == nil ||
+		encoderResponse2.Val == nil ||
+		encoderResponse3.Val == nil ||
+		encoderResponse4.Val == nil ||
+		*encoderResponse1.Val != *encoderResponse2.Val ||
+		*encoderResponse1.Val != *encoderResponse3.Val ||
+		*encoderResponse1.Val != *encoderResponse4.Val {
+		return nil, common.CreateError(ctx, common.InternalError, "Values don't match!!!", errors.New("Values don't match!!!"))
+	}
+
+	return &gateway.PongString{
+		S: *encoderResponse1.Val,
+	}, nil
+}
+
 func GetPingAsync(ctx context.Context, req *gateway.GetPingAsyncdownstreamsListRequest, client gateway.GetPingAsyncdownstreamsListClient) (*gateway.Pong, error) {
 	backend1Req := &encoder_backend.GetPingListRequest{
 		ID: req.ID,
@@ -158,6 +232,7 @@ func createService(_ context.Context, _ AppConfig) (*gateway.ServiceInterface, *
 		PatchPing:                   PatchPing,
 		PostPingBinary:              PostPingBinary,
 		GetPingMultiCode:            GetPingMultiCode,
+		GetPingMultiContentBackendS: GetPingMultiContentBackend,
 		GetPingAsyncdownstreamsList: GetPingAsync,
 		GetEmptyResponseList:        GetEmptyResponse,
 		GetWithHeaderList:           GetWithHeader,
