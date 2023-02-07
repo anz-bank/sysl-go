@@ -9,15 +9,19 @@ import (
 	"time"
 	"unicode"
 
-	"google.golang.org/grpc"
 	"grpc_complex_app_name/internal/gen/pkg/servers/gateway"
 	"grpc_complex_app_name/internal/gen/pkg/servers/gateway/encoder_backend"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health/grpc_health_v1"
 
 	ebpb "grpc_complex_app_name/internal/gen/pb/encoder_backend"
 	pb "grpc_complex_app_name/internal/gen/pb/gateway"
 
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -211,4 +215,30 @@ func TestGRPCComplexAppName_Integration(t *testing.T) {
 		WithRequest(&pb.EncodeReq{Content: "hello world!", EncoderId: "rot13"}).
 		ExpectResponse(&pb.EncodeResp{Content: "uryyb jbeyq!"}).
 		Send()
+}
+
+func TestGRPCComplexAppName_Health(t *testing.T) {
+	gatewayTester := gateway.NewIntegrationTestServer(t, context.Background(), createService, applicationConfig)
+	defer gatewayTester.Close()
+
+	// FIXME: this should be part of integration test server API. This is copied from how the integration test server's
+	// internal client dials the server.
+	conn, err := grpc.Dial(
+		"testGateway",
+		grpc.WithContextDialer(gatewayTester.GetE2eTester().GetBufDialer),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	require.NoError(t, err)
+	defer conn.Close()
+
+	client := grpc_health_v1.NewHealthClient(conn)
+	resp, err := client.Check(context.Background(), &grpc_health_v1.HealthCheckRequest{
+		Service: "aaaaaa",
+	})
+	require.NoError(t, err, fmt.Sprintf("healthcheck Check() should return no error but got %s", err))
+	assert.Equal(t, resp.Status, grpc_health_v1.HealthCheckResponse_SERVING)
+
+	resp, err = client.Check(context.Background(), &grpc_health_v1.HealthCheckRequest{Service: "are you alive"})
+	require.NoError(t, err, fmt.Sprintf("healthcheck Check() should return no error but got %s", err))
+	assert.Equal(t, resp.Status, grpc_health_v1.HealthCheckResponse_NOT_SERVING)
 }

@@ -37,8 +37,16 @@ func Encode(ctx context.Context, req *pb.EncodeReq, client gateway.EncodeClient)
 
 func createService(_ context.Context, _ AppConfig) (*gateway.GrpcServiceInterface, *core.Hooks, error) {
 	return &gateway.GrpcServiceInterface{
-		Encode: Encode,
-	}, nil, nil
+			Encode: Encode,
+		}, &core.Hooks{
+			HealthCheck: core.HealthCheckFunc(
+				func(ctx context.Context, s string) (core.HealthCheckStatus, error) {
+					if s == "are you alive" {
+						return core.NOT_SERVING, nil
+					}
+					return core.SERVING, nil
+				}),
+		}, nil
 }
 
 func newAppServer(ctx context.Context) (core.StoppableServer, error) {

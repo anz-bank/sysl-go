@@ -11,8 +11,31 @@ import (
 	"github.com/anz-bank/sysl-go/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 )
+
+type healthCheckSrv struct {
+	grpc_health_v1.UnimplementedHealthServer
+	hc HealthCheck
+}
+
+var healthCheckStatusMap = map[HealthCheckStatus]grpc_health_v1.HealthCheckResponse_ServingStatus{
+	UNKNOWN:         grpc_health_v1.HealthCheckResponse_UNKNOWN,
+	SERVING:         grpc_health_v1.HealthCheckResponse_SERVING,
+	NOT_SERVING:     grpc_health_v1.HealthCheckResponse_NOT_SERVING,
+	SERVICE_UNKNOWN: grpc_health_v1.HealthCheckResponse_SERVICE_UNKNOWN,
+}
+
+func (h *healthCheckSrv) Check(ctx context.Context, req *grpc_health_v1.HealthCheckRequest) (*grpc_health_v1.HealthCheckResponse, error) {
+	resp, err := h.hc.Check(ctx, req.Service)
+	if err != nil {
+		return nil, err
+	}
+	return &grpc_health_v1.HealthCheckResponse{
+		Status: healthCheckStatusMap[resp],
+	}, nil
+}
 
 // Deprecated: prefer GrpcServerManager.
 type GrpcManager interface {
@@ -71,6 +94,11 @@ func configurePublicGrpcServerListener(ctx context.Context, m GrpcServerManager,
 	if cfg != nil && cfg.GenCode.Upstream.GRPC.EnableReflection {
 		reflection.Register(server)
 	}
+
+	if hooks != nil && hooks.HealthCheck != nil {
+		grpc_health_v1.RegisterHealthServer(server, &healthCheckSrv{hc: hooks.HealthCheck})
+	}
+
 	// Not sure if it is possible to register multiple servers
 	for _, h := range m.EnabledGrpcHandlers {
 		h.RegisterServer(ctx, server)

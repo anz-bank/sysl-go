@@ -164,6 +164,32 @@ type Hooks struct {
 
 	// ExperimentalTemporalWorkerBuilder can be used to build a custom temporal worker.
 	ExperimentalTemporalWorkerBuilder func(client client.Client, taskQueue string, options worker.Options) worker.Worker
+
+	// HealthCheck can be used to provide custom health check endpoints for your service.
+	// Currently only gRPC service is supported by implementing grpc.health.v1 when this field is set.
+	HealthCheck HealthCheck
+}
+
+// HealthCheckStatus is an expected response for a health check function.
+type HealthCheckStatus int
+
+const (
+	UNKNOWN HealthCheckStatus = iota
+	SERVING
+	NOT_SERVING
+	SERVICE_UNKNOWN
+)
+
+type HealthCheck interface {
+	Check(ctx context.Context, service string) (HealthCheckStatus, error)
+}
+
+// HealthCheckFunc is a type provided to make it easier to register health check endpoints by just supplying a Check
+// function.
+type HealthCheckFunc func(context.Context, string) (HealthCheckStatus, error)
+
+func (h HealthCheckFunc) Check(ctx context.Context, service string) (HealthCheckStatus, error) {
+	return h(ctx, service)
 }
 
 func ResolveGrpcDialOptions(ctx context.Context, serviceName string, h *Hooks, grpcDownstreamConfig *config.CommonGRPCDownstreamData) ([]grpc.DialOption, error) {
