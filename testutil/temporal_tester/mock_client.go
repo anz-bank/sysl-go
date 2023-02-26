@@ -262,6 +262,18 @@ func (m *MockClient) CheckHealth(ctx context.Context, request *client.CheckHealt
 	return nil, nil
 }
 
+func (m *MockClient) UpdateWorkflow(
+	ctx context.Context, workflowID string, workflowRunID string, updateName string, args ...interface{},
+) (client.WorkflowUpdateHandle, error) {
+	return nil, nil
+}
+
+func (m *MockClient) UpdateWorkflowWithOptions(
+	ctx context.Context, request *client.UpdateWorkflowWithOptionsRequest,
+) (client.WorkflowUpdateHandle, error) {
+	return nil, nil
+}
+
 func (m *MockClient) WorkflowService() workflowservice.WorkflowServiceClient {
 	return nil
 }
