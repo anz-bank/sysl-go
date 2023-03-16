@@ -178,8 +178,8 @@ let type =
     let rec guessType = \app \typeStr
         cond {
             //str.lower(typeStr) <: primitives: {'primitive': (s: //str.upper(typeStr))},
-            //seq.has_prefix('sequence of ', typeStr): {'sequence': guessType(//seq.trim_prefix('sequence of ', typeStr))},
-            //seq.has_prefix('set of ', typeStr): {'set': guessType(//seq.trim_prefix('set of ', typeStr))},
+            //seq.has_prefix('sequence of ', typeStr): {'sequence': guessType(app, //seq.trim_prefix('sequence of ', typeStr))},
+            //seq.has_prefix('set of ', typeStr): {'set': guessType(app, //seq.trim_prefix('set of ', typeStr))},
             _:
                 let splitted = //seq.split('.', typeStr);
                 cond splitted count {
