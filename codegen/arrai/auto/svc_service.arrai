@@ -78,7 +78,7 @@ let sysl = //{./sysl};
                         Required:      required,
                         OKResponse:    ${cond {"ok" <: retvars: "&okResponse", _: "nil"}},
                         ErrorResponse: ${cond {"error" <: retvars: "&errorResponse", _: "nil"}},
-                        ExtraHeaders:  nil,
+                        ExtraHeaders:  s.Headers,
                     })
                 `
             }
