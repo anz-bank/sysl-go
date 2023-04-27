@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -98,6 +99,22 @@ func TestValidateString(t *testing.T) {
 	req.Nil(Validate("s"))
 }
 
+func TestValidateArray(t *testing.T) {
+	req := require.New(t)
+
+	err := Validate([]int{})
+	req.Nil(err)
+
+	type dummyObj struct {
+		Foo int `validate:"min=5,max=7"`
+	}
+
+	err = Validate([]dummyObj{{Foo: 6}})
+	req.Nil(err)
+	err = Validate([]dummyObj{{Foo: 10}})
+	req.NotNil(err)
+}
+
 type innerDummyType struct {
 	Foo int `validate:"min=5,max=7"`
 }
@@ -136,7 +153,9 @@ func testDummyValidator(reflect.Value) interface{} {
 
 func TestMain(m *testing.M) {
 	RegisterCustomValidator(testDummyValidator, dummyvalidator{})
+	os.Exit(m.Run())
 }
+
 func TestRegisterCustomValidator(t *testing.T) {
 	// What this test is doing is ensuring that the registered validator is called for the correct type.
 

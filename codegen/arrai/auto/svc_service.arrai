@@ -116,11 +116,11 @@ let sysl = //{./sysl};
                     let responseVar = $`${makeType(.var)}${go.name(//seq.concat(.type))}Response`;
                     let responseType = typeWithClientPackage(app, .);
 
-                    # The current implementation of restlib#unmarshal returns pointer references for raw string
-                    # and byte responses in order to handle aliased string and byte responses also. For this reason,
-                    # raw string and byte responses must be dereferenced before returned.
-                    let ptrResponseType = cond { responseType <: {'string', '[]byte'}: '*' ++ responseType, _: responseType };
-                    let ptrResponseVar = cond { responseType <: {'string', '[]byte'}: '*' ++ responseVar, _: responseVar };
+                    # declareResp currently strips '*' from type and passes &type to 'OKResponse',
+                    # therefore if there was no '*' to begin with we need to add it here
+                    let addStar = cond {!(responseType & '*'): '*' };
+                    let ptrResponseType = addStar ++ responseType;
+                    let ptrResponseVar = addStar ++ responseVar;
 
                     # The block below also avoids validating raw string and byte responses. The
                     # Validator#validate method is designed to validate structs, and while this method does

@@ -12,6 +12,7 @@ import (
 	"github.com/anz-bank/sysl-go/log"
 
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway"
+	"rest_miscellaneous/internal/gen/pkg/servers/gateway/array_response_backend"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/encoder_backend"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/multi_contenttype_backend"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/oneof_backend"
@@ -220,6 +221,44 @@ func GetEmptyResponse(_ context.Context, _ *gateway.GetEmptyResponseListRequest)
 	return &gateway.Get_emptyResponse_200_resp_type_body{}, nil
 }
 
+func GetPingArrayResponseList(ctx context.Context, _ *gateway.GetPingArrayResponseListRequest, client gateway.GetPingArrayResponseListClient) ([]*gateway.Res, error) {
+	backendReq := &array_response_backend.GetArrayResponseListRequest{}
+	backendRes, err := client.Array_response_backendGetArrayResponseList(ctx, backendReq)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]*gateway.Res, 0, len(backendRes))
+	for _, v := range backendRes {
+		res = append(res, &gateway.Res{Val: v.Val})
+	}
+
+	return res, nil
+}
+
+func GetPingStringResponseList(ctx context.Context, _ *gateway.GetPingStringResponseListRequest, client gateway.GetPingStringResponseListClient) (string, error) {
+	backendReq := &array_response_backend.GetStringResponseListRequest{}
+	backendRes, err := client.Array_response_backendGetStringResponseList(ctx, backendReq)
+	if err != nil {
+		return "", err
+	}
+
+	return backendRes, nil
+}
+
+func GetPingBytesResponseList(ctx context.Context, _ *gateway.GetPingBytesResponseListRequest, client gateway.GetPingBytesResponseListClient) ([]byte, error) {
+	backendReq := &array_response_backend.GetBytesResponseListRequest{}
+	backendRes, err := client.Array_response_backendGetBytesResponseList(ctx, backendReq)
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]byte, len(backendRes))
+	copy(res, backendRes)
+
+	return res, nil
+}
+
 func GetWithHeader(_ context.Context, _ *gateway.GetWithHeaderListRequest) (*gateway.WithHeaderResponse, error) {
 	return &gateway.WithHeaderResponse{}, nil
 }
@@ -235,6 +274,9 @@ func createService(_ context.Context, _ AppConfig) (*gateway.ServiceInterface, *
 		GetPingMultiContentBackendS: GetPingMultiContentBackend,
 		GetPingAsyncdownstreamsList: GetPingAsync,
 		GetEmptyResponseList:        GetEmptyResponse,
+		GetPingArrayResponseList:    GetPingArrayResponseList,
+		GetPingStringResponseList:   GetPingStringResponseList,
+		GetPingBytesResponseList:    GetPingBytesResponseList,
 		GetWithHeaderList:           GetWithHeader,
 	}, nil, nil
 }

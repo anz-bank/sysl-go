@@ -1,0 +1,16 @@
+array_response_backend:
+    /array-response:
+        GET:
+            return 200 <: sequence of Res [mediatype="application/json"]
+
+    !type Res:
+        val <: string?:
+            @json_tag = "val"
+
+    /string-response:
+        GET:
+            return 200 <: string [mediatype="application/json"]
+
+    /bytes-response:
+        GET:
+            return 200 <: bytes [mediatype="application/json"]

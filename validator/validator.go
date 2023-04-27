@@ -77,7 +77,18 @@ func Validate(v interface{}) error {
 		case reflect.String, reflect.Slice:
 			return nil
 		}
+	} else if val.Kind() == reflect.Slice {
+		n := val.Len()
+		for i := 0; i < n; i++ {
+			err := Validate(val.Index(i).Interface())
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
+
 	if DefaultValidator == nil {
 		DefaultValidator = NewDefaultValidator()
 	}

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway"
+	"rest_miscellaneous/internal/gen/pkg/servers/gateway/array_response_backend"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/encoder_backend"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/multi_contenttype_backend"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/oneof_backend"
@@ -39,6 +40,8 @@ genCode:
     oneof_backend:
       clientTimeout: 1s
     multi_contenttype_backend:
+      clientTimeout: 1s
+    array_response_backend:
       clientTimeout: 1s
 `
 
@@ -355,5 +358,38 @@ func TestMiscellaneous_EmptyResponse(t *testing.T) {
 		ExpectResponseCode(200).
 		ExpectResponseHeaders(map[string]string{"Content-Type": `application/json`}).
 		ExpectResponseBody("{}").
+		Send()
+}
+
+func TestMiscellaneous_ArrayResponse(t *testing.T) {
+	t.Parallel()
+	gatewayTester := gateway.NewTestServer(t, context.Background(), createService, "")
+	defer gatewayTester.Close()
+
+	gatewayTester.Mocks.Array_response_backend.GetArrayResponseList.
+		MockResponse(200, map[string]string{"Content-Type": `application/json`}, []*array_response_backend.Res{{Val: common.NewString("Res")}})
+
+	gatewayTester.GetPingArrayResponseList().
+		ExpectResponseCode(200).
+		ExpectResponseHeaders(map[string]string{"Content-Type": `application/json`}).
+		ExpectResponseBody([]*gateway.Res{{Val: common.NewString("Res")}}).
+		Send()
+
+	gatewayTester.Mocks.Array_response_backend.GetStringResponseList.
+		MockResponse(200, map[string]string{"Content-Type": `text/plain`}, "Res")
+
+	gatewayTester.GetPingStringResponseList().
+		ExpectResponseCode(200).
+		ExpectResponseHeaders(map[string]string{"Content-Type": `text/plain`}).
+		ExpectResponseBody("Res").
+		Send()
+
+	gatewayTester.Mocks.Array_response_backend.GetBytesResponseList.
+		MockResponse(200, map[string]string{"Content-Type": `application/octet-stream`}, []byte("Res"))
+
+	gatewayTester.GetPingBytesResponseList().
+		ExpectResponseCode(200).
+		ExpectResponseHeaders(map[string]string{"Content-Type": `application/octet-stream`}).
+		ExpectResponseBody([]byte("Res")).
 		Send()
 }
