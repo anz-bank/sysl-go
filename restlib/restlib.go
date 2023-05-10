@@ -114,39 +114,19 @@ func marshalRequestBody(contentType string, v interface{}) (io.Reader, error) {
 	return reader, nil
 }
 
-// DoHTTPRequest returns HTTPResult.
-func DoHTTPRequest(ctx context.Context,
-	client *http.Client,
-	method, urlString string,
-	body interface{},
-	required []string,
-	okResponse, errorResponse interface{},
-) (*HTTPResult, error) {
-	return DoHTTPRequest2(ctx, &HTTPRequest{
-		client,
-		method,
-		urlString,
-		body,
-		required,
-		okResponse,
-		errorResponse,
-		nil,
-	})
-}
-
 type HTTPRequest struct {
-	Client                    *http.Client
-	Method, URLString         string
-	Body                      interface{}
-	Required                  []string
-	OKResponse, ErrorResponse interface{}
-	ExtraHeaders              map[string][]string
+	Client            *http.Client
+	Method, URLString string
+	Body              interface{}
+	Required          []string
+	Responses         func(int) any
+	ExtraHeaders      map[string][]string
 }
 
 // DoHTTPRequest returns HTTPResult.
 //
 //nolint:funlen // TODO: Refactor this function to be shorter.
-func DoHTTPRequest2(ctx context.Context, config *HTTPRequest) (*HTTPResult, error) {
+func DoHTTPRequest(ctx context.Context, config *HTTPRequest) (*HTTPResult, error) {
 	var reader io.Reader
 	headers := common.RequestHeaderFromContext(ctx)
 	contentType := headers.Get("Content-Type")
@@ -207,15 +187,13 @@ func DoHTTPRequest2(ctx context.Context, config *HTTPRequest) (*HTTPResult, erro
 		return nil, err
 	}
 
-	// OK
-	if httpResponse.StatusCode >= 200 && httpResponse.StatusCode < 300 {
-		return unmarshal(httpResponse, respBody, config.OKResponse)
-	}
-
-	// Error
-	result, err := unmarshal(httpResponse, respBody, config.ErrorResponse)
+	result, err := unmarshal(httpResponse, respBody, config.Responses(httpResponse.StatusCode))
 	if err != nil {
 		return nil, err
+	}
+
+	if httpResponse.StatusCode >= 200 && httpResponse.StatusCode < 300 {
+		return result, nil
 	}
 
 	// Successful unmarshal but we have unmarshalled an error.

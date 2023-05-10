@@ -16,4 +16,7 @@ include codegen.mk
 $(SERVERS_ROOT)/gateway/external_types.go: internal/external_types/gateway/external_types.go
 	cp -f $< $@
 
-gen-all-servers: $(SERVERS_ROOT)/gateway/external_types.go
+$(SERVERS_ROOT)/gatewayWithBff/gateway/external_types.go: internal/external_types/gateway/external_types.go
+	cp -f $< $@
+
+gen-all-servers: $(SERVERS_ROOT)/gateway/external_types.go $(SERVERS_ROOT)/gatewayWithBff/gateway/external_types.go

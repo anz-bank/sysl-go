@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"rest_miscellaneous/internal/gen/pkg/servers/gatewayWithBff"
+	"rest_miscellaneous/internal/gen/pkg/servers/gatewayWithBff/gateway"
+	"rest_miscellaneous/internal/gen/pkg/servers/gatewayWithBff/types"
 
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
@@ -29,6 +31,8 @@ genCode:
         port: 9022 # FIXME no guarantee this port is free
   downstream:
     contextTimeout: "1s"
+    gateway:
+        clientTimeout: "1s"
 `
 
 type Payload struct {
@@ -149,6 +153,65 @@ func TestMiscellaniousWithBff(t *testing.T) {
 				WithBody(gatewayWithBff.GatewayBinaryRequest{Content: inputBytes}).
 				ExpectResponseCode(200).
 				ExpectResponseBody(gatewayWithBff.GatewayBinaryResponse{Content: inputBytes}).
+				Send()
+		})
+	}
+}
+
+func TestMultiResponse(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		code         int
+		mockResp     any
+		expectedResp string
+	}{
+		{200, gateway.Pong{Identifier: 123}, `Pong response: &{Identifier:123}`},
+		{201, gateway.PongString{S: `pong string`}, `PongString response: pong string`},
+	} {
+		test := test
+		t.Run(fmt.Sprintf("code-%d", test.code), func(t *testing.T) {
+			t.Parallel()
+			gatewayTester := gatewayWithBff.NewTestServer(t, context.Background(), createService, fmt.Sprintf(applicationConfig, ``))
+			defer gatewayTester.Close()
+
+			gatewayTester.Mocks.Gateway.GetPingMultiCode.
+				ExpectURLParamCode(int64(test.code)).
+				MockResponse(test.code, map[string]string{}, test.mockResp)
+
+			gatewayTester.PostMultiResponses().
+				WithBody(gatewayWithBff.Code{int64(test.code)}).
+				ExpectResponseBody(&types.SomethingExternal{
+					Data: test.expectedResp,
+				}).
+				Send()
+		})
+	}
+}
+
+func TestMultiResponseError(t *testing.T) {
+	t.Parallel()
+
+	for _, test := range []struct {
+		code      int
+		mockError any
+	}{
+		{400, gateway.GatewayBinaryRequest{Content: []byte("400 error")}},
+		{500, gateway.GatewayBinaryResponse{Content: []byte("500 error")}},
+	} {
+		test := test
+		t.Run(fmt.Sprintf("code-%d", test.code), func(t *testing.T) {
+			t.Parallel()
+			gatewayTester := gatewayWithBff.NewTestServer(t, context.Background(), createService, fmt.Sprintf(applicationConfig, ``))
+			defer gatewayTester.Close()
+
+			gatewayTester.Mocks.Gateway.GetPingMultiCode.
+				ExpectURLParamCode(int64(test.code)).
+				MockResponse(test.code, map[string]string{}, test.mockError)
+
+			gatewayTester.PostMultiResponses().
+				WithBody(gatewayWithBff.Code{int64(test.code)}).
+				ExpectResponseBody(test.mockError).
 				Send()
 		})
 	}

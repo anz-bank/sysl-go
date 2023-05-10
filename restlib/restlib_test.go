@@ -30,6 +30,32 @@ const (
 	errorJSON = `{ "test2":"test string 2" }`
 )
 
+// testDoHTTPRequest returns HTTPResult.
+func testDoHTTPRequest(ctx context.Context,
+	client *http.Client,
+	method, urlString string,
+	body interface{},
+	required []string,
+	okResponse, errorResponse interface{},
+) (*HTTPResult, error) {
+	return DoHTTPRequest(ctx, &HTTPRequest{
+		client,
+		method,
+		urlString,
+		body,
+		required,
+		func(i int) any {
+			switch {
+			case i >= 200 && i < 300:
+				return okResponse
+			default:
+				return errorResponse
+			}
+		},
+		nil,
+	})
+}
+
 func TestUnmarshalPanicOnNilResponse(t *testing.T) {
 	require.Panics(t, func() { _, _ = unmarshal(nil, nil, nil) })
 }
@@ -145,7 +171,7 @@ func TestDoHTTPRequestOkType(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	result, err := DoHTTPRequest(context.Background(), srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
+	result, err := testDoHTTPRequest(context.Background(), srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.IsType(t, &OkType{}, result.Response)
@@ -158,7 +184,7 @@ func TestDoHTTPRequest204Response(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	result, err := DoHTTPRequest(context.Background(), srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
+	result, err := testDoHTTPRequest(context.Background(), srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.IsType(t, &OkType{}, result.Response)
@@ -172,7 +198,7 @@ func TestDoHTTPRequest204ResponseGZIP(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	result, err := DoHTTPRequest(context.Background(), srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
+	result, err := testDoHTTPRequest(context.Background(), srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.IsType(t, &OkType{}, result.Response)
@@ -185,7 +211,7 @@ func TestDoHTTPRequest206Response(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	result, err := DoHTTPRequest(context.Background(), srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
+	result, err := testDoHTTPRequest(context.Background(), srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.IsType(t, &OkType{}, result.Response)
@@ -198,7 +224,7 @@ func TestDoHTTPRequestErrorType(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	result, err := DoHTTPRequest(context.Background(), srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
+	result, err := testDoHTTPRequest(context.Background(), srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
 	require.Error(t, err)
 	require.IsType(t, &HTTPResult{}, err)
 	require.Nil(t, result)
@@ -212,7 +238,7 @@ func TestDoHTTPRequestRightTypeWrongJSON(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	result, err := DoHTTPRequest(context.Background(), srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
+	result, err := testDoHTTPRequest(context.Background(), srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	require.IsType(t, &OkType{}, result.Response)
@@ -232,7 +258,7 @@ func TestDoHTTPRequestXMLBody(t *testing.T) {
 	reqHeader := http.Header{}
 	reqHeader.Add("Content-Type", "text/xml; charset=utf-8")
 	ctx := common.RequestHeaderToContext(context.Background(), reqHeader)
-	result, err := DoHTTPRequest(ctx, srv.Client(), "POST", srv.URL, xmlBody, make([]string, 0), &OkType{}, &ErrorType{})
+	result, err := testDoHTTPRequest(ctx, srv.Client(), "POST", srv.URL, xmlBody, make([]string, 0), &OkType{}, &ErrorType{})
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	strRes, isString := result.Response.(string)
@@ -277,7 +303,7 @@ func TestDoHTTPRequestSendStructAsUrlEncodedBody(t *testing.T) {
 	reqHeader.Add("Content-Type", "application/x-www-form-urlencoded")
 	ctx := common.RequestHeaderToContext(context.Background(), reqHeader)
 
-	result, err := DoHTTPRequest(ctx, srv.Client(), "POST", srv.URL, req, make([]string, 0), &OkType{}, &ErrorType{})
+	result, err := testDoHTTPRequest(ctx, srv.Client(), "POST", srv.URL, req, make([]string, 0), &OkType{}, &ErrorType{})
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	responseObj, ok := result.Response.(*OkType)
@@ -323,7 +349,7 @@ func TestDoHTTPRequestSendStructAsUrlEncodedBodyWithCharset(t *testing.T) {
 	reqHeader.Add("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
 	ctx := common.RequestHeaderToContext(context.Background(), reqHeader)
 
-	result, err := DoHTTPRequest(ctx, srv.Client(), "POST", srv.URL, req, make([]string, 0), &OkType{}, &ErrorType{})
+	result, err := testDoHTTPRequest(ctx, srv.Client(), "POST", srv.URL, req, make([]string, 0), &OkType{}, &ErrorType{})
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	responseObj, ok := result.Response.(*OkType)
@@ -372,7 +398,7 @@ func TestDoHTTPRequestSendStructWithCustomUrlFieldTagsAsUrlEncodedBody(t *testin
 	reqHeader.Add("Content-Type", "application/x-www-form-urlencoded")
 	ctx := common.RequestHeaderToContext(context.Background(), reqHeader)
 
-	result, err := DoHTTPRequest(ctx, srv.Client(), "POST", srv.URL, req, make([]string, 0), &OkType{}, &ErrorType{})
+	result, err := testDoHTTPRequest(ctx, srv.Client(), "POST", srv.URL, req, make([]string, 0), &OkType{}, &ErrorType{})
 	require.NoError(t, err)
 	require.NotNil(t, result)
 	responseObj, ok := result.Response.(*OkType)
@@ -540,7 +566,7 @@ func TestRestResultContextWithoutProvision(t *testing.T) {
 	defer srv.Close()
 
 	ctx := context.Background()
-	result, err := DoHTTPRequest(ctx, srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
+	result, err := testDoHTTPRequest(ctx, srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
 	OnRestResultHTTPResult(ctx, result, err)
 	restResult := common.GetRestResult(ctx)
 	require.Nil(t, restResult)
@@ -555,7 +581,7 @@ func TestRestResultContextOnSuccess(t *testing.T) {
 
 	ctx := context.Background()
 	ctx = common.ProvisionRestResult(ctx)
-	result, err := DoHTTPRequest(ctx, srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
+	result, err := testDoHTTPRequest(ctx, srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
 	OnRestResultHTTPResult(ctx, result, err)
 	restResult := common.GetRestResult(ctx)
 	require.NotNil(t, restResult)
@@ -575,7 +601,7 @@ func TestRestResultContextOnError(t *testing.T) {
 
 	ctx := context.Background()
 	ctx = common.ProvisionRestResult(ctx)
-	result, err := DoHTTPRequest(ctx, srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
+	result, err := testDoHTTPRequest(ctx, srv.Client(), "GET", srv.URL, nil, make([]string, 0), &OkType{}, &ErrorType{})
 	OnRestResultHTTPResult(ctx, result, err)
 	restResult := common.GetRestResult(ctx)
 	require.NotNil(t, restResult)
@@ -653,14 +679,18 @@ func TestConcurrentRequestRace(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			_, err := DoHTTPRequest2(ctx, &HTTPRequest{
-				Client:        testClient,
-				Method:        "GET",
-				URLString:     testURL,
-				Body:          []byte("Hello"),
-				Required:      []string{},
-				OKResponse:    &OkType{},
-				ErrorResponse: &ErrorType{},
+			_, err := DoHTTPRequest(ctx, &HTTPRequest{
+				Client:    testClient,
+				Method:    "GET",
+				URLString: testURL,
+				Body:      []byte("Hello"),
+				Required:  []string{},
+				Responses: func(statusCode int) any {
+					if statusCode >= 200 && statusCode < 300 {
+						return &OkType{}
+					}
+					return &ErrorType{}
+				},
 			})
 			require.NoError(t, err)
 		}()

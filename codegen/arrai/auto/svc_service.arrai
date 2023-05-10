@@ -4,19 +4,12 @@ let sysl = //{./sysl};
 \(:app, :appname, :endpoints, :clientDeps, :module, :basepath, ...)
     let (:methodSignature, :typeWithClientPackage, :methodReturnTypes, ...) = go.module(module);
 
-    let HttpMethodStatements = \ep
+    let HttpMethodStatements = \methodName \ep
         let patterns = sysl.patterns(ep);
         let returns = sysl.endpoint.returns(app, ep);
 
         let nils = methodReturnTypes(app, ep) where .@item != "error" orderby .@ >>
             cond { .@item = "string": '""', _ : "nil" };
-
-        let declareResp = \var
-            let r = returns where .@item.var = var && typeWithClientPackage(app, .@item) >>
-                $`var ${var}Response ${//seq.trim_prefix('*', typeWithClientPackage(app, .))}`
-                rank(@:.@item);
-            # just the first type for now, todo: remove where .@ < 1
-            r where .@ < 1;
 
         let returnDownstreamError = \type \var \err
             $`return ${nils ++ [
@@ -28,9 +21,7 @@ let sysl = //{./sysl};
                 (ep("param")?.a:{} where {"header"} (<=) sysl.patterns(.@item('type')) && sysl.type.required(.@item('type'))) rank (:.@) >>
                     $`"${.('type')?('attrs')?('name')?('s').s:(.('name').s)}"`
             ::, }}
-            ${declareResp("ok")::\i}
-            ${declareResp("error")::\i}
-            ${#`
+            ${
                 let pathvars = ep('restParams')('urlParam')?.a:{};
                 let terms = pathvars => $`{${.@item('name').s}}`;
                 let formatArgs = $`"%s${//seq.split("/")(ep('restParams')('path').s) >> cond {. <: terms: "%v", _: .}::/}"`; #`
@@ -70,14 +61,13 @@ let sysl = //{./sysl};
                 let retvars = returns where .@item.type != [""] => .@item.var;
                 let method = ep('restParams')('method').s;
                 $`
-                    result, err := restlib.DoHTTPRequest2(ctx, &restlib.HTTPRequest{
+                    result, err := restlib.DoHTTPRequest(ctx, &restlib.HTTPRequest{
                         Client:        s.Client,
                         Method:        "${method}",
                         URLString:     u.String(),
                         Body:          ${body || ["nil"]::},
                         Required:      required,
-                        OKResponse:    ${cond {"ok" <: retvars: "&okResponse", _: "nil"}},
-                        ErrorResponse: ${cond {"error" <: retvars: "&errorResponse", _: "nil"}},
+                        Responses:     responses${methodName},
                         ExtraHeaders:  s.Headers,
                     })
                 `
@@ -95,7 +85,7 @@ let sysl = //{./sysl};
                             if !ok {
                                 ${downstreamUnavailable}
                             }
-                            ${returnDownstreamError("Response", "response", "&errorResponse")}
+                            ${returnDownstreamError("Response", "response", "response.Response.(error)")}
                         `,
                         _: downstreamUnavailable
                     }
@@ -181,10 +171,64 @@ let sysl = //{./sysl};
             return &Client{client, serviceURL, nil}
         }
 
-        ${endpoints where cond .@item.@value {{'restParams': _, ...}: true} >> \(@value: ep, ...) $`
-            // ${go.methodName(app, ep)} ...
-            func (s *Client) ${methodSignature(app, ep)} {
-                ${HttpMethodStatements(ep)}
-            }
-        `::\i}
+        ${endpoints where cond .@item.@value {{'restParams': _, ...}: true} >> \(@value: ep, ...)
+            let methodName = go.methodName(app, ep);
+
+            let responses =
+                let returns = (sysl.endpoint.returns(app, ep) where typeWithClientPackage(app, .@item));
+                let responses = returns =>
+                    let (:@, @item: (:codeAndMediaType, :var, :type, :seq, ...)) = .;
+                    let (:code, ...) = codeAndMediaType single;
+                    let code = (code || (var = 'error' && '400') || '200');
+                    (:code, type: //seq.trim_prefix('*', typeWithClientPackage(app, .@item)), ord: @, :var)
+                ;
+                let responses = responses nest |type, ord, var|types;
+                responses =>
+                    let t = cond (.types count) {
+                        0: (type: '', var: ''),
+                        1: let t = .types single; (:t.type, :t.var),
+                        _: let t = (.types orderby .ord)(0); (:t.type, :t.var),
+                    };
+                    t +> (code: //eval.value(.code))
+            ;
+
+            let returnType = \type $`
+                var resp ${type}
+                return &resp
+            `;
+
+            let defaultResponse = \var
+                let default = ((responses <&- {(:var)}) orderby .code)(0)?:(code: 0, type: '');
+                (
+                    default.type && $`
+                        // default to ${var:q} response of status code ${default.code}
+                        ${returnType(default.type)}
+                    `
+                ) || `return nil`
+            ;
+
+            $`
+                // ${methodName} ...
+                func (s *Client) ${methodSignature(app, ep)} {
+                    ${HttpMethodStatements(methodName, ep)}
+                }
+
+                func responses${methodName}(statusCode int) any {
+                    switch statusCode {
+                    ${
+                        responses orderby .code >> $`
+                            case ${.code}:
+                                ${returnType(.type)}
+                        `
+                    ::\i}
+                    }
+
+                    // default behavior when status code is not mapped
+                    if statusCode >= 200 && statusCode < 300 {
+                        ${defaultResponse('ok')}
+                    }
+                    ${defaultResponse('error')}
+                }
+            `
+        ::\i}
     `

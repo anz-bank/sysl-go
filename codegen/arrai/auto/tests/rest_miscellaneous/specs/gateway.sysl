@@ -115,11 +115,21 @@ GatewayWithBff [package="gatewayWithBff"]:
         POST (GatewayBinaryRequestRequest <: GatewayBinaryRequest [mediatype="application/json", ~body]):
             return ok <: GatewayBinaryResponse
 
+    /multi/responses:
+        POST (code <: Code [mediatype="application/json", ~body]):
+            Gateway <- GET /ping/multi/{code}
+            return ok <: Types.SomethingExternal
+            return 400 <: GatewayBinaryRequest
+            return 500 <: GatewayBinaryResponse
+
     !type GatewayBinaryRequest:
         content <: bytes
 
     !type GatewayBinaryResponse:
         content <: bytes
+
+    !type Code:
+        code <: int
 
 Types:
     !type SomethingExternal:
