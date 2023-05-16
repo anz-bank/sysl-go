@@ -86,9 +86,44 @@ func PostMultiResponses(
 	return nil, fmt.Errorf("no responses")
 }
 
+func PostMultiStatuses(ctx context.Context, req *gatewayWithBff.PostMultiStatusesRequest, client gatewayWithBff.PostMultiStatusesClient) (*types.SomethingExternal, error) {
+	respPong, respPongString, err := client.GatewayGetPingMultiCodeTypesList(ctx, &gateway.GetPingMultiCodeTypesListRequest{
+		Code: req.Request.Code,
+	})
+	if err != nil {
+		if downstreamError, ok := err.(*common.DownstreamError); ok {
+			if downstreamError.Response != nil {
+				switch downstreamError.Response.StatusCode {
+				case 400, 500:
+					if gatewayBinaryRequest, ok := downstreamError.Cause.(*gateway.GatewayBinaryRequest); ok { return nil, ErrorResponseWriter{ code: 400,
+							err:  gatewayWithBff.GatewayBinaryRequest{Content: gatewayBinaryRequest.Content}}
+					}
+				}
+			}
+		}
+		return nil, err
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	if respPong != nil {
+		return &types.SomethingExternal{
+			Data: fmt.Sprintf("Pong response: %+v", respPong),
+		}, nil
+	}
+	if respPongString != nil {
+		return &types.SomethingExternal{
+			Data: fmt.Sprintf("PongString response: %+v", respPongString.S),
+		}, nil
+	}
+	return nil, fmt.Errorf("no responses")
+}
+
 func createService(_ context.Context, _ AppConfig) (*gatewayWithBff.ServiceInterface, *core.Hooks, error) {
 	return &gatewayWithBff.ServiceInterface{
 		PostMultiResponses: PostMultiResponses,
+		PostMultiStatuses:  PostMultiStatuses,
 		PostPingBinary:     PostPingBinary,
 	}, nil, nil
 }

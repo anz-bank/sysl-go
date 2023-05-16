@@ -178,9 +178,8 @@ let sysl = //{./sysl};
                 let returns = (sysl.endpoint.returns(app, ep) where typeWithClientPackage(app, .@item));
                 let responses = returns =>
                     let (:@, @item: (:codeAndMediaType, :var, :type, :seq, ...)) = .;
-                    let (:code, ...) = codeAndMediaType single;
-                    let code = (code || (var = 'error' && '400') || '200');
-                    (:code, type: //seq.trim_prefix('*', typeWithClientPackage(app, .@item)), ord: @, :var)
+                    let codes = ((codeAndMediaType => .code) where .) || (var = 'error' && {'400'}) || {'200'};
+                    (:codes, type: //seq.trim_prefix('*', typeWithClientPackage(app, .@item)), ord: @, :var)
                 ;
                 let responses = responses nest |type, ord, var|types;
                 responses =>
@@ -189,7 +188,7 @@ let sysl = //{./sysl};
                         1: let t = .types single; (:t.type, :t.var),
                         _: let t = (.types orderby .ord)(0); (:t.type, :t.var),
                     };
-                    t +> (code: //eval.value(.code))
+                    t +> (codes: .codes => //eval.value(.))
             ;
 
             let returnType = \type $`
@@ -198,10 +197,10 @@ let sysl = //{./sysl};
             `;
 
             let defaultResponse = \var
-                let default = ((responses <&- {(:var)}) orderby .code)(0)?:(code: 0, type: '');
+                let default = ((responses <&- {(:var)}) orderby (.codes min .) )(0)?:(type: '');
                 (
                     default.type && $`
-                        // default to ${var:q} response of status code ${default.code}
+                        // default to ${var:q} response of status code ${default.codes orderby .::, :}
                         ${returnType(default.type)}
                     `
                 ) || `return nil`
@@ -216,8 +215,8 @@ let sysl = //{./sysl};
                 func responses${methodName}(statusCode int) any {
                     switch statusCode {
                     ${
-                        responses orderby .code >> $`
-                            case ${.code}:
+                        responses orderby .codes >> $`
+                            case ${.codes orderby .::, :}:
                                 ${returnType(.type)}
                         `
                     ::\i}

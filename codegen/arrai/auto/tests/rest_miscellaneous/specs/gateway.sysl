@@ -57,8 +57,17 @@ Gateway [package="gateway", ~vars_in_url_name]:
         GET:
             return 200 <: Pong [mediatype="application/json;charset=UTF-8"]
             return 201 <: PongString
+            return 202 <: PongString
             return 400 <: GatewayBinaryRequest
             return 500 <: GatewayBinaryResponse
+
+    /ping/multi/{code <: int}/types:
+        GET:
+            return 200 <: Pong [mediatype="application/json;charset=UTF-8"]
+            return 201 <: Pong [mediatype="application/json;charset=UTF-8"]
+            return 202 <: PongString
+            return 400 <: GatewayBinaryRequest
+            return 500 <: GatewayBinaryRequest
 
     # testing PATH and mediatype
     /ping:
@@ -118,9 +127,16 @@ GatewayWithBff [package="gatewayWithBff"]:
     /multi/responses:
         POST (code <: Code [mediatype="application/json", ~body]):
             Gateway <- GET /ping/multi/{code}
+            Gateway <- GET /ping/multi/{code}/types
             return ok <: Types.SomethingExternal
             return 400 <: GatewayBinaryRequest
             return 500 <: GatewayBinaryResponse
+
+    /multi/statuses:
+        POST (code <: Code [mediatype="application/json", ~body]):
+            Gateway <- GET /ping/multi/{code}/types
+            return ok <: Types.SomethingExternal
+            return error <: GatewayBinaryRequest
 
     !type GatewayBinaryRequest:
         content <: bytes
