@@ -6,7 +6,6 @@ replace github.com/anz-bank/sysl-go => ../../../../..
 
 require (
 	github.com/anz-bank/sysl-go v0.189.0
-	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/spf13/afero v1.9.2
 	github.com/stretchr/testify v1.8.1
@@ -24,6 +23,7 @@ require (
 	github.com/dlclark/regexp2 v1.7.0 // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
+	github.com/go-chi/chi v4.1.2+incompatible // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect
@@ -72,7 +72,7 @@ require (
 	golang.org/x/time v0.1.0 // indirect
 	google.golang.org/genproto v0.0.0-20230209215440-0dfe4f8abfcc // indirect
 	google.golang.org/grpc v1.53.0 // indirect
-	google.golang.org/protobuf v1.28.1 // indirect
+	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

@@ -6,7 +6,6 @@ replace github.com/anz-bank/sysl-go => ../../../../..
 
 require (
 	github.com/anz-bank/sysl-go v0.208.0
-	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/stretchr/testify v1.8.1
 )
@@ -23,6 +22,7 @@ require (
 	github.com/dlclark/regexp2 v1.7.0 // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
+	github.com/go-chi/chi v4.1.2+incompatible // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-playground/locales v0.14.0 // indirect
 	github.com/go-playground/universal-translator v0.18.0 // indirect

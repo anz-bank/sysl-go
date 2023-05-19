@@ -54,6 +54,7 @@ func TestDownstreamError_CreateDownstreamError_Timeout(t *testing.T) {
 	r.WriteHeader(http.StatusConflict)
 
 	resp := r.Result()
+	defer resp.Body.Close()
 	resp.Request = &http.Request{
 		Method: "PUT",
 		URL: &url.URL{
@@ -82,6 +83,7 @@ func TestDownstreamError_CreateDownstreamError_UnexpectedResponse(t *testing.T) 
 	r.WriteHeader(http.StatusInternalServerError)
 
 	resp := r.Result()
+	defer resp.Body.Close()
 	resp.Request = &http.Request{
 		Method: "POST",
 		URL: &url.URL{
@@ -113,6 +115,7 @@ This is a very very long response body.`
 	r.WriteHeader(http.StatusUnauthorized)
 
 	resp := r.Result()
+	defer resp.Body.Close()
 	resp.Request = &http.Request{
 		Method: "GET",
 		URL: &url.URL{
