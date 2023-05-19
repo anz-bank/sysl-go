@@ -43,6 +43,7 @@ func TestDownstreamError_Unwrap(t *testing.T) {
 	r.WriteHeader(http.StatusInternalServerError)
 
 	resp := r.Result()
+	defer resp.Body.Close()
 	resp.Request = &http.Request{
 		Method: "POST",
 		URL: &url.URL{
