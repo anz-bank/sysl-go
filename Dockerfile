@@ -1,4 +1,5 @@
-FROM --platform=$BUILDPLATFORM golang:1.18-buster AS stage
+ARG DOCKER_BASE=golang:1.18-buster
+FROM --platform=$BUILDPLATFORM ${DOCKER_BASE} AS stage
 
 ARG TARGETARCH
 ARG TARGETOS
@@ -44,7 +45,7 @@ RUN if [ "${TARGETARCH}" = "arm64" ]; \
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v$PROTOC_GEN_GO_VERSION
 RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v$PROTOC_GEN_GO_GRPC_VERSION
 
-FROM --platform=$BUILDPLATFORM golang:1.18-buster
+FROM --platform=$BUILDPLATFORM ${DOCKER_BASE}
 COPY --from=stage /bin/arrai /bin
 COPY --from=stage /bin/sysl /bin
 COPY --from=stage /go/bin/goimports /bin

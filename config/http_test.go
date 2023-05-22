@@ -73,7 +73,7 @@ func TestValidateGlobalConfigSlashBasePath(t *testing.T) {
 func TestProxyHandlerFromConfig(t *testing.T) {
 	dummyReq, _ := http.NewRequest("", "", nil)
 	testTransport := Transport{
-		ProxyURL: "https://localhost:3128",
+		ProxyURL: "https://localhost:5555",
 		UseProxy: true,
 	}
 	testURL, _ := url.Parse(testTransport.ProxyURL)
@@ -84,8 +84,13 @@ func TestProxyHandlerFromConfig(t *testing.T) {
 }
 
 func TestProxyHandlerFromConfigDefaultProxy(t *testing.T) {
-	os.Setenv(`http_proxy`, `http://localhost:3128`)
-	os.Setenv(`https_proxy`, `http://localhost:3128`)
+	testValue := `http://localhost:5555`
+	orig, set := os.LookupEnv(`HTTP_PROXY`)
+	if set {
+		t.Cleanup(func() { _ = os.Setenv(`http_proxy`, orig) })
+	}
+	err := os.Setenv(`HTTP_PROXY`, testValue)
+	require.NoError(t, err)
 	dummyReq, _ := http.NewRequest("", "http://", nil)
 	testTransport := Transport{
 		UseProxy: true,
@@ -93,7 +98,7 @@ func TestProxyHandlerFromConfigDefaultProxy(t *testing.T) {
 	fn := proxyHandlerFromConfig(&testTransport)
 	requestURL, err := fn(dummyReq)
 	require.NoError(t, err)
-	require.Equal(t, `http://localhost:3128`, requestURL.String())
+	require.Equal(t, testValue, requestURL.String())
 }
 
 func TestProxyHandlerFromConfigNoProxy(t *testing.T) {

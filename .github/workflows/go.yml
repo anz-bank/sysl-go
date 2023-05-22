@@ -1,29 +1,43 @@
 name: Test
+
 on:
   push:
     branches:
       - master
   pull_request:
 
+env:
+  GOPROXY:           ${{ vars.GOPROXY }}
+  DOCKER_BUILD_ARGS: "${{ vars.DOCKER_BUILD_ARGS }}"
+
 jobs:
   test:
     name: Test
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.RUNNER_UBUNTU && fromJSON(vars.RUNNER_UBUNTU) || 'ubuntu-latest' }}
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
 
-      - name: "go work"
-        uses: ./.github/actions/builder
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build docker container image
+        uses: docker/build-push-action@v3
         with:
-          entrypoint: /usr/bin/make
-          args: go-work
+          context: .
+          file: builder.Dockerfile
+          pull: true
+          load: true
+          push: false
+          tags: ci-builder
+          build-args: |
+            ${{ env.DOCKER_BUILD_ARGS }}
+
+      - name: "go work"
+        run: docker run --rm -v $(pwd):/work -w /work --entrypoint "/usr/bin/make" ci-builder go-work
 
       - name: "make all"
-        uses: ./.github/actions/builder
-        with:
-          entrypoint: /usr/bin/make
-          args: all
+        run: docker run --rm -v $(pwd):/work -w /work --entrypoint "/usr/bin/make" ci-builder all
 
       - name: "hack - workaround github actions runner filesystem permission issue"
         # This hack should not be necessary, but if we don't do it, the
@@ -43,7 +57,4 @@ jobs:
           sudo chown -R $USER:$USER $GITHUB_WORKSPACE
 
       - name: "make check-tidy"
-        uses: ./.github/actions/builder
-        with:
-          entrypoint: /usr/bin/make
-          args: check-tidy
+        run: docker run --rm -v $(pwd):/work -w /work --entrypoint "/usr/bin/make" ci-builder check-tidy
