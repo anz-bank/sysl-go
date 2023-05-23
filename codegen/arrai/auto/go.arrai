@@ -379,7 +379,7 @@ let typeWithPackage = \mod \app \return \package
                 ;
                 cond syslType {
                     {'sequence': {'typeRef': _, ...}, ...}:
-                        $`[]*${package && package ++ '.'}${fixExternal(leafType(mod, app, syslType('sequence')))}`,
+                        $`[]${package && package ++ '.'}${fixExternal(leafType(mod, app, syslType('sequence')))}`,
                     {'typeRef': _, ...}:
                         $`*${package && package ++ '.'}${fixExternal(leafType(mod, app, syslType))}`,
                     _: leafType(mod, app, syslType),

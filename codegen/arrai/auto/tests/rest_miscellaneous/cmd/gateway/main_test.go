@@ -372,7 +372,7 @@ func TestMiscellaneous_ArrayResponse(t *testing.T) {
 	gatewayTester.GetPingArrayResponseList().
 		ExpectResponseCode(200).
 		ExpectResponseHeaders(map[string]string{"Content-Type": `application/json`}).
-		ExpectResponseBody([]*gateway.Res{{Val: common.NewString("Res")}}).
+		ExpectResponseBody([]gateway.Res{{Val: common.NewString("Res")}}).
 		Send()
 
 	gatewayTester.Mocks.Array_response_backend.GetStringResponseList.

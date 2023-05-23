@@ -221,16 +221,16 @@ func GetEmptyResponse(_ context.Context, _ *gateway.GetEmptyResponseListRequest)
 	return &gateway.Get_emptyResponse_200_resp_type_body{}, nil
 }
 
-func GetPingArrayResponseList(ctx context.Context, _ *gateway.GetPingArrayResponseListRequest, client gateway.GetPingArrayResponseListClient) ([]*gateway.Res, error) {
+func GetPingArrayResponseList(ctx context.Context, _ *gateway.GetPingArrayResponseListRequest, client gateway.GetPingArrayResponseListClient) ([]gateway.Res, error) {
 	backendReq := &array_response_backend.GetArrayResponseListRequest{}
 	backendRes, err := client.Array_response_backendGetArrayResponseList(ctx, backendReq)
 	if err != nil {
 		return nil, err
 	}
 
-	res := make([]*gateway.Res, 0, len(backendRes))
+	res := make([]gateway.Res, 0, len(backendRes))
 	for _, v := range backendRes {
-		res = append(res, &gateway.Res{Val: v.Val})
+		res = append(res, gateway.Res{Val: v.Val})
 	}
 
 	return res, nil
