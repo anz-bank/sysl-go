@@ -71,6 +71,7 @@ func TestDownstreamError_CreateDownstreamError_Timeout(t *testing.T) {
 	require.Implements(t, (*ErrorKinder)(nil), e)
 	require.Equal(t, e.(ErrorKinder).ErrorKind(), DownstreamTimeoutError)
 	require.EqualError(t, e, "ServerError(Kind=Time out from down stream services, Message=PUT https://www.test.com/hello, Cause=nothing)")
+	defer resp.Body.Close()
 }
 
 func TestDownstreamError_CreateDownstreamError_UnexpectedResponse(t *testing.T) {
@@ -99,6 +100,7 @@ func TestDownstreamError_CreateDownstreamError_UnexpectedResponse(t *testing.T) 
 	require.Implements(t, (*ErrorKinder)(nil), e)
 	require.Equal(t, e.(ErrorKinder).ErrorKind(), DownstreamUnexpectedResponseError)
 	require.EqualError(t, e, "DownstreamError(Kind=Unexpected response from downstream services, Method=POST, URL=https://www.test.com/hello, StatusCode=500, ContentType=application/json, ContentLength=58, Snippet={\"status\": {\"code\": \"1234\", description: \"unknown error\"}}, Cause=nothing)")
+	defer resp.Body.Close()
 }
 
 func TestDownstreamError_CreateDownstreamError_Unauthorized(t *testing.T) {
@@ -130,4 +132,5 @@ This is a very very long response body.`
 	require.Implements(t, (*ErrorKinder)(nil), e)
 	require.Equal(t, e.(ErrorKinder).ErrorKind(), DownstreamUnauthorizedError)
 	require.EqualError(t, e, "DownstreamError(Kind=Unauthorized error from downstream services, Method=GET, URL=https://www.test.com/hello, StatusCode=401, ContentType=text/plain, ContentLength=159, Snippet=This is a very very long response body.\nThis is a very very long response body.\nThis is a very very long response body.\nThis is , Cause=nothing)")
+	defer resp.Body.Close()
 }

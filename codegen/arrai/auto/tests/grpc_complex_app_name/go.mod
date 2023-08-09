@@ -1,6 +1,6 @@
 module grpc_complex_app_name
 
-go 1.18
+go 1.20
 
 replace github.com/anz-bank/sysl-go => ../../../../..
 

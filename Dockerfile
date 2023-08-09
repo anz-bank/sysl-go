@@ -1,4 +1,4 @@
-ARG DOCKER_BASE=golang:1.18-buster
+ARG DOCKER_BASE=golang:1.20-buster
 FROM --platform=$BUILDPLATFORM ${DOCKER_BASE} AS stage
 
 ARG TARGETARCH

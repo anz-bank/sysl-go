@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/anz-bank/sysl-go/syslgo"
 	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/assert"
 	enumspb "go.temporal.io/api/enums/v1"
@@ -14,6 +13,8 @@ import (
 	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/testsuite"
 	"go.temporal.io/sdk/workflow"
+
+	"github.com/anz-bank/sysl-go/syslgo"
 )
 
 var (
@@ -256,6 +257,18 @@ func (m *MockClient) DescribeTaskQueue(ctx context.Context, taskqueue string, ta
 
 func (m *MockClient) ResetWorkflowExecution(ctx context.Context, request *workflowservice.ResetWorkflowExecutionRequest) (*workflowservice.ResetWorkflowExecutionResponse, error) {
 	return nil, nil
+}
+
+func (m *MockClient) UpdateWorkerBuildIdCompatibility(ctx context.Context, options *client.UpdateWorkerBuildIdCompatibilityOptions) error {
+	return nil
+}
+
+func (m *MockClient) GetWorkerBuildIdCompatibility(ctx context.Context, options *client.GetWorkerBuildIdCompatibilityOptions) (*client.WorkerBuildIDVersionSets, error) {
+	return nil, nil
+}
+
+func (m *MockClient) GetWorkflowUpdateHandle(ref client.GetWorkflowUpdateHandleOptions) client.WorkflowUpdateHandle {
+	return nil
 }
 
 func (m *MockClient) CheckHealth(ctx context.Context, request *client.CheckHealthRequest) (*client.CheckHealthResponse, error) {

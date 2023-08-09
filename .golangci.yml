@@ -1,5 +1,5 @@
 service:
-  golangci-lint-version: 1.48.0
+  golangci-lint-version: 1.51.0
 
 linters-settings:
   lll:

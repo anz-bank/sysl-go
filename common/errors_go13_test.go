@@ -43,6 +43,7 @@ func TestDownstreamError_Unwrap(t *testing.T) {
 	r.WriteHeader(http.StatusInternalServerError)
 
 	resp := r.Result()
+
 	resp.Request = &http.Request{
 		Method: "POST",
 		URL: &url.URL{
@@ -66,6 +67,7 @@ func TestDownstreamError_Unwrap(t *testing.T) {
 	require.NotNil(t, unwrappedErr2)
 	require.Error(t, unwrappedErr2)
 	require.Equal(t, err, unwrappedErr2)
+	defer resp.Body.Close()
 }
 
 func TestServerError_Is_FmtErrorf(t *testing.T) {

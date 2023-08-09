@@ -1,6 +1,6 @@
 module rest_without_return_type
 
-go 1.18
+go 1.20
 
 replace github.com/anz-bank/sysl-go => ../../../../..
 

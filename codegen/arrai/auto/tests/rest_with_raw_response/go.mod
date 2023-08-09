@@ -1,6 +1,6 @@
 module rest_with_raw_response
 
-go 1.18
+go 1.20
 
 replace github.com/anz-bank/sysl-go => ../../../../..
 

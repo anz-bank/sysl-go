@@ -1,6 +1,6 @@
 module simple_rest_with_downstream
 
-go 1.18
+go 1.20
 
 require (
 	github.com/anz-bank/sysl-go v0.189.0
