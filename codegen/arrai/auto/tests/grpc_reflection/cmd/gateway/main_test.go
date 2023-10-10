@@ -145,7 +145,7 @@ func testGRPCServerReflection(t *testing.T, enabled bool) {
 	names, err := doGatewayReflectionList(ctx)
 	if enabled {
 		require.Nil(t, err)
-		require.Equal(t, []string{"gateway.Gateway", "grpc.reflection.v1alpha.ServerReflection"}, names)
+		require.Equal(t, []string{"gateway.Gateway", "grpc.reflection.v1.ServerReflection", "grpc.reflection.v1alpha.ServerReflection"}, names)
 	} else {
 		require.NotNil(t, err)
 	}

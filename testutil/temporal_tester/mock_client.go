@@ -300,3 +300,7 @@ func (m *MockClient) ScheduleClient() client.ScheduleClient {
 }
 
 func (m *MockClient) Close() {}
+
+func (m *MockClient) GetWorkerTaskReachability(ctx context.Context, options *client.GetWorkerTaskReachabilityOptions) (*client.WorkerTaskReachability, error) {
+	return nil, nil
+}
