@@ -9,6 +9,7 @@ require (
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
 	github.com/dlclark/regexp2 v1.7.0
 	github.com/go-chi/chi v4.1.2+incompatible
+	github.com/go-jose/go-jose/v3 v3.0.1
 	github.com/go-playground/validator/v10 v10.11.1
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.3.1
@@ -26,7 +27,6 @@ require (
 	go.temporal.io/sdk v1.25.1
 	google.golang.org/grpc v1.60.0
 	google.golang.org/protobuf v1.31.0
-	gopkg.in/square/go-jose.v2 v2.6.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 

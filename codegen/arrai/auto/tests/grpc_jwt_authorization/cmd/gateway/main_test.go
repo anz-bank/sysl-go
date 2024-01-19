@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/anz-bank/sysl-go/syslgo"
 	"google.golang.org/grpc/metadata"
 	"grpc_jwt_authorization/internal/gen/pkg/servers/gateway"
+
+	"github.com/anz-bank/sysl-go/syslgo"
 
 	pb "grpc_jwt_authorization/internal/gen/pb/gateway"
 
@@ -170,7 +171,7 @@ func TestJWTAuthorizationOfGRPCEndpoints(t *testing.T) {
 			name:          "request with gibberish instead of JWT fails",
 			appCfg:        appCfgFour,
 			rawJWT:        "surprise!",
-			expectedError: "rpc error: code = Unknown desc = jwtauth err 1: jwt parse error: square/go-jose: compact JWS format must have three parts", // FIXME impl detail leak in error msg
+			expectedError: "rpc error: code = Unknown desc = jwtauth err 1: jwt parse error: go-jose/go-jose: compact JWS format must have three parts", // FIXME impl detail leak in error msg
 		},
 		{
 			name:          "request with authorised claims and signed by untrusted issuer fails",

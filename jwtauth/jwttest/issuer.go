@@ -8,11 +8,12 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/go-jose/go-jose/v3"
+	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/google/uuid"
+
 	"github.com/anz-bank/sysl-go/jwtauth"
 	"github.com/anz-bank/sysl-go/jwtauth/jwthttp"
-	"github.com/google/uuid"
-	"gopkg.in/square/go-jose.v2"
-	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 // Issuer is a test issuer to issue jwts with claims on demand
