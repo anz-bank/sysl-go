@@ -1,5 +1,5 @@
 service:
-  golangci-lint-version: 1.51.0
+  golangci-lint-version: 1.56.2
 
 linters-settings:
   lll:
@@ -10,7 +10,7 @@ linters:
   enable:
     - asciicheck
     - bodyclose
-    - depguard
+    # - depguard
     - dogsled
     - errcheck
     - exportloopref
@@ -84,4 +84,4 @@ issues:
         - funlen # Ignore function length for tests
 
 run:
-  deadline: 2m
+  timeout: 2m

@@ -31,7 +31,7 @@ See [sysl-template](https://github.com/anz-bank/sysl-template) for more examples
 Ensure your environment provides:
 
 - [go 1.20](https://golang.org/doc/install)
-- [golangci-lint 1.51.0](https://github.com/golangci/golangci-lint/releases/tag/v1.51.0)
+- [golangci-lint 1.56.2](https://github.com/golangci/golangci-lint/releases/tag/v1.56.2)
 - [protobuf 3.11.4](https://github.com/protocolbuffers/protobuf/)
 - `make`
 - proto3 and gRPC

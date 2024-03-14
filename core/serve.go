@@ -20,6 +20,7 @@ import (
 	pkgHealth "github.com/anz-bank/pkg/health"
 	pkg "github.com/anz-bank/pkg/log"
 	zero "github.com/anz-bank/pkg/logging"
+
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/health"
 	"github.com/anz-bank/sysl-go/log"
@@ -597,7 +598,7 @@ type autogenServer struct {
 	m                  sync.Mutex // protect access to multiServer
 }
 
-//nolint:funlen,gocognit
+//nolint:funlen
 func (s *autogenServer) Start() error {
 	// precondition: ctx must have been threaded through InitialiseLogging and hence contain a logger
 	ctx := s.ctx
