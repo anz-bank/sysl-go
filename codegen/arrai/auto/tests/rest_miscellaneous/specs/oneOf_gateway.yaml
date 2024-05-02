@@ -28,6 +28,14 @@ paths:
               example:
                 values:
                   - one: true
+        '400':
+          description: error
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/One"
+                  - $ref: "#/components/schemas/Two"
 
 components:
   schemas:

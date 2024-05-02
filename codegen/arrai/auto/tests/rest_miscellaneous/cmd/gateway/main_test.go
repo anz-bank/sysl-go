@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/anz-bank/sysl-go/validator"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/array_response_backend"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/encoder_backend"
@@ -18,10 +19,11 @@ import (
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/oneof_backend"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/types"
 
-	"github.com/anz-bank/sysl-go/common"
-	"github.com/anz-bank/sysl-go/core"
 	"github.com/sethvargo/go-retry"
 	"github.com/stretchr/testify/require"
+
+	"github.com/anz-bank/sysl-go/common"
+	"github.com/anz-bank/sysl-go/core"
 )
 
 const applicationConfig = `---
@@ -305,6 +307,21 @@ func TestMiscellaneous_OneOfRaw(t *testing.T) {
 		ExpectResponseCode(201).
 		ExpectResponseBody(res).
 		Send()
+}
+
+func TestMiscellaneous_OneOfErrorReturn(t *testing.T) {
+	t.Parallel()
+
+	// Just want to confirm that it generates types that satisfy the 'error' and 'Validator' interfaces
+	var e error
+	e = gateway.Post_rotateOneOf_400_resp_type_body{}
+	e = oneof_backend.Post_rotateOneOf_400_resp_type_body{}
+	_ = e
+
+	var v validator.Validator
+	v = &gateway.Post_rotateOneOf_400_resp_type_body{}
+	v = &oneof_backend.Post_rotateOneOf_400_resp_type_body{}
+	_ = v
 }
 
 func TestMiscellaneous_MultiCode(t *testing.T) {

@@ -21,6 +21,14 @@ paths:
             application/json; charset = utf-8:
               schema:
                 $ref: "#/components/schemas/OneOfResponse"
+        '400':
+          description: error
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/One"
+                  - $ref: "#/components/schemas/Two"
 
 components:
   schemas:

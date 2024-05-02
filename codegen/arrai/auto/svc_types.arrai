@@ -244,6 +244,19 @@ let fieldJsonTag = \type \key
                     `::\i}
             }
 
+            ${cond {typename <: go.errorReturnTypes(app): $`
+                // Error fulfills the error interface.
+                func (s ${typename}) Error() string {
+                    type plain ${typename}
+                    return fmt.Sprintf("%+v", plain(s))
+                }
+            `}}
+
+            // *${typename} validator
+            func (s *${typename}) Validate() error {
+                return validator.Validate(s)
+            }
+
             // Marshal data from the first non-nil pointer in the struct to JSON
             func (dst ${typename}) MarshalJSON() ([]byte, error) {
                 ${unionTypes >> $`
