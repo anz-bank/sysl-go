@@ -2,7 +2,10 @@ let sysl = //{./sysl};
 
 let name =
     let wordRE = //re.compile(`[\p{L}_][\p{L}\p{N}_]*`);
-    let trimRE = //re.compile(`^_+`).sub("");
+    # types starting with _ aren't exported so remove the underscores
+    # types can't start with an integer, if it does add an N to the start
+    let trimRE = \word
+        //re.compile(`^_+`).sub("", word) -> //re.compile(`^(\d)`).sub("N$1", .);
     let initialisms = {
         # https://github.com/golang/lint/blob/8f45f776aaf18cebc8d65861cc70c33c60471952/lint.go#L771
         "ACL", "API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML",
@@ -15,8 +18,8 @@ let name =
     };
     let uppers = \word
         (wordRE.match(word) >> .(0)) -> \[first, ...rest] [trimRE(first)] ++ rest >> \v
-        let upper = //str.upper(trimRE(v));
-        cond {upper <: initialisms: upper, _: //str.title(v)};
+            let upper = //str.upper(trimRE(v));
+            cond {upper <: initialisms: upper, _: //str.title(v)};
     \word
         let result = cond word {"": "", _: //seq.concat(uppers(word))};
         cond {result <: restricted: result++"_", _: result};

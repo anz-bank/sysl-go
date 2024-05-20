@@ -354,6 +354,12 @@ func TestMiscellaneous_DoubleUnderscore(t *testing.T) {
 	_ = encoder_backend.Double_underscore{S: "accessible"}
 }
 
+func TestMiscellaneous_StartWithInteger(t *testing.T) {
+	t.Parallel()
+	// Just want to confirm that it generates a valid type
+	_ = encoder_backend.N1TypeStartsWithInt{N1s: "accessible"}
+}
+
 func TestMiscellaneous_TypesSomethingExternal(t *testing.T) {
 	t.Parallel()
 

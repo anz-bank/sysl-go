@@ -23,3 +23,9 @@ EncoderBackend [package="encoder_backend", ~vars_in_url_name]:
     !type __double_underscore:
         __s <: string
 
+    /start_with_int:
+        POST:
+            return ok <: _1TypeStartsWithInt
+
+    !type _1TypeStartsWithInt:
+        _1s <: string
