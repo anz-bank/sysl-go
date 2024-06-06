@@ -13,6 +13,10 @@ import (
 
 type AppConfig struct{}
 
+func GetPing0(_ context.Context, _ *pingpong.GetPing0Request) error {
+	return nil
+}
+
 func GetPing1(_ context.Context, req *pingpong.GetPing1Request) (*pingpong.Pong, error) {
 	return &pingpong.Pong{
 		Identifier: req.Identifier,
@@ -25,6 +29,42 @@ func GetPing2(_ context.Context, req *pingpong.GetPing2Request) (*pingpong.Pong,
 	}, nil
 }
 
+func GetPing3(_ context.Context, req *pingpong.GetPing3Request) (*pingpong.Pong, error) {
+	return &pingpong.Pong{
+		Identifier: req.Identifier,
+	}, nil
+}
+
+func GetPing4(_ context.Context, req *pingpong.GetPing4Request) (*pingpong.Pong, error) {
+	return &pingpong.Pong{
+		Identifier: req.Identifier,
+	}, nil
+}
+
+func GetPing5(_ context.Context, req *pingpong.GetPing5Request) (*pingpong.Pong, *pingpong.Pong2, error) {
+	if req.Identifier == 0 {
+		return &pingpong.Pong{
+			Identifier: req.Identifier,
+		}, nil, nil
+	}
+
+	return nil, &pingpong.Pong2{
+		ID: req.Identifier,
+	}, nil
+}
+
+func GetPing6(_ context.Context, req *pingpong.GetPing6Request) (*pingpong.Pong, *pingpong.Pong2, error) {
+	if req.Identifier == 0 {
+		return &pingpong.Pong{
+			Identifier: req.Identifier,
+		}, nil, nil
+	}
+
+	return nil, &pingpong.Pong2{
+		ID: req.Identifier,
+	}, nil
+}
+
 func GetPingTimeout(_ context.Context, req *pingpong.GetPingtimeoutRequest) (*pingpong.Pong, error) {
 	time.Sleep(10 * time.Second)
 	return &pingpong.Pong{
@@ -34,8 +74,13 @@ func GetPingTimeout(_ context.Context, req *pingpong.GetPingtimeoutRequest) (*pi
 
 func createService(_ context.Context, _ AppConfig) (*pingpong.ServiceInterface, *core.Hooks, error) {
 	return &pingpong.ServiceInterface{
+			GetPing0:       GetPing0,
 			GetPing1:       GetPing1,
 			GetPing2:       GetPing2,
+			GetPing3:       GetPing3,
+			GetPing4:       GetPing4,
+			GetPing5:       GetPing5,
+			GetPing6:       GetPing6,
 			GetPingtimeout: GetPingTimeout,
 		}, &core.Hooks{},
 		nil

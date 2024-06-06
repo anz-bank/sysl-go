@@ -126,19 +126,15 @@ let sysl = //{./sysl};
                                 }
                             `}}
 
-                            ${
-                                cond {
-                                    returns where .@item.type = [""] && .@item.var = "ok": $`return ${ptrResponseVar}, &result.HTTPResponse.Header, nil`,
-                                    # return response in correct location for function signature (nil otherwise)
-                                    _: $`return ${sysl.replaceArrayElement(nils, i, ptrResponseVar) ::, }, nil`,
-                                }
-                            }
+                            return ${
+                                # return response in correct location for function signature (nil otherwise)
+                                sysl.replaceArrayElement(nils, i, ptrResponseVar) ::, :}, nil
                         }
                     `
             ::\i}
             ${cond {
+                returns where .@item.type = [""] && .@item.var = "ok": $`return ${sysl.replaceArrayElement(nils, nils count - 1, "&result.HTTPResponse.Header") ::, }, nil`,
                 returns where .@item.type != [""] && .@item.var = "ok": returnDownstreamError("UnexpectedResponse", "result", "nil"),
-                returns where .@item.type = [""] && .@item.var = "ok": "return &result.HTTPResponse.Header, nil",
                 _: "return nil",
             }}
         `;
@@ -213,7 +209,7 @@ let sysl = //{./sysl};
                 }
 
                 func responses${methodName}(statusCode int) any {
-                    switch statusCode {
+                    ${ responses && $`switch statusCode {
                     ${
                         responses orderby .codes >> $`
                             case ${.codes orderby .::, :}:
@@ -222,6 +218,7 @@ let sysl = //{./sysl};
                     ::\i}
                     }
 
+                    `}
                     // default behavior when status code is not mapped
                     if statusCode >= 200 && statusCode < 300 {
                         ${defaultResponse('ok')}

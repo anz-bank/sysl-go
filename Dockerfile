@@ -6,7 +6,7 @@ ARG TARGETOS
 # requires git make curl
 # but this base image has all of those tools already
 
-ENV SYSL_VERSION=0.735.0
+ENV SYSL_VERSION=0.745.0
 ENV ARRAI_VERSION=0.319.0
 
 ENV PROTOC_VERSION=21.7
