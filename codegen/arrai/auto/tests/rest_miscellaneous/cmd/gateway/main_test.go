@@ -366,6 +366,19 @@ func TestMiscellaneous_TypesSomethingExternal(t *testing.T) {
 	_ = types.SomethingExternal{}
 }
 
+func TestMiscellaneous_OpenApi2ArrayWithMinMax(t *testing.T) {
+	t.Parallel()
+
+	a := gateway.ArrayWithMin{}
+	var i interface{} = a.Val
+	switch i.(type) {
+	case []gateway.Res:
+	// Just want to confirm that the type was generated correctly
+	default:
+		t.Fail()
+	}
+}
+
 func TestMiscellaneous_EmptyResponse(t *testing.T) {
 	t.Parallel()
 	gatewayTester := gateway.NewTestServer(t, context.Background(), createService, "")

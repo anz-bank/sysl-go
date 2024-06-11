@@ -29,6 +29,19 @@
           "type": "string"
         }
       }
+    },
+    "ArrayWithMin": {
+      "type": "object",
+      "properties": {
+        "val": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Res"
+          },
+          "minItems": 1,
+          "maxItems": 1
+        }
+      }
     }
   }
 }
