@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/anz-bank/sysl-go/config"
+	"github.com/go-chi/chi/v5"
 
 	"github.com/anz-bank/sysl-go/validator"
-	"github.com/go-chi/chi"
 )
 
 func DefaultCallback() Callback {

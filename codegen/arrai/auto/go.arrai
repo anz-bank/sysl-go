@@ -321,7 +321,7 @@ let prelude = \app \imports $`
                 _: $`${.:q}`,
             } orderby .
         ::\i:\n}
-        "github.com/go-chi/chi"
+        "github.com/go-chi/chi/v5"
         "github.com/rickb777/date"
         "google.golang.org/grpc"
         "google.golang.org/grpc/test/bufconn"

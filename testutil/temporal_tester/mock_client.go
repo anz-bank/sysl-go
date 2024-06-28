@@ -255,6 +255,10 @@ func (m *MockClient) DescribeTaskQueue(ctx context.Context, taskqueue string, ta
 	return nil, nil
 }
 
+func (m *MockClient) DescribeTaskQueueEnhanced(ctx context.Context, options client.DescribeTaskQueueEnhancedOptions) (client.TaskQueueDescription, error) {
+	return client.TaskQueueDescription{}, nil
+}
+
 func (m *MockClient) ResetWorkflowExecution(ctx context.Context, request *workflowservice.ResetWorkflowExecutionRequest) (*workflowservice.ResetWorkflowExecutionResponse, error) {
 	return nil, nil
 }
@@ -271,19 +275,27 @@ func (m *MockClient) GetWorkflowUpdateHandle(ref client.GetWorkflowUpdateHandleO
 	return nil
 }
 
+func (m *MockClient) GetWorkerVersioningRules(ctx context.Context, options client.GetWorkerVersioningOptions) (*client.WorkerVersioningRules, error) {
+	return nil, nil
+}
+
 func (m *MockClient) CheckHealth(ctx context.Context, request *client.CheckHealthRequest) (*client.CheckHealthResponse, error) {
 	return nil, nil
 }
 
 func (m *MockClient) UpdateWorkflow(
-	ctx context.Context, workflowID string, workflowRunID string, updateName string, args ...interface{},
+	ctx context.Context, options client.UpdateWorkflowOptions,
 ) (client.WorkflowUpdateHandle, error) {
 	return nil, nil
 }
 
 func (m *MockClient) UpdateWorkflowWithOptions(
-	ctx context.Context, request *client.UpdateWorkflowWithOptionsRequest,
+	ctx context.Context, request *client.UpdateWorkflowOptions,
 ) (client.WorkflowUpdateHandle, error) {
+	return nil, nil
+}
+
+func (m *MockClient) UpdateWorkerVersioningRules(ctx context.Context, options client.UpdateWorkerVersioningRulesOptions) (*client.WorkerVersioningRules, error) {
 	return nil, nil
 }
 

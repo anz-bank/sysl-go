@@ -13,13 +13,13 @@ import (
 	"time"
 
 	anzlog "github.com/anz-bank/sysl-go/log"
+	"github.com/go-chi/chi/v5"
 
 	"github.com/anz-bank/pkg/health"
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
 	"github.com/anz-bank/sysl-go/metrics"
 	"github.com/anz-bank/sysl-go/status"
-	"github.com/go-chi/chi"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -223,7 +223,7 @@ func configureRouters(basePath string, mWare []func(handler http.Handler) http.H
 	if basePath == "" || basePath == "/" {
 		router = rootRouter
 	} else {
-		router = rootRouter.Route(basePath, nil).(*chi.Mux)
+		router = rootRouter.Route(basePath, func(r chi.Router) {}).(*chi.Mux)
 	}
 
 	return rootRouter, router

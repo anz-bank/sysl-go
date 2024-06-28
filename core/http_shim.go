@@ -5,7 +5,7 @@ import (
 
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 )
 
 type HTTPManagerShim struct {

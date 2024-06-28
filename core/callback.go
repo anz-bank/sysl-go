@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/anz-bank/sysl-go/log"
+	"github.com/go-chi/chi/v5"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 
@@ -14,7 +15,6 @@ import (
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/core/authrules"
 	"github.com/anz-bank/sysl-go/jwtauth"
-	"github.com/go-chi/chi"
 	"google.golang.org/grpc"
 )
 

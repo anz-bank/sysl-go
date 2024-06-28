@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/anz-bank/sysl-go/log"
+	"github.com/go-chi/chi/v5"
 
-	"github.com/go-chi/chi"
 	"github.com/stretchr/testify/require"
 
 	"github.com/anz-bank/sysl-go/common"

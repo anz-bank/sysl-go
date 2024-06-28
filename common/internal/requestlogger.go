@@ -6,10 +6,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/go-chi/chi/middleware"
-
 	"github.com/anz-bank/sysl-go/config"
 	"github.com/anz-bank/sysl-go/log"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 type RequestLogger interface {

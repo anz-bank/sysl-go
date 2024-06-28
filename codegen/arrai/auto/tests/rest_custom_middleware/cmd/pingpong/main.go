@@ -13,8 +13,7 @@ import (
 	"github.com/anz-bank/sysl-go/common"
 	"github.com/anz-bank/sysl-go/core"
 	"github.com/anz-bank/sysl-go/log"
-
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 )
 
 type AppConfig struct{}

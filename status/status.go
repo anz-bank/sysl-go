@@ -7,10 +7,9 @@ import (
 	"net/http"
 
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
+	"github.com/go-chi/chi/v5"
 
 	"github.com/anz-bank/sysl-go/config"
-
-	"github.com/go-chi/chi"
 )
 
 type Service struct {

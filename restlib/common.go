@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/anz-bank/sysl-go/convert"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 )
 
 func GetURLParam(r *http.Request, key string) string {
