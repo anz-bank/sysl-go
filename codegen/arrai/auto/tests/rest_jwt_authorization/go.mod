@@ -6,6 +6,7 @@ replace github.com/anz-bank/sysl-go => ../../../../..
 
 require (
 	github.com/anz-bank/sysl-go v0.189.0
+	github.com/go-chi/chi/v5 v5.0.14
 	github.com/sethvargo/go-retry v0.1.0
 	github.com/spf13/afero v1.11.0
 	github.com/stretchr/testify v1.9.0
@@ -14,9 +15,9 @@ require (
 require (
 	github.com/alecthomas/participle v0.7.1 // indirect
 	github.com/anz-bank/go-pkcs12 v0.4.0 // indirect
-	github.com/anz-bank/pkg v0.7.0 // indirect
-	github.com/arr-ai/frozen v1.6.0 // indirect
-	github.com/arr-ai/hash v1.0.0 // indirect
+	github.com/anz-bank/pkg v0.8.0 // indirect
+	github.com/arr-ai/frozen v1.7.0 // indirect
+	github.com/arr-ai/hash v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
@@ -24,7 +25,6 @@ require (
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.4 // indirect
-	github.com/go-chi/chi/v5 v5.0.14 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.3 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
@@ -32,6 +32,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.20.0 // indirect
