@@ -1,6 +1,7 @@
 package temporal_tester
 
 import (
+	"github.com/nexus-rpc/sdk-go/nexus"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/converter"
@@ -48,6 +49,10 @@ func (mw *MockWorker) RegisterActivity(a interface{}) {
 
 func (mw *MockWorker) RegisterActivityWithOptions(a interface{}, options activity.RegisterOptions) {
 	mw.mockClient.Env.RegisterActivityWithOptions(a, options)
+}
+
+func (mw *MockWorker) RegisterNexusService(s *nexus.Service) {
+	mw.mockClient.Env.RegisterNexusService(s)
 }
 
 func (mw *MockWorker) GetTestActivityEnv() *testsuite.TestActivityEnvironment {
