@@ -7,7 +7,7 @@ replace github.com/anz-bank/sysl-go => ../../../../..
 require (
 	github.com/anz-bank/sysl-go v0.279.0
 	github.com/stretchr/testify v1.10.0
-	go.temporal.io/sdk v1.31.0
+	go.temporal.io/sdk v1.32.1
 	google.golang.org/grpc v1.66.0
 	google.golang.org/protobuf v1.34.2
 )

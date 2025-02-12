@@ -324,3 +324,12 @@ func (m *MockClient) NewWithStartWorkflowOperation(options client.StartWorkflowO
 func (m *MockClient) UpdateWithStartWorkflow(ctx context.Context, options client.UpdateWithStartWorkflowOptions) (client.WorkflowUpdateHandle, error) {
 	return nil, nil
 }
+
+func (m *MockClient) UpdateWorkflowExecutionOptions(ctx context.Context, options client.UpdateWorkflowExecutionOptionsRequest) (client.WorkflowExecutionOptions, error) {
+	return client.WorkflowExecutionOptions{}, nil
+}
+
+func (m *MockClient) DeploymentClient() client.DeploymentClient {
+	var c client.DeploymentClient
+	return c
+}
