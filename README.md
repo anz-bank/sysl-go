@@ -24,14 +24,15 @@ docker pull anzbank/sysl-go:latest
 
 docker run --rm -v $(pwd):/mount:ro anzbank/sysl-go /sysl-go/codegen/arrai/service.arrai github.com/anz-bank/sysl-template/gen /mount/api/project.json simple rest-app | tar xf - -C gen/simple
 ```
+
 See [sysl-template](https://github.com/anz-bank/sysl-template) for more examples
 
 ## Local Development
 
 Ensure your environment provides:
 
-- [go 1.20](https://golang.org/doc/install)
-- [golangci-lint 1.56.2](https://github.com/golangci/golangci-lint/releases/tag/v1.56.2)
+- [go 1.24](https://golang.org/doc/install)
+- [golangci-lint 2.1.5](https://github.com/golangci/golangci-lint/releases/tag/v2.1.5)
 - [protobuf 3.11.4](https://github.com/protocolbuffers/protobuf/)
 - `make`
 - proto3 and gRPC
@@ -43,8 +44,7 @@ Ensure your environment provides:
 - [`go-bindata`](https://github.com/go-bindata/go-bindata) tool available on PATH
 - [`goimports`](https://pkg.go.dev/golang.org/x/tools/cmd/goimports) tool available on PATH
 
-
-On OSX, after installing [go 1.20](https://golang.org/doc/install) run
+On OSX, after installing [go 1.24](https://golang.org/doc/install) run
 
     brew install golangci/tap/golangci-lint make curl protoc-gen-go grpc
 

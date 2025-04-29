@@ -5,7 +5,7 @@ sysl file to test template generation
 ## Prerequisites
 
 - [Sysl v0.11.0 or later ](https://sysl.io/docs/install/)
-- Go 1.20
+- Go 1.24
 
 ## Building application Docker container image
 

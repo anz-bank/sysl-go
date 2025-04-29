@@ -8,11 +8,12 @@ import (
 
 	"github.com/anz-bank/sysl-go/log"
 
-	"github.com/anz-bank/sysl-go/jsontime"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
+
+	"github.com/anz-bank/sysl-go/jsontime"
 )
 
 // configReaderImpl exposes a wrapper api for viper.
@@ -110,8 +111,7 @@ func (m configReaderImpl) validateNoUnusedKeys(metadata *mapstructure.Metadata) 
 		unusedNotIgnored = append(unusedNotIgnored, unusedKey)
 	}
 	if len(unusedNotIgnored) > 0 {
-		msg := fmt.Sprintf("Misconfiguration error: found unexpected config key(s): %s", strings.Join(unusedNotIgnored, ","))
-		return fmt.Errorf(msg)
+		return fmt.Errorf("Misconfiguration error: found unexpected config key(s): %s", strings.Join(unusedNotIgnored, ","))
 	}
 	return nil
 }

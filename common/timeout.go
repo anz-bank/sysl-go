@@ -39,6 +39,10 @@ func logf(ctx context.Context, format string, args ...interface{}) {
 	log.Errorf(ctx, fmt.Errorf(format, args...), "timeout error")
 }
 
+func logError(ctx context.Context, errMsg string) {
+	log.Errorf(ctx, errors.New(errMsg), "timeout error")
+}
+
 // Timeout is a middleware that cancels ctx after a given timeout or call a special handler on timeout.
 func Timeout(timeout time.Duration, timeoutHandler http.Handler) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -106,7 +110,7 @@ func (h *timeoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		defer func() {
 			if p := recover(); p != nil {
-				logf(ctx, string(debug.Stack()))
+				logError(ctx, string(debug.Stack()))
 				panicChan <- p
 			}
 		}()

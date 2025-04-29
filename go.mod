@@ -1,6 +1,6 @@
 module github.com/anz-bank/sysl-go
 
-go 1.21
+go 1.24.2
 
 require (
 	github.com/alecthomas/participle v0.7.1
@@ -9,7 +9,7 @@ require (
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
 	github.com/dlclark/regexp2 v1.11.0
 	github.com/go-chi/chi/v5 v5.0.14
-	github.com/go-jose/go-jose/v3 v3.0.3
+	github.com/go-jose/go-jose/v3 v3.0.4
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.6.0
@@ -24,7 +24,7 @@ require (
 	github.com/spf13/cast v1.6.0
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
-	go.temporal.io/api v1.43.0
+	go.temporal.io/api v1.44.1
 	go.temporal.io/sdk v1.32.1
 	google.golang.org/grpc v1.66.0
 	google.golang.org/protobuf v1.34.2
@@ -70,12 +70,12 @@ require (
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/crypto v0.26.0 // indirect
+	golang.org/x/crypto v0.37.0 // indirect
 	golang.org/x/exp v0.0.0-20240613232115-7f521ea00fb8 // indirect
-	golang.org/x/net v0.28.0 // indirect
-	golang.org/x/sync v0.8.0 // indirect
-	golang.org/x/sys v0.24.0 // indirect
-	golang.org/x/text v0.17.0 // indirect
+	golang.org/x/net v0.39.0 // indirect
+	golang.org/x/sync v0.13.0 // indirect
+	golang.org/x/sys v0.32.0 // indirect
+	golang.org/x/text v0.24.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240827150818-7e3bb234dfed // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240827150818-7e3bb234dfed // indirect

@@ -1,19 +1,11 @@
-service:
-  golangci-lint-version: 1.56.2
-
-linters-settings:
-  lll:
-    line-length: 180
-
+version: "2"
 linters:
-  disable-all: true
+  default: none
   enable:
     - asciicheck
     - bodyclose
-    # - depguard
     - dogsled
     - errcheck
-    - exportloopref
     - funlen
     - gochecknoinits
     - gocognit
@@ -21,67 +13,58 @@ linters:
     - gocritic
     - gocyclo
     - godot
-    - gofmt
-    - goimports
     - gomodguard
     - goprintffuncname
-    - gosimple
-    - govet
     - ineffassign
     - misspell
     - nakedret
     - nolintlint
     - prealloc
-    - exportloopref
-    # Had to remove static check because golangci-lint complains that
-    # //nolint:staticheck wasn't required, but then complains of a deprecated
-    # usage when //nolint:staticheck is removed. Also, in at least one instance,
-    # actually fixing the problem would break backwards compatibility.
-    # - staticcheck
-    - typecheck
+#    - staticcheck
     - unconvert
     - unparam
     - whitespace
-
-  # disable: # as at 1.27.0
-  #   - dupl
-  #   - gochecknoglobals
-  #   - godox
-  #   - goerr113
-  #   - gomnd
-  #   - gosec
-  #   - lll
-  #   - nestif
-  #   - stylecheck
-  #   - testpackage
-  #   - unused
-  #   - wsl
-
-issues:
-  exclude-rules:
-    #Ignore variable scope linting
-    - path: "errors/error_handler_test.go"
-      linters:
-        - scopelint
-    - path: "config/config_test.go"
-      linters:
-        - scopelint
-    # Ignore things like "FormId should be FormID"
-    - path: codegen
-      text: "ST1003:"
-      linters:
-        - stylecheck
-    # Ignore things like "FormId should be FormID"
-    - path: codegen
-      text: ".*should be.*"
-      linters:
-        - golint
-
-    - path: _test\.go
-      linters:
-        - govet # Ignore err shadowing in test files
-        - gomnd
-        - funlen # Ignore function length for tests
-
-run:
-  timeout: 2m
+  settings:
+    lll:
+      line-length: 180
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - scopelint
+        path: errors/error_handler_test.go
+      - linters:
+          - scopelint
+        path: config/config_test.go
+      - linters:
+          - staticcheck
+        path: codegen
+        text: 'ST1003:'
+      - linters:
+          - golint
+        path: codegen
+        text: .*should be.*
+      - linters:
+          - funlen
+          - govet
+          - mnd
+        path: _test\.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

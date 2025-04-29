@@ -8,8 +8,9 @@ import (
 
 	anzlog "github.com/anz-bank/sysl-go/log"
 
-	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
+
+	"github.com/anz-bank/sysl-go/testutil"
 )
 
 func TestTLSLogFilter_Write(t *testing.T) {
@@ -28,7 +29,7 @@ func TestTLSLogFilter_Write(t *testing.T) {
 			writer := &TLSLogFilter{logger.WithLevel(anzlog.DebugLevel), re}
 			serverLogger := log.New(writer, "", 0)
 
-			serverLogger.Printf(tt.in)
+			serverLogger.Print(tt.in)
 
 			require.Equal(t, 1, logger.EntryCount())
 			require.Equal(t, tt.in, logger.LastEntry().Message)

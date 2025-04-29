@@ -10,8 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anz-bank/sysl-go/log"
 	"github.com/go-chi/chi/v5"
+
+	"github.com/anz-bank/sysl-go/log"
 
 	"github.com/stretchr/testify/require"
 
@@ -19,8 +20,9 @@ import (
 	"github.com/anz-bank/sysl-go/handlerinitialiser"
 	"github.com/anz-bank/sysl-go/testutil"
 
-	"github.com/anz-bank/sysl-go/status"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/anz-bank/sysl-go/status"
 
 	"github.com/anz-bank/sysl-go/config"
 
@@ -389,7 +391,7 @@ func TestHTTPStoppableServerGracefulStopTimeout(t *testing.T) {
 		BasePath: "/",
 		Common: config.CommonServerConfig{
 			HostName: "localhost",
-			Port:     8084,
+			Port:     8083,
 			TLS:      nil,
 		},
 	}
@@ -419,7 +421,7 @@ func TestHTTPStoppableServerGracefulStopTimeout(t *testing.T) {
 	}()
 
 	healthCheck := func(suffix string) error {
-		resp, err := http.Get("http://localhost:8084/" + suffix)
+		resp, err := http.Get("http://localhost:8083/" + suffix)
 		if err != nil {
 			return err
 		}
