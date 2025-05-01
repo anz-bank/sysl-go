@@ -3,7 +3,8 @@ let validate = //{./validate};
 let generate = \(:outDir, :json, :repo, :path, :appname, :subDir, :pbbase) \template
     let basepath = $`${repo}/${subDir}${path}`;
     let module = //encoding.json.decode(json);
-    let app = module("apps")(appname);
+    let app = module("apps")(appname)?:{};
+    let _ = cond {!app: //error($`Could not find app "${appname}" in the sysl model`)};
 
     let config = //{./generate}.config((:basepath, :json, :module, :app));
 
