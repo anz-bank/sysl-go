@@ -69,12 +69,28 @@ func TestSetAndGetNilRequestHeader(t *testing.T) {
 	require.Equal(t, http.Header(nil), out)
 }
 
-func TestSetAndGetValidRequesetHeader(t *testing.T) {
+func TestSetAndGetValidRequestHeader(t *testing.T) {
 	in := make(http.Header)
 	in["Accept-Header"] = []string{"b"}
 
 	out := RequestHeaderFromContext(RequestHeaderToContext(context.Background(), in))
 	require.Equal(t, "b", out["Accept-Header"][0])
+}
+
+func TestSetAndGetCanonicalRequestHeader(t *testing.T) {
+	in := make(http.Header)
+	in["AcCepT-hEaDer"] = []string{"b"}
+
+	out := RequestHeaderFromContext(RequestHeaderToContext(context.Background(), in))
+	require.Equal(t, "b", out["Accept-Header"][0])
+}
+
+func TestSetAndGetNonCanonicalRequestHeader(t *testing.T) {
+	in := make(http.Header)
+	in["AcCepT-hEaDer"] = []string{"b"}
+
+	out := RequestHeaderFromContext(RequestHeaderToContextAsIs(context.Background(), in))
+	require.Equal(t, "b", out["AcCepT-hEaDer"][0])
 }
 
 func TestGetUnsetRequestHeader(t *testing.T) {

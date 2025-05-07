@@ -59,6 +59,14 @@ func RequestHeaderToContext(ctx context.Context, header http.Header) context.Con
 	return context.WithValue(ctx, reqHeaderContextKey{}, &reqHeaderContext{canonicalizedHeader})
 }
 
+// RequestHeaderToContextAsIs creates a new context containing the request header, but will not canonicalize the keys.
+// Warning: Do not use this function unless absolutely necessary and you understand that some checks will assume the
+// keys are canonicalized. If you have a downstream that require case-sensitive headers then you can use this function
+// as a last resort.
+func RequestHeaderToContextAsIs(ctx context.Context, header http.Header) context.Context {
+	return context.WithValue(ctx, reqHeaderContextKey{}, &reqHeaderContext{header.Clone()})
+}
+
 // RequestHeaderFromContext retrieves the request header from the context.
 func RequestHeaderFromContext(ctx context.Context) http.Header {
 	reqHeader := getReqHeaderContext(ctx)
