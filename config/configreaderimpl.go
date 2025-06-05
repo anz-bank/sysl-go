@@ -6,14 +6,12 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/anz-bank/sysl-go/jsontime"
 	"github.com/anz-bank/sysl-go/log"
-
-	"github.com/mitchellh/mapstructure"
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/pkg/errors"
 	"github.com/spf13/cast"
 	"github.com/spf13/viper"
-
-	"github.com/anz-bank/sysl-go/jsontime"
 )
 
 // configReaderImpl exposes a wrapper api for viper.
