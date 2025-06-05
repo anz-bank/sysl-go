@@ -23,4 +23,4 @@ $(ACTUAL_FILES) &: internal/gen/pkg/servers/template
 include codegen.mk
 
 clean:
-	rm -rf internal/gen/ $(ACTUAL_FILES)
+	rm -rf internal/gen/ cmd/ $(ACTUAL_FILES)

@@ -47,7 +47,7 @@ auto-test-%/.dummy:
 
 update-auto-test-go-mod: $(patsubst %,go-mod-%.dummy,$(ALL_TESTS)) ## Update go.mod and go.sum files within auto tests
 go-mod-%/.dummy:
-	cd $* && go mod download && go mod tidy
+	cd $* && go mod download && go mod tidy && make gen-all-servers && go mod tidy && make clean
 
 clean: $(patsubst %,clean-%.dummy,$(ALL_TESTS))
 	rm -f $(COVERFILE)

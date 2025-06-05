@@ -32,3 +32,5 @@ template.arraiz: template.arrai
 
 go.mod: template.arraiz
 	go mod init custom_template
+
+internal/gen/pkg/servers/template: template.arraiz
