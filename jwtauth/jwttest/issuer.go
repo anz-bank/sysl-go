@@ -8,8 +8,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/go-jose/go-jose/v3"
-	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/google/uuid"
 
 	"github.com/anz-bank/sysl-go/jwtauth"
@@ -66,7 +66,7 @@ func (i Issuer) IssueFromMap(claims map[string]interface{}) (string, error) {
 			claims["iss"] = i.Name
 		}
 	}
-	return jwt.Signed(i.Signer).Claims(claims).CompactSerialize()
+	return jwt.Signed(i.Signer).Claims(claims).Serialize()
 }
 
 // Verify implements jwtauth.Verifier.
@@ -78,7 +78,7 @@ func (i Issuer) Verify(token *jwt.JSONWebToken, claims ...interface{}) error {
 //
 // Checks the issuer on the inbound jwt matches the name of the issuer.
 func (i Issuer) Authenticate(ctx context.Context, token string) (jwtauth.Claims, error) {
-	parsed, err := jwt.ParseSigned(token)
+	parsed, err := jwt.ParseSigned(token, []jose.SignatureAlgorithm{jose.RS256})
 	if err != nil {
 		return jwtauth.Claims{}, &jwtauth.AuthError{
 			Code:  jwtauth.AuthErrCodeInvalidJWT,

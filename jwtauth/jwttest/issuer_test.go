@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/go-jose/go-jose/v3"
-	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -35,7 +35,7 @@ func TestIssue(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify the jwt can be verified by the issuers public key
-	parsed, err := jwt.ParseSigned(token)
+	parsed, err := jwt.ParseSigned(token, []jose.SignatureAlgorithm{jose.RS256})
 	require.NoError(t, err)
 	var claimsFromToken jwtauth.Claims
 	require.NoError(t, parsed.Claims(issuer.PubKey, &claimsFromToken))
@@ -51,7 +51,7 @@ func TestIssueFromMap(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify the jwt can be verified by the issuers public key
-	parsed, err := jwt.ParseSigned(token)
+	parsed, err := jwt.ParseSigned(token, []jose.SignatureAlgorithm{jose.RS256})
 	require.NoError(t, err)
 	var claimsFromToken jwtauth.Claims
 	require.NoError(t, parsed.Claims(issuer.PubKey, &claimsFromToken))

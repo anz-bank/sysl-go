@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/pkg/errors"
 )
 
@@ -33,7 +34,7 @@ type StdAuthenticator struct {
 // Authenticate authenticates a jwt and returns the extracted claims, or an
 // error if any occur.
 func (a *StdAuthenticator) Authenticate(ctx context.Context, raw string) (Claims, error) {
-	token, err := jwt.ParseSigned(raw)
+	token, err := jwt.ParseSigned(raw, []jose.SignatureAlgorithm{jose.RS256})
 	if err != nil {
 		pkgLogger.Debug(ctx, "error parsing jwt:", err)
 		return Claims{}, &AuthError{
@@ -83,7 +84,7 @@ type InsecureAuthenticator struct{}
 
 // Authenticate implements the Authenticator interface.
 func (i InsecureAuthenticator) Authenticate(ctx context.Context, raw string) (Claims, error) {
-	token, err := jwt.ParseSigned(raw)
+	token, err := jwt.ParseSigned(raw, []jose.SignatureAlgorithm{jose.RS256})
 	if err != nil {
 		pkgLogger.Debug(ctx, "jwt parse error:", err)
 		return Claims{}, &AuthError{

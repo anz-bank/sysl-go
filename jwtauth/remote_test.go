@@ -6,7 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -29,7 +30,7 @@ func TestRemoteJWKSVerify(t *testing.T) {
 	require.NotNil(t, v)
 
 	token := issueTestJWT()
-	jwtToken, err := jwt.ParseSigned(token)
+	jwtToken, err := jwt.ParseSigned(token, []jose.SignatureAlgorithm{jose.RS256})
 	require.NoError(t, err)
 	require.NotNil(t, jwtToken)
 	var claims Claims
@@ -47,7 +48,7 @@ func TestRemoteJWKSVerifyCacheExpired(t *testing.T) {
 		},
 	}
 	token := issueTestJWT()
-	jwtToken, err := jwt.ParseSigned(token)
+	jwtToken, err := jwt.ParseSigned(token, []jose.SignatureAlgorithm{jose.RS256})
 	require.NoError(t, err)
 	require.NotNil(t, jwtToken)
 	var claims Claims
@@ -67,7 +68,7 @@ func TestRemoteJWKSVerifyCannotRefresh(t *testing.T) {
 		},
 	}
 	token := issueTestJWT()
-	jwtToken, err := jwt.ParseSigned(token)
+	jwtToken, err := jwt.ParseSigned(token, []jose.SignatureAlgorithm{jose.RS256})
 	require.NoError(t, err)
 	require.NotNil(t, jwtToken)
 
@@ -94,7 +95,7 @@ func TestRemoteJWKSNotAvailableOnStartup(t *testing.T) {
 
 	activeJWKS = goodJWKS
 	token := issueTestJWT()
-	jwtToken, err := jwt.ParseSigned(token)
+	jwtToken, err := jwt.ParseSigned(token, []jose.SignatureAlgorithm{jose.RS256})
 	require.NoError(t, err)
 	require.NotNil(t, jwtToken)
 	var claims Claims
@@ -107,7 +108,7 @@ func TestRemoteJWKSVerifyFailsUntrustedJWT(t *testing.T) {
 	v, err := NewRemoteJWKSIssuer(ctx, "test-issuer", url, client, time.Minute, 0)
 	require.NoError(t, err)
 	token := issueUntrustedTestJWT()
-	jwtToken, err := jwt.ParseSigned(token)
+	jwtToken, err := jwt.ParseSigned(token, []jose.SignatureAlgorithm{jose.RS256})
 	require.NoError(t, err)
 	require.NotNil(t, jwtToken)
 
@@ -128,7 +129,7 @@ func TestRemoteJWKSVerifyFailsMaliciousJWT(t *testing.T) {
 	v, err := NewRemoteJWKSIssuer(ctx, "test-issuer", url, client, time.Minute, 0)
 	require.NoError(t, err)
 	token := issueMaliciousTestJWT()
-	jwtToken, err := jwt.ParseSigned(token)
+	jwtToken, err := jwt.ParseSigned(token, []jose.SignatureAlgorithm{jose.RS256})
 	require.NoError(t, err)
 	require.NotNil(t, jwtToken)
 

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/go-jose/go-jose/v3"
-	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/pkg/errors"
 )
 
@@ -65,7 +65,7 @@ func issueTestJWT() string {
 	claims := Claims{
 		"iss": "test",
 	}
-	res, _ := jwt.Signed(testSigner).Claims(claims).CompactSerialize()
+	res, _ := jwt.Signed(testSigner).Claims(claims).Serialize()
 	return res
 }
 
@@ -74,7 +74,7 @@ func issueExpiredJWT() string {
 		"iss": "test",
 		"exp": jwt.NewNumericDate(time.Now().Add(-5 * time.Second)),
 	}
-	res, _ := jwt.Signed(testSigner).Claims(claims).CompactSerialize()
+	res, _ := jwt.Signed(testSigner).Claims(claims).Serialize()
 	return res
 }
 
@@ -82,7 +82,7 @@ func issueUntrustedTestJWT() string {
 	claims := Claims{
 		"iss": "untrusted",
 	}
-	res, _ := jwt.Signed(testUntrustedSigner).Claims(claims).CompactSerialize()
+	res, _ := jwt.Signed(testUntrustedSigner).Claims(claims).Serialize()
 	return res
 }
 
@@ -90,7 +90,7 @@ func issueMaliciousTestJWT() string {
 	claims := Claims{
 		"iss": "test",
 	}
-	res, _ := jwt.Signed(testMaliciousSigner).Claims(claims).CompactSerialize()
+	res, _ := jwt.Signed(testMaliciousSigner).Claims(claims).Serialize()
 	return res
 }
 
@@ -103,6 +103,6 @@ func issueTestJWTWithActor(actorSubject string) string {
 			"sub": actorSubject,
 		},
 	}
-	res, _ := jwt.Signed(testSigner).Claims(claims).CompactSerialize()
+	res, _ := jwt.Signed(testSigner).Claims(claims).Serialize()
 	return res
 }

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -141,17 +141,17 @@ func asJSONBytes(value interface{}) []byte {
 
 func TestAuthenticateCustomClaims(t *testing.T) {
 	ctx := testContext()
-	auth := (&StdAuthenticator{
+	auth := &StdAuthenticator{
 		Verifiers: map[string]Verifier{
 			"test": testVerifier{},
 		},
-	})
+	}
 
 	claims := map[string]interface{}{
 		"iss":                 "test",
 		"_some_private_claim": []string{"1234"},
 	}
-	token, _ := jwt.Signed(testSigner).Claims(claims).CompactSerialize()
+	token, _ := jwt.Signed(testSigner).Claims(claims).Serialize()
 
 	actual, err := auth.Authenticate(ctx, token)
 	require.NoError(t, err)

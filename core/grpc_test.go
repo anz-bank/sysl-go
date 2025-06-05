@@ -7,14 +7,15 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/anz-bank/sysl-go/config"
-	test "github.com/anz-bank/sysl-go/core/testdata/proto"
-	"github.com/anz-bank/sysl-go/handlerinitialiser"
-	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+
+	"github.com/anz-bank/sysl-go/config"
+	test "github.com/anz-bank/sysl-go/core/testdata/proto"
+	"github.com/anz-bank/sysl-go/handlerinitialiser"
+	"github.com/anz-bank/sysl-go/testutil"
 )
 
 const testPort = 8888
@@ -77,7 +78,14 @@ func (h *grpcHandler) GrpcPublicServerConfig() *config.GRPCServerConfig {
 func connectAndCheckReturn(ctx context.Context, t *testing.T, securityOption grpc.DialOption) {
 	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", testPort), securityOption, grpc.WithBlock())
 	require.NoError(t, err)
-	defer conn.Close()
+	defer func(conn *grpc.ClientConn) {
+		err := conn.Close()
+		if err != nil {
+			t.Errorf("Failed to close connection: %v", err)
+		} else {
+			t.Log("Connection closed successfully")
+		}
+	}(conn)
 	client := test.NewTestServiceClient(conn)
 	resp, err := client.Test(ctx, &test.TestRequest{Field1: "test"})
 	require.NoError(t, err)
@@ -149,7 +157,10 @@ func Test_encryptionConfigUsed(t *testing.T) {
 }
 
 func Test_serverUsesGivenLogger(t *testing.T) {
-	os.Setenv("GRPC_GO_LOG_VERBOSITY_LEVEL", "99")
+	err := os.Setenv("GRPC_GO_LOG_VERBOSITY_LEVEL", "99")
+	if err != nil {
+		require.NoError(t, err)
+	}
 
 	ctx, logger := testutil.NewTestContextWithLogger()
 
@@ -167,7 +178,14 @@ func Test_serverUsesGivenLogger(t *testing.T) {
 
 	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", testPort), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	require.NoError(t, err)
-	defer conn.Close()
+	defer func(conn *grpc.ClientConn) {
+		err := conn.Close()
+		if err != nil {
+			t.Errorf("Failed to close connection: %v", err)
+		} else {
+			t.Log("Connection closed successfully")
+		}
+	}(conn)
 
 	var connecting bool
 	cre := regexp.MustCompile(`Channel switches to new LB policy`)
