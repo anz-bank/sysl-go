@@ -5,7 +5,7 @@ import (
 	"reflect"
 
 	"github.com/anz-bank/sysl-go/validator"
-	"github.com/mitchellh/mapstructure"
+	"github.com/go-viper/mapstructure/v2"
 )
 
 const DefaultReplacementText = "****************"

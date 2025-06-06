@@ -3,11 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-
-	reflection "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
-
 	"testing"
 	"time"
+
+	reflection "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 
 	"google.golang.org/grpc"
 
@@ -130,8 +129,7 @@ func testGRPCServerReflection(t *testing.T, enabled bool) {
 	}()
 
 	// Wait for application to come up
-	backoff, err := retry.NewFibonacci(20 * time.Millisecond)
-	require.Nil(t, err)
+	backoff := retry.NewFibonacci(20 * time.Millisecond)
 	backoff = retry.WithMaxDuration(5*time.Second, backoff)
 	err = retry.Do(ctx, backoff, func(ctx context.Context) error {
 		_, err := doGatewayEncode(ctx, "testing; one two, one two; is this thing on?")

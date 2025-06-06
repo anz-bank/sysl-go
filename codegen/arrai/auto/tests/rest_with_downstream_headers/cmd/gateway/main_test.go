@@ -205,8 +205,7 @@ func TestRestWithDownstreamHeadersAppSmokeTest(t *testing.T) {
 	}()
 
 	// Wait for application to come up
-	backoff, err := retry.NewFibonacci(20 * time.Millisecond)
-	require.Nil(t, err)
+	backoff := retry.NewFibonacci(20 * time.Millisecond)
 	backoff = retry.WithMaxDuration(5*time.Second, backoff)
 	err = retry.Do(ctx, backoff, func(ctx context.Context) error {
 		_, err := doGatewayRequestResponse(ctx, "testing; one two, one two; is this thing on?")

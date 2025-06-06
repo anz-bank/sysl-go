@@ -33,9 +33,6 @@ jobs:
           build-args: |
             ${{ env.DOCKER_BUILD_ARGS }}
 
-      - name: "go work"
-        run: docker run --rm -v $(pwd):/work -w /work --entrypoint "/usr/bin/make" ci-builder go-work
-
       - name: "make all"
         run: docker run --rm -v $(pwd):/work -w /work --entrypoint "/usr/bin/make" ci-builder all
 

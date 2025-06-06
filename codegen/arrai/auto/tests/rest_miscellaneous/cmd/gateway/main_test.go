@@ -11,13 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/anz-bank/sysl-go/validator"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/array_response_backend"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/encoder_backend"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/multi_contenttype_backend"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/oneof_backend"
 	"rest_miscellaneous/internal/gen/pkg/servers/gateway/types"
+
+	"github.com/anz-bank/sysl-go/validator"
 
 	"github.com/sethvargo/go-retry"
 	"github.com/stretchr/testify/require"
@@ -111,8 +112,7 @@ func startAndTestServer(t *testing.T, applicationConfig, basePath string) {
 	}()
 
 	// Wait for application to come up
-	backoff, err := retry.NewFibonacci(20 * time.Millisecond)
-	require.Nil(t, err)
+	backoff := retry.NewFibonacci(20 * time.Millisecond)
 	backoff = retry.WithMaxDuration(5*time.Second, backoff)
 	require.NoError(t, retry.Do(ctx, backoff, func(ctx context.Context) error {
 		_, err := doGatewayRequestResponse(ctx, basePath, "")

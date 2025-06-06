@@ -319,7 +319,7 @@ func TestJWTAuthorizationOfRESTEndpoints(t *testing.T) {
 			// Test if the endpoint of our gateway application server works.
 			// There is a retry loop here since we might need to wait a bit
 			// for the application server to come up.
-			backoff, err := retry.NewFibonacci(20 * time.Millisecond)
+			backoff := retry.NewFibonacci(20 * time.Millisecond)
 			require.Nil(t, err)
 
 			var actualResponse string

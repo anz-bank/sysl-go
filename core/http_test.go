@@ -275,10 +275,9 @@ func TestHTTPStoppableServerCanBeHardStopped(t *testing.T) {
 	}
 
 	// Wait for server to come up
-	backoff, err := retry.NewFibonacci(20 * time.Millisecond)
-	require.NoError(t, err)
+	backoff := retry.NewFibonacci(20 * time.Millisecond)
 	backoff = retry.WithMaxDuration(5*time.Second, backoff)
-	err = retry.Do(ctx, backoff, func(ctx context.Context) error {
+	err := retry.Do(ctx, backoff, func(ctx context.Context) error {
 		err := healthCheck()
 		if err != nil {
 			return retry.RetryableError(err)
@@ -344,10 +343,9 @@ func TestHTTPStoppableServerCanBeGracefullyStopped(t *testing.T) {
 	}
 
 	// Wait for server to come up
-	backoff, err := retry.NewFibonacci(20 * time.Millisecond)
-	require.NoError(t, err)
+	backoff := retry.NewFibonacci(20 * time.Millisecond)
 	backoff = retry.WithMaxDuration(5*time.Second, backoff)
-	err = retry.Do(ctx, backoff, func(ctx context.Context) error {
+	err := retry.Do(ctx, backoff, func(ctx context.Context) error {
 		err := healthCheck("")
 		if err != nil {
 			return retry.RetryableError(err)
@@ -433,10 +431,9 @@ func TestHTTPStoppableServerGracefulStopTimeout(t *testing.T) {
 	}
 
 	// Wait for server to come up
-	backoff, err := retry.NewFibonacci(20 * time.Millisecond)
-	require.NoError(t, err)
+	backoff := retry.NewFibonacci(20 * time.Millisecond)
 	backoff = retry.WithMaxDuration(5*time.Second, backoff)
-	err = retry.Do(ctx, backoff, func(ctx context.Context) error {
+	err := retry.Do(ctx, backoff, func(ctx context.Context) error {
 		err := healthCheck("")
 		if err != nil {
 			return retry.RetryableError(err)

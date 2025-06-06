@@ -333,3 +333,8 @@ func (m *MockClient) DeploymentClient() client.DeploymentClient {
 	var c client.DeploymentClient
 	return c
 }
+
+func (m *MockClient) WorkerDeploymentClient() client.WorkerDeploymentClient {
+	var c client.WorkerDeploymentClient
+	return c
+}

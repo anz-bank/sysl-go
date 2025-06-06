@@ -135,8 +135,7 @@ func TestApplicationSmokeTest(t *testing.T) {
 	}()
 
 	// Wait for application to come up
-	backoff, err := retry.NewFibonacci(10 * time.Millisecond)
-	require.Nil(t, err)
+	backoff := retry.NewFibonacci(10 * time.Millisecond)
 	backoff = retry.WithMaxDuration(10*time.Second, backoff)
 	err = retry.Do(ctx, backoff, func(ctx context.Context) error {
 		_, _, err := doPingRequestResponse(ctx, 0, 0)

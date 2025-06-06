@@ -99,8 +99,7 @@ func startAndTestServer(t *testing.T, applicationConfig, basePath string) {
 	}()
 
 	// Wait for application to come up
-	backoff, err := retry.NewFibonacci(20 * time.Millisecond)
-	require.Nil(t, err)
+	backoff := retry.NewFibonacci(20 * time.Millisecond)
 	backoff = retry.WithMaxDuration(5*time.Second, backoff)
 	require.NoError(t, retry.Do(ctx, backoff, func(ctx context.Context) error {
 		_, err := doGatewayRequestResponse(ctx, basePath, "")
@@ -222,7 +221,6 @@ func TestMultiStatusCodeResponse(t *testing.T) {
 	}
 }
 
-
 func TestMultiResponseError(t *testing.T) {
 	t.Parallel()
 
@@ -278,4 +276,3 @@ func TestMultiStatusCodeError(t *testing.T) {
 		})
 	}
 }
-
