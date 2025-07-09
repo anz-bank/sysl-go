@@ -61,8 +61,8 @@ require (
 	github.com/spf13/viper v1.20.1 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
-	go.temporal.io/api v1.49.1 // indirect
-	go.temporal.io/sdk v1.34.0 // indirect
+	go.temporal.io/api v1.50.0 // indirect
+	go.temporal.io/sdk v1.35.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.39.0 // indirect
 	golang.org/x/net v0.41.0 // indirect

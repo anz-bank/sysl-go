@@ -9,6 +9,7 @@ import (
 	enumspb "go.temporal.io/api/enums/v1"
 	"go.temporal.io/api/operatorservice/v1"
 	"go.temporal.io/api/workflowservice/v1"
+	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/testsuite"
@@ -337,4 +338,11 @@ func (m *MockClient) DeploymentClient() client.DeploymentClient {
 func (m *MockClient) WorkerDeploymentClient() client.WorkerDeploymentClient {
 	var c client.WorkerDeploymentClient
 	return c
+}
+
+func (m *MockClient) DescribeWorkflow(ctx context.Context, workflowID string, runID string) (*client.WorkflowExecutionDescription, error) {
+	return &client.WorkflowExecutionDescription{}, nil
+}
+
+func (m *MockClient) RegisterDynamicActivity(activity interface{}, options *activity.DynamicRegisterOptions) {
 }

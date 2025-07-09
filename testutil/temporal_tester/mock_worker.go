@@ -59,6 +59,14 @@ func (mw *MockWorker) GetTestActivityEnv() *testsuite.TestActivityEnvironment {
 	return mw.actEnv
 }
 
+func (mw *MockWorker) RegisterDynamicWorkflow(a interface{}, options workflow.DynamicRegisterOptions) {
+	mw.mockClient.Env.RegisterDynamicWorkflow(a, options)
+}
+
+func (mw *MockWorker) RegisterDynamicActivity(a interface{}, options activity.DynamicRegisterOptions) {
+	mw.mockClient.Env.RegisterDynamicActivity(a, options)
+}
+
 // TestFuture is a wrapper of the test result of executing test activity.
 type TestFuture[Resp any] struct {
 	converter.EncodedValue

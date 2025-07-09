@@ -24,8 +24,8 @@ require (
 	github.com/spf13/cast v1.9.2
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
-	go.temporal.io/api v1.49.1
-	go.temporal.io/sdk v1.34.0
+	go.temporal.io/api v1.50.0
+	go.temporal.io/sdk v1.35.0
 	google.golang.org/grpc v1.73.0
 	google.golang.org/protobuf v1.36.6
 	gopkg.in/yaml.v2 v2.4.0
