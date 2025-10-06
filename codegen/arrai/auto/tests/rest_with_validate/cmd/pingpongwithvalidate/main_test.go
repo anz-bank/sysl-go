@@ -176,6 +176,7 @@ const (
 	patternWithNegativeLookahead
 	enumString
 	enumInt
+	largeNumber
 )
 
 func getBody(vts varToSet, s string, i int64) pingpongwithvalidate.PingWithValidateRequest {
@@ -202,6 +203,8 @@ func getBody(vts varToSet, s string, i int64) pingpongwithvalidate.PingWithValid
 		ret.EnumString = &s
 	case enumInt:
 		ret.EnumInt = &i
+	case largeNumber:
+		ret.LargeNumber = &i
 	}
 
 	return ret
@@ -258,6 +261,8 @@ func TestValidate_BodyParams(t *testing.T) {
 
 		{`enumIntSuccess`, 200, getBody(enumInt, "", 1)},
 		{`enumIntFail`, 400, getBody(enumInt, "", 4)},
+
+		{`LargeNumber`, 200, getBody(largeNumber, "", 9999999)},
 	} {
 		test := test
 		t.Run(test.name, func(t *testing.T) {

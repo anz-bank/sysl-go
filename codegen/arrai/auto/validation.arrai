@@ -25,6 +25,10 @@ let quoteSpaced =
     let hasSpace = //re.compile('\\s').match;
     \s cond {hasSpace(s): $`'${s}'`, _: s};
 
+let removeScientificNotation = \s
+    let i = //eval.value(s);
+    $`${i:0.0f}`;
+
 let validationTagForType = \type 
     let tags =
         cond type {
@@ -32,28 +36,28 @@ let validationTagForType = \type
                 //rel.union(c.a => cond .@item {
                     {'length': l, ...}:
                         l => cond . {
-                            (@: 'max', @value: m): $`max=${m.s}`,
-                            (@: 'min', @value: m): $`min=${m.s}`,
+                            (@: 'max', @value: m): $`max=${removeScientificNotation(m.s)}`,
+                            (@: 'min', @value: m): $`min=${removeScientificNotation(m.s)}`,
                         } where .
                 })
         } | cond type {
             {'attrs': a, ...}:
                 (
                     # first check openapi 3.0.3
-                    cond a {{'min':m, 'exclusiveMin':{'s':(s: '(b: {})'), ...}, ...}: {$`min=${m('s').s}`}}
-                    | cond a {{'min':m, 'exclusiveMin':{'s':(s: '(b: true)'), ...}, ...}: {$`gt=${m('s').s}`}}
+                    cond a {{'min':m, 'exclusiveMin':{'s':(s: '(b: {})'), ...}, ...}: {$`min=${removeScientificNotation(m('s').s)}`}}
+                    | cond a {{'min':m, 'exclusiveMin':{'s':(s: '(b: true)'), ...}, ...}: {$`gt=${removeScientificNotation(m('s').s)}`}}
                     || #otherwise check openapi 3.1.0
-                    cond a {{'min':m, ...}: {$`min=${m('s').s}`}}
-                    | cond a {{'exclusiveMin':m, ...}: {$`gt=${m('s').s}`}}
+                    cond a {{'min':m, ...}: {$`min=${removeScientificNotation(m('s').s)}`}}
+                    | cond a {{'exclusiveMin':m, ...}: {$`gt=${removeScientificNotation(m('s').s)}`}}
                 )
                 |
                 (
                     # first check openapi 3.0.3
-                    cond a {{'max':m, 'exclusiveMax':{'s':(s: '(b: {})'), ...}, ...}: {$`max=${m('s').s}`}}
-                    | cond a {{'max':m, 'exclusiveMax':{'s':(s: '(b: true)'), ...}, ...}: {$`lt=${m('s').s}`}}
+                    cond a {{'max':m, 'exclusiveMax':{'s':(s: '(b: {})'), ...}, ...}: {$`max=${removeScientificNotation(m('s').s)}`}}
+                    | cond a {{'max':m, 'exclusiveMax':{'s':(s: '(b: true)'), ...}, ...}: {$`lt=${removeScientificNotation(m('s').s)}`}}
                     || #otherwise check openapi 3.1.0
-                    cond a {{'max':m, ...}: {$`max=${m('s').s}`}}
-                    | cond a {{'exclusiveMax':m, ...}: {$`lt=${m('s').s}`}}
+                    cond a {{'max':m, ...}: {$`max=${removeScientificNotation(m('s').s)}`}}
+                    | cond a {{'exclusiveMax':m, ...}: {$`lt=${removeScientificNotation(m('s').s)}`}}
                 )
                 |
                 (

@@ -55,6 +55,10 @@ components:
           maximum: 10
           exclusiveMinimum: false
           exclusiveMaximum: false
+        largeNumber:
+          type: integer
+          format: int64
+          maximum: 9999999
         patternSimple:
           type: string
           pattern: 'aaa'
