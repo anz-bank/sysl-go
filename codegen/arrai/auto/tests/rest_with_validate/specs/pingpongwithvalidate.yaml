@@ -26,6 +26,13 @@ components:
       type: string
       minLength: 1
       maxLength: 2
+    arrayObjectDetails:
+      type: object
+      properties:
+        stringWithLength:
+          type: string
+          minLength: 2
+          maxLength: 7
     PingWithValidateRequest:
       type: object
       required:
@@ -81,6 +88,10 @@ components:
             - 3
         refWithLength:
           $ref: '#/components/schemas/toRefWithLength'
+        arrayOfObjects:
+          type: array
+          items:
+            $ref: '#/components/schemas/arrayObjectDetails'
 
   parameters:
     headerLength:

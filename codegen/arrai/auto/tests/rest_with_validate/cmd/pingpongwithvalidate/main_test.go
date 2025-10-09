@@ -177,6 +177,7 @@ const (
 	enumString
 	enumInt
 	largeNumber
+	arrayOfObject
 )
 
 func getBody(vts varToSet, s string, i int64) pingpongwithvalidate.PingWithValidateRequest {
@@ -205,6 +206,8 @@ func getBody(vts varToSet, s string, i int64) pingpongwithvalidate.PingWithValid
 		ret.EnumInt = &i
 	case largeNumber:
 		ret.LargeNumber = &i
+	case arrayOfObject:
+		ret.ArrayOfObjects = []pingpongwithvalidate.ArrayObjectDetails{{&s}}
 	}
 
 	return ret
@@ -263,6 +266,9 @@ func TestValidate_BodyParams(t *testing.T) {
 		{`enumIntFail`, 400, getBody(enumInt, "", 4)},
 
 		{`LargeNumber`, 200, getBody(largeNumber, "", 9999999)},
+
+		{`ArrayOfObjectDiveTooShort`, 400, getBody(arrayOfObject, "1", 0)},
+		{`ArrayOfObjectDive`, 200, getBody(arrayOfObject, "12", 0)},
 	} {
 		test := test
 		t.Run(test.name, func(t *testing.T) {

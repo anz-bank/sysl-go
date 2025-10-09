@@ -63,6 +63,8 @@ let validationTagForType = \type
                 (
                     cond a {{'openapi_enum': {'a': {'elt': (a: e, ...), ...}, ...}, ...}: {$`oneof=${e >> quoteSpaced(.('s').s):: }`}}
                 )
+        } | cond type {
+            {'sequence': {'typeRef':_, ...}, ...}: {$`dive`}
         };
     cond {tags:
         //seq.join(',', cond { !sysl.type.required(type): ['omitempty']} ++ (tags orderby .))
