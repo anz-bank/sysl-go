@@ -66,6 +66,10 @@ components:
           type: integer
           format: int64
           maximum: 9999999
+        floatWithFractional:
+          type: number
+          minimum: 1
+          maximum: 999999999.99
         patternSimple:
           type: string
           pattern: 'aaa'

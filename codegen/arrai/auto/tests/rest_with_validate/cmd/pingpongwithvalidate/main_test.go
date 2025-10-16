@@ -178,6 +178,7 @@ const (
 	enumInt
 	largeNumber
 	arrayOfObject
+	floatWithFractional
 )
 
 func getBody(vts varToSet, s string, i int64) pingpongwithvalidate.PingWithValidateRequest {
@@ -208,6 +209,17 @@ func getBody(vts varToSet, s string, i int64) pingpongwithvalidate.PingWithValid
 		ret.LargeNumber = &i
 	case arrayOfObject:
 		ret.ArrayOfObjects = []pingpongwithvalidate.ArrayObjectDetails{{&s}}
+	}
+
+	return ret
+}
+
+func getBodyFloat(vts varToSet, f float64) pingpongwithvalidate.PingWithValidateRequest {
+	ret := getPopulatedBody()
+
+	switch vts {
+	case floatWithFractional:
+		ret.FloatWithFractional = &f
 	}
 
 	return ret
@@ -269,6 +281,10 @@ func TestValidate_BodyParams(t *testing.T) {
 
 		{`ArrayOfObjectDiveTooShort`, 400, getBody(arrayOfObject, "1", 0)},
 		{`ArrayOfObjectDive`, 200, getBody(arrayOfObject, "12", 0)},
+
+		{`FloatWithFractionalSmallest`, 200, getBodyFloat(floatWithFractional, 1)},
+		{`FloatWithFractionalLargest`, 200, getBodyFloat(floatWithFractional, 999999999.99)},
+		{`FloatWithFractionalTooLarge`, 400, getBodyFloat(floatWithFractional, 1000000000)},
 	} {
 		test := test
 		t.Run(test.name, func(t *testing.T) {
