@@ -213,7 +213,7 @@ let temporal = //{./temporal};
                         let name = type('attrs')?('name')('s').s:name;
                         let required = sysl.type.required(type);
                         let regex = type('attrs')?('regex')?('s').s:{};
-                        let validateTag = validation.validationTagForType(type);
+                        let validateTag = validation.validationTagForType(app, type);
                         let validate = validateApp && (regex || validateTag);
                         $`${cond {required || validate: $`${go.name(name)} := restlib.GetHeaderParam(r, "${name}")`}}
                         ${cond {required: $`

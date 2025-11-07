@@ -175,6 +175,7 @@ const (
 	patternSimple
 	patternWithNegativeLookahead
 	enumString
+	enumStringRef
 	enumInt
 	largeNumber
 	arrayOfObject
@@ -203,6 +204,8 @@ func getBody(vts varToSet, s string, i int64) pingpongwithvalidate.PingWithValid
 		ret.PatternWithNegativeLookahead = &s
 	case enumString:
 		ret.EnumString = &s
+	case enumStringRef:
+		ret.EnumStringRef = &s
 	case enumInt:
 		ret.EnumInt = &i
 	case largeNumber:
@@ -273,6 +276,11 @@ func TestValidate_BodyParams(t *testing.T) {
 		{`enumStringSuccessWithSpace`, 200, getBody(enumString, "Val With Spaces", 0)},
 		{`enumStringSuccessWithTabs`, 200, getBody(enumString, "Val\tWith\tTabs", 0)},
 		{`enumStringFail`, 400, getBody(enumString, "val1", 0)},
+
+		{`enumStringRefSuccess`, 200, getBody(enumStringRef, "Val1", 0)},
+		{`enumStringRefSuccessWithSpace`, 200, getBody(enumStringRef, "Val With Spaces", 0)},
+		{`enumStringRefSuccessWithTabs`, 200, getBody(enumStringRef, "Val\tWith\tTabs", 0)},
+		{`enumStringRefFail`, 400, getBody(enumStringRef, "val1", 0)},
 
 		{`enumIntSuccess`, 200, getBody(enumInt, "", 1)},
 		{`enumIntFail`, 400, getBody(enumInt, "", 4)},

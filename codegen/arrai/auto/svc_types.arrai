@@ -54,7 +54,7 @@ let fieldJsonTag = \type \key
                             cond attrDef {{'attrs': {'validate': {'s': (s: tag), ...}, ...}, ...}: tag}
                             || cond {
                                 # if this entity is marked for validation
-                                validateEntity: validation.validationTagForType(attrDef),
+                                validateEntity: validation.validationTagForType(app, attrDef),
                             };
 
                         # Purpose: add url field tags to support scenario where we need

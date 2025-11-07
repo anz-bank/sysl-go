@@ -38,9 +38,15 @@ let removeScientificNotation = \s
         _: s
     };
 
-let validationTagForType = \type 
+let validationTagForType = \app \type
+    # follow any alias first
+    let t = cond type {
+        {'typeRef': {'ref': {'path': (a: [(s: typeName)]), ...}, ...}, ...}:
+            app('types')?(typeName)?:{},
+    } || type;
+
     let tags =
-        cond type {
+        cond t {
             {'constraint': c, ...}:
                 //rel.union(c.a => cond .@item {
                     {'length': l, ...}:
@@ -49,7 +55,7 @@ let validationTagForType = \type
                             (@: 'min', @value: m): $`min=${removeScientificNotation(m.s)}`,
                         } where .
                 })
-        } | cond type {
+        } | cond t {
             {'attrs': a, ...}:
                 (
                     # first check openapi 3.0.3
@@ -72,7 +78,7 @@ let validationTagForType = \type
                 (
                     cond a {{'openapi_enum': {'a': {'elt': (a: e, ...), ...}, ...}, ...}: {$`oneof=${e >> quoteSpaced(.('s').s):: }`}}
                 )
-        } | cond type {
+        } | cond t {
             {'sequence': {'typeRef':_, ...}, ...}: {$`dive`}
         };
     cond {tags:

@@ -84,6 +84,8 @@ components:
             - Val3
             - Val With Spaces
             - Val	With	Tabs
+        enumStringRef:
+          $ref: '#/components/schemas/enumString'
         enumInt:
           type: integer
           enum:
@@ -96,7 +98,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/arrayObjectDetails'
-
+    enumString:
+      type: string
+      enum:
+        - Val1
+        - Val2
+        - Val3
+        - Val With Spaces
+        - Val	With	Tabs
   parameters:
     headerLength:
       name: headerLength
