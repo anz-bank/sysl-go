@@ -12,6 +12,10 @@ import (
 
 type AppConfig struct{}
 
+func GetPingPathParamWithValidate(_ context.Context, _ *pingpongwithvalidate.GetPingPathParamWithValidateRequest) error {
+	return nil
+}
+
 func PostPingWithValidate(_ context.Context, _ *pingpongwithvalidate.PostPingWithValidateRequest) error {
 	return nil
 }
@@ -25,8 +29,9 @@ func PostPongPong(_ context.Context, req *pingpongwithvalidate.PostPongPongReque
 
 func createService(_ context.Context, _ AppConfig) (*pingpongwithvalidate.ServiceInterface, *core.Hooks, error) {
 	return &pingpongwithvalidate.ServiceInterface{
-			PostPingWithValidate: PostPingWithValidate,
-			PostPongPong:         PostPongPong,
+			GetPingPathParamWithValidate: GetPingPathParamWithValidate,
+			PostPingWithValidate:         PostPingWithValidate,
+			PostPongPong:                 PostPongPong,
 		}, &core.Hooks{},
 		nil
 }

@@ -19,6 +19,14 @@ paths:
       responses:
         '200':
           description: OK
+  /ping-path-param-with-validate/{pathWithPattern}/{pathWithLength}:
+    get:
+      parameters:
+        - $ref: '#/components/parameters/PathWithPattern'
+        - $ref: '#/components/parameters/PathWithLength'
+      responses:
+        '200':
+          description: OK
 
 components:
   schemas:
@@ -121,3 +129,18 @@ components:
       schema:
         type: string
         pattern: '^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)(\.(?!$)|$)){4}$'
+    PathWithPattern:
+      name: pathWithPattern
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: ^[a-f0-9]{12}$
+    PathWithLength:
+      name: pathWithLength
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 2
+        maxLength: 7

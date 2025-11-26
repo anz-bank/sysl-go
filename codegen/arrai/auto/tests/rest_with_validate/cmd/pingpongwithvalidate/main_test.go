@@ -353,3 +353,32 @@ func TestValidate_HeaderParams(t *testing.T) {
 		})
 	}
 }
+
+func TestValidate_PathParams(t *testing.T) {
+	t.Parallel()
+	gatewayTester := pingpongwithvalidate.NewTestServer(t, context.Background(), createService, "")
+	defer gatewayTester.Close()
+
+	for _, test := range []struct {
+		name            string
+		code            int
+		pathWithPattern string
+		pathWithLength  string
+	}{
+		{`allPopulated`, 200, "7d83d140bd56", "123"},
+
+		{`LengthTooShort`, 400, "7d83d140bd56", "1"},
+		{`LengthSmallest`, 200, "7d83d140bd56", "12"},
+		{`LengthLargest`, 200, "7d83d140bd56", "1234567"},
+		{`LengthTooLong`, 400, "7d83d140bd56", "12345678"},
+
+		{`patternFail`, 400, "invalid", "123"},
+	} {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			gatewayTester.GetPingPathParamWithValidate(test.pathWithPattern, test.pathWithLength).
+				ExpectResponseCode(test.code).
+				Send()
+		})
+	}
+}

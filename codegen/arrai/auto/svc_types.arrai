@@ -169,7 +169,12 @@ let fieldJsonTag = \type \key
         `::\i}
         ${endpoints >> \(@value: ep, ...)
             let typename = $`${go.methodName(app, ep)}Request`;
-            let paramTags = validation.paramValidateTags(ep) => (:.@, @value:$'`validate:"${.@value}"`');
+            let paramTags = validation.paramValidateTags(ep);
+            let queryParams = ep('restParams')?('queryParam')?.a:{};
+            let urlParams = ep('restParams')?('urlParam')?.a:{}
+                # merge with params defined at the root
+                >> \u let m = ep('param')?.a:{} where .@item('name').s = u('name').s => .@item; cond m {{i}: u +> i, _: u};
+            let params = (queryParams ++ urlParams) => .@item orderby sysl.source(.('type'));
             $`
                 // ${typename} ...
                 type ${typename} struct {
@@ -177,12 +182,32 @@ let fieldJsonTag = \type \key
                         (ep('param')?.a:{}) where "body" <: sysl.patterns(.@item('type')) >>
                             $`Request ${go.bodyType(module, app, .('type'))}`
                     ::\i}
-                    ${ep('restParams')?:{}
-                        -> (.('queryParam')?.a:{}) ++ (.('urlParam')?.a:{})
-                        orderby sysl.source(.@item('type'))
-                        >>  let tags = paramTags(.@item('name').s)?:{};
-                            $`${go.name(.@item('name').s)} ${go.type(module, app, .@item('type'))} ${tags}`
+                    ${
+                         params >>
+                            let validateTag = 
+                                # if there is a validate tag use it
+                                paramTags(.('name').s)?:{}
+                                || cond {
+                                    # if this app is marked for validation
+                                    validateApp: validation.validationTagForType(app, .('type')),
+                                };
+                            let structTags = cond { validateTag: $'`validate:"${validateTag}"`' };
+                            $`${go.name(.('name').s)} ${go.type(module, app, .('type'))} ${structTags}`
                     ::\i}
+                }
+
+                // *${typename} validator
+                func (s *${typename}) Validate() error {
+                    ${cond {validateApp:
+                        let regexParams = params where .@item('type')('attrs')?('regex')?:{} rank (:.@);
+                        regexParams >>
+                            $`
+                                if !common.RegexWithFallbackMustCompile(``${.('type')('attrs')('regex')('s').s}``).MatchString(s.${go.name(.('name').s)}) {
+                                    return errors.New("${go.name(.('name').s)} does not fit the required regex")
+                                }
+                            `
+                    }::\i:\n}
+                    return validator.Validate(s)
                 }
             `
         ::\i}

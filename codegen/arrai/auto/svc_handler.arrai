@@ -247,7 +247,7 @@ let temporal = //{./temporal};
                     ::\i:\n}
                     ctx, cancel := s.genCallback.DownstreamTimeoutContext(ctx)
                     defer cancel()
-                    valErr := validator.Validate(&req)
+                    valErr := req.Validate()
                     if valErr != nil {
                         common.HandleError(ctx, w, common.BadRequestError, "Invalid request", valErr, s.genCallback.MapError, s.genCallback.WriteError)
                         return
