@@ -9,8 +9,8 @@ github.com/alecthomas/participle v0.7.1/go.mod h1:HfdmEuwvr12HXQN44HPWXR0lHmVolV
 github.com/alecthomas/repr v0.0.0-20181024024818-d37bc2a10ba1/go.mod h1:xTS7Pm1pD1mvyM075QCDSRqH6qRLXylzS24ZTpRiSzQ=
 github.com/alecthomas/repr v0.1.0 h1:ENn2e1+J3k09gyj2shc0dHr/yjaWSHRlrJ4DPMevDqE=
 github.com/alecthomas/repr v0.1.0/go.mod h1:2kn6fqh/zIyPLmm3ugklbEi5hg5wS435eygvNfaDQL8=
-github.com/anz-bank/go-pkcs12 v0.4.0 h1:vwah5oaCxmepbOwfQrC3s/3V5lQGKj/3ncee0N4GahQ=
-github.com/anz-bank/go-pkcs12 v0.4.0/go.mod h1:O+b5w1AozX79iJAa14TRdxHrOZuoZqnohKvTyjx9RjE=
+github.com/anz-bank/go-pkcs12 v0.5.0 h1:JaL3t4HOnXRNG8RInhLJ3AOHasYmQS7vTmPH09GqM3o=
+github.com/anz-bank/go-pkcs12 v0.5.0/go.mod h1:pGg7aPy1TjycPVc7PG2tAkGjiq8Mk7Tf39vwC08TibM=
 github.com/anz-bank/pkg v0.8.0 h1:wCI72vCDp132Gy+YDkaERuyFBQSwYRkQA8/TqHw1EOU=
 github.com/anz-bank/pkg v0.8.0/go.mod h1:SBFePMUjiD4M8hbapuTAZ9gTfSjG4PuwygZvxCH5nt0=
 github.com/arr-ai/frozen v1.7.0 h1:/Vz1V7t1zsCKeYRPKdi+3KonWCMXjXoMEniVIXgcrDY=

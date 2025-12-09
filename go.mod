@@ -4,7 +4,7 @@ go 1.24.2
 
 require (
 	github.com/alecthomas/participle v0.7.1
-	github.com/anz-bank/go-pkcs12 v0.4.0
+	github.com/anz-bank/go-pkcs12 v0.5.0
 	github.com/anz-bank/pkg v0.8.0
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
 	github.com/dlclark/regexp2 v1.11.5

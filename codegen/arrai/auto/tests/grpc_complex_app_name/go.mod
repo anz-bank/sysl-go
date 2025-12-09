@@ -14,7 +14,7 @@ require (
 
 require (
 	github.com/alecthomas/participle v0.7.1 // indirect
-	github.com/anz-bank/go-pkcs12 v0.4.0 // indirect
+	github.com/anz-bank/go-pkcs12 v0.5.0 // indirect
 	github.com/anz-bank/pkg v0.8.0 // indirect
 	github.com/arr-ai/frozen v1.7.0 // indirect
 	github.com/arr-ai/hash v1.1.0 // indirect
