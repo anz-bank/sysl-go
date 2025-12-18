@@ -181,6 +181,7 @@ const (
 	arrayOfObject
 	arrayOfEnum
 	floatWithFractional
+	refOfArrayWithLength
 )
 
 func getBody(vts varToSet, s string, i int64) pingpongwithvalidate.PingWithValidateRequest {
@@ -215,6 +216,8 @@ func getBody(vts varToSet, s string, i int64) pingpongwithvalidate.PingWithValid
 		ret.ArrayOfObjects = []pingpongwithvalidate.ArrayObjectDetails{{&s}}
 	case arrayOfEnum:
 		ret.ArrayOfEnumString = []string{s}
+	case refOfArrayWithLength:
+		ret.RefOfArrayWithLength = []string{s}
 	}
 
 	return ret
@@ -299,6 +302,9 @@ func TestValidate_BodyParams(t *testing.T) {
 		{`FloatWithFractionalSmallest`, 200, getBodyFloat(floatWithFractional, 1)},
 		{`FloatWithFractionalLargest`, 200, getBodyFloat(floatWithFractional, 999999999.99)},
 		{`FloatWithFractionalTooLarge`, 400, getBodyFloat(floatWithFractional, 1000000000)},
+
+		{`RefOfArrayValid`, 200, getBody(refOfArrayWithLength, "123", 0)},
+		{`RefOfArrayTooLong`, 400, getBody(refOfArrayWithLength, "1234", 0)},
 	} {
 		test := test
 		t.Run(test.name, func(t *testing.T) {

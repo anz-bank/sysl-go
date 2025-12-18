@@ -34,6 +34,11 @@ components:
       type: string
       minLength: 1
       maxLength: 2
+    toRefOfArrayWithLength:
+      type: array
+      items:
+        type: string
+        maxLength: 3
     arrayObjectDetails:
       type: object
       properties:
@@ -102,6 +107,8 @@ components:
             - 3
         refWithLength:
           $ref: '#/components/schemas/toRefWithLength'
+        refOfArrayWithLength:
+          $ref: '#/components/schemas/toRefOfArrayWithLength'
         arrayOfObjects:
           type: array
           items:

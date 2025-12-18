@@ -38,7 +38,7 @@ let removeScientificNotation = \s
         _: s
     };
 
-let validationTagForType = \app \type
+let rec validationTagsForType = \app \type
     # follow any alias first
     let t = cond type {
         {'typeRef': {'ref': {'path': (a: [(s: typeName)]), ...}, ...}, ...}:
@@ -74,15 +74,21 @@ let validationTagForType = \app \type
                     cond a {{'max':m, ...}: {$`max=${removeScientificNotation(m('s').s)}`}}
                     | cond a {{'exclusiveMax':m, ...}: {$`lt=${removeScientificNotation(m('s').s)}`}}
                 )
-                |
-                (
-                    cond a {{'openapi_enum': {'a': {'elt': (a: e, ...), ...}, ...}, ...}: {$`oneof=${e >> quoteSpaced(.('s').s):: }`}}
-                )
-        } | cond t {
-            {'sequence': _, ...}: {$`dive`}
         };
+    (tags orderby .) ++ cond t {
+        {'sequence': sequence, ...}: ['dive']
+    } ++ cond t {
+        # enum needs to be after dive
+        {'attrs': {'openapi_enum': {'a': {'elt': (a: e, ...), ...}, ...}, ...}, ...}:
+            [$`oneof=${e >> quoteSpaced(.('s').s):: }`]
+    } ++ cond t {
+        {'sequence': sequence, ...}: validationTagsForType(app, sequence)
+    };
+
+let validationTagForType = \app \type
+    let tags = validationTagsForType(app, type);
     cond {tags:
-        //seq.join(',', cond { !sysl.type.required(type): ['omitempty']} ++ (tags orderby .))
+        //seq.join(',', cond { !sysl.type.required(type): ['omitempty']} ++ tags)
     };
 
 (
