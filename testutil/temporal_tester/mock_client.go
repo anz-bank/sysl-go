@@ -346,3 +346,23 @@ func (m *MockClient) DescribeWorkflow(ctx context.Context, workflowID string, ru
 
 func (m *MockClient) RegisterDynamicActivity(activity interface{}, options *activity.DynamicRegisterOptions) {
 }
+
+func (m *MockClient) CompleteActivityByActivityID(ctx context.Context, namespace, activityID, activityRunID string, result interface{}, err error) error {
+	return nil
+}
+
+func (m *MockClient) ExecuteActivity(ctx context.Context, options client.StartActivityOptions, activity any, args ...any) (client.ActivityHandle, error) {
+	return nil, nil
+}
+
+func (m *MockClient) GetActivityHandle(options client.GetActivityHandleOptions) client.ActivityHandle {
+	return nil
+}
+
+func (m *MockClient) ListActivities(ctx context.Context, options client.ListActivitiesOptions) (client.ListActivitiesResult, error) {
+	return client.ListActivitiesResult{}, nil
+}
+
+func (m *MockClient) CountActivities(ctx context.Context, options client.CountActivitiesOptions) (*client.CountActivitiesResult, error) {
+	return nil, nil
+}

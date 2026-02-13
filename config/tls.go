@@ -13,7 +13,8 @@ import (
 	"sort"
 	"strings"
 
-	pkcs12 "github.com/anz-bank/go-pkcs12"
+	"github.com/anz-bank/go-pkcs12"
+
 	"github.com/anz-bank/sysl-go/log"
 )
 
@@ -350,7 +351,7 @@ func buildPool(ctx context.Context, cfg *TrustedCertPoolConfig) (*x509.CertPool,
 	var pool *x509.CertPool
 	buildPoolFn, ok := CertPoolEncodingTypes[strings.ToLower(*cfg.Encoding)]
 	if !ok {
-		keys := make([]string, len(CertPoolEncodingTypes))
+		keys := make([]string, 0, len(CertPoolEncodingTypes))
 		for key := range CertPoolEncodingTypes {
 			keys = append(keys, key)
 		}
