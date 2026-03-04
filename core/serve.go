@@ -863,8 +863,7 @@ func getExternalLogger(ctx context.Context) (context.Context, log.Logger) {
 		return log.PutLogger(ctx, lgr), lgr
 	}
 	fields := pkg.FieldsFrom(ctx)
-	empty := pkg.Fields{}
-	if fields != empty {
+	if !fields.IsEmpty() {
 		lgr := log.NewPkgLogger(fields)
 		lgr.Debug("legacy pkg logger configuration detected, use Hooks.Logger instead")
 		return log.PutLogger(ctx, lgr), lgr
