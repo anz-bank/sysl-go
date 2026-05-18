@@ -3,10 +3,12 @@ package common
 import (
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"testing"
 	"time"
 
+	"github.com/anz-bank/sysl-go/testutil"
 	"github.com/stretchr/testify/require"
 )
 
@@ -77,20 +79,6 @@ func TestTimeoutHandler_CallbackCalledIfTimeout(t *testing.T) {
 	defer resp.Body.Close()
 }
 
-func recoverer(next http.Handler, hit *bool) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if rvr := recover(); rvr != nil {
-				*hit = true
-
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			}
-		}()
-
-		next.ServeHTTP(w, r)
-	})
-}
-
 func TestTimeoutHandler_PanicRethrow(t *testing.T) {
 	req := require.New(t)
 	tester := defaultTestHandler()
@@ -98,16 +86,17 @@ func TestTimeoutHandler_PanicRethrow(t *testing.T) {
 	handler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		panic("HElp")
 	})
+	testCtx := testutil.NewTestContext()
 
-	caught := false
-	timeoutmware := Timeout(time.Millisecond, tester)
-	ts := NewHTTPTestServer(recoverer(timeoutmware(handler), &caught))
-	defer ts.Close()
+	timeoutHandler := TimeoutHandler(handler, time.Millisecond, tester).(*timeoutHandler)
+	timeoutHandler.testContext = testCtx
+	httpReq := httptest.NewRequest(http.MethodGet, "/", nil)
+	httpResp := httptest.NewRecorder()
 
-	resp, err := http.Get(ts.URL)
-	req.True(caught)
-	req.NoError(err)
-	defer resp.Body.Close()
+	req.PanicsWithValue("HElp", func() {
+		timeoutHandler.ServeHTTP(httpResp, httpReq)
+	})
+	req.False(tester.called)
 }
 
 func TestTimeoutHandler_ContextTimoutMoreThanWriteTimeout(t *testing.T) {

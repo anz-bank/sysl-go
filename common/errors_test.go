@@ -141,3 +141,81 @@ This is a very very long response body.`
 	require.EqualError(t, e, "DownstreamError(Kind=Unauthorized error from downstream services, Method=GET, URL=https://www.test.com/hello, StatusCode=401, ContentType=text/plain, ContentLength=159, Snippet=This is a very very long response body.\nThis is a very very long response body.\nThis is a very very long response body.\nThis is , Cause=nothing)")
 	defer resp.Body.Close()
 }
+func TestCheckContextTimeout_ContextDeadlineExceeded(t *testing.T) {
+	// Given a context with deadline exceeded
+	ctx, cancel := context.WithTimeout(context.Background(), 0*time.Nanosecond)
+	defer cancel()
+	time.Sleep(1 * time.Millisecond) // Ensure context timeout fires
+
+	testErr := fmt.Errorf("some error")
+
+	// When
+	err := CheckContextTimeout(ctx, "test message", testErr)
+
+	// Then
+	require.NotNil(t, err)
+	serverErr, ok := err.(*ServerError)
+	require.True(t, ok, "expected ServerError")
+	require.Equal(t, DownstreamTimeoutError, serverErr.Kind)
+	require.Equal(t, "test message", serverErr.Message)
+	require.Equal(t, testErr, serverErr.Cause)
+}
+
+func TestCheckContextTimeout_HTTPClientTimeout(t *testing.T) {
+	// Given a valid context but an HTTP client timeout error
+	ctx := context.Background()
+
+	// Create a mock timeout error (simulates Client.Timeout exceeded)
+	timeoutErr := &mockTimeoutError{msg: "Client.Timeout exceeded"}
+
+	// When
+	err := CheckContextTimeout(ctx, "test message", timeoutErr)
+
+	// Then
+	require.NotNil(t, err)
+	serverErr, ok := err.(*ServerError)
+	require.True(t, ok, "expected ServerError")
+	require.Equal(t, DownstreamTimeoutError, serverErr.Kind)
+	require.Equal(t, "test message", serverErr.Message)
+	require.Equal(t, timeoutErr, serverErr.Cause)
+}
+
+func TestCheckContextTimeout_NoTimeout(t *testing.T) {
+	// Given a valid context and a non-timeout error
+	ctx := context.Background()
+	testErr := fmt.Errorf("regular error")
+
+	// When
+	err := CheckContextTimeout(ctx, "test message", testErr)
+
+	// Then
+	require.Nil(t, err, "expected nil for non-timeout errors")
+}
+
+func TestCheckContextTimeout_NilError(t *testing.T) {
+	// Given a valid context and nil error
+	ctx := context.Background()
+
+	// When
+	err := CheckContextTimeout(ctx, "test message", nil)
+
+	// Then
+	require.Nil(t, err, "expected nil for nil error")
+}
+
+// mockTimeoutError simulates an HTTP client timeout error.
+type mockTimeoutError struct {
+	msg string
+}
+
+func (e *mockTimeoutError) Error() string {
+	return e.msg
+}
+
+func (e *mockTimeoutError) Timeout() bool {
+	return true
+}
+
+func (e *mockTimeoutError) Temporary() bool {
+	return true
+}

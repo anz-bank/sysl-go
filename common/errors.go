@@ -2,6 +2,7 @@ package common
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 )
@@ -94,7 +95,34 @@ func CheckContextTimeout(ctx context.Context, message string, cause error) error
 	if ctx.Err() == context.DeadlineExceeded {
 		return &ServerError{Kind: DownstreamTimeoutError, Message: message, Cause: cause}
 	}
+
+	// Also treat HTTP client timeouts as DownstreamTimeoutError (504) rather than
+	// DownstreamUnavailableError (503). This is the normal case when the HTTP client
+	// timeout fires before the context timeout.
+	if isTimeoutError(cause) {
+		return &ServerError{Kind: DownstreamTimeoutError, Message: message, Cause: cause}
+	}
+
 	return nil
+}
+
+// isTimeoutError checks if an error is a timeout error by checking common timeout error types.
+func isTimeoutError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// Check for standard timeout errors
+	type timeoutError interface {
+		Timeout() bool
+	}
+
+	var te timeoutError
+	if errors.As(err, &te) && te.Timeout() {
+		return true
+	}
+
+	return false
 }
 
 type DownstreamError struct {
