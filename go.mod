@@ -8,10 +8,10 @@ require (
 	github.com/anz-bank/pkg v0.10.0
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869
 	github.com/dlclark/regexp2 v1.11.5
-	github.com/go-chi/chi/v5 v5.2.1
-	github.com/go-jose/go-jose/v4 v4.1.3
+	github.com/go-chi/chi/v5 v5.2.5
+	github.com/go-jose/go-jose/v4 v4.1.4
 	github.com/go-playground/validator/v10 v10.26.0
-	github.com/go-viper/mapstructure/v2 v2.2.1
+	github.com/go-viper/mapstructure/v2 v2.5.0
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.6.0
 	github.com/nexus-rpc/sdk-go v0.6.0
