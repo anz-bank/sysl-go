@@ -6,6 +6,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testScopeFoo                = "foo"
+	testScopeBarr               = "barr"
+	exprNotJWTHasScopeTest      = `not(jwtHasScope("test"))`
+	exprAllJWTHasScopeFoo       = `all(jwtHasScope("foo"))`
+	exprAnyJWTHasScopeFooBarr   = `any(jwtHasScope("foo"), jwtHasScope("barr"))`
+	exprAllJWTHasScopeFooBarr   = `all(jwtHasScope("foo"), jwtHasScope("barr"))`
+	exprComplexWithFizzBuzzTest = `all(any(jwtHasScope("fizz"),jwtHasScope("buzz")),not(jwtHasScope("test")))`
+)
+
 func demoScopes(scopes []string) func(string) (bool, error) {
 	return func(queryScope string) (bool, error) {
 		for _, scope := range scopes {
@@ -35,28 +45,28 @@ func TestRepr(t *testing.T) {
 			expectedOutput: `any(jwtHasScope("test"))`,
 		},
 		{
-			input:          `not(jwtHasScope("test"))`,
-			expectedOutput: `not(jwtHasScope("test"))`,
+			input:          exprNotJWTHasScopeTest,
+			expectedOutput: exprNotJWTHasScopeTest,
 		},
 		{
 			input:          `not(jwtHasScope('test'))`,
-			expectedOutput: `not(jwtHasScope("test"))`,
+			expectedOutput: exprNotJWTHasScopeTest,
 		},
 		{
 			input:          `not(jwtHasScope("te'''\"st"))`,
 			expectedOutput: `not(jwtHasScope("te'''\"st"))`,
 		},
 		{
-			input:          `all(any(jwtHasScope("fizz"),jwtHasScope("buzz")),not(jwtHasScope("test")))`,
-			expectedOutput: `all(any(jwtHasScope("fizz"),jwtHasScope("buzz")),not(jwtHasScope("test")))`,
+			input:          exprComplexWithFizzBuzzTest,
+			expectedOutput: exprComplexWithFizzBuzzTest,
 		},
 		{
-			input:          `all(any(jwtHasScope("fizz"),jwtHasScope("buzz")),not(jwtHasScope("test")))`,
-			expectedOutput: `all(any(jwtHasScope("fizz"),jwtHasScope("buzz")),not(jwtHasScope("test")))`,
+			input:          exprComplexWithFizzBuzzTest,
+			expectedOutput: exprComplexWithFizzBuzzTest,
 		},
 		{
 			input:          `all(any(jwtHasScope("fizz",),jwtHasScope("buzz",),),not(jwtHasScope("test",),),)`,
-			expectedOutput: `all(any(jwtHasScope("fizz"),jwtHasScope("buzz")),not(jwtHasScope("test")))`,
+			expectedOutput: exprComplexWithFizzBuzzTest,
 		},
 	}
 
@@ -74,7 +84,7 @@ func TestRepr(t *testing.T) {
 func TestOpExprTrailingCommaInvariance(t *testing.T) {
 	t.Parallel()
 
-	a, err := CompileExpression(`any(jwtHasScope("foo"), jwtHasScope("barr"))`)
+	a, err := CompileExpression(exprAnyJWTHasScopeFooBarr)
 	require.NoError(t, err)
 
 	b, err := CompileExpression(`any(jwtHasScope("foo", ), jwtHasScope("barr", ), )`)
@@ -97,78 +107,78 @@ func TestCompileExpression(t *testing.T) {
 	scenarios := []scenario{
 		{
 			name:            "access denied if rule requires scope but there are no scopes",
-			inputExprString: `all(jwtHasScope("foo"))`,
+			inputExprString: exprAllJWTHasScopeFoo,
 			inputScopes:     []string{},
 			expectedResult:  false,
 			expectedError:   "",
 		},
 		{
 			name:            "access denied if rule requires scope but there is different scope",
-			inputExprString: `all(jwtHasScope("foo"))`,
+			inputExprString: exprAllJWTHasScopeFoo,
 			inputScopes:     []string{"banana"},
 			expectedResult:  false,
 			expectedError:   "",
 		},
 		{
 			name:            "access granted if rule requires scope and there is that scope",
-			inputExprString: `all(jwtHasScope("foo"))`,
-			inputScopes:     []string{"foo"},
+			inputExprString: exprAllJWTHasScopeFoo,
+			inputScopes:     []string{testScopeFoo},
 			expectedResult:  true,
 			expectedError:   "",
 		},
 		{
 			name:            "access granted if rule requires scope and there is that scope as well as some other scope",
-			inputExprString: `all(jwtHasScope("foo"))`,
-			inputScopes:     []string{"foo", "banana"},
+			inputExprString: exprAllJWTHasScopeFoo,
+			inputScopes:     []string{testScopeFoo, "banana"},
 			expectedResult:  true,
 			expectedError:   "",
 		},
 		{
 			name:            "access denied if rule requires absence of scope but there is that scope",
-			inputExprString: `not(jwtHasScope("test"))`,
+			inputExprString: exprNotJWTHasScopeTest,
 			inputScopes:     []string{"test", "foo"},
 			expectedResult:  false,
 			expectedError:   "",
 		},
 		{
 			name:            "access granted if rule requires disjunction of scopes and there is one of those scope",
-			inputExprString: `any(jwtHasScope("foo"), jwtHasScope("barr"))`,
-			inputScopes:     []string{"foo"},
+			inputExprString: exprAnyJWTHasScopeFooBarr,
+			inputScopes:     []string{testScopeFoo},
 			expectedResult:  true,
 			expectedError:   "",
 		},
 		{
 			name:            "access granted if rule requires disjunction of scopes and there is the other of those scope",
-			inputExprString: `any(jwtHasScope("foo"), jwtHasScope("barr"))`,
-			inputScopes:     []string{"barr"},
+			inputExprString: exprAnyJWTHasScopeFooBarr,
+			inputScopes:     []string{testScopeBarr},
 			expectedResult:  true,
 			expectedError:   "",
 		},
 		{
 			name:            "access granted if rule requires disjunction of scopes and there are both scopes",
-			inputExprString: `any(jwtHasScope("foo"), jwtHasScope("barr"))`,
-			inputScopes:     []string{"barr", "foo"},
+			inputExprString: exprAnyJWTHasScopeFooBarr,
+			inputScopes:     []string{testScopeBarr, testScopeFoo},
 			expectedResult:  true,
 			expectedError:   "",
 		},
 		{
 			name:            "access granted if rule requires conjunction of scopes and there are both scopes",
-			inputExprString: `all(jwtHasScope("foo"), jwtHasScope("barr"))`,
-			inputScopes:     []string{"barr", "foo"},
+			inputExprString: exprAllJWTHasScopeFooBarr,
+			inputScopes:     []string{testScopeBarr, testScopeFoo},
 			expectedResult:  true,
 			expectedError:   "",
 		},
 		{
 			name:            "access denied if rule requires conjunction of scopes and there is only one scope",
-			inputExprString: `all(jwtHasScope("foo"), jwtHasScope("barr"))`,
-			inputScopes:     []string{"foo"},
+			inputExprString: exprAllJWTHasScopeFooBarr,
+			inputScopes:     []string{testScopeFoo},
 			expectedResult:  false,
 			expectedError:   "",
 		},
 		{
 			name:            "access denied if rule requires conjunction of scopes and there is only the other scope",
-			inputExprString: `all(jwtHasScope("foo"), jwtHasScope("barr"))`,
-			inputScopes:     []string{"barr"},
+			inputExprString: exprAllJWTHasScopeFooBarr,
+			inputScopes:     []string{testScopeBarr},
 			expectedResult:  false,
 			expectedError:   "",
 		},

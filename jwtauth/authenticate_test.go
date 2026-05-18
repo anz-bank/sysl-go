@@ -10,6 +10,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testIssuer = "test"
+	issuerKey  = "iss"
+)
+
 func testContext() context.Context {
 	return context.Background()
 }
@@ -18,7 +23,7 @@ func TestStdAuthenticator(t *testing.T) {
 	ctx := testContext()
 	auth := &StdAuthenticator{
 		Verifiers: map[string]Verifier{
-			"test": testVerifier{},
+			testIssuer: testVerifier{},
 		},
 	}
 	token := issueTestJWT()
@@ -31,7 +36,7 @@ func TestAuthenticateExpiredJWT(t *testing.T) {
 	ctx := testContext()
 	auth := &StdAuthenticator{
 		Verifiers: map[string]Verifier{
-			"test": testVerifier{},
+			testIssuer: testVerifier{},
 		},
 	}
 	token := issueExpiredJWT()
@@ -45,7 +50,7 @@ func TestStdAuthenticatorBadToken(t *testing.T) {
 	ctx := testContext()
 	auth := &StdAuthenticator{
 		Verifiers: map[string]Verifier{
-			"test": testVerifier{},
+			testIssuer: testVerifier{},
 		},
 	}
 	token := "NOT A JWT"
@@ -58,7 +63,7 @@ func TestStdAuthenticatorUntrustedSource(t *testing.T) {
 	ctx := testContext()
 	auth := &StdAuthenticator{
 		Verifiers: map[string]Verifier{
-			"test": testVerifier{},
+			testIssuer: testVerifier{},
 		},
 	}
 	token := issueUntrustedTestJWT()
@@ -71,7 +76,7 @@ func TestStdAuthenticatorMaliciousSource(t *testing.T) {
 	ctx := testContext()
 	auth := &StdAuthenticator{
 		Verifiers: map[string]Verifier{
-			"test": testVerifier{},
+			testIssuer: testVerifier{},
 		},
 	}
 	token := issueMaliciousTestJWT()
@@ -84,7 +89,7 @@ func TestStdAuthenticatorWithActorClaim(t *testing.T) {
 	ctx := testContext()
 	auth := &StdAuthenticator{
 		Verifiers: map[string]Verifier{
-			"test": testVerifier{},
+			testIssuer: testVerifier{},
 		},
 	}
 	token := issueTestJWTWithActor("foo")
@@ -143,12 +148,12 @@ func TestAuthenticateCustomClaims(t *testing.T) {
 	ctx := testContext()
 	auth := &StdAuthenticator{
 		Verifiers: map[string]Verifier{
-			"test": testVerifier{},
+			testIssuer: testVerifier{},
 		},
 	}
 
 	claims := map[string]interface{}{
-		"iss":                 "test",
+		issuerKey:             testIssuer,
 		"_some_private_claim": []string{"1234"},
 	}
 	token, _ := jwt.Signed(testSigner).Claims(claims).Serialize()

@@ -8,6 +8,11 @@ import (
 	"github.com/bmizerany/assert"
 )
 
+const (
+	testKey          = "Key"
+	testKeyLowercase = "key"
+)
+
 func TestQueryParam(t *testing.T) {
 	type args struct {
 		params url.Values
@@ -19,13 +24,13 @@ func TestQueryParam(t *testing.T) {
 		args args
 		want url.Values
 	}{
-		{name: "HandleStrings", args: args{params: url.Values{}, key: "Key", value: "1234"}, want: url.Values{"key": []string{"1234"}}},
-		{name: "HandleInt64s", args: args{params: url.Values{}, key: "Key", value: int64(1234)}, want: url.Values{"key": []string{"1234"}}},
-		{name: "HandleFloat64s", args: args{params: url.Values{}, key: "Key", value: float64(1.234)}, want: url.Values{"key": []string{"1.234"}}},
-		{name: "HandleBooleans", args: args{params: url.Values{}, key: "Key", value: "true"}, want: url.Values{"key": []string{"true"}}},
-		{name: "HandleSliceStrings", args: args{params: url.Values{}, key: "Key", value: []string{"a", "b"}}, want: url.Values{"key": []string{"a", "b"}}},
-		{name: "HandleSliceInt64", args: args{params: url.Values{}, key: "Key", value: []int64{1, 2, 3, 4}}, want: url.Values{"key": []string{"1", "2", "3", "4"}}},
-		{name: "HandleNil", args: args{params: url.Values{}, key: "Key", value: nil}, want: nil},
+		{name: "HandleStrings", args: args{params: url.Values{}, key: testKey, value: "1234"}, want: url.Values{testKeyLowercase: []string{"1234"}}},
+		{name: "HandleInt64s", args: args{params: url.Values{}, key: testKey, value: int64(1234)}, want: url.Values{testKeyLowercase: []string{"1234"}}},
+		{name: "HandleFloat64s", args: args{params: url.Values{}, key: testKey, value: float64(1.234)}, want: url.Values{testKeyLowercase: []string{"1.234"}}},
+		{name: "HandleBooleans", args: args{params: url.Values{}, key: testKey, value: "true"}, want: url.Values{testKeyLowercase: []string{"true"}}},
+		{name: "HandleSliceStrings", args: args{params: url.Values{}, key: testKey, value: []string{"a", "b"}}, want: url.Values{testKeyLowercase: []string{"a", "b"}}},
+		{name: "HandleSliceInt64", args: args{params: url.Values{}, key: testKey, value: []int64{1, 2, 3, 4}}, want: url.Values{testKeyLowercase: []string{"1", "2", "3", "4"}}},
+		{name: "HandleNil", args: args{params: url.Values{}, key: testKey, value: nil}, want: nil},
 	}
 
 	for _, tt := range tests {

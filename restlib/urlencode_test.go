@@ -13,8 +13,8 @@ func TestUrlEncodeStructOfStrings(t *testing.T) {
 	}
 
 	req := &BananaRequest{
-		Banana:     "ripe",
-		BananaType: "wrapped",
+		Banana:     ripeValue,
+		BananaType: wrappedValue,
 	}
 	data, err := urlencode(req)
 	require.NoError(t, err)
@@ -29,7 +29,7 @@ func TestUrlEncodeStructWithNullableStrings(t *testing.T) {
 	}
 
 	req := &BananaRequest{
-		Banana: "ripe",
+		Banana: ripeValue,
 	}
 	data, err := urlencode(req)
 	require.NoError(t, err)
@@ -44,7 +44,7 @@ func TestUrlEncodeStructWithInteger(t *testing.T) {
 	}
 
 	req := &BananaRequest{
-		Banana:       "ripe",
+		Banana:       ripeValue,
 		Multiplicity: 6,
 	}
 	data, err := urlencode(req)

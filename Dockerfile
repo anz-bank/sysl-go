@@ -1,4 +1,4 @@
-ARG DOCKER_BASE=golang:1.24.2-bookworm
+ARG DOCKER_BASE=golang:1.26.3-bookworm
 FROM --platform=$BUILDPLATFORM ${DOCKER_BASE} AS stage
 
 ARG TARGETARCH
@@ -6,8 +6,8 @@ ARG TARGETOS
 # requires git make curl
 # but this base image has all of those tools already
 
-ENV SYSL_VERSION=0.790.0
-ENV ARRAI_VERSION=0.321.0
+ENV SYSL_VERSION=0.792.0
+ENV ARRAI_VERSION=0.336.0
 
 ENV PROTOC_VERSION=21.7
 ENV PROTOC_GEN_GO_VERSION=1.28.1

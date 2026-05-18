@@ -366,3 +366,23 @@ func (m *MockClient) ListActivities(ctx context.Context, options client.ListActi
 func (m *MockClient) CountActivities(ctx context.Context, options client.CountActivitiesOptions) (*client.CountActivitiesResult, error) {
 	return nil, nil
 }
+
+func (m *MockClient) CompleteActivityWithOptions(ctx context.Context, options client.CompleteActivityOptions) error {
+	return nil
+}
+
+func (m *MockClient) CompleteActivityByActivityIDWithOptions(ctx context.Context, options client.CompleteActivityByActivityIDOptions) error {
+	return nil
+}
+
+func (m *MockClient) CompleteActivityByIDWithOptions(ctx context.Context, opts client.CompleteActivityByIDOptions) error {
+	return nil
+}
+
+func (m *MockClient) RecordActivityHeartbeatWithOptions(ctx context.Context, opts client.RecordActivityHeartbeatOptions) error {
+	return nil
+}
+
+func (m *MockClient) RecordActivityHeartbeatByIDWithOptions(ctx context.Context, opts client.RecordActivityHeartbeatByIDOptions) error {
+	return nil
+}

@@ -23,7 +23,7 @@ func TestHttpError_WriteError(t *testing.T) {
 			err: HTTPError{
 				HTTPCode:    400,
 				Code:        "1234",
-				Description: "Missing one or more of the required parameters",
+				Description: missingParam,
 			},
 			body:       `{"status":{"code":"1234","description":"Missing one or more of the required parameters"}}`,
 			statusCode: http.StatusBadRequest,
@@ -42,7 +42,7 @@ func TestHttpError_WriteError(t *testing.T) {
 			name: "without code",
 			err: HTTPError{
 				HTTPCode:    400,
-				Description: "Missing one or more of the required parameters",
+				Description: missingParam,
 			},
 			body:       `{"status":{"description":"Missing one or more of the required parameters"}}`,
 			statusCode: http.StatusBadRequest,
@@ -73,7 +73,7 @@ func TestHttpError_WriteErrorWithExtraFields(t *testing.T) {
 	err := HTTPError{
 		HTTPCode:    400,
 		Code:        "1234",
-		Description: "Missing one or more of the required parameters",
+		Description: missingParam,
 	}
 	body := `{"status":{"aaa":123,"code":"1234","description":"Missing one or more of the required parameters","zzz":"hello"}}`
 	statusCode := http.StatusBadRequest
@@ -96,7 +96,7 @@ func TestHttpError_WriteErrorWithoutCodeAndWithExtraFields(t *testing.T) {
 	ctx := LoggerToContext(context.Background(), logger, logger.WithField("test", "test"))
 	err := HTTPError{
 		HTTPCode:    400,
-		Description: "Missing one or more of the required parameters",
+		Description: missingParam,
 	}
 	body := `{"status":{"description":"Missing one or more of the required parameters","statusCode":123}}`
 	statusCode := http.StatusBadRequest

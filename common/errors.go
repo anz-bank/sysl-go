@@ -25,7 +25,7 @@ const downstreamResponseSnippetMaxLength = 128
 func (k Kind) String() string {
 	switch k {
 	case BadRequestError:
-		return "Missing one or more of the required parameters"
+		return missingParam
 	case InternalError:
 		return "Internal Server Error"
 	case UnauthorizedError:

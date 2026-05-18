@@ -33,6 +33,14 @@ import (
 
 var contextTimeout = time.Second
 
+const (
+	helloMsg   = "Hello"
+	fooPath    = "/foo"
+	barPath    = "/bar"
+	barName    = "bar"
+	textPrefix = "text"
+)
+
 func newString(s string) *string {
 	return &s
 }
@@ -121,7 +129,7 @@ func Test_makeNewServer(t *testing.T) {
 			args: args{
 				router: nil,
 				tlsConfig: &tls.Config{
-					ServerName: "Hello",
+					ServerName: helloMsg,
 					MinVersion: tls.VersionTLS12,
 					MaxVersion: tls.VersionTLS12,
 				},
@@ -140,7 +148,7 @@ func Test_makeNewServer(t *testing.T) {
 			want: &http.Server{
 				Addr: ":8080",
 				TLSConfig: &tls.Config{
-					ServerName: "Hello",
+					ServerName: helloMsg,
 					MinVersion: tls.VersionTLS12,
 					MaxVersion: tls.VersionTLS12,
 				},
@@ -183,7 +191,7 @@ func Test_prepareServerListener(t *testing.T) {
 			args: args{
 				rootRouter: nil,
 				tlsConfig: &tls.Config{
-					ServerName: "Hello",
+					ServerName: helloMsg,
 					MinVersion: tls.VersionTLS12,
 					MaxVersion: tls.VersionTLS12,
 				},
@@ -229,12 +237,12 @@ func Test_SelectBasePath_BothFilledSelectsDynamic(t *testing.T) {
 func Test_SelectBasePath_FullTable(t *testing.T) {
 	for _, i := range []struct{ spec, config, result string }{
 		{"", "", "/"},
-		{"", "/foo", "/foo"},
-		{"bar", "", "/bar"},
-		{"/bar", "", "/bar"},
-		{"bar", "/", "/"},
-		{"bar", "/foo", "/foo"},
-		{"/bar", "/foo", "/foo"},
+		{"", fooPath, fooPath},
+		{barName, "", barPath},
+		{barPath, "", barPath},
+		{barName, "/", "/"},
+		{barName, fooPath, fooPath},
+		{barPath, fooPath, fooPath},
 	} {
 		assert.Equal(t, i.result, SelectBasePath(i.spec, i.config))
 	}
@@ -245,7 +253,7 @@ func TestHTTPStoppableServerCanBeHardStopped(t *testing.T) {
 	cfg := config.CommonHTTPServerConfig{
 		BasePath: "/",
 		Common: config.CommonServerConfig{
-			HostName: "localhost",
+			HostName: localhostAddr,
 			Port:     8082,
 			TLS:      nil,
 		},
@@ -299,7 +307,7 @@ func TestHTTPStoppableServerCanBeGracefullyStopped(t *testing.T) {
 	cfg := config.CommonHTTPServerConfig{
 		BasePath: "/",
 		Common: config.CommonServerConfig{
-			HostName: "localhost",
+			HostName: localhostAddr,
 			Port:     8083,
 			TLS:      nil,
 		},
@@ -388,7 +396,7 @@ func TestHTTPStoppableServerGracefulStopTimeout(t *testing.T) {
 	cfg := config.CommonHTTPServerConfig{
 		BasePath: "/",
 		Common: config.CommonServerConfig{
-			HostName: "localhost",
+			HostName: localhostAddr,
 			Port:     8083,
 			TLS:      nil,
 		},
@@ -482,7 +490,7 @@ func Test_configureAdminServerListener_Valid(t *testing.T) {
 		library: func() *config.LibraryConfig {
 			return &config.LibraryConfig{
 				Log: config.LogConfig{
-					Format:       "text",
+					Format:       textPrefix,
 					Level:        log.DebugLevel,
 					ReportCaller: false,
 				},
@@ -493,7 +501,7 @@ func Test_configureAdminServerListener_Valid(t *testing.T) {
 		},
 		admin: func() *config.CommonHTTPServerConfig {
 			return &config.CommonHTTPServerConfig{
-				Common:       config.CommonServerConfig{HostName: "localhost", Port: 9494, TLS: nil},
+				Common:       config.CommonServerConfig{HostName: localhostAddr, Port: 9494, TLS: nil},
 				BasePath:     "/",
 				ReadTimeout:  time.Minute,
 				WriteTimeout: time.Minute,
@@ -526,7 +534,7 @@ func Test_configureAdminServerListener_MissingLibraryConfig(t *testing.T) {
 		library:  func() *config.LibraryConfig { return nil },
 		admin: func() *config.CommonHTTPServerConfig {
 			return &config.CommonHTTPServerConfig{
-				Common:       config.CommonServerConfig{HostName: "localhost", Port: 9595, TLS: nil},
+				Common:       config.CommonServerConfig{HostName: localhostAddr, Port: 9595, TLS: nil},
 				BasePath:     "/",
 				ReadTimeout:  time.Minute,
 				WriteTimeout: time.Minute,
@@ -550,7 +558,7 @@ func Test_configureAdminServerListener_MissingAdminConfig(t *testing.T) {
 		library: func() *config.LibraryConfig {
 			return &config.LibraryConfig{
 				Log: config.LogConfig{
-					Format:       "text",
+					Format:       textPrefix,
 					Level:        log.DebugLevel,
 					ReportCaller: false,
 				},
@@ -580,7 +588,7 @@ func Test_configureAdminServerListener_MissingMiddlewareHandler(t *testing.T) {
 		library: func() *config.LibraryConfig {
 			return &config.LibraryConfig{
 				Log: config.LogConfig{
-					Format:       "text",
+					Format:       textPrefix,
 					Level:        log.DebugLevel,
 					ReportCaller: false,
 				},
@@ -591,7 +599,7 @@ func Test_configureAdminServerListener_MissingMiddlewareHandler(t *testing.T) {
 		},
 		admin: func() *config.CommonHTTPServerConfig {
 			return &config.CommonHTTPServerConfig{
-				Common:       config.CommonServerConfig{HostName: "localhost", Port: 9494, TLS: nil},
+				Common:       config.CommonServerConfig{HostName: localhostAddr, Port: 9494, TLS: nil},
 				BasePath:     "/",
 				ReadTimeout:  time.Minute,
 				WriteTimeout: time.Minute,

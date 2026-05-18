@@ -63,7 +63,7 @@ func getTestPublicKey() *jose.JSONWebKey {
 
 func issueTestJWT() string {
 	claims := Claims{
-		"iss": "test",
+		issuerKey: testIssuer,
 	}
 	res, _ := jwt.Signed(testSigner).Claims(claims).Serialize()
 	return res
@@ -71,8 +71,8 @@ func issueTestJWT() string {
 
 func issueExpiredJWT() string {
 	claims := Claims{
-		"iss": "test",
-		"exp": jwt.NewNumericDate(time.Now().Add(-5 * time.Second)),
+		issuerKey: "test",
+		"exp":     jwt.NewNumericDate(time.Now().Add(-5 * time.Second)),
 	}
 	res, _ := jwt.Signed(testSigner).Claims(claims).Serialize()
 	return res
@@ -80,7 +80,7 @@ func issueExpiredJWT() string {
 
 func issueUntrustedTestJWT() string {
 	claims := Claims{
-		"iss": "untrusted",
+		issuerKey: "untrusted",
 	}
 	res, _ := jwt.Signed(testUntrustedSigner).Claims(claims).Serialize()
 	return res
@@ -88,7 +88,7 @@ func issueUntrustedTestJWT() string {
 
 func issueMaliciousTestJWT() string {
 	claims := Claims{
-		"iss": "test",
+		issuerKey: testIssuer,
 	}
 	res, _ := jwt.Signed(testMaliciousSigner).Claims(claims).Serialize()
 	return res
@@ -98,7 +98,7 @@ func issueTestJWTWithActor(actorSubject string) string {
 	// "act", Actor, ref:  [RFC8693, Section 4.1]
 	// See: https://tools.ietf.org/html/rfc8693
 	claims := Claims{
-		"iss": "test",
+		issuerKey: "test",
 		"act": map[string]string{
 			"sub": actorSubject,
 		},

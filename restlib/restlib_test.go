@@ -26,8 +26,12 @@ type ErrorType struct {
 type BytesType []byte
 
 const (
-	okJSON    = `{ "test":"test string" }`
-	errorJSON = `{ "test2":"test string 2" }`
+	okJSON         = `{ "test":"test string" }`
+	errorJSON      = `{ "test2":"test string 2" }`
+	contentTypeKey = "Content-Type"
+	ripeValue      = "ripe"
+	wrappedValue   = "wrapped"
+	testString     = "test string"
 )
 
 // testDoHTTPRequest returns HTTPResult.
@@ -98,7 +102,7 @@ func TestUnmarshalEmptyBodyOK(t *testing.T) {
 
 func TestUnmarshalBytesContent(t *testing.T) {
 	header := map[string][]string{
-		"Content-Type": {"image/png"},
+		contentTypeKey: {"image/png"},
 	}
 	var image = []byte{1, 2}
 	result, err := unmarshal(&http.Response{Header: header}, image, &BytesType{})
@@ -112,7 +116,7 @@ func TestUnmarshalBytesContent(t *testing.T) {
 
 func TestUnmarshalRawStringContent(t *testing.T) {
 	header := map[string][]string{
-		"Content-Type": {"text/plain"},
+		contentTypeKey: {"text/plain"},
 	}
 	var response = ""
 	result, err := unmarshal(&http.Response{Header: header}, []byte("hello"), &response)
@@ -126,7 +130,7 @@ func TestUnmarshalRawStringContent(t *testing.T) {
 
 func TestUnmarshalRawBytesContent(t *testing.T) {
 	header := map[string][]string{
-		"Content-Type": {"application/octet-stream"},
+		contentTypeKey: {"application/octet-stream"},
 	}
 	var image = []byte{1, 2}
 	var response []byte
@@ -274,15 +278,15 @@ func TestDoHTTPRequestSendStructAsUrlEncodedBody(t *testing.T) {
 	}
 
 	req := &BananaRequest{
-		Banana:     "ripe",
-		BananaType: "wrapped",
+		Banana:     ripeValue,
+		BananaType: wrappedValue,
 		ExpiresAt:  time.Date(2021, time.February, 10, 0, 0, 0, 0, time.UTC),
 	}
 
 	expectedURLEncodedData := []byte(`Banana=ripe&BananaType=wrapped&ExpiresAt=2021-02-10T00%3A00%3A00Z`)
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/json")
+		w.Header().Add(contentTypeKey, "application/json")
 		data, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -300,7 +304,7 @@ func TestDoHTTPRequestSendStructAsUrlEncodedBody(t *testing.T) {
 	defer srv.Close()
 
 	reqHeader := http.Header{}
-	reqHeader.Add("Content-Type", "application/x-www-form-urlencoded")
+	reqHeader.Add(contentTypeKey, "application/x-www-form-urlencoded")
 	ctx := common.RequestHeaderToContext(context.Background(), reqHeader)
 
 	result, err := testDoHTTPRequest(ctx, srv.Client(), "POST", srv.URL, req, make([]string, 0), &OkType{}, &ErrorType{})
@@ -308,7 +312,7 @@ func TestDoHTTPRequestSendStructAsUrlEncodedBody(t *testing.T) {
 	require.NotNil(t, result)
 	responseObj, ok := result.Response.(*OkType)
 	require.True(t, ok)
-	expectedResponseObj := &OkType{Test: "test string"}
+	expectedResponseObj := &OkType{Test: testString}
 	require.Equal(t, expectedResponseObj, responseObj)
 }
 
@@ -320,15 +324,15 @@ func TestDoHTTPRequestSendStructAsUrlEncodedBodyWithCharset(t *testing.T) {
 	}
 
 	req := &BananaRequest{
-		Banana:     "ripe",
-		BananaType: "wrapped",
+		Banana:     ripeValue,
+		BananaType: wrappedValue,
 		ExpiresAt:  time.Date(2021, time.February, 10, 0, 0, 0, 0, time.UTC),
 	}
 
 	expectedURLEncodedData := []byte(`Banana=ripe&BananaType=wrapped&ExpiresAt=2021-02-10T00%3A00%3A00Z`)
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/json")
+		w.Header().Add(contentTypeKey, "application/json")
 		data, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -346,7 +350,7 @@ func TestDoHTTPRequestSendStructAsUrlEncodedBodyWithCharset(t *testing.T) {
 	defer srv.Close()
 
 	reqHeader := http.Header{}
-	reqHeader.Add("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
+	reqHeader.Add(contentTypeKey, "application/x-www-form-urlencoded; charset=utf-8")
 	ctx := common.RequestHeaderToContext(context.Background(), reqHeader)
 
 	result, err := testDoHTTPRequest(ctx, srv.Client(), "POST", srv.URL, req, make([]string, 0), &OkType{}, &ErrorType{})
@@ -354,7 +358,7 @@ func TestDoHTTPRequestSendStructAsUrlEncodedBodyWithCharset(t *testing.T) {
 	require.NotNil(t, result)
 	responseObj, ok := result.Response.(*OkType)
 	require.True(t, ok)
-	expectedResponseObj := &OkType{Test: "test string"}
+	expectedResponseObj := &OkType{Test: testString}
 	require.Equal(t, expectedResponseObj, responseObj)
 }
 
@@ -368,8 +372,8 @@ func TestDoHTTPRequestSendStructWithCustomUrlFieldTagsAsUrlEncodedBody(t *testin
 
 	// Ref: https://pkg.go.dev/github.com/google/go-querystring/query
 	req := &BananaRequest{
-		Banana:                  "ripe",
-		BananaType:              "wrapped",
+		Banana:                  ripeValue,
+		BananaType:              wrappedValue,
 		ExpiresAt:               time.Date(2021, time.February, 10, 0, 0, 0, 0, time.UTC),
 		ProprietaryBananaSecret: "THIS MUST NOT BE SENT OVER THE WIRE",
 	}
@@ -377,7 +381,7 @@ func TestDoHTTPRequestSendStructWithCustomUrlFieldTagsAsUrlEncodedBody(t *testin
 	expectedURLEncodedData := []byte(`banana=ripe&banana_type=wrapped&expires_at=2021-02-10T00%3A00%3A00Z`)
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/json")
+		w.Header().Add(contentTypeKey, "application/json")
 		data, err := io.ReadAll(r.Body)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -395,7 +399,7 @@ func TestDoHTTPRequestSendStructWithCustomUrlFieldTagsAsUrlEncodedBody(t *testin
 	defer srv.Close()
 
 	reqHeader := http.Header{}
-	reqHeader.Add("Content-Type", "application/x-www-form-urlencoded")
+	reqHeader.Add(contentTypeKey, "application/x-www-form-urlencoded")
 	ctx := common.RequestHeaderToContext(context.Background(), reqHeader)
 
 	result, err := testDoHTTPRequest(ctx, srv.Client(), "POST", srv.URL, req, make([]string, 0), &OkType{}, &ErrorType{})
@@ -403,7 +407,7 @@ func TestDoHTTPRequestSendStructWithCustomUrlFieldTagsAsUrlEncodedBody(t *testin
 	require.NotNil(t, result)
 	responseObj, ok := result.Response.(*OkType)
 	require.True(t, ok)
-	expectedResponseObj := &OkType{Test: "test string"}
+	expectedResponseObj := &OkType{Test: testString}
 	require.Equal(t, expectedResponseObj, responseObj)
 }
 
@@ -414,7 +418,7 @@ type testResp struct {
 func TestSendHTTPResponseJSONBody(t *testing.T) {
 	// Given
 	recorder := httptest.NewRecorder()
-	recorder.Header().Set("Content-Type", "application/json")
+	recorder.Header().Set(contentTypeKey, "application/json")
 
 	resp := testResp{Data: "test"}
 
@@ -434,7 +438,7 @@ func TestSendHTTPResponseJSONBody(t *testing.T) {
 func TestSendHTTPResponseXMLBody(t *testing.T) {
 	// Given
 	recorder := httptest.NewRecorder()
-	recorder.Header().Set("Content-Type", "text/xml; charset=utf-8")
+	recorder.Header().Set(contentTypeKey, "text/xml; charset=utf-8")
 
 	resp := testResp{Data: "test"}
 
@@ -454,7 +458,7 @@ func TestSendHTTPResponseXMLBody(t *testing.T) {
 func TestSendHTTPResponseBinaryBody(t *testing.T) {
 	// Given
 	recorder := httptest.NewRecorder()
-	recorder.Header().Set("Content-Type", "application/octet-stream")
+	recorder.Header().Set(contentTypeKey, "application/octet-stream")
 
 	// When
 	data := []byte("test binary data")
@@ -475,7 +479,7 @@ type ByteWrapper []byte
 func TestSendHTTPResponseBinaryBody2(t *testing.T) {
 	// Given
 	recorder := httptest.NewRecorder()
-	recorder.Header().Set("Content-Type", "application/pdf")
+	recorder.Header().Set(contentTypeKey, "application/pdf")
 
 	// When
 	data := ByteWrapper("test binary data")
@@ -494,7 +498,7 @@ func TestSendHTTPResponseBinaryBody2(t *testing.T) {
 func TestSendHTTPResponseContentTypeImage(t *testing.T) {
 	// Given
 	recorder := httptest.NewRecorder()
-	recorder.Header().Set("Content-Type", "image/jpeg")
+	recorder.Header().Set(contentTypeKey, "image/jpeg")
 
 	// When
 	data := &BytesType{1, 2}
@@ -512,7 +516,7 @@ func TestSendHTTPResponseContentTypeImage(t *testing.T) {
 
 func TestSendHTTPResponseContentTypeTextPlain(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	recorder.Header().Set("Content-Type", "text/plain")
+	recorder.Header().Set(contentTypeKey, "text/plain")
 
 	data := "Plain text"
 	SendHTTPResponse(recorder, 200, data)
@@ -528,7 +532,7 @@ func TestSendHTTPResponseContentTypeTextPlain(t *testing.T) {
 
 func TestSendHTTPResponseContentTypeTextHtml(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	recorder.Header().Set("Content-Type", "text/html")
+	recorder.Header().Set(contentTypeKey, "text/html")
 
 	data := "Plain text"
 	SendHTTPResponse(recorder, 200, data)
@@ -544,7 +548,7 @@ func TestSendHTTPResponseContentTypeTextHtml(t *testing.T) {
 
 func TestSendHTTPResponseContentTypeOctetStream(t *testing.T) {
 	recorder := httptest.NewRecorder()
-	recorder.Header().Set("Content-Type", "application/octet-stream")
+	recorder.Header().Set(contentTypeKey, "application/octet-stream")
 
 	data := []byte("Encoded")
 	SendHTTPResponse(recorder, 200, data)

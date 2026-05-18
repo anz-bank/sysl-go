@@ -13,6 +13,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testMsg     = "test"
+	httpsScheme = "https"
+	testHost    = "www.test.com"
+	testPath    = "hello"
+)
+
 var ctx, _ = context.WithTimeout(context.Background(), 0*time.Nanosecond)
 var err = fmt.Errorf("nothing")
 var serverErrors = []struct {
@@ -22,22 +29,22 @@ var serverErrors = []struct {
 	in   error
 	out  Kind
 }{
-	{ctx, UnknownError, "test", err, DownstreamTimeoutError},
-	{context.Background(), UnknownError, "test", err, UnknownError},
-	{context.Background(), BadRequestError, "test", err, BadRequestError},
-	{context.Background(), InternalError, "test", err, InternalError},
-	{context.Background(), UnauthorizedError, "test", err, UnauthorizedError},
-	{context.Background(), DownstreamUnavailableError, "test", err, DownstreamUnavailableError},
-	{context.Background(), DownstreamTimeoutError, "test", err, DownstreamTimeoutError},
-	{context.Background(), BadRequestError, "test", &ServerError{Kind: DownstreamTimeoutError, Message: "test", Cause: err}, DownstreamTimeoutError},
-	{context.Background(), DownstreamUnauthorizedError, "test", &ServerError{Kind: DownstreamUnauthorizedError, Message: "test", Cause: err}, DownstreamUnauthorizedError},
-	{context.Background(), DownstreamUnexpectedResponseError, "test", &ServerError{Kind: DownstreamUnexpectedResponseError, Message: "test", Cause: err}, DownstreamUnexpectedResponseError},
+	{ctx, UnknownError, testMsg, err, DownstreamTimeoutError},
+	{context.Background(), UnknownError, testMsg, err, UnknownError},
+	{context.Background(), BadRequestError, testMsg, err, BadRequestError},
+	{context.Background(), InternalError, testMsg, err, InternalError},
+	{context.Background(), UnauthorizedError, testMsg, err, UnauthorizedError},
+	{context.Background(), DownstreamUnavailableError, testMsg, err, DownstreamUnavailableError},
+	{context.Background(), DownstreamTimeoutError, testMsg, err, DownstreamTimeoutError},
+	{context.Background(), BadRequestError, testMsg, &ServerError{Kind: DownstreamTimeoutError, Message: testMsg, Cause: err}, DownstreamTimeoutError},
+	{context.Background(), DownstreamUnauthorizedError, testMsg, &ServerError{Kind: DownstreamUnauthorizedError, Message: testMsg, Cause: err}, DownstreamUnauthorizedError},
+	{context.Background(), DownstreamUnexpectedResponseError, testMsg, &ServerError{Kind: DownstreamUnexpectedResponseError, Message: testMsg, Cause: err}, DownstreamUnexpectedResponseError},
 }
 
 func TestServerErrorCreateError(t *testing.T) {
 	req := require.New(t)
 	for _, t := range serverErrors {
-		req.EqualError(&ServerError{Kind: t.out, Message: t.msg, Cause: err}, CreateError(t.ctx, t.kind, "test", t.in).Error())
+		req.EqualError(&ServerError{Kind: t.out, Message: t.msg, Cause: err}, CreateError(t.ctx, t.kind, testMsg, t.in).Error())
 	}
 }
 
@@ -57,9 +64,9 @@ func TestDownstreamError_CreateDownstreamError_Timeout(t *testing.T) {
 	resp.Request = &http.Request{
 		Method: "PUT",
 		URL: &url.URL{
-			Scheme: "https",
-			Host:   "www.test.com",
-			Path:   "hello",
+			Scheme: httpsScheme,
+			Host:   testHost,
+			Path:   testPath,
 		},
 	}
 
@@ -86,9 +93,9 @@ func TestDownstreamError_CreateDownstreamError_UnexpectedResponse(t *testing.T) 
 	resp.Request = &http.Request{
 		Method: "POST",
 		URL: &url.URL{
-			Scheme: "https",
-			Host:   "www.test.com",
-			Path:   "hello",
+			Scheme: httpsScheme,
+			Host:   testHost,
+			Path:   testPath,
 		},
 	}
 
@@ -118,9 +125,9 @@ This is a very very long response body.`
 	resp.Request = &http.Request{
 		Method: "GET",
 		URL: &url.URL{
-			Scheme: "https",
-			Host:   "www.test.com",
-			Path:   "hello",
+			Scheme: httpsScheme,
+			Host:   testHost,
+			Path:   testPath,
 		},
 	}
 

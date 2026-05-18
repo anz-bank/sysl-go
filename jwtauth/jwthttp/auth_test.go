@@ -15,6 +15,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const authHeader = "Authorization"
+
 func testContext() context.Context {
 	return context.Background()
 }
@@ -77,7 +79,7 @@ func TestWithUnauthHandler(t *testing.T) {
 func TestAuthorizePassesAuthorizedRequests(t *testing.T) {
 	// Test a authorizor middleware with no authorizors still authenticates (validates jwts)
 	auth := &Auth{
-		Headers: []string{"Authorization"},
+		Headers: []string{authHeader},
 		// returns an error when attempting to authenticate
 		Authenticator: goodAuthenticator{},
 	}
@@ -93,7 +95,7 @@ func TestAuthorizePassesAuthorizedRequests(t *testing.T) {
 func TestAuthAllowAnonPassthrough(t *testing.T) {
 	// Test a authorizor anonymous middleware passes requests with no Authorization header
 	auth := &Auth{
-		Headers: []string{"Authorization"},
+		Headers: []string{authHeader},
 		// returns an error when attempting to authenticate
 		Authenticator: badAuthenticator{err: errors.New("bad auth")},
 	}
@@ -111,7 +113,7 @@ func TestAuthAllowAnonPassthrough(t *testing.T) {
 func TestAuthAllowAnonReject(t *testing.T) {
 	// Test a authorizor anonymous middleware rejects a request with invalid JWT
 	auth := &Auth{
-		Headers: []string{"Authorization"},
+		Headers: []string{authHeader},
 		// returns an error when attempting to authenticate
 		Authenticator: badAuthenticator{err: errors.New("bad auth")},
 	}
@@ -121,7 +123,7 @@ func TestAuthAllowAnonReject(t *testing.T) {
 
 	// with bad auth header
 	req, _ := http.NewRequest("GET", server.URL, nil)
-	req.Header.Add("Authorization", "Bearer BAD")
+	req.Header.Add(authHeader, "Bearer BAD")
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
 	defer resp.Body.Close()
@@ -131,7 +133,7 @@ func TestAuthAllowAnonReject(t *testing.T) {
 func TestAuthNOAuthenticates(t *testing.T) {
 	// Test a authorizor middleware with no authorizors still authenticates (validates jwts)
 	auth := &Auth{
-		Headers: []string{"Authorization"},
+		Headers: []string{authHeader},
 		// returns an error when attempting to authenticate
 		Authenticator: badAuthenticator{errors.New("AuthError")},
 	}
@@ -147,7 +149,7 @@ func TestAuthNOAuthenticates(t *testing.T) {
 func TestAuthNOAuthorizes(t *testing.T) {
 	// Test an auth middleware applies authorizors
 	auth := &Auth{
-		Headers: []string{"Authorization"},
+		Headers: []string{authHeader},
 		// returns an error when attempting to authenticate
 		Authenticator: badAuthenticator{errors.New("AuthError")},
 	}
@@ -165,12 +167,12 @@ func TestAuthNOAuthorizes(t *testing.T) {
 
 func TestGetBearer(t *testing.T) {
 	auth := &Auth{
-		Headers:       []string{"Authorization"},
+		Headers:       []string{authHeader},
 		Authenticator: goodAuthenticator{jwtauth.Claims{"scope": "a"}},
 	}
 	token := "Bearer token"
 	headers := http.Header{
-		"Authorization": []string{token},
+		authHeader: []string{token},
 	}
 	assert.Equal(t, "token", auth.getBearer(headers))
 }

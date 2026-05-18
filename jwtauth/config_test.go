@@ -17,7 +17,7 @@ func TestAuthFromConfig(t *testing.T) {
 	ac := &Config{
 		Issuers: []IssuerConfig{
 			{
-				Name:     "test",
+				Name:     testIssuer,
 				JWKSURL:  url,
 				CacheTTL: jsontime.Duration(time.Minute),
 			},
@@ -34,12 +34,12 @@ func TestAuthFromConfigDuplicateIssuerNames(t *testing.T) {
 	ac := &Config{
 		Issuers: []IssuerConfig{
 			{
-				Name:     "test",
+				Name:     testIssuer,
 				JWKSURL:  url,
 				CacheTTL: jsontime.Duration(time.Minute),
 			},
 			{
-				Name:     "test",
+				Name:     testIssuer,
 				JWKSURL:  url,
 				CacheTTL: jsontime.Duration(time.Minute),
 			},
@@ -69,7 +69,7 @@ func TestAuthFromConfigIssuerNoMethod(t *testing.T) {
 	ac := &Config{
 		Issuers: []IssuerConfig{
 			{
-				Name: "test",
+				Name: testIssuer,
 			},
 		},
 	}
@@ -80,7 +80,7 @@ func TestAuthFromConfigIssuerNoMethod(t *testing.T) {
 func TestVerifierFromConfigRemoteJWKS(t *testing.T) {
 	ctx := testContext()
 	url, client := testClient()
-	ic := IssuerConfig{Name: "test", JWKSURL: url, CacheTTL: jsontime.Duration(time.Minute)}
+	ic := IssuerConfig{Name: testIssuer, JWKSURL: url, CacheTTL: jsontime.Duration(time.Minute)}
 	_, err := VerifierFromIssuerConfig(ctx, ic, client)
 	require.NoError(t, err)
 }
@@ -104,7 +104,7 @@ func TestConfigUnmarshal(t *testing.T) {
 	expected := Config{
 		Issuers: []IssuerConfig{
 			{
-				Name:     "test",
+				Name:     testIssuer,
 				JWKSURL:  "https://localhost:8080",
 				CacheTTL: jsontime.Duration(time.Minute),
 			},

@@ -10,10 +10,12 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+const authHeader = "Authorization"
+
 func TestGetBearer(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		md := metadata.New(map[string]string{
-			"Authorization": "Bearer my-token",
+			authHeader: "Bearer my-token",
 		})
 		ctx := metadata.NewIncomingContext(context.Background(), md)
 		token, err := jwtgrpc.GetBearerFromIncomingContext(ctx)
@@ -38,7 +40,7 @@ func TestGetBearer(t *testing.T) {
 
 	t.Run("EmptyAuthHeader", func(t *testing.T) {
 		md := metadata.New(map[string]string{
-			"Authorization": "",
+			authHeader: "",
 		})
 		ctx := metadata.NewIncomingContext(context.Background(), md)
 		_, err := jwtgrpc.GetBearerFromIncomingContext(ctx)
@@ -48,7 +50,7 @@ func TestGetBearer(t *testing.T) {
 
 	t.Run("NotBearer", func(t *testing.T) {
 		md := metadata.New(map[string]string{
-			"Authorization": "Basic OIONFSJBONLVDS",
+			authHeader: "Basic OIONFSJBONLVDS",
 		})
 		ctx := metadata.NewIncomingContext(context.Background(), md)
 		_, err := jwtgrpc.GetBearerFromIncomingContext(ctx)

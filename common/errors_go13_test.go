@@ -16,6 +16,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	testSchemeHTTPS = "https"
+	testPathHello   = "hello"
+	testMessage     = "test"
+)
+
 func TestServerError_Unwrap(t *testing.T) {
 	// Given
 	innerWrappedError := fmt.Errorf("inner wrapped: %w", err)
@@ -47,9 +53,9 @@ func TestDownstreamError_Unwrap(t *testing.T) {
 	resp.Request = &http.Request{
 		Method: "POST",
 		URL: &url.URL{
-			Scheme: "https",
-			Host:   "www.test.com",
-			Path:   "hello",
+			Scheme: testSchemeHTTPS,
+			Host:   testHost,
+			Path:   testPathHello,
 		},
 	}
 
@@ -107,7 +113,7 @@ func TestServerError_Is_CustomizedInner(t *testing.T) {
 	// Given
 	e1 := errors.New("inner most error")
 	e2 := &innerError{
-		message: "test",
+		message: testMessage,
 		err:     e1,
 	}
 	e := CreateError(context.Background(), BadRequestError, "bad request", e2)

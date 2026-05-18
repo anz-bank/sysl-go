@@ -18,7 +18,10 @@ import (
 	"github.com/anz-bank/sysl-go/testutil"
 )
 
-const testPort = 8888
+const (
+	testPort      = 8888
+	localhostAddr = "localhost"
+)
 
 type testServer struct {
 	test.UnimplementedTestServiceServer
@@ -31,7 +34,7 @@ func (*testServer) Test(ctx context.Context, req *test.TestRequest) (*test.TestR
 func localServer() config.GRPCServerConfig {
 	return config.GRPCServerConfig{
 		CommonServerConfig: config.CommonServerConfig{
-			HostName: "localhost",
+			HostName: localhostAddr,
 			Port:     testPort,
 		},
 	}
@@ -76,7 +79,7 @@ func (h *grpcHandler) GrpcPublicServerConfig() *config.GRPCServerConfig {
 }
 
 func connectAndCheckReturn(ctx context.Context, t *testing.T, securityOption grpc.DialOption) {
-	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", testPort), securityOption, grpc.WithBlock())
+	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", localhostAddr, testPort), securityOption, grpc.WithBlock())
 	require.NoError(t, err)
 	defer func(conn *grpc.ClientConn) {
 		err := conn.Close()
@@ -119,7 +122,7 @@ func Test_encryptionConfigUsed(t *testing.T) {
 
 	cfg := config.GRPCServerConfig{
 		CommonServerConfig: config.CommonServerConfig{
-			HostName: "localhost",
+			HostName: localhostAddr,
 			Port:     testPort,
 			TLS: &config.TLSConfig{
 				MinVersion: ptr("1.2"),
@@ -176,7 +179,7 @@ func Test_serverUsesGivenLogger(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	conn, err := grpc.Dial(fmt.Sprintf("localhost:%d", testPort), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	conn, err := grpc.Dial(fmt.Sprintf("%s:%d", localhostAddr, testPort), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
 	require.NoError(t, err)
 	defer func(conn *grpc.ClientConn) {
 		err := conn.Close()
